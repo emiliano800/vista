@@ -1,0 +1,8 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "vista",
+  "keep_vars": true,
+  "main": "src/web/worker.mjs",
+  "compatibility_date": "2026-09-19",
+  "assets": {"directory": "./src/web/public", "binding": "ASSETS", "run_worker_first": true}
+}

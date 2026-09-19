@@ -1,18 +1,66 @@
-from fastapi import FastAPI
+from pathlib import Path
 
-from vista.api import deals, employees, findings, runs, summaries, tenants, usage
+from fastapi import FastAPI, Request
+from fastapi.exceptions import RequestValidationError
+from fastapi.responses import JSONResponse
+from fastapi.staticfiles import StaticFiles
 
-app = FastAPI(title="Vista", version="0.1.0")
+from vista.api import deals, employees, findings, recordings, runs, sessions, summaries, tenants, usage
 
-app.include_router(tenants.router)
-app.include_router(deals.router)
-app.include_router(runs.router)
-app.include_router(usage.router)
-app.include_router(employees.router)
-app.include_router(findings.router)
-app.include_router(summaries.router)
+app = FastAPI(title="Vista", version="0.2.0")
+
+
+@app.middleware("http")
+async def bounded_requests(request: Request, call_next):
+    if request.method in ("POST", "PUT", "PATCH"):
+        body = bytearray()
+        async for chunk in request.stream():
+            body.extend(chunk)
+            if len(body) > 8 * 1024 * 1024:
+                return JSONResponse({"detail": "Upload exceeds the 8 MiB limit"}, status_code=413)
+        request._body = bytes(body)
+    response = await call_next(request)
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["Referrer-Policy"] = "no-referrer"
+    response.headers["Cache-Control"] = "no-store"
+    return response
+
+
+@app.exception_handler(RequestValidationError)
+async def invalid_request(request, exc):
+    # Do not echo access keys or recording contents in error payloads/logs.
+    return JSONResponse(
+        {
+            "detail": [
+                {"loc": e["loc"], "msg": "Invalid data" if e["type"] == "value_error" else e["msg"], "type": e["type"]}
+                for e in exc.errors()
+            ]
+        },
+        status_code=422,
+    )
+
+
+for router in (
+    tenants.router,
+    deals.router,
+    runs.router,
+    usage.router,
+    employees.router,
+    findings.router,
+    summaries.router,
+    sessions.router,
+    recordings.router,
+):
+    app.include_router(router)
+    app.include_router(router, prefix="/api", include_in_schema=False)
 
 
 @app.get("/health")
+@app.get("/api/health")
 def health() -> dict:
     return {"status": "ok"}
+
+
+public = Path(__file__).resolve().parents[1] / "web" / "public"
+if public.exists():
+    app.mount("/", StaticFiles(directory=public, html=True), name="web")

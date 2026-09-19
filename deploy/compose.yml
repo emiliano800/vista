@@ -1,0 +1,70 @@
+# Run from repo root: docker compose --env-file deploy/.env -f deploy/compose.yml up -d --build
+x-backend: &backend
+  image: vista-api:local
+  build:
+    context: ..
+  environment: &environment
+    VISTA_DATABASE_URL: postgresql+psycopg://vista:${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD}@postgres:5432/vista
+    VISTA_S3_ENDPOINT_URL: http://minio:9000
+    VISTA_S3_ACCESS_KEY: vista-storage
+    VISTA_S3_SECRET_KEY: ${S3_PASSWORD:?Set S3_PASSWORD}
+    VISTA_S3_BUCKET: vista-reports
+    VISTA_COOKIE_SECURE: "true"
+    VISTA_ALLOWED_ORIGINS: '["https://bumpsolutions.org","https://vista.emilianocamachoalmanza.workers.dev"]'
+  depends_on:
+    postgres:
+      condition: service_healthy
+    minio:
+      condition: service_started
+
+services:
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: vista
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD}
+      POSTGRES_DB: vista
+    volumes:
+      - postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U vista"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    restart: unless-stopped
+  minio:
+    image: quay.io/minio/minio
+    command: server /data
+    environment:
+      MINIO_ROOT_USER: vista-storage
+      MINIO_ROOT_PASSWORD: ${S3_PASSWORD:?Set S3_PASSWORD}
+    volumes:
+      - reports:/data
+    restart: unless-stopped
+  migrate:
+    <<: *backend
+    command: [".venv/bin/python", "-m", "vista.manage", "migrate"]
+    restart: on-failure
+  api:
+    <<: *backend
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    expose: ["8000"]
+    restart: unless-stopped
+  caddy:
+    image: caddy:2
+    environment:
+      API_HOST: ${API_HOST:?Set API_HOST to your backend DNS hostname}
+    ports: ["80:80", "443:443", "443:443/udp"]
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy:/data
+      - caddy_config:/config
+    depends_on: [api]
+    restart: unless-stopped
+volumes:
+  postgres:
+  reports:
+  caddy:
+  caddy_config:
