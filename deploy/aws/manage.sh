@@ -7,15 +7,24 @@
 #   deploy/aws/manage.sh migrate
 #
 # Uses the stack's worker task definition (same image, database secret and bucket as the API).
-# Output such as a freshly issued access key is printed once here and is also in the
-# /vista/<stack>/worker CloudWatch log group; treat it as sensitive.
+# Prefer --output-file PATH before the command to save keys privately and remove
+# their CloudWatch log stream. Otherwise keys appear in stdout and CloudWatch.
 set -euo pipefail
+umask 077
 cd "$(dirname "$0")/../.."
 if [ -f deploy/aws/.env ]; then
   set -a; . deploy/aws/.env; set +a
 fi
 STACK_NAME=${STACK_NAME:-vista}
+OUTPUT_FILE=""
+if [ "${1:-}" = "--output-file" ]; then
+  [ "$#" -ge 3 ] || { echo "usage: manage.sh --output-file PATH COMMAND ..." >&2; exit 64; }
+  OUTPUT_FILE=$2
+  [ ! -e "$OUTPUT_FILE" ] || { echo "Output file already exists; choose a new path" >&2; exit 64; }
+  shift 2
+fi
 [ "$#" -gt 0 ] || { sed -n '2,8p' "$0"; exit 64; }
+COMMAND=$1
 
 out() { aws cloudformation describe-stacks --stack-name "$STACK_NAME" \
   --query "Stacks[0].Outputs[?OutputKey=='$1'].OutputValue" --output text; }
@@ -30,9 +39,18 @@ LOG_GROUP="/vista/$STACK_NAME/worker"
 ARGS=$(python3 -c 'import json,sys; print(json.dumps([".venv/bin/python","-m","vista.manage",*sys.argv[1:]]))' "$@")
 OVERRIDES=$(python3 -c 'import json,sys; print(json.dumps({"containerOverrides":[{"name":"Main","command":json.loads(sys.argv[1])}]}))' "$ARGS")
 
-TASK_ARN=$(aws ecs run-task --cluster "$CLUSTER" --task-definition "$TASK_DEF" --launch-type FARGATE \
+TASK_RESULT=$(aws ecs run-task --cluster "$CLUSTER" --task-definition "$TASK_DEF" --launch-type FARGATE \
   --network-configuration "awsvpcConfiguration={subnets=[$SUBNETS],securityGroups=[$SG],assignPublicIp=ENABLED}" \
-  --overrides "$OVERRIDES" --query "tasks[0].taskArn" --output text)
+  --overrides "$OVERRIDES" --output json)
+TASK_ARN=$(printf '%s' "$TASK_RESULT" | python3 -c '
+import json, sys
+result = json.load(sys.stdin)
+tasks = result.get("tasks", [])
+if result.get("failures") or not tasks:
+    print("ECS could not start the management task: " + json.dumps(result.get("failures", [])), file=sys.stderr)
+    sys.exit(1)
+print(tasks[0]["taskArn"])
+')
 TASK_ID=${TASK_ARN##*/}
 echo "task $TASK_ID started; waiting..." >&2
 aws ecs wait tasks-stopped --cluster "$CLUSTER" --tasks "$TASK_ARN"
@@ -48,10 +66,29 @@ for _ in 1 2 3 4 5 6; do
 done
 OUTPUT=$(aws logs get-log-events --log-group-name "$LOG_GROUP" --log-stream-name "ecs/Main/$TASK_ID" \
   --start-from-head --query "events[].message" --output text 2>/dev/null || true)
-if [ -n "$OUTPUT" ]; then printf '%s\n' "$OUTPUT"; else echo "(command produced no output)" >&2; fi
+if [ -n "$OUTPUT_FILE" ]; then
+  # Keep one-time keys out of terminal transcripts; never overwrite another key file.
+  (set -o noclobber; printf '%s\n' "$OUTPUT" > "$OUTPUT_FILE")
+  echo "Command output saved privately to $OUTPUT_FILE" >&2
+elif [ -n "$OUTPUT" ]; then printf '%s\n' "$OUTPUT"; else echo "(command produced no output)" >&2; fi
 echo "task $TASK_ID finished with exit code $EXIT_CODE" >&2
 
 if [ "$EXIT_CODE" != "0" ]; then
   echo "task exited with code $EXIT_CODE ($REASON)" >&2
   exit 1
 fi
+
+case "$COMMAND" in
+  create-workspace|add-user|rotate-key)
+    if [ -z "$OUTPUT" ]; then
+      echo "Task succeeded but logs were unavailable; inspect task $TASK_ID before retrying to avoid duplicate workspaces" >&2
+      exit 1
+    fi
+    if [ -n "$OUTPUT_FILE" ]; then
+      # A private local copy now exists; remove the remote copy of the issued key.
+      if ! aws logs delete-log-stream --log-group-name "$LOG_GROUP" --log-stream-name "ecs/Main/$TASK_ID"; then
+        echo "WARNING: access key is still in CloudWatch stream ecs/Main/$TASK_ID; remove it after securing the output" >&2
+      fi
+    fi
+    ;;
+esac
