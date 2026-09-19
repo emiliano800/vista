@@ -98,3 +98,56 @@ annotations and run again.
 
 Plug in a real recorder by implementing `EventSource.events()` and yielding
 `RawEvent`s, and add `ActivityRule`s / case-id patterns for your applications.
+
+## Desktop recorder (`recorder/`)
+
+The employee-facing recorder: one Start button, an always-on-top overlay pill
+that stays visible over Excel/Outlook/anything, and a small dashboard (today,
+my recordings, what is recorded, settings). Electron shell, `uiohook-napi` for
+global mouse/keyboard/shortcut hooks, `get-windows` for the foreground app and
+window title, `desktopCapturer` for screenshots on window switch and a
+low-frame-rate `screen.webm`.
+
+Everything is written locally to `~/Vista/recordings/<id>/`:
+
+```
+events.jsonl      one RawEvent per line - the same wire format taskmining reads
+manifest.json     user, platform, start/end, counts, app time, processing state
+shots/NNNNNN.jpg  screenshots referenced by `screen` events (payload.image)
+screen.webm       optional screen video
+annotations.jsonl notes the employee adds (phone, paper, meetings)
+processed/        output of `taskmining run`, executed automatically on Stop
+```
+
+Redaction (emails, phones, IBAN/card/SSN) runs on the device before a line is
+written; typed characters are not stored by default (only key counts and
+shortcut combos); private apps/title keywords mute capture entirely.
+
+```bash
+cd recorder && npm install
+npm start                # real hooks
+npm run start:demo       # simulated Outlook/Acrobat/QuickBooks/Excel activity, no hooks
+VISTA_PYTHON=/path/to/python npm start   # interpreter that has taskmining installed
+```
+
+### macOS
+
+```bash
+brew install node            # Node 20+
+python3 -m venv .venv && .venv/bin/pip install -e .   # taskmining for post-processing
+cd recorder && npm install && VISTA_PYTHON=$PWD/../.venv/bin/python npm start
+```
+
+macOS asks for three permissions the first time (System Settings → Privacy &
+Security); the dashboard shows which are missing and opens the right pane:
+
+| Permission | Why | Without it |
+|---|---|---|
+| Accessibility | `uiohook-napi` global hooks, foreground window | no clicks/keys, Start is blocked |
+| Input Monitoring | keyboard events | key counts and shortcuts stay at 0 |
+| Screen Recording | window titles (`get-windows`), screenshots, `screen.webm` | titles empty, no shots |
+
+The app appears in the permission lists only after it has tried once, so press
+Start, grant, then press Start again. In development the entry is "Electron";
+a signed `.app` build (`electron-builder`) shows as "Vista". While recording
+the Dock icon hides so only the overlay is visible; it returns on Stop.

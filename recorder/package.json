@@ -1,0 +1,19 @@
+{
+  "name": "vista-recorder",
+  "version": "0.1.0",
+  "description": "One-button desktop recorder for Vista task mining: always-on overlay, cross-platform input hooks, active-window + screenshot capture, on-device redaction.",
+  "private": true,
+  "type": "module",
+  "main": "src/main.js",
+  "scripts": {
+    "start": "electron .",
+    "start:demo": "electron . --demo"
+  },
+  "dependencies": {
+    "get-windows": "^9.3.0",
+    "uiohook-napi": "^1.5.5"
+  },
+  "devDependencies": {
+    "electron": "~43.7.2"
+  }
+}

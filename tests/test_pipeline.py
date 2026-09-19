@@ -118,6 +118,24 @@ def test_jsonl_roundtrip():
     assert back == events
 
 
+def test_recorder_events_flow_through_preprocess():
+    # shape written by recorder/ (Electron): shortcuts and screenshots must survive
+    # keystroke aggregation without being merged into typing bursts
+    events = [
+        ev(0, EventType.FOCUS, app="Excel", title="AP tracker.xlsx"),
+        ev(0.5, EventType.SCREEN, app="Excel", title="AP tracker.xlsx", payload={"image": "shots/000001.jpg"}),
+        ev(1, EventType.KEY, app="Excel", title="AP tracker.xlsx", text="4"),
+        ev(1.1, EventType.KEY, app="Excel", title="AP tracker.xlsx", text="2"),
+        ev(2, EventType.SHORTCUT, app="Excel", title="AP tracker.xlsx", text="Ctrl+S", payload={"modifiers": ["ctrl"]}),
+        ev(3, EventType.KEY, app="Excel", title="AP tracker.xlsx", text="x"),
+    ]
+    line = events[4].to_json()
+    assert RawEvent.from_json(line) == events[4]
+    out = preprocess.aggregate_keystrokes(events)
+    assert [e.event_type for e in out] == [EventType.FOCUS, EventType.SCREEN, EventType.KEY, EventType.SHORTCUT, EventType.KEY]
+    assert out[2].payload["n_keys"] == 2 and out[3].text == "Ctrl+S"
+
+
 def test_xes_escapes_attributes():
     rules = [abstraction.ActivityRule('Act "quoted" & <x>', app="X")]
     steps = abstraction.abstract([("s", ev(0, EventType.CLICK, app="X", title='a "b" & <c>'))], rules)

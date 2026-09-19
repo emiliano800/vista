@@ -15,11 +15,19 @@ class EventType(StrEnum):
     COPY = "copy"
     PASTE = "paste"
     SCROLL = "scroll"
+    SHORTCUT = "shortcut"  # modifier combination (Ctrl+S, Alt+Tab); text = canonical combo, never typed content
+    SCREEN = "screen"  # screenshot taken on focus change / click; payload["image"] = relative file path
 
 
 @dataclass
 class RawEvent:
-    """A single low-level desktop interaction as recorded by the client."""
+    """A single low-level desktop interaction as recorded by the client.
+
+    Wire format is one JSON object per line (``recording.jsonl``). The desktop
+    recorder in ``recorder/`` writes exactly this shape; ``payload`` carries
+    type-specific extras (``button``, ``x``/``y``, ``n_keys``, ``image``,
+    ``modifiers``, ``recording_id``).
+    """
 
     timestamp: datetime
     user: str

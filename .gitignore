@@ -8,3 +8,5 @@ dist/
 build/
 .ruff_cache/
 out/
+node_modules/
+Vista/
