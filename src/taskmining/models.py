@@ -82,6 +82,9 @@ class Annotation:
     note: str = ""
     case_id: str = ""
     author: str = "employee"
+    # "manual" / "section": labels the steps in the range. "session": a summary of the
+    # whole recording — context for the reader, never a relabel of individual steps.
+    scope: str = "manual"
 
     def to_json(self) -> str:
         d = asdict(self)
@@ -99,6 +102,7 @@ class Annotation:
             note=d.get("note", "") or "",
             case_id=d.get("case_id", "") or "",
             author=d.get("author", "employee") or "employee",
+            scope=d.get("scope", "manual") or "manual",
         )
 
 

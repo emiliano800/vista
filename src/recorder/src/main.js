@@ -8,10 +8,12 @@ import { fileURLToPath } from 'node:url';
 
 import { BrowserWindow, Menu, Tray, app, clipboard, desktopCapturer, ipcMain, nativeImage, screen, session, shell, systemPreferences, safeStorage } from 'electron';
 
+import { CONFIDENCE_THRESHOLD, RESOLVED_STATUSES, SESSION_ID, applyDecision, explainSection, openaiConfig, reviewSummary } from './explain.js';
 import { DEMO_KEYS, DemoHook, demoActiveWindow, demoClipboard } from './demo.js';
 import { DEFAULT_SETTINGS, Recorder, keyNamesFrom, loadSettings } from './recorder.js';
 import { redactText } from './redact.js';
 import { cloudRequest, companyID, uploadReport, workspaceURL } from './cloud.js';
+import { buildSections, parseEvents, recordingName } from './sections.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const UI = path.join(__dirname, '..', 'ui');
@@ -126,6 +128,150 @@ function postProcess(manifest) {
   });
 }
 
+// Video sections: the long single-window stretches of a recording, computed
+// once after Stop (and again when the employee asks) from events.jsonl.
+function readEvents(dir) {
+  try {
+    return parseEvents(fs.readFileSync(path.join(dir, 'events.jsonl'), 'utf8'));
+  } catch {
+    return [];
+  }
+}
+
+function readManifest(dir) {
+  return JSON.parse(fs.readFileSync(path.join(dir, 'manifest.json'), 'utf8'));
+}
+
+function readAnnotations(dir) {
+  try {
+    return parseEvents(fs.readFileSync(path.join(dir, 'annotations.jsonl'), 'utf8'));
+  } catch {
+    return [];
+  }
+}
+
+// review.json: the AI's explanation per section (+ the whole session) and
+// what the employee decided about each. Shape: { threshold, model, generated_at, items: { S1: {...}, session: {...} } }
+const REVIEW_FILE = 'review.json';
+
+function readReview(dir) {
+  try {
+    return JSON.parse(fs.readFileSync(path.join(dir, REVIEW_FILE), 'utf8'));
+  } catch {
+    return { threshold: CONFIDENCE_THRESHOLD, model: null, generated_at: null, generating: false, items: {} };
+  }
+}
+
+function writeReview(dir, review) {
+  fs.writeFileSync(path.join(dir, REVIEW_FILE), JSON.stringify(review, null, 2));
+}
+
+function sectionsFor(recordingId) {
+  const dir = path.join(RECORDINGS, recordingId);
+  const m = readManifest(dir);
+  const events = readEvents(dir);
+  const sections = buildSections(events, m);
+  const anns = readAnnotations(dir);
+  const review = readReview(dir);
+  for (const s of sections) {
+    // notes that cover each section so the UI can show "annotated"
+    s.annotations = anns
+      .filter((a) => a.scope !== 'session' && Date.parse(a.start) < Date.parse(s.end) && Date.parse(a.end) > Date.parse(s.start))
+      .map((a) => ({ label: a.label, note: a.note, author: a.author }));
+    s.review = review.items[s.id] ?? null;
+  }
+  const video = m.files?.video && fs.existsSync(path.join(dir, m.files.video)) ? path.join(dir, m.files.video) : null;
+  return {
+    recording_id: recordingId,
+    video,
+    video_url: video ? `file://${video}` : null,
+    started_at: m.started_at,
+    ended_at: m.ended_at,
+    pauses: m.pauses ?? [],
+    sections,
+    shots_dir: `file://${path.join(dir, 'shots')}`,
+    review: {
+      enabled: !!openaiConfig(process.env, recorder.settings),
+      generating: !!review.generating,
+      generated_at: review.generated_at,
+      model: review.model,
+      session: review.items[SESSION_ID] ?? null,
+      summary: reviewSummary(review.items, review.threshold ?? CONFIDENCE_THRESHOLD),
+    },
+  };
+}
+
+function broadcastSections(recordingId) {
+  if (dashboard && !dashboard.isDestroyed()) dashboard.webContents.send('recordings:sections', sectionsFor(recordingId));
+}
+
+// Ask the model to explain every section plus the whole session. Items the
+// employee has already resolved are never redone; `force` redoes the open
+// ones. Runs after Stop when a key is configured, and on demand from the dashboard.
+const explaining = new Set();
+async function explainRecording(recordingId, { force = false } = {}) {
+  const api = openaiConfig(process.env, recorder.settings);
+  if (!api) return { error: 'no_key', message: 'Add an OpenAI API key under Settings → AI explanations (or set OPENAI_API_KEY).' };
+  if (explaining.has(recordingId)) return sectionsFor(recordingId);
+  explaining.add(recordingId);
+  const dir = path.join(RECORDINGS, recordingId);
+  const review = readReview(dir);
+  review.generating = true;
+  review.threshold = CONFIDENCE_THRESHOLD;
+  review.model = api.model;
+  writeReview(dir, review);
+  broadcastSections(recordingId);
+  try {
+    const m = readManifest(dir);
+    const events = readEvents(dir);
+    const sections = buildSections(events, m);
+    const ctx = { manifest: { ...m, annotations_preview: readAnnotations(dir).map((a) => `${a.label}${a.note ? ': ' + a.note : ''}`).slice(0, 8) }, sections, events };
+    const targets = [...sections, { whole: true, id: SESSION_ID }];
+    for (const s of targets) {
+      const prev = review.items[s.id];
+      if (prev && (RESOLVED_STATUSES.has(prev.status) || (!force && prev.status !== 'failed'))) continue;
+      try {
+        const r = await explainSection(s, ctx, api, { dir, screenshots: !!recorder.settings.clarifyScreenshots });
+        delete r.prompt; // stays in main; the UI never needs it
+        review.items[s.id] = r;
+      } catch (e) {
+        review.items[s.id] = { id: s.id, label: '', explanation: '', confidence: 0, unclear: [], questions: [], status: 'failed', error: e.message, at: new Date().toISOString() };
+      }
+      writeReview(dir, review);
+      broadcastSections(recordingId);
+    }
+  } finally {
+    review.generating = false;
+    review.generated_at = new Date().toISOString();
+    writeReview(dir, review);
+    explaining.delete(recordingId);
+    broadcastSections(recordingId);
+  }
+  return sectionsFor(recordingId);
+}
+
+// Employee decision on one explanation: approve / fix / explain. Writes the
+// annotation (with the AI's version kept alongside for provenance) and
+// updates review.json.
+function decide(recordingId, itemId, action, body = {}) {
+  const dir = path.join(RECORDINGS, recordingId);
+  const review = readReview(dir);
+  const { item, annotation } = applyDecision(review.items[itemId], action, body);
+  review.items[itemId] = item;
+  writeReview(dir, review);
+  const whole = itemId === SESSION_ID;
+  const m = readManifest(dir);
+  const section = whole ? null : buildSections(readEvents(dir), m).find((s) => s.id === itemId);
+  addAnnotation(recordingId, {
+    ...annotation,
+    start: whole ? m.started_at : section?.start,
+    end: whole ? m.ended_at : section?.end,
+    scope: whole ? 'session' : 'section',
+    section_id: whole ? null : itemId,
+  });
+  return sectionsFor(recordingId);
+}
+
 function pickSummary(s) {
   return {
     raw_events: s.n_raw_events,
@@ -209,7 +355,7 @@ function listRecordings() {
       } catch {
         /* none */
       }
-      out.push({ ...m, dir: path.join(RECORDINGS, id), annotations });
+      out.push({ ...m, dir: path.join(RECORDINGS, id), annotations, name: m.name ?? recordingName(m, { summary: m.summary_text ?? '' }) });
     } catch {
       /* corrupt manifest */
     }
@@ -223,9 +369,13 @@ function broadcastRecordings() {
 
 // Employee annotation: what the screen couldn't see (calls, paper, meetings).
 // Same JSONL shape as taskmining.annotations.read_annotations.
-function addAnnotation(recordingId, { label, note = '', start, end, case_id = '' }) {
+// `scope` is 'section' (a video section), 'session' (whole-recording summary)
+// or 'manual'. A session summary also renames the recording.
+// `author` is 'employee' for anything typed, 'ai' for an approved AI
+// explanation; `ai` keeps the model's version when the employee fixed it.
+function addAnnotation(recordingId, { label, note = '', start, end, case_id = '', scope = 'manual', section_id = null, qa = [], author = 'employee', ai = null }) {
   const dir = path.join(RECORDINGS, recordingId);
-  const m = JSON.parse(fs.readFileSync(path.join(dir, 'manifest.json'), 'utf8'));
+  const m = readManifest(dir);
   const row = {
     user: m.user,
     start: start ?? m.started_at,
@@ -233,10 +383,19 @@ function addAnnotation(recordingId, { label, note = '', start, end, case_id = ''
     label: redactText(label),
     note: redactText(note),
     case_id,
-    author: 'employee',
+    author,
+    scope,
+    section_id,
+    qa: qa.map((x) => ({ q: redactText(x.q), a: redactText(x.a) })),
+    ...(ai ? { ai } : {}),
   };
   fs.appendFileSync(path.join(dir, 'annotations.jsonl'), JSON.stringify(row) + '\n');
-  if (m.ended_at) postProcess(m);
+  if (scope === 'session') {
+    const summary_text = row.note || row.label;
+    const patched = { ...m, summary_text, name: recordingName(m, { summary: summary_text }) };
+    fs.writeFileSync(path.join(dir, 'manifest.json'), JSON.stringify(patched, null, 2));
+  }
+  if (m.ended_at) postProcess(readManifest(dir));
   else broadcastRecordings();
   return row;
 }
@@ -244,7 +403,7 @@ function addAnnotation(recordingId, { label, note = '', start, end, case_id = ''
 // ---- windows -----------------------------------------------------------------
 
 // Overlay sizes: `orb` is the idle blue circle, `pill` the recording bar, `panel` the expanded details.
-const SIZES = { orb: { w: 64, h: 64 }, pill: { w: 380, h: 64 }, panel: { w: 380, h: 332 } };
+const SIZES = { orb: { w: 104, h: 104 }, pill: { w: 380, h: 64 }, panel: { w: 380, h: 332 } };
 let overlayMode = 'orb';
 
 function setOverlayMode(mode) {
@@ -252,9 +411,10 @@ function setOverlayMode(mode) {
   const from = SIZES[overlayMode], to = SIZES[mode];
   if (!to) return;
   const [x, y] = overlay.getPosition();
-  // keep the pill centred on where the orb was
+  // keep the pill centred on where the orb was (the orb window is oversized so its glow isn't clipped)
   const nx = Math.round(x + (from.w - to.w) / 2);
-  overlay.setBounds({ x: Math.max(0, nx), y, width: to.w, height: to.h });
+  const ny = overlayMode === 'orb' || mode === 'orb' ? Math.round(y + (from.h - to.h) / 2) : y;
+  overlay.setBounds({ x: Math.max(0, nx), y: Math.max(0, ny), width: to.w, height: to.h });
   overlayMode = mode;
 }
 
@@ -264,7 +424,7 @@ function createOverlay() {
     width: SIZES.orb.w,
     height: SIZES.orb.h,
     x: Math.round(workArea.x + (workArea.width - SIZES.orb.w) / 2),
-    y: workArea.y + 12,
+    y: workArea.y,
     frame: false,
     transparent: true,
     resizable: false,
@@ -361,9 +521,21 @@ function trayIcon() {
 
 function toggle() {
   if (recorder.state === 'idle') return startRecording();
-  if (recorder.state === 'recording') return recorder.pause();
-  if (recorder.state === 'paused') return recorder.resume();
+  if (recorder.state === 'recording') return pauseRecording();
+  if (recorder.state === 'paused') return resumeRecording();
   return recorder.status();
+}
+
+function pauseRecording() {
+  const status = recorder.pause();
+  if (recorder.settings.video && captureWin) captureWin.webContents.send('video:pause');
+  return status;
+}
+
+function resumeRecording() {
+  const status = recorder.resume();
+  if (recorder.settings.video && captureWin) captureWin.webContents.send('video:resume');
+  return status;
 }
 
 function startRecording() {
@@ -395,6 +567,7 @@ async function stopRecording() {
   setOverlayMode('orb');
   if (MAC) app.dock.show();
   openReview(status.recordingId);
+  if (openaiConfig(process.env, recorder.settings)) explainRecording(status.recordingId).catch(() => {});
   return status;
 }
 
@@ -465,14 +638,17 @@ ipcMain.handle('cloud:upload', async (event, id) => {
 // ---- IPC ----------------------------------------------------------------------
 
 ipcMain.handle('rec:start', () => startRecording());
-ipcMain.handle('rec:pause', () => recorder.pause());
-ipcMain.handle('rec:resume', () => recorder.resume());
+ipcMain.handle('rec:pause', () => pauseRecording());
+ipcMain.handle('rec:resume', () => resumeRecording());
 ipcMain.handle('rec:stop', () => stopRecording());
 ipcMain.handle('rec:toggle', () => toggle());
 ipcMain.handle('rec:status', () => recorder.status());
 ipcMain.handle('recordings:list', () => listRecordings());
 ipcMain.handle('recordings:open', (_e, id) => shell.openPath(id ? path.join(RECORDINGS, id) : RECORDINGS));
 ipcMain.handle('recordings:annotate', (_e, id, ann) => addAnnotation(id, ann));
+ipcMain.handle('recordings:sections', (_e, id) => sectionsFor(id));
+ipcMain.handle('recordings:explain', (_e, id, opts) => explainRecording(id, opts ?? {}));
+ipcMain.handle('recordings:decide', (_e, id, itemId, action, body) => decide(id, itemId, action, body ?? {}));
 ipcMain.handle('dashboard:open', () => createDashboard());
 ipcMain.handle('overlay:resize', (_e, mode) => setOverlayMode(mode));
 ipcMain.handle('settings:get', () => recorder.settings);
@@ -483,7 +659,7 @@ ipcMain.handle('settings:set', (_e, patch) => {
   return recorder.settings;
 });
 ipcMain.handle('settings:defaults', () => DEFAULT_SETTINGS);
-ipcMain.handle('app:info', () => ({ demo: DEMO, home: HOME, platform: process.platform, user: os.userInfo().username }));
+ipcMain.handle('app:info', () => ({ demo: DEMO, home: HOME, platform: process.platform, user: os.userInfo().username, openai: !!openaiConfig(process.env, recorder.settings) }));
 ipcMain.handle('permissions:get', () => permissions(false));
 ipcMain.handle('permissions:open', (_e, kind) => openPermissionPane(kind));
 ipcMain.on('video:chunk', (_e, dir, buf) => {

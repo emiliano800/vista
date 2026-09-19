@@ -78,6 +78,7 @@ def apply_annotations(
     annotations: list[Annotation],
     min_offscreen: timedelta = timedelta(seconds=30),
 ) -> list[Step]:
+    annotations = [a for a in annotations if a.scope != "session"]
     if not annotations:
         return steps
     by_user: dict[str, list[Annotation]] = {}

@@ -32,6 +32,9 @@
         border-radius: 16px;
         box-shadow: 0 8px 30px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.06);
         overflow: hidden;
+        transform-origin: 50% 26px;
+        transition: transform 0.28s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.22s ease;
+        will-change: transform, opacity;
       }
       /* ---------------- pill row ---------------- */
       #pill {
@@ -67,14 +70,17 @@
         background: rgba(255, 255, 255, 0.08);
         border-radius: 999px; height: 32px; padding: 0 12px;
         display: inline-flex; align-items: center; gap: 6px;
-        transition: background 0.15s, transform 0.05s;
+        transition: background 0.18s ease, transform 0.18s cubic-bezier(0.2, 0.8, 0.2, 1), color 0.18s;
       }
+      button:hover { transform: translateY(-1px); }
       button:hover { background: rgba(255, 255, 255, 0.14); }
       button:active { transform: scale(0.97); }
       button.primary { background: var(--accent); font-weight: 600; padding: 0 16px; }
       button.primary:hover { background: #4d71e6; }
       button.stop { background: rgba(255, 77, 79, 0.18); color: #ffb3b4; }
       button.stop:hover { background: rgba(255, 77, 79, 0.3); }
+      button.pause { background: rgba(245, 185, 66, 0.16); color: #ffd98a; }
+      button.pause:hover { background: rgba(245, 185, 66, 0.28); }
       button.icon { width: 32px; padding: 0; justify-content: center; color: var(--muted); }
       button.icon:hover { color: var(--fg); }
       button svg { width: 14px; height: 14px; fill: currentColor; }
@@ -103,21 +109,80 @@
       .links a:hover { color: var(--fg); }
 
       /* ---------------- idle orb ---------------- */
+      /* Orb and shell both stay in the DOM; the mode switch cross-fades them so
+         hovering feels like the circle unfolds into the pill instead of snapping. */
       #orb {
+        position: absolute; top: 50%; left: 50%; margin: -26px 0 0 -26px;
         width: 52px; height: 52px; border-radius: 50%;
         background: radial-gradient(circle at 35% 30%, #6d8cf0, var(--accent) 60%, #2b48b0);
         box-shadow: 0 6px 22px rgba(61, 99, 221, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.25);
         display: flex; align-items: center; justify-content: center;
         cursor: pointer;
-        animation: breathe 3.2s ease-in-out infinite;
+        transition: transform 0.28s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.2s ease;
+        will-change: transform, opacity;
       }
-      #orb svg { width: 20px; height: 20px; fill: #fff; }
+      #orb:hover { transform: scale(1.08); }
+      #orb svg { width: 20px; height: 20px; fill: #fff; transition: transform 0.28s cubic-bezier(0.2, 0.8, 0.2, 1); position: relative; z-index: 1; }
+      #orb:hover svg { transform: scale(1.15); }
+
+      /* Idle animations. The orb cycles through these (one class at a time,
+         see ORB_ANIMS below) so it reads as alive without being distracting.
+         ::before / ::after are the extra shapes (rings, orbiting dot, sheen). */
+      #orb::before, #orb::after { content: ''; position: absolute; inset: 0; border-radius: 50%; pointer-events: none; opacity: 0; }
+
+      #orb.a-breathe { animation: breathe 3.2s ease-in-out infinite; }
       @keyframes breathe {
         0%, 100% { box-shadow: 0 6px 22px rgba(61, 99, 221, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.25); }
-        50% { box-shadow: 0 6px 30px rgba(61, 99, 221, 0.75), inset 0 1px 0 rgba(255, 255, 255, 0.25); }
+        50% { box-shadow: 0 6px 30px rgba(61, 99, 221, 0.75), inset 0 1px 0 rgba(255, 255, 255, 0.25); transform: scale(1.04); }
       }
-      body.orb #shell { display: none; }
-      body:not(.orb) #orb { display: none; }
+
+      #orb.a-ripple::before, #orb.a-ripple::after { border: 2px solid rgba(109, 140, 240, 0.9); animation: ripple 2.4s cubic-bezier(0.2, 0.7, 0.3, 1) infinite; }
+      #orb.a-ripple::after { animation-delay: 1.2s; }
+      @keyframes ripple {
+        0% { transform: scale(0.9); opacity: 0.8; }
+        100% { transform: scale(1.35); opacity: 0; }
+      }
+
+      #orb.a-orbit::before { inset: -6px; border: 1.5px solid rgba(109, 140, 240, 0.35); opacity: 1; }
+      #orb.a-orbit::after {
+        inset: -6px; opacity: 1; border-radius: 50%;
+        background: radial-gradient(circle 4px at 50% 0%, #fff 0, #fff 55%, transparent 60%);
+        filter: drop-shadow(0 0 4px rgba(255, 255, 255, 0.9));
+        animation: orbit 2.6s linear infinite;
+      }
+      @keyframes orbit { to { transform: rotate(360deg); } }
+
+      #orb.a-shimmer { background: radial-gradient(circle at 35% 30%, #6d8cf0, var(--accent) 60%, #2b48b0); overflow: hidden; }
+      #orb.a-shimmer::before {
+        opacity: 1; inset: -20%;
+        background: linear-gradient(115deg, transparent 40%, rgba(255, 255, 255, 0.55) 50%, transparent 60%);
+        animation: shimmer 2.8s ease-in-out infinite;
+      }
+      @keyframes shimmer {
+        0%, 35% { transform: translateX(-70%); }
+        65%, 100% { transform: translateX(70%); }
+      }
+
+      #orb.a-float { animation: floaty 3.6s ease-in-out infinite; }
+      @keyframes floaty {
+        0%, 100% { transform: translateY(0) rotate(0deg); }
+        30% { transform: translateY(-4px) rotate(-3deg); }
+        70% { transform: translateY(2px) rotate(3deg); }
+      }
+
+      #orb.a-hue { animation: hue 4s ease-in-out infinite; }
+      @keyframes hue {
+        0%, 100% { filter: hue-rotate(0deg) saturate(1); }
+        50% { filter: hue-rotate(-28deg) saturate(1.25); box-shadow: 0 6px 28px rgba(80, 140, 240, 0.7), inset 0 1px 0 rgba(255, 255, 255, 0.25); }
+      }
+
+      body.orb #shell { opacity: 0; transform: scaleX(0.16) scaleY(0.8); pointer-events: none; }
+      body:not(.orb) #orb { opacity: 0; transform: scale(0.5); pointer-events: none; }
+      body.orb #orb { opacity: 1; transform: scale(1); }
+      body.orb #orb:hover { transform: scale(1.08); }
+      body:not(.orb) #shell { opacity: 1; transform: none; }
+      body.settling #shell, body.settling #orb { transition-duration: 0.18s; }
+      @media (prefers-reduced-motion: reduce) { #shell, #orb, #orb svg, button { transition: none !important; } #orb, #orb::before, #orb::after { animation: none !important; } }
     </style>
   </head>
   <body class="orb">
@@ -133,8 +198,9 @@
         </div>
         <div id="actions">
           <button id="start" class="primary">Start recording</button>
-          <button id="pause" class="icon hidden" title="Pause">
+          <button id="pause" class="pause hidden" title="Pause recording">
             <svg viewBox="0 0 16 16"><rect x="3" y="2" width="4" height="12" rx="1"/><rect x="9" y="2" width="4" height="12" rx="1"/></svg>
+            Pause
           </button>
           <button id="resume" class="primary hidden">Resume</button>
           <button id="stop" class="stop hidden" title="Stop and save">
@@ -176,17 +242,42 @@
       let status = null;
       let hoverTimer = null;
 
-      // Idle → a single blue orb. Hovering it opens the pill with the Start button;
+      // Idle → a single blue orb. Hovering it unfolds the pill with the Start button;
       // leaving (still idle, not expanded) folds it back. Recording keeps the pill.
-      function setMode(mode) {
-        document.body.classList.toggle('orb', mode === 'orb');
-        window.vista.resizeOverlay(mode);
+      // Growing: resize the window first, then animate the content in. Shrinking:
+      // animate out first, then resize, so the window never clips mid-animation.
+      let mode = 'orb', shrinkTimer = null;
+      function setMode(next) {
+        if (next === mode) return;
+        clearTimeout(shrinkTimer);
+        const growing = next !== 'orb' && (mode === 'orb' || next === 'panel');
+        mode = next;
+        applyOrbAnim();
+        if (growing) {
+          window.vista.resizeOverlay(next).then(() => requestAnimationFrame(() => document.body.classList.toggle('orb', next === 'orb')));
+        } else {
+          document.body.classList.toggle('orb', next === 'orb');
+          shrinkTimer = setTimeout(() => window.vista.resizeOverlay(next), next === 'orb' ? 230 : 0);
+        }
       }
-      $('orb').onmouseenter = () => { clearTimeout(hoverTimer); setMode('pill'); };
+      // Idle orb cycles through its animations, one at a time, a few loops each.
+      const ORB_ANIMS = ['breathe', 'ripple', 'orbit', 'shimmer', 'float', 'hue'];
+      const ORB_ANIM_MS = 7000;
+      let animIdx = 0;
+      function applyOrbAnim() {
+        const orb = $('orb');
+        orb.classList.remove(...ORB_ANIMS.map((a) => `a-${a}`));
+        if (mode === 'orb') orb.classList.add(`a-${ORB_ANIMS[animIdx]}`);
+      }
+      applyOrbAnim();
+      setInterval(() => { animIdx = (animIdx + 1) % ORB_ANIMS.length; applyOrbAnim(); }, ORB_ANIM_MS);
+
+      // mousemove too: mouseenter doesn't fire when the cursor is already over the orb as the window appears
+      $('orb').onmouseenter = $('orb').onmousemove = () => { clearTimeout(hoverTimer); setMode('pill'); };
       document.body.onmouseleave = () => {
         if (!status || status.state !== 'idle' || expanded) return;
         clearTimeout(hoverTimer);
-        hoverTimer = setTimeout(() => { if (status && status.state === 'idle' && !expanded) setMode('orb'); }, 700);
+        hoverTimer = setTimeout(() => { if (status && status.state === 'idle' && !expanded) setMode('orb'); }, 450);
       };
       document.body.onmouseenter = () => clearTimeout(hoverTimer);
 
