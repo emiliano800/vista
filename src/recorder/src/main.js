@@ -149,7 +149,7 @@ function findRepoRoot() {
   if (process.env.VISTA_REPO) return process.env.VISTA_REPO;
   let d = __dirname;
   for (let i = 0; i < 5; i++) {
-    if (fs.existsSync(path.join(d, 'taskmining', '__main__.py'))) return d;
+    if (fs.existsSync(path.join(d, 'src', 'taskmining', '__main__.py'))) return d;
     d = path.dirname(d);
   }
   return null;

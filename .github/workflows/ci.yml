@@ -26,6 +26,6 @@ jobs:
         with:
           node-version: 22
       - run: for f in src/main.js src/recorder.js src/demo.js src/preload.cjs; do node --check "$f"; done
-        working-directory: recorder
+        working-directory: src/recorder
       - run: node --test test/*.test.js
-        working-directory: recorder
+        working-directory: src/recorder

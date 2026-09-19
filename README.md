@@ -1,185 +1,78 @@
 # Vista
 
-An open, dependency-free (Python 3.12+) reimplementation of the **Celonis Task Mining** pipeline:
-from raw desktop interactions to a process-mining event log, discovered process
-model, and automation-potential ranking.
+Process intelligence for lower-middle-market companies: record how work actually
+gets done on employees' desktops, turn the clicks into a process map, and rank
+what to automate first — with every number tied back to observed evidence.
 
 ```
-python -m taskmining run --synthetic 40 --out out/
+clicks → steps → cases → process map → dollars
 ```
 
-## How Celonis Task Mining works (reverse-engineered)
+## Structure
 
-Celonis Task Mining is a "bottom-up" complement to process mining. Instead of
-reading transactional data out of ERP tables, a desktop client watches how
-people actually work across applications and turns the clicks into an event
-log that the same discovery engine (Process Explorer, Variant Explorer,
-Conformance) can consume. Public documentation, marketing material and the
-behaviour of the product point to the following stages, each of which has a
-module here:
+```
+src/
+  recorder/     Electron desktop app the employee runs (one button, always-on overlay)
+  taskmining/   Python engine: redact → sessionise → abstract → annotate → correlate → log → discover → score
+  vista/        FastAPI backend: tenants, deals, employee agents, findings (Postgres + S3)
+tests/          pytest (test_pipeline.py = engine; the rest need Postgres)
+migrations/     Alembic, platform + per-tenant schemas
+synthetic_data/ generated company datasets for the backend agents
+scripts/        demo.py — backend end-to-end smoke run
+setup.sh, Makefile   one-command local setup and day-to-day commands
+```
 
-| Stage | Celonis component | Vista module | What it does |
-|---|---|---|---|
-| 1. Capture | Task Mining desktop client (Windows) | `taskmining.capture` | Hooks OS input + UI Automation/accessibility APIs to record `click`, `key`, `focus`, `copy`, `paste`, `scroll` with app, window title, URL and UI element. Vista defines the `EventSource` contract, a `JsonlSource`, and a `SyntheticSource` that emits realistic accounts-payable traffic. |
-| 2. Privacy & pre-processing | Client-side "data protection" rules, server-side cleaning | `taskmining.preprocess` | Regex PII redaction (email, phone, IBAN, card), user pseudonymisation (salted SHA-256), keystroke-burst aggregation (single keys collapsed into one typing event with `n_keys`), and idle-gap sessionisation. |
-| 3. Activity abstraction | "Activity definitions" / task labelling in the Task Mining app | `taskmining.abstraction` | Ordered `ActivityRule`s matching app / title / URL / element / event type lift low-level events to business activities (`Enter Invoice (SAP MIRO)`), merging consecutive events of one activity into a `Step` with counts of keys, copies and pastes. |
-| 3b. Human annotation *(Vista addition)* | — (Celonis only has analyst-side activity definitions and a client pause button) | `taskmining.annotations` | Employees or analysts state what happened in a time range (`Annotation(user, start, end, label, note, case_id, author)` from JSONL/CSV). Annotations outrank rules: overlapping steps are split and relabelled, annotated time with no screen events becomes an explicit `(off-screen)` step (phone, paper, meetings), and unexplained `Other (…)` steps / long gaps are turned into guided-interview `Question`s. |
-| 4. Case correlation | "Case ID mapping" / business-object linking | `taskmining.correlation` | Extracts business identifiers (`INV-…`, `TICKET-…`, `PO…`) from titles/URLs and forward/backward-fills them within a session so screens that don't show the ID still land in the right case. Human-supplied case IDs are never overwritten; steps that still have no ID fall back to time-boxed **task episodes** (`EP-<user>-<n>`) so ID-less Excel/Outlook shops still get cases. |
-| 5. Event log | Data model / Data Pool tables | `taskmining.eventlog` | Exports `case_id, activity, start, end, user, …` plus `activity_source`, `case_source` and `note` as CSV and IEEE XES so any process mining tool (Celonis, PM4Py, ProM, Disco) can load it. |
-| 6. Discovery | Process Explorer, Variant Explorer | `taskmining.discovery` | Directly-follows graph with frequency and mean wait per edge, variants with throughput time, per-activity duration stats, rework detection. DOT and Mermaid renderers. |
-| 7. Analytics | Automation opportunity / Task Mining dashboards | `taskmining.analytics` | Scores each activity on frequency, regularity (low duration CV), data transfer (copy/paste/typing volume, linked cross-app pastes count double) and app switching to rank automation candidates; `data_flows` lists the app-to-app re-keying edges. |
+Each component has its own README: [`src/recorder`](src/recorder/README.md),
+[`src/taskmining`](src/taskmining/README.md).
 
-`taskmining.pipeline.Pipeline` wires the stages together; `PipelineResult.write()`
-produces `raw_events.jsonl`, `clean_events.jsonl`, `event_log.csv`,
-`event_log.xes`, `dfg.dot`, `dfg.mmd`, `annotations.jsonl`, `questions.json` and
-`summary.json`.
+## How the pieces connect
 
-### Provenance
+```
+ employee desktop                                              analyst / company
+┌───────────────────────────────────────────────────┐
+│ recorder (Electron)                               │
+│  hooks + screenshots + clipboard → redact on device│
+│  → ~/Vista/recordings/<id>/events.jsonl           │
+│  on Stop: python -m taskmining run ──► processed/ │──► dashboard "Last session"
+└───────────────────────────────────────────────────┘
+                     │ (not wired yet)
+                     ▼
+┌───────────────────────────────────────────────────┐
+│ vista backend (FastAPI + Postgres + S3)           │
+│  tenants · deals · employee agents · findings     │──► company portal / PE-fund views
+└───────────────────────────────────────────────────┘
+```
 
-Every `Step` carries where its label and case came from, so observed facts stay
-separable from inference and from what people told us:
-
-| `Source` | `activity_source` means | `case_source` means |
-|---|---|---|
-| `observed` | — | id read directly from a window title / URL |
-| `rule` | an `ActivityRule` matched | — |
-| `fallback` | no rule matched → `Other (<app>)` | — |
-| `filled` | — | propagated from a neighbouring step in the session |
-| `episode` | — | synthetic case from a contiguous burst of work (no id available) |
-| `human` | employee / analyst annotation | case id stated in an annotation |
-
-`summary.json` reports the distribution of both, plus `off_screen_hours` and the
-number of open questions for the next interview.
-
-### Design notes
-
-* **Task mining has no natural case.** The hard part—and the one Celonis hides
-  behind configuration—is deciding which clicks belong together. Vista makes
-  that explicit: sessions (idle gap) bound the search, identifier regexes
-  anchor it, and fill rules extend it to neighbouring screens. Steps that still
-  can't be correlated become task episodes (or, with `--no-episodes`, keep an
-  empty `case_id` and are excluded from discovery).
-* **Abstraction is rule-based on purpose.** Celonis lets analysts define
-  activities from screen titles; ML labelling is layered on top. Rules are
-  deterministic and auditable, which is what a process analyst needs first.
-* **Privacy happens before anything is stored.** Redaction runs on the raw
-  stream; keystroke text is redacted again after burst aggregation so an email
-  typed one key at a time is still caught. Annotation notes are redacted and
-  annotation users pseudonymised with the same salt as the events.
-* **Screens are one evidence source, not the only one.** Phone calls, paper
-  records and meetings never reach a recorder. Annotations put that work into
-  the same event log as explicit off-screen steps, and off-screen steps never
-  inherit a neighbour's case id — only a person can attach them to a case.
+* `recorder` writes `RawEvent` JSONL — the exact shape `taskmining` reads — and
+  runs the engine locally when a recording stops. Everything stays on the
+  employee's machine today.
+* `taskmining` is pure functions over event lists; it has no I/O beyond reading
+  and writing files, so the same code will run as a queue worker later.
+* `vista` (backend) is **not connected to the recorder yet**. It has no
+  task-mining endpoints; the planned hand-off is batched JSONL upload →
+  ingest API → per-tenant event-log store → findings. Until then the backend
+  and the recorder/engine are developed independently.
 
 ## Getting started
 
-One command installs the engine and the recorder and runs both test suites
-(needs [uv](https://docs.astral.sh/uv/) and Node 18+; `./setup.sh --check`
-tells you what is missing and how to install it):
+Needs [uv](https://docs.astral.sh/uv/) and Node 18+ (`brew install uv node`).
+`./setup.sh --check` tells you what is missing and how to install it.
 
 ```bash
 git clone https://github.com/ylemiesa57/vista.git && cd vista
 ./setup.sh          # uv sync + npm install + ruff/pytest/node tests
-make demo           # recorder with simulated apps
-make start          # real recorder
+make demo           # recorder with simulated apps, no OS permissions needed
+make start          # real recorder (macOS asks for Accessibility/Input Monitoring/Screen Recording)
 ```
 
-`make test` re-runs everything; `make run` processes 40 synthetic cases into
-`out/`. No Docker: the recorder has to run on the employee's own desktop
-(screen, input hooks, OS permissions) and the engine is stdlib-only.
+| Command | What |
+|---|---|
+| `make test` | ruff + engine pytest + recorder node tests |
+| `make run` | engine on 40 synthetic cases → `out/` |
+| `make demo` / `make start` | recorder |
+| `make lint` / `make fmt` | ruff |
 
-Engine only:
-
-```bash
-uv sync --group dev
-uv run pytest tests/test_pipeline.py
-
-# generate raw events, then process them (mirrors client -> server hand-off)
-uv run python -m taskmining generate --cases 100 --out raw.jsonl
-uv run python -m taskmining run --input raw.jsonl --out out/
-
-# add what the recorder cannot see (phone, paper, meetings, corrections)
-uv run python -m taskmining generate --cases 100 --out raw.jsonl --annotations-out ann.jsonl
-uv run python -m taskmining run --input raw.jsonl --annotations ann.jsonl --out out/
-#   or: uv run python -m taskmining run --synthetic 40 --annotations auto --out out/
-
-# render the process graph
-dot -Tpng out/dfg.dot -o dfg.png
-```
-
-Annotation files are JSONL (one object per line) or CSV with columns
-`user,start,end,label[,note,case_id,author]`; timestamps are ISO-8601 and `user`
-is the raw user name (it is pseudonymised on the way in). Run the pipeline once,
-hand `out/questions.json` to the employee or analyst, append their answers as
-annotations and run again.
-
-Plug in a real recorder by implementing `EventSource.events()` and yielding
-`RawEvent`s, and add `ActivityRule`s / case-id patterns for your applications.
-
-## Desktop recorder (`recorder/`)
-
-The employee-facing recorder: one Start button, an always-on-top overlay pill
-that stays visible over Excel/Outlook/anything, and a small dashboard (today,
-my recordings, what is recorded, settings). Electron shell, `uiohook-napi` for
-global mouse/keyboard/shortcut hooks, `get-windows` for the foreground app and
-window title, `desktopCapturer` for screenshots and a low-frame-rate
-`screen.webm`.
-
-Screenshots are taken on window switch, every 15 s, and **when the screen
-actually changes**: a 64x36 grayscale thumbnail is polled every 750 ms and a
-full frame is shot when >= 4 % of its pixels move (min 1.5 s apart), so a new
-email, a new Excel sheet or a dialog inside the same window is captured. The
-`screen` event carries `payload.reason` (`focus` / `interval` / `change`) and
-the normalised `diff`.
-
-Copy and paste are **linked**: on Cmd/Ctrl+C the recorder remembers a salted
-hash of the clipboard plus the source app/window; a later Cmd/Ctrl+V with the
-same clipboard gets `payload.source_app`, `source_title`, `transfer_ms` and
-`cross_app`. The engine counts cross-app pastes as `n_transfers` per step
-(weighted in the automation score) and aggregates them into `data_flows`
-("Acrobat -> QuickBooks, 42x") in `summary.json` - the swivel-chair map.
-
-Everything is written locally to `~/Vista/recordings/<id>/`:
-
-```
-events.jsonl      one RawEvent per line - the same wire format taskmining reads
-manifest.json     user, platform, start/end, counts, app time, processing state
-shots/NNNNNN.jpg  screenshots referenced by `screen` events (payload.image)
-screen.webm       optional screen video
-annotations.jsonl notes the employee adds (phone, paper, meetings)
-processed/        output of `taskmining run`, executed automatically on Stop
-```
-
-Redaction (emails, phones, IBAN/card/SSN) runs on the device before a line is
-written; typed characters are not stored by default (only key counts and
-shortcut combos); private apps/title keywords mute capture entirely.
-
-```bash
-make demo                # simulated Outlook/Acrobat/QuickBooks/Excel activity, no hooks
-make start               # real hooks
-```
-
-On Stop the recorder runs `python -m taskmining run` with the repo's `.venv`
-(created by `uv sync` / `setup.sh`); set `VISTA_PYTHON=/path/to/python` to use
-another interpreter.
-
-### macOS
-
-```bash
-brew install uv node
-./setup.sh && make start
-```
-
-macOS asks for three permissions the first time (System Settings → Privacy &
-Security); the dashboard shows which are missing and opens the right pane:
-
-| Permission | Why | Without it |
-|---|---|---|
-| Accessibility | `uiohook-napi` global hooks, foreground window | no clicks/keys, Start is blocked |
-| Input Monitoring | keyboard events | key counts and shortcuts stay at 0 |
-| Screen Recording | window titles (`get-windows`), screenshots, `screen.webm` | titles empty, no shots |
-
-The app appears in the permission lists only after it has tried once, so press
-Start, grant, then press Start again. In development the entry is "Electron";
-a signed `.app` build (`electron-builder`) shows as "Vista". While recording
-the Dock icon hides so only the overlay is visible; it returns on Stop.
+No Docker for the recorder/engine: the recorder has to run on the employee's
+own desktop and the engine is stdlib-only. The backend does use
+`docker compose up -d` for Postgres and MinIO (`.env.example`), then
+`uv run pytest` runs its tests and `uv run python scripts/demo.py` a smoke run.

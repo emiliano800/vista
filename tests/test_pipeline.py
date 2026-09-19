@@ -119,7 +119,7 @@ def test_jsonl_roundtrip():
 
 
 def test_recorder_events_flow_through_preprocess():
-    # shape written by recorder/ (Electron): shortcuts and screenshots must survive
+    # shape written by src/recorder/ (Electron): shortcuts and screenshots must survive
     # keystroke aggregation without being merged into typing bursts
     events = [
         ev(0, EventType.FOCUS, app="Excel", title="AP tracker.xlsx"),
@@ -257,7 +257,7 @@ def test_eventlog_exports_provenance_and_note():
 
 
 def test_linked_pastes_become_transfers_and_data_flows(tmp_path):
-    # shape written by recorder/: a paste whose clipboard hash matched an earlier copy
+    # shape written by src/recorder/: a paste whose clipboard hash matched an earlier copy
     # carries the source app; only cross-app links count as transfers
     linked = {"clip_hash": "ab12", "source_app": "Acrobat", "source_title": "INV-1.pdf", "transfer_ms": 4200, "chars": 9}
     events = [
