@@ -1,6 +1,6 @@
 # Vista
 
-An open, dependency-free reimplementation of the **Celonis Task Mining** pipeline:
+An open, dependency-free (Python 3.12+) reimplementation of the **Celonis Task Mining** pipeline:
 from raw desktop interactions to a process-mining event log, discovered process
 model, and automation-potential ranking.
 
@@ -74,8 +74,8 @@ number of open questions for the next interview.
 ## Getting started
 
 ```bash
-pip install -e ".[dev]"
-pytest
+pip install -e . pytest ruff   # or: uv sync
+pytest tests/test_pipeline.py
 
 # generate raw events, then process them (mirrors client -> server hand-off)
 python -m taskmining generate --cases 100 --out raw.jsonl

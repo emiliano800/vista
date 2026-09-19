@@ -4,11 +4,11 @@ import json
 from collections.abc import Iterator
 from dataclasses import asdict, dataclass, field
 from datetime import datetime
-from enum import Enum
+from enum import StrEnum
 from typing import TextIO
 
 
-class EventType(str, Enum):
+class EventType(StrEnum):
     CLICK = "click"
     KEY = "key"
     FOCUS = "focus"
@@ -48,7 +48,7 @@ class RawEvent:
 OFF_SCREEN_APP = "(off-screen)"  # app value of steps that only exist because a human reported them
 
 
-class Source(str, Enum):
+class Source(StrEnum):
     """Provenance of a derived field, so observed facts stay separable from inference."""
 
     OBSERVED = "observed"  # read directly from a screen (id in window title / url)
