@@ -5,13 +5,32 @@ import json
 import secrets
 import uuid
 
-from sqlalchemy import delete
+from sqlalchemy import delete, text
 
-from vista.db import platform_session, tenant_session
+from vista.db import engine, platform_session, tenant_session
 from vista.models.platform import BrowserSession, Tenant, User
 from vista.models.tenant import Deal, DealMembership
 from vista.storage import ensure_bucket
 from vista.tenancy import migrate_all_tenants, migrate_platform, provision_tenant
+
+# Arbitrary constant; serialises `migrate` across containers that start together.
+MIGRATION_LOCK_ID = 7_310_552_001
+
+
+def migrate() -> None:
+    """Upgrade shared + tenant schemas and ensure the report bucket exists.
+    Holds a Postgres advisory lock so concurrent task launches (ECS canary
+    deployments, autoscaling) run migrations one at a time."""
+    with engine.connect() as lock_conn:
+        lock_conn.execute(text("SELECT pg_advisory_lock(:id)"), {"id": MIGRATION_LOCK_ID})
+        lock_conn.commit()
+        try:
+            migrate_platform()
+            migrate_all_tenants()
+        finally:
+            lock_conn.execute(text("SELECT pg_advisory_unlock(:id)"), {"id": MIGRATION_LOCK_ID})
+            lock_conn.commit()
+    ensure_bucket()
 
 
 def main():
@@ -31,9 +50,7 @@ def main():
     rotate.add_argument("--user", required=True, type=uuid.UUID)
     args = parser.parse_args()
     if args.command == "migrate":
-        migrate_platform()
-        migrate_all_tenants()
-        ensure_bucket()
+        migrate()
         return
     if args.command == "create-workspace":
         tenant, user, token = provision_tenant(args.firm, args.email)

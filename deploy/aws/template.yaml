@@ -1,0 +1,473 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: >-
+  Vista backend on AWS: ECS Express Mode (Fargate) for the FastAPI service, Amazon RDS
+  PostgreSQL, a private S3 bucket for uploaded reports, and an optional job worker.
+  The website and bumpsolutions.org stay on Cloudflare; point the Worker's API_ORIGIN at
+  the ApiEndpoint output.
+
+Parameters:
+  ImageUri:
+    Type: String
+    Description: Full ECR image URI (with tag or digest) built from the repository Dockerfile.
+  VpcId:
+    Type: AWS::EC2::VPC::Id
+    Description: VPC for the service, database and load balancer (the default VPC works).
+  SubnetIds:
+    Type: List<AWS::EC2::Subnet::Id>
+    Description: >-
+      Public subnets in at least two Availability Zones of VpcId. Express Mode places the
+      internet-facing load balancer and tasks here; RDS uses the same subnets without a
+      public address.
+  AllowedOrigins:
+    Type: String
+    Default: '["https://bumpsolutions.org","https://vista.emilianocamachoalmanza.workers.dev"]'
+    Description: JSON array of browser origins allowed to call the API through the Cloudflare Worker.
+  ApiCpu:
+    Type: String
+    Default: "512"
+    Description: Fargate CPU units for each API task (256 = 0.25 vCPU).
+  ApiMemory:
+    Type: String
+    Default: "1024"
+    Description: Fargate memory in MiB for each API task.
+  ApiMinTasks:
+    Type: Number
+    Default: 1
+  ApiMaxTasks:
+    Type: Number
+    Default: 4
+  WorkerDesiredCount:
+    Type: Number
+    Default: 0
+    MinValue: 0
+    MaxValue: 4
+    Description: >-
+      Number of job-worker tasks (agent runs). Recording reports do not need a worker;
+      set to 1 when agent runs should execute in AWS.
+  OpenAIApiKey:
+    Type: String
+    Default: ""
+    NoEcho: true
+    Description: Optional. Stored in Secrets Manager and injected as VISTA_OPENAI_API_KEY.
+  OpenAIModel:
+    Type: String
+    Default: gpt-4o-mini
+  ProvisioningKey:
+    Type: String
+    Default: ""
+    NoEcho: true
+    Description: Optional operator key that enables POST /tenants. Leave empty to keep it disabled.
+  DBInstanceClass:
+    Type: String
+    Default: db.t4g.micro
+  DBEngineVersion:
+    Type: String
+    Default: "16"
+    Description: RDS PostgreSQL version. A major version alone selects the current default minor release.
+  DBAllocatedStorage:
+    Type: Number
+    Default: 20
+  DBDeletionProtection:
+    Type: String
+    Default: "true"
+    AllowedValues: ["true", "false"]
+  LogRetentionDays:
+    Type: Number
+    Default: 30
+
+Conditions:
+  HasOpenAIKey: !Not [!Equals [!Ref OpenAIApiKey, ""]]
+  HasProvisioningKey: !Not [!Equals [!Ref ProvisioningKey, ""]]
+  RunWorker: !Not [!Equals [!Ref WorkerDesiredCount, 0]]
+  DeletionProtection: !Equals [!Ref DBDeletionProtection, "true"]
+
+Resources:
+  # ------------------------------------------------------------------ storage
+  ReportsBucket:
+    Type: AWS::S3::Bucket
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      BucketName: !Sub "${AWS::StackName}-reports-${AWS::AccountId}"
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+      VersioningConfiguration:
+        Status: Enabled
+      OwnershipControls:
+        Rules:
+          - ObjectOwnership: BucketOwnerEnforced
+      CorsConfiguration:
+        # Presigned document uploads/downloads from the browser (deals API).
+        CorsRules:
+          - AllowedMethods: [GET, PUT, HEAD]
+            AllowedOrigins: ["https://bumpsolutions.org", "https://vista.emilianocamachoalmanza.workers.dev"]
+            AllowedHeaders: ["*"]
+            MaxAge: 3000
+
+  ReportsBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref ReportsBucket
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Sid: DenyInsecureTransport
+            Effect: Deny
+            Principal: "*"
+            Action: "s3:*"
+            Resource:
+              - !GetAtt ReportsBucket.Arn
+              - !Sub "${ReportsBucket.Arn}/*"
+            Condition:
+              Bool:
+                aws:SecureTransport: "false"
+
+  # ----------------------------------------------------------------- database
+  DBSubnetGroup:
+    Type: AWS::RDS::DBSubnetGroup
+    Properties:
+      DBSubnetGroupDescription: !Sub "${AWS::StackName} database subnets"
+      SubnetIds: !Ref SubnetIds
+
+  AppSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: !Sub "${AWS::StackName} application tasks (identity for database access)"
+      VpcId: !Ref VpcId
+      SecurityGroupIngress:
+        # Express Mode's own load-balancer security group also reaches the tasks; this
+        # VPC-scoped rule keeps the health checks working if only this group is attached.
+        - IpProtocol: tcp
+          FromPort: 8000
+          ToPort: 8000
+          CidrIp: 10.0.0.0/8
+        - IpProtocol: tcp
+          FromPort: 8000
+          ToPort: 8000
+          CidrIp: 172.16.0.0/12
+        - IpProtocol: tcp
+          FromPort: 8000
+          ToPort: 8000
+          CidrIp: 192.168.0.0/16
+      Tags:
+        - Key: Name
+          Value: !Sub "${AWS::StackName}-app"
+
+  DBSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: !Sub "${AWS::StackName} database: PostgreSQL from application tasks only"
+      VpcId: !Ref VpcId
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 5432
+          ToPort: 5432
+          SourceSecurityGroupId: !Ref AppSecurityGroup
+      SecurityGroupEgress:
+        - IpProtocol: "-1"
+          CidrIp: 127.0.0.1/32
+          Description: no outbound access needed
+      Tags:
+        - Key: Name
+          Value: !Sub "${AWS::StackName}-db"
+
+  Database:
+    Type: AWS::RDS::DBInstance
+    DeletionPolicy: Snapshot
+    UpdateReplacePolicy: Snapshot
+    Properties:
+      DBInstanceIdentifier: !Sub "${AWS::StackName}-postgres"
+      Engine: postgres
+      EngineVersion: !Ref DBEngineVersion
+      DBInstanceClass: !Ref DBInstanceClass
+      DBName: vista
+      MasterUsername: vista
+      ManageMasterUserPassword: true
+      AllocatedStorage: !Ref DBAllocatedStorage
+      MaxAllocatedStorage: 100
+      StorageType: gp3
+      StorageEncrypted: true
+      MultiAZ: false
+      PubliclyAccessible: false
+      DBSubnetGroupName: !Ref DBSubnetGroup
+      VPCSecurityGroups: [!Ref DBSecurityGroup]
+      BackupRetentionPeriod: 7
+      DeletionProtection: !If [DeletionProtection, true, false]
+      AutoMinorVersionUpgrade: true
+      CopyTagsToSnapshot: true
+      EnableCloudwatchLogsExports: [postgresql]
+
+  # ------------------------------------------------------------------ secrets
+  OpenAISecret:
+    Type: AWS::SecretsManager::Secret
+    Condition: HasOpenAIKey
+    Properties:
+      Name: !Sub "${AWS::StackName}/openai-api-key"
+      SecretString: !Ref OpenAIApiKey
+
+  ProvisioningSecret:
+    Type: AWS::SecretsManager::Secret
+    Condition: HasProvisioningKey
+    Properties:
+      Name: !Sub "${AWS::StackName}/provisioning-key"
+      SecretString: !Ref ProvisioningKey
+
+  # ---------------------------------------------------------------------- IAM
+  TaskExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub "${AWS::StackName}-task-execution"
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal: {Service: ecs-tasks.amazonaws.com}
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy
+      Policies:
+        - PolicyName: read-secrets
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action: secretsmanager:GetSecretValue
+                Resource:
+                  - !GetAtt Database.MasterUserSecret.SecretArn
+                  - !If [HasOpenAIKey, !Ref OpenAISecret, !Ref "AWS::NoValue"]
+                  - !If [HasProvisioningKey, !Ref ProvisioningSecret, !Ref "AWS::NoValue"]
+              - Effect: Allow
+                Action: [logs:CreateLogGroup, logs:CreateLogStream, logs:PutLogEvents]
+                Resource: !Sub "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/vista/*"
+
+  TaskRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub "${AWS::StackName}-task"
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal: {Service: ecs-tasks.amazonaws.com}
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: reports-bucket
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action: [s3:ListBucket, s3:GetBucketLocation]
+                Resource: !GetAtt ReportsBucket.Arn
+              - Effect: Allow
+                Action: [s3:GetObject, s3:PutObject, s3:DeleteObject]
+                Resource: !Sub "${ReportsBucket.Arn}/*"
+        - PolicyName: ecs-exec
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - ssmmessages:CreateControlChannel
+                  - ssmmessages:CreateDataChannel
+                  - ssmmessages:OpenControlChannel
+                  - ssmmessages:OpenDataChannel
+                Resource: "*"
+
+  InfrastructureRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub "${AWS::StackName}-express-infrastructure"
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Sid: AllowAccessInfrastructureForECSExpressServices
+            Effect: Allow
+            Principal: {Service: ecs.amazonaws.com}
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AmazonECSInfrastructureRoleforExpressGatewayServices
+
+  # ------------------------------------------------------------------ compute
+  Cluster:
+    Type: AWS::ECS::Cluster
+    Properties:
+      ClusterName: !Ref AWS::StackName
+      CapacityProviders: [FARGATE, FARGATE_SPOT]
+      ClusterSettings:
+        - Name: containerInsights
+          Value: enabled
+
+  ApiLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub "/vista/${AWS::StackName}/api"
+      RetentionInDays: !Ref LogRetentionDays
+
+  WorkerLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub "/vista/${AWS::StackName}/worker"
+      RetentionInDays: !Ref LogRetentionDays
+
+  ApiService:
+    Type: AWS::ECS::ExpressGatewayService
+    DependsOn: ReportsBucketPolicy
+    Properties:
+      ServiceName: !Sub "${AWS::StackName}-api"
+      Cluster: !Ref Cluster
+      InfrastructureRoleArn: !GetAtt InfrastructureRole.Arn
+      ExecutionRoleArn: !GetAtt TaskExecutionRole.Arn
+      TaskRoleArn: !GetAtt TaskRole.Arn
+      Cpu: !Ref ApiCpu
+      Memory: !Ref ApiMemory
+      HealthCheckPath: /api/health
+      NetworkConfiguration:
+        Subnets: !Ref SubnetIds
+        SecurityGroups: [!Ref AppSecurityGroup]
+      ScalingTarget:
+        MinTaskCount: !Ref ApiMinTasks
+        MaxTaskCount: !Ref ApiMaxTasks
+        AutoScalingMetric: AVERAGE_CPU
+        AutoScalingTargetValue: 60
+      PrimaryContainer:
+        Image: !Ref ImageUri
+        ContainerPort: 8000
+        AwsLogsConfiguration:
+          LogGroup: !Ref ApiLogGroup
+          LogStreamPrefix: ecs
+        Environment:
+          - {Name: VISTA_ROLE, Value: api}
+          - {Name: VISTA_MIGRATE_ON_START, Value: "true"}
+          - {Name: PORT, Value: "8000"}
+          - {Name: VISTA_DB_HOST, Value: !GetAtt Database.Endpoint.Address}
+          - {Name: VISTA_DB_PORT, Value: !GetAtt Database.Endpoint.Port}
+          - {Name: VISTA_DB_NAME, Value: vista}
+          - {Name: VISTA_DB_SSLMODE, Value: require}
+          - {Name: VISTA_S3_ENDPOINT_URL, Value: ""}
+          - {Name: VISTA_S3_ACCESS_KEY, Value: ""}
+          - {Name: VISTA_S3_SECRET_KEY, Value: ""}
+          - {Name: VISTA_S3_REGION, Value: !Ref "AWS::Region"}
+          - {Name: VISTA_S3_BUCKET, Value: !Ref ReportsBucket}
+          - {Name: VISTA_COOKIE_SECURE, Value: "true"}
+          - {Name: VISTA_ALLOWED_ORIGINS, Value: !Ref AllowedOrigins}
+          - {Name: VISTA_OPENAI_MODEL, Value: !Ref OpenAIModel}
+        Secrets:
+          - Name: VISTA_DB_USER
+            ValueFrom: !Sub "${Database.MasterUserSecret.SecretArn}:username::"
+          - Name: VISTA_DB_PASSWORD
+            ValueFrom: !Sub "${Database.MasterUserSecret.SecretArn}:password::"
+          - !If
+            - HasOpenAIKey
+            - {Name: VISTA_OPENAI_API_KEY, ValueFrom: !Ref OpenAISecret}
+            - !Ref AWS::NoValue
+          - !If
+            - HasProvisioningKey
+            - {Name: VISTA_PROVISIONING_KEY, ValueFrom: !Ref ProvisioningSecret}
+            - !Ref AWS::NoValue
+      Tags:
+        - Key: app
+          Value: vista
+
+  # Job worker (agent runs). Same image, no load balancer; runs only when WorkerDesiredCount > 0.
+  # The task definition is also what deploy/aws/manage.sh uses for one-off admin commands.
+  WorkerTaskDefinition:
+    Type: AWS::ECS::TaskDefinition
+    Properties:
+      Family: !Sub "${AWS::StackName}-worker"
+      RequiresCompatibilities: [FARGATE]
+      NetworkMode: awsvpc
+      Cpu: "256"
+      Memory: "512"
+      ExecutionRoleArn: !GetAtt TaskExecutionRole.Arn
+      TaskRoleArn: !GetAtt TaskRole.Arn
+      RuntimePlatform:
+        CpuArchitecture: X86_64
+        OperatingSystemFamily: LINUX
+      ContainerDefinitions:
+        - Name: Main
+          Image: !Ref ImageUri
+          Essential: true
+          LogConfiguration:
+            LogDriver: awslogs
+            Options:
+              awslogs-group: !Ref WorkerLogGroup
+              awslogs-region: !Ref AWS::Region
+              awslogs-stream-prefix: ecs
+          Environment:
+            - {Name: VISTA_ROLE, Value: worker}
+            - {Name: VISTA_MIGRATE_ON_START, Value: "false"}
+            - {Name: VISTA_DB_HOST, Value: !GetAtt Database.Endpoint.Address}
+            - {Name: VISTA_DB_PORT, Value: !GetAtt Database.Endpoint.Port}
+            - {Name: VISTA_DB_NAME, Value: vista}
+            - {Name: VISTA_DB_SSLMODE, Value: require}
+            - {Name: VISTA_S3_ENDPOINT_URL, Value: ""}
+            - {Name: VISTA_S3_ACCESS_KEY, Value: ""}
+            - {Name: VISTA_S3_SECRET_KEY, Value: ""}
+            - {Name: VISTA_S3_REGION, Value: !Ref "AWS::Region"}
+            - {Name: VISTA_S3_BUCKET, Value: !Ref ReportsBucket}
+            - {Name: VISTA_COOKIE_SECURE, Value: "true"}
+            - {Name: VISTA_ALLOWED_ORIGINS, Value: !Ref AllowedOrigins}
+            - {Name: VISTA_OPENAI_MODEL, Value: !Ref OpenAIModel}
+          Secrets:
+            - Name: VISTA_DB_USER
+              ValueFrom: !Sub "${Database.MasterUserSecret.SecretArn}:username::"
+            - Name: VISTA_DB_PASSWORD
+              ValueFrom: !Sub "${Database.MasterUserSecret.SecretArn}:password::"
+            - !If
+              - HasOpenAIKey
+              - {Name: VISTA_OPENAI_API_KEY, ValueFrom: !Ref OpenAISecret}
+              - !Ref AWS::NoValue
+            - !If
+              - HasProvisioningKey
+              - {Name: VISTA_PROVISIONING_KEY, ValueFrom: !Ref ProvisioningSecret}
+              - !Ref AWS::NoValue
+
+  WorkerService:
+    Type: AWS::ECS::Service
+    Condition: RunWorker
+    DependsOn: ApiService
+    Properties:
+      ServiceName: !Sub "${AWS::StackName}-worker"
+      Cluster: !Ref Cluster
+      TaskDefinition: !Ref WorkerTaskDefinition
+      DesiredCount: !Ref WorkerDesiredCount
+      LaunchType: FARGATE
+      EnableExecuteCommand: true
+      NetworkConfiguration:
+        AwsvpcConfiguration:
+          AssignPublicIp: ENABLED
+          Subnets: !Ref SubnetIds
+          SecurityGroups: [!Ref AppSecurityGroup]
+      DeploymentConfiguration:
+        MinimumHealthyPercent: 0
+        MaximumPercent: 100
+
+Outputs:
+  ApiEndpoint:
+    Description: HTTPS origin of the API; set this as API_ORIGIN on the Cloudflare Worker (no trailing path).
+    Value: !GetAtt ApiService.Endpoint
+  ApiServiceArn:
+    Value: !GetAtt ApiService.ServiceArn
+  ClusterName:
+    Value: !Ref Cluster
+  ReportsBucketName:
+    Value: !Ref ReportsBucket
+  DatabaseEndpoint:
+    Value: !GetAtt Database.Endpoint.Address
+  DatabaseSecretArn:
+    Description: Secrets Manager secret holding the RDS master username and password.
+    Value: !GetAtt Database.MasterUserSecret.SecretArn
+  WorkerTaskDefinitionArn:
+    Description: Task definition used by deploy/aws/manage.sh for one-off admin commands.
+    Value: !Ref WorkerTaskDefinition
+  AppSecurityGroupId:
+    Value: !Ref AppSecurityGroup
+  ApiLogGroupName:
+    Value: !Ref ApiLogGroup

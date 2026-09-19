@@ -3,6 +3,7 @@
 !pyproject.toml
 !uv.lock
 !alembic.ini
+!docker-entrypoint.sh
 !migrations/
 !migrations/**
 !src/
