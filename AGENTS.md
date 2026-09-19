@@ -10,10 +10,18 @@ the portfolio for cross-company synergies (purchasing, software overlap, cross-s
 Initial industry focus: HVAC roll-ups. Near-term goal: 24-hour hackathon prototype with
 a portfolio dashboard, three synthetic HVAC companies (Harbor Heating, Summit Mechanical,
 Cedar Climate), live acquisition onboarding, and an evidence-backed synergy agent.
-Docs: IMPLEMENTATION_SO_FAR.md (what's built), FURTHER_STEPS.md (tech roadmap +
-frontend spec), BUSINESS_COURSE_OF_ACTION.md (business plan distilled). The original
-verbatim business plan (BUSINESS_PLAN_AND_IDEAS.md) and IMPLEMENTATION.md were removed
-as superseded; both remain in git history.
+Docs (consolidated 2026-09-19): CURRENT_IMPLEMENTATION.md (what's built + deployed),
+NEXT_STEPS.md (roadmap; leads with frontend rebuild), BUSINESS_COURSE_OF_ACTION.md
+(business plan distilled). Superseded and removed (recoverable from git history):
+BUSINESS_PLAN_AND_IDEAS.md, IMPLEMENTATION.md, IMPLEMENTATION_SO_FAR.md,
+FURTHER_STEPS.md, DEPLOYMENT_REVIEW.md (its validation details live in git history
+at 8ab2d1b).
+
+IMPORTANT user feedback (2026-09-19): the current web workspace (recording-report
+viewer) is NOT the frontend the user envisions. The target is the three-surface
+design in NEXT_STEPS.md §1 — near-invisible employee surface (one-tap verification
+questions in email/Slack), company view (summary + findings queue + audit drawer),
+PE portfolio view — with the report viewer demoted to an evidence layer.
 
 Agent end-state (user's vision): one autonomous agent per back-office employee that
 knows only the person's role and discovers inefficiencies itself (codex-style, eventually
@@ -58,8 +66,8 @@ Key product principles (from the business plan):
 - Remotes: `origin` = github.com/emiliano800/vista (full repo, including docs);
   `upstream` = github.com/ylemiesa57/vista (code only).
 - Always pull/fetch both remotes before pushing.
-- Push code changes to BOTH remotes. The doc files README.md, IMPLEMENTATION_SO_FAR.md,
-  FURTHER_STEPS.md, BUSINESS_COURSE_OF_ACTION.md, and AGENTS.md (any root-level .md)
+- Push code changes to BOTH remotes. Root-level doc .md files (README.md,
+  CURRENT_IMPLEMENTATION.md, NEXT_STEPS.md, BUSINESS_COURSE_OF_ACTION.md, AGENTS.md)
   must NEVER be committed/pushed to `upstream` — they go to `origin` only.
 - Workflow: `main` tracks origin and carries everything. The `upstream-main` branch
   mirrors the code without those doc files and is pushed to `upstream`'s main.
@@ -93,4 +101,5 @@ Key product principles (from the business plan):
   AWS CLI default is the scoped `emiliano-vista-operator` IAM user, with credentials
   in macOS Keychain. It can run workspace-management tasks but not infrastructure
   deployments. Prefer `deploy/aws/manage.sh --output-file PATH COMMAND ...` for
-  private credential delivery and log cleanup. See DEPLOYMENT_REVIEW.md for validation.
+  private credential delivery and log cleanup. Deployment validation record: git
+  history at commit 8ab2d1b (formerly DEPLOYMENT_REVIEW.md).
