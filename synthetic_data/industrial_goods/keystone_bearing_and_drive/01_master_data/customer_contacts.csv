@@ -1,0 +1,67 @@
+Contact Id,Customer Id,Full Name,Title,Email,Phone,Role,Primary
+KBD-CT0001,KBD-CUST0001,Sarah Choi,Purchasing Manager,schoi@appalachian-conveyor.com,(201) 458-8637,AP,Y
+KBD-CT0002,KBD-CUST0001,Priya Rodriguez,Purchasing Manager,prodriguez@appalachian-conveyor.com,(318) 878-6961,Buyer,N
+KBD-CT0003,KBD-CUST0002,David Johnson,Maintenance Manager,djohnson@riverbend-foods.com,(414) 808-6824,Technical,Y
+KBD-CT0004,KBD-CUST0002,Priya Patel,Reliability Engineer,ppatel@riverbend-foods.com,(685) 992-4299,Buyer,N
+KBD-CT0005,KBD-CUST0003,Robert Jones,Purchasing Manager,rjones@tricounty-conveyor.com,(372) 692-5462,Buyer,Y
+KBD-CT0006,KBD-CUST0004,Elizabeth Lopez,Storeroom Lead,elopez@summit-chemical.com,(655) 621-8775,Buyer,Y
+KBD-CT0007,KBD-CUST0005,Priya Clark,Buyer,pclark@cardinal-foods.com,(394) 416-7619,Decision Maker,Y
+KBD-CT0008,KBD-CUST0005,Jessica Nakamura,Purchasing Manager,jnakamura@cardinal-foods.com,(720) 845-3981,Buyer,N
+KBD-CT0009,KBD-CUST0006,Andrew Clark,AP Clerk,aclark@prairie-foods.com,(691) 558-7994,Buyer ,Y
+KBD-CT0010,KBD-CUST0006,Robert King,Maintenance Manager,rking@prairie-foods.com,(913) 264-2751,Decision Maker,N
+KBD-CT0011,KBD-CUST0007,Richard Martin,Storeroom Lead,rmartin@cardinal-poultry.com,(830) 954-9614,Buyer,Y
+KBD-CT0012,KBD-CUST0008,Carlos Nakamura,AP Clerk,cnakamura@piedmont-agequipment.com,(795) 661-3387,Buyer,Y
+KBD-CT0013,KBD-CUST0008,Richard Clark ,Reliability Engineer,rclark@piedmont-agequipment.com,(356) 396-5096,Buyer,N
+KBD-CT0014,KBD-CUST0008,Ashley Schneider,Plant Engineer,aschneider@piedmont-agequipment.com,(570) 723-5082,Buyer,N
+KBD-CT0015,KBD-CUST0009,William Smith,Buyer,wsmith@keystone-chemical.com,(480) 463-1931,Buyer,Y
+KBD-CT0016,KBD-CUST0009,Steven Lee,Buyer,slee@keystone-chemical.com ,(257) 817-1695,Buyer,N
+KBD-CT0017 ,KBD-CUST0009,Linda Thompson,Reliability Engineer,lthompson@keystone-chemical.com,(787) 936-5515,Decision Maker,N
+KBD-CT0018,KBD-CUST0010,Michael Miller,AP Clerk,mmiller@allegheny-paper.com,(338) 387-2655,Decision Maker,Y
+KBD-CT0019,KBD-CUST0011,Elena O'Brien,Storeroom Lead,eobrien@hickory-waterauthority.com,(888) 701-8188,Buyer,Y
+KBD-CT0020,KBD-CUST0011,Steven White,AP Clerk,swhite@hickory-waterauthority.com,(945) 473-2422,Decision Maker,N
+KBD-CT0021,KBD-CUST0011,Sandra Clark,Reliability Engineer,sclark@hickory-waterauthority.com,(924) 610-7839,Technical,N
+KBD-CT0022,KBD-CUST0012,Kevin Rodriguez,Storeroom Lead,krodriguez@riverbend-packagingsystems.com,(567) 221-6774,Buyer,Y
+KBD-CT0023,KBD-CUST0012,Jessica Lewis,Plant Engineer,jlewis@riverbend-packagingsystems.com,(216) 463-4789,Buyer,N
+KBD-CT0024,KBD-CUST0013,Fatima Jackson,Reliability Engineer,fjackson@riverbend-plastics.com,(768) 668-4296,Buyer,Y
+KBD-CT0025,KBD-CUST0013,Fatima Walker,Plant Engineer,fwalker@riverbend-plastics.com,(817) 885-4937,AP,N
+KBD-CT0026,KBD-CUST0013,Sarah Young,Buyer,syoung@riverbend-plastics.com,(942) 528-7424,Buyer,N
+KBD-CT0027,KBD-CUST0014,Richard Smith,Plant Engineer,rsmith@fox-paper.com,(233) 425-2488,Decision Maker,Y
+KBD-CT0028,KBD-CUST0014,Fatima Okafor,Maintenance Manager,fokafor@fox-paper.com,(583) 300-1320,Technical,N
+KBD-CT0029,KBD-CUST0014,Aisha Martinez,Storeroom Lead ,amartinez@fox-paper.com,(911) 594-6310,Buyer,N
+KBD-CT0030,KBD-CUST0015,Paul Wright,Plant Engineer,pwright@hickory-lumber.com,(492) 487-8506,Buyer,Y
+KBD-CT0031,KBD-CUST0015,Linda Wright,Maintenance Manager,lwright@hickory-lumber.com,(448) 866-5170,Technical,N
+KBD-CT0032,KBD-CUST0016,Maria Delgado,Buyer,mdelgado@lehigh-agequipment.com,(474) 938-4821,Buyer,Y
+KBD-CT0033,KBD-CUST0016,Anthony Allen,Maintenance Manager,aallen@lehigh-agequipment.com,(622) 825-6501,Buyer,N
+KBD-CT0034,KBD-CUST0017,Carlos Lewis,Purchasing Manager,clewis@hickory-steel.com,(259) 696-1747,Technical,Y
+KBD-CT0035,KBD-CUST0017,Nancy Moore,Reliability Engineer,nmoore@hickory-steel.com,(969) 378-9563,Buyer,N
+KBD-CT0036,KBD-CUST0018,Michael Hernandez,Storeroom Lead,mhernandez@cardinal-plastics.com,(433) 484-4865,Buyer,Y
+KBD-CT0037,KBD-CUST0018,Omar Schneider,Maintenance Manager,oschneider@cardinal-plastics.com,(511) 378-7869,Decision Maker,N
+KBD-CT0038,KBD-CUST0019,Nancy Scott,Buyer,nscott@tricounty-materials.com,(413) 405-5285,AP,Y
+KBD-CT0039,KBD-CUST0019,Andrew Williams,AP Clerk,awilliams@tricounty-materials.com,(307) 280-6052,AP,N
+KBD-CT0040,KBD-CUST0020,Fatima Wilson,Purchasing Manager,fwilson@northstar-plastics.com,(734) 201-7906,Technical,Y
+KBD-CT0041,KBD-CUST0020,Fatima Johnson,Storeroom Lead,fjohnson@northstar-plastics.com,(895) 667-5624,Buyer,N
+KBD-CT0042,KBD-CUST0020,Sandra Rodriguez,Purchasing Manager,srodriguez@northstar-plastics.com,(382) 916-2771,Technical,N
+KBD-CT0043,KBD-CUST0021,Fatima Robinson,Reliability Engineer,frobinson@tennessee-lumber.com,(830) 277-1748,Buyer,Y
+KBD-CT0044,KBD-CUST0021,Andrew Wright,Buyer,awright@tennessee-lumber.com,(204) 923-3154,Buyer,N
+KBD-CT0045,KBD-CUST0021,Maria Harris,AP Clerk,mharris@tennessee-lumber.com,(932) 960-8926,Buyer,N
+KBD-CT0046,KBD-CUST0022,Hiro Walker,Plant Engineer,hwalker@keystone-steel.com,(307) 856-8522,Decision Maker,Y
+KBD-CT0047,KBD-CUST0022,Elizabeth Scott,Storeroom Lead,escott@keystone-steel.com,(874) 491-2188,Buyer,N
+KBD-CT0048,KBD-CUST0023,Nancy O'Brien,Reliability Engineer,nobrien@keystone-plastics.com,(399) 551-5762,Technical,Y
+KBD-CT0049,KBD-CUST0024,Sandra White,Buyer,swhite@tennessee-plastics.com,(481) 989-2458,Decision Maker,Y
+KBD-CT0050,KBD-CUST0024,Michael Schneider,Buyer,mschneider@tennessee-plastics.com,(596) 854-5335,Buyer,N
+KBD-CT0051,KBD-CUST0024 ,William Garcia,Buyer,wgarcia@tennessee-plastics.com,(226) 513-6129,Buyer,N
+KBD-CT0052,KBD-CUST0025,William White,Reliability Engineer,wwhite@great-climate.com,(534) 824-9626,AP,Y
+KBD-CT0053,KBD-CUST0026,Paul Hernandez,Storeroom Lead,phernandez@pioneer-plastics.com,(930) 506-8564,Technical,Y
+KBD-CT0054,KBD-CUST0026,Fatima Delgado ,Buyer,fdelgado@pioneer-plastics.com,(655) 272-5436,Decision Maker,N
+KBD-CT0055,KBD-CUST0026,Betty White,Reliability Engineer,bwhite@pioneer-plastics.com,(922) 282-8095,AP,N
+KBD-CT0056,KBD-CUST0027,Elizabeth White,Plant Engineer,ewhite@appalachian-packagingsystems.com,(982) 574-3112,Decision Maker ,Y
+KBD-CT0057,KBD-CUST0027,Hiro Martin,Buyer,hmartin@appalachian-packagingsystems.com,(349) 860-6996,AP,N
+KBD-CT0058,KBD-CUST0028,Wei Martinez,Maintenance Manager,wmartinez@piedmont-poultry.com,(285) 461-1286,Decision Maker,Y
+KBD-CT0059,KBD-CUST0029,Betty Anderson,AP Clerk,banderson@iron-plastics.com,(840) 586-4701,Buyer,Y
+KBD-CT0060,KBD-CUST0029,Joseph Brown,Purchasing Manager,jbrown@iron-plastics.com,(303) 644-3246,AP,N
+KBD-CT0061,KBD-CUST0029,Emily King,Reliability Engineer,eking@iron-plastics.com,(684) 632-9671,Buyer,N
+KBD-CT0062,KBD-CUST0030,Joseph Clark,Storeroom Lead,jclark@fox-climate.com,(451) 788-3182,Technical,Y
+KBD-CT0063,KBD-CUST0031,Joseph Okafor,Storeroom Lead,jokafor@iron-materials.com,(241) 626-4190,Buyer,Y
+KBD-CT0064,KBD-CUST0031,Anthony Harris,Storeroom Lead,aharris@iron-materials.com,(844) 624-4954,Technical,N
+KBD-CT0065,KBD-CUST0031,Susan Thompson,AP Clerk,sthompson@iron-materials.com,(845) 551-3253,Buyer,N
+KBD-CT0066,KBD-CUST0032,Priya Harris,Maintenance Manager,pharris@susquehanna-packagingsystems.com,(257) 348-2367,AP,Y

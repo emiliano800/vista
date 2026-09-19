@@ -1,0 +1,29 @@
+Endorsement Request Id,Policy Id,Client Id,Request Type,Requested Value,Effective Date,Requested By,Carrier Code,Submitted To Carrier Date,Status,Carrier Endorsement Number,Premium Change,Received Date,Checked Against Request,Handled By
+HAR-END0001,HAR-P00025,HAR-C0008,Payroll Audit Adjustment,Add subsidiary: XYZ Holdings LLC,2026-03-22,Carrier audit,GRD,18-Mar-2026,Requested,,-3852,,,E009
+HAR-END0002,HAR-P00036,HAR-C0011,Change Named Insured,First National Bank ISAOA,2026-01-26,Client,TRV,2026-01-27,Issued,END-232243,0,2026-03-05,Y,E013
+HAR-END0003,HAR-P00057,HAR-C0018,Change Named Insured,"Audited payroll +$412,000 class 5190",2026-01-29,Carrier audit,NAT,2026-01-21,Issued - Discrepancy,END-724637,0,2026-02-27,N - carrier issued wrong VIN,E009
+HAR-END0004,HAR-P00024,HAR-C0008,Delete Vehicle,First National Bank ISAOA,2025-12-07,Client,PRG,2025-12-05,Requested,,-651,,,E009
+HAR-END0005,HAR-P00072,HAR-C0022,Add Additional Insured,Add subsidiary: XYZ Holdings LLC,2025-07-26,Certificate holder,CNA,2025-07-26,Pending Carrier,,0,,,E007
+HAR-END0006,HAR-P00098,HAR-C0030,Add Driver,2024 Ford Transit 250 VIN 1FTBR1C8XRKA55210,2025-07-31,Client,LIB,2025-07-27,Issued - Discrepancy,END-948859,0,2025-08-17,N - carrier issued wrong VIN,E009
+HAR-END0007,HAR-P00097,HAR-C0030,Payroll Audit Adjustment,Turner Construction Company - CG 20 10,2025-12-17,Client,HIG,2025-12-11,Issued - Discrepancy,END-478899,10935,2025-12-17,N - carrier issued wrong VIN,E009
+HAR-END0008,HAR-P00004,HAR-C0002,Payroll Audit Adjustment,2024 Ford Transit 250 VIN 1FTBR1C8XRKA55210,12/13/2025,Client,AMT,2025-12-08,Requested,,-3497,,,E012
+HAR-END0009,HAR-P00094,HAR-C0029,Delete Vehicle,Turner Construction Company - CG 20 10,2026-03-10,Lender,PRG,2026-03-10,Issued ,END-739844,-2004,03/29/26,Y,E007
+HAR-END0010,HAR-P00047,HAR-C0015,Add Vehicle,Loc 3: 1800 Enterprise Ct,2026-01-03,Carrier audit,PRG,2025-12-24,Issued,END-468105,2277,2026-01-03,Y,E010
+HAR-END0011,HAR-P00054,HAR-C0017,Add Location,PO Box 4410,2025-07-16,Carrier audit,TRV,"Jul 15, 2025",Pending Carrier,,2204,,,E010
+HAR-END0012,HAR-P00067,HAR-C0021,Add Additional Insured,Add subsidiary: XYZ Holdings LLC,2025-12-23,Client,LIB,2025-12-22,Issued,END-136702,250,2026-01-27,Y,E010
+HAR-END0013,HAR-P00054,HAR-C0017,Add Mortgagee,Add subsidiary: XYZ Holdings LLC,2025-07-30,Client,TRV,2025-07-25,Requested,,0,,,E010
+HAR-END0014 ,HAR-P00007,HAR-C0003,Add Waiver of Subrogation,Add subsidiary: XYZ Holdings LLC,2026-01-26,Lender,TRV,01/19/2026,Issued,END-417082 ,0,2026-02-01,Y,E011
+HAR-END0015 ,HAR-P00030,HAR-C0010,Change Mailing Address,Loc 3: 1800 Enterprise Ct,2025-09-20,Lender,CNA,2025-09-16,Requested,,0,,,E006
+HAR-END0016 ,HAR-P00093,HAR-C0029,Add Location,First National Bank ISAOA,2025-11-01,Lender,CNA,2025-11-03,Issued,END-882307,9442,12/03/2025,Y,E007
+HAR-END0017,HAR-P00096,HAR-C0030,Add Additional Insured,First National Bank ISAOA,2025-08-04,Certificate holder,TRV,2025-07-28,Pending Carrier,,0,,,E009
+HAR-END0018,HAR-P00040,HAR-C0013,Add Mortgagee,PO Box 4410,2025-11-06,Certificate holder,HIG,02-Nov-2025,Issued,END-287913,0,2025-11-10,Y,E013
+HAR-END0019,HAR-P00095,HAR-C0029,Change Named Insured,Unit 14 - sold,2025-07-22,Lender,TRV,2025-07-17,Issued,END-535400,0,"Aug 17, 2025",Y,E007
+HAR-END0020,HAR-P00020,HAR-C0007,Change Mailing Address,Turner Construction Company - CG 20 10,2026-03-08,Carrier audit,NAT,03/03/2026,Issued,END-721255,0,2026-03-13,Y,E011
+HAR-END0021,HAR-P00081,HAR-C0024,Change Mailing Address,First National Bank ISAOA,2025-09-25 ,Client,NAT,2025-09-23,Issued - Discrepancy,END-972257,0,2025-10-01,N - carrier issued wrong VIN,E008
+HAR-END0022,HAR-P00055,HAR-C0017,Add Waiver of Subrogation,First National Bank ISAOA,"Oct 14, 2025",Client ,MKL,2025-10-10,Issued,END-526475,150,2025-10-26,Y,E010
+HAR-END0023,HAR-P00098,HAR-C0030,Add Driver,Add subsidiary: XYZ Holdings LLC,2026-01-28,Certificate holder,LIB,2026-01-26,Pending Carrier,,0,,,E009
+HAR-END0024,HAR-P00099,HAR-C0030,Increase Limits,2024 Ford Transit 250 VIN 1FTBR1C8XRKA55210,2025-10-26,Client,MKL,2025-10-25,Issued,END-938805,1578,2025-11-05,Y,E009
+HAR-END0025,HAR-P00068,HAR-C0021,Add Mortgagee,Loc 3: 1800 Enterprise Ct,2025-08-10,Client,NAT,2025-08-11,Issued ,END-759322,0,2025-08-19,Y,E010
+HAR-END0026,HAR-P00021,HAR-C0007,Delete Vehicle,Blanket WOS CG 24 04,2025-11-22,Client,LIB,2025-11-21,Issued,END-327708,-3895,12/24/25,Y,E011
+HAR-END0027,HAR-P00041,HAR-C0013,Add Waiver of Subrogation,2024 Ford Transit 250 VIN 1FTBR1C8XRKA55210,2026-01-28,Carrier audit,CNA,2026-01-23,Requested,,250,,,E013
+HAR-END0028,HAR-P00077,HAR-C0023,Change Named Insured,Loc 3: 1800 Enterprise Ct,2025-12-09,Lender,MKL,2025-12-01,Requested,,0,,,E009

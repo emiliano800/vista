@@ -1,0 +1,9 @@
+carrier_code,carrier_name,state,appointment_type,appointment_date,status,binding_authority,agency_agreement_on_file
+TRV,Travelers Indemnity Company,CT,Agency,2013-09-23,Active,None,Y
+HIG,The Hartford Fire Insurance Company,CT,Agency,2004-10-24,Active,None,Y
+LIB,Liberty Mutual Insurance,CT,Agency,2004-11-17,Active,None,Y
+CNA,CNA Insurance,CT,Agency,2001-12-20,Active,BOP < $10k premium,Y
+CHB,Chubb (Federal Insurance Company),CT,Agency,2020-10-06,Active,Auto - up to 10 units,Y
+AMT,AmTrust Financial,CT,Agency,2021-07-15,Active,None,Y
+MKL,Markel Specialty (Evanston Insurance Co.),CT,Agency,2017-12-13,Active,BOP < $10k premium,Y
+BEZ,Beazley (Lloyd's Syndicate 2623),CT,Agency,2017-01-21,Active,None,Y

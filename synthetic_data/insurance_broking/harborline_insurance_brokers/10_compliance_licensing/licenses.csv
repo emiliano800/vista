@@ -1,0 +1,19 @@
+Employee Id,Licensee Name,Npn,State,License Type,License Number,Issue Date,Expiration Date,Ce Hours Required,Ce Hours Completed,Resident,Status
+E001,Betty Rodriguez,14596454,AL,Property & Casualty Producer,8022044,2025-10-02,2027-10-02,24,24,N,Active
+E001,Betty Rodriguez,10273259,FL,Property & Casualty Producer,1535784,2024-07-15,2026-07-15,24,24,Y,Active
+E002,Nancy Scott,12673271,FL,Property & Casualty Producer,4234063,2024-12-01,2026-12-01,24,18,Y,Active
+E003,Matthew Choi,15708239,FL,Property & Casualty Producer,5529996,2025-01-01,2027-01-01,24,24,Y,Active
+E004 ,Priya Martinez,19152437,FL,Property & Casualty Producer,8575110,2024-07-20,2026-07-20,24,18,Y,Active
+E004,Priya Martinez,13359061,NJ,Property & Casualty Producer,4015717,2024-05-07,2026-05-07,24,24,N,Active
+E005,Priya Garcia,11096705,FL,Property & Casualty Producer,2189896,2025-01-15,2027-01-15,24,24,Y,Active
+E006,Elena Jackson,13131614,FL,Property & Casualty Producer,8260232,2025-09-24,2027-09-24,24,24,Y,Active
+E007,Ashley Wilson,18244550,FL,Property & Casualty Producer,7346074,2024-11-23,2026-11-23,24,6,Y,Active
+E007,Ashley Wilson,18708916,OH,Property & Casualty Producer,1261929,2025-12-21,2027-12-21,24,24,N,Active
+E008,Jessica Schneider,15174164,FL,Property & Casualty Producer,4826835,"Jan 10, 2025",2027-01-10,24,12,Y,Active
+E009,Matthew Jones,17030190,FL,Property & Casualty Producer,2191299,2024-11-17,"Nov 17, 2026",24,24,Y,Active
+E009,Matthew Jones,14791027,GA,Property & Casualty Producer,1285657,2025-12-24,2027-12-24,24,24,N,Active
+E010,Nancy Fitzgerald,14132642,FL ,Property & Casualty Producer,2901520,06/13/24,2026-06-13,24,6,Y,Active
+E011,Sandra White,16485418,FL,Property & Casualty Producer,1262676,2025-05-03,2027-05-03,24,24,Y,Active
+E012,Patricia Thomas,15051841,FL,Property & Casualty Producer,3367505,2024-08-18,18-Aug-2026,24,12,Y,Active
+E013,Sarah King,11518700,AL,Property & Casualty Producer,3230448,2025-09-11,2027-09-11,24,18,N,Active
+E013,Sarah King,10225680,FL,Property & Casualty Producer,9960105,2024-02-18,2026-02-17,24,24,Y,EXPIRED

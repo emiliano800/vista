@@ -1,0 +1,14 @@
+VENDOR_ID,CUSTOMER,CATEGORY,PAYMENT_TERMS,TAX_ID_ON_FILE,1099_ELIGIBLE,STATUS
+V001,Iron Mtn,Records Storage / Shredding,Net 15,N,N,Active
+V002,Staples,Office Supplies,Net 30,Y,N,Active
+V003,Iron Mtn Landscaping LLC,Landscaping,Net 30,Y,Y,Active
+V004,Landlord - Lackawanna Ave Realty,Rent,Net 30,Y,N ,Active
+V005,PPL Electric,Utilities,Net 30 ,N,N ,Active
+V006,Frontier,TELECOM / INTERNET,Net 30,Y,N,
+V007,Local CPA - Steven Smith,Professional Fees,Net 30 ,Y,Y,Active
+V008,IIABPA,Association Dues,Net 30,Y,N,ACTIVE
+V009,Westport Insurance Corp (Swiss Re) ,E&O Insurance,Net 30,N,N,Active
+V010,Shred-it,Shredding,Net 30,Y,N,Active
+V011,Aramark Refreshments,Office,Net 30,Y,N,Active
+V006,Frontier,TELECOM / INTERNET,Net 30,Y,N,
+V012,Local Print Shop,Marketing,Net 30,N,N,Active

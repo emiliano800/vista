@@ -1,0 +1,20 @@
+Supplier Id,Supplier Name,Category,City,State,Payment Terms,Tax Id,Approved Supplier,W9 On File,Iso 9001 Certified,Supplier Since,Remit To,Ach Enabled,Status
+KBD-V001,Alro Steel,Metals Service Center,Jackson,MI,Net 30,29-1431397,Y,Y,N,2017-06-05 ,"PO Box 11137, Jackson, MI",N,Active
+KBD-V002,Apex Fastener Corp,Fastener Manufacturer,Elgin,IL,Net 30,87-8958895,Y,N,Y,2017-06-11,"PO Box 13066, Elgin, IL",N,Active
+KBD-V003,Applied Industrial Technologies,Bearings & PT Distributor,Cleveland,OH,Net 30,77-4598877,Y,Y,N,2013-02-06,"PO Box 6822, Cleveland, OH",Y,Active
+KBD-V004,Baldor-Reliance (ABB),Motors,Fort Smith,AR,Net 45,78-5697944,Y,Y,N,2014-05-13,"PO Box 82027, Fort Smith, AR",Y,Active
+KBD-V005,Brighton-Best International,Fastener Master Distributor,Long Beach,CA,Net 30,34-5168220,Y,Y,Y,1997-05-29,"PO Box 89088, Long Beach, CA",Y,Active
+KBD-V006,Fastenal,Fasteners / MRO,Winona,MN,Net 30,42-4879475,Y,Y,N,2021-08-26,"PO Box 73440, Winona, MN",Y,Active
+KBD-V007,GRAINGER,MRO Supplies,Lake Forest,IL,Net 30,73-4416130,Y,Y,Y ,2019-07-19,"PO Box 72787, Lake Forest, IL",Y,Active
+KBD-V008,Garlock Sealing Technologies,Seals / Gaskets,Palmyra,NY,Net 30,85-2575373,Y,N,N,2001-06-24,"PO Box 9435, Palmyra, NY",N,Active
+KBD-V009,Haas Automation,Machine Tools,Oxnard,CA,Net 30,61-9336394,Y,Y,N,2019-05-26,"PO Box 50646, Oxnard, CA",Y,Active
+KBD-V010,Kaman Industrial Technologies,Bearings & PT Distributor,Bloomfield,CT,Net 30,25-9365965,Y,Y,Y,2016-07-14,"PO Box 7503, Bloomfield, CT",N,Active
+KBD-V011,MSC Industrial Supply,Cutting Tools / MRO,Melville,NY,Net 30,21-9498602,Y,Y,Y,2017-06-27,"PO Box 16106, Melville, NY",N,Active
+KBD-V012,McMaster-Carr,MRO Catalog ,Elmhurst,IL,Net 30,73-2544882,Y,Y,N,2023-03-01,"PO Box 44600, Elmhurst, IL",N,Active
+KBD-V013,Motion Industries,Bearings & PT Distributor,Birmingham,AL,Net 30,13-8906271,Y,Y,Y,1999-10-20,"PO Box 35286, Birmingham, AL",Y,Active
+KBD-V014,Parker Hannifin,Seals / Hydraulics,Cleveland,OH,Net 45,55-8533737,Y,Y,N,2016-09-11,"PO Box 46444, Cleveland, OH",N,Active
+KBD-V015,Regal Rexnord,Gearing / Couplings,Milwaukee,WI,Net 45,93-2565109,Y,N,N,2006-04-30,"PO Box 29023, Milwaukee, WI",Y,Active 
+KBD-V016,Ryerson,Metals Service Center,Chicago,IL,Net 45,55-2183792,Y,Y,N,1997-10-05,"PO Box 72197, Chicago, IL",N,Active
+KBD-V017,Sandvik Coromant,Cutting Tools,Mebane,NC,Net 30,29-3767369,Y,Y,Y,2004-09-26,"PO Box 13836, Mebane, NC",Y,Active
+KBD-V018,Uline,Packaging,Pleasant Prairie,WI,Net 30 ,98-7365660,Y,N,Y,2021-08-10,"PO Box 2277, Pleasant Prairie, WI",Y,Active
+KBD-V019,W W Grainger Inc,MRO Supplies,Lake Forest,IL,Net 45,73-4416130 ,Y,Y,Y,2019-07-19,"PO Box 72787, Lake Forest, IL",N,Active

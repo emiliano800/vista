@@ -56,6 +56,69 @@ class RunCreate(BaseModel):
     idempotency_key: str | None = None
 
 
+class EmployeeCreate(BaseModel):
+    name: str
+    role_title: str
+    email: EmailStr | None = None
+
+
+class EmployeeOut(BaseModel):
+    id: uuid.UUID
+    name: str
+    role_title: str
+    email: str | None
+    created_at: datetime
+
+
+class AgentCreate(BaseModel):
+    employee_id: uuid.UUID
+    scopes: list[str] = []
+    schedule: str = "daily"  # hourly|daily|weekly
+
+
+class AgentOut(BaseModel):
+    id: uuid.UUID
+    employee_id: uuid.UUID
+    employee_name: str
+    role_title: str
+    status: str
+    scopes: list[str]
+    schedule: str
+    last_run_at: datetime | None
+    created_at: datetime
+
+
+class AgentPatch(BaseModel):
+    status: str | None = None  # active|paused
+    scopes: list[str] | None = None
+    schedule: str | None = None
+
+
+class FindingOut(BaseModel):
+    id: uuid.UUID
+    run_id: uuid.UUID
+    employee_id: uuid.UUID | None
+    agent_id: uuid.UUID | None
+    kind: str
+    title: str
+    detail: str
+    evidence: dict
+    status: str
+    created_at: datetime
+
+
+class FindingPatch(BaseModel):
+    status: str  # open|reviewed|dismissed|actioned
+
+
+class SummaryOut(BaseModel):
+    id: uuid.UUID
+    run_id: uuid.UUID
+    content: str
+    stats: dict
+    created_at: datetime
+
+
 class RunEventOut(BaseModel):
     seq: int
     event_type: str
@@ -65,7 +128,9 @@ class RunEventOut(BaseModel):
 
 class RunOut(BaseModel):
     id: uuid.UUID
-    deal_id: uuid.UUID
+    run_type: str = "deal_analysis"
+    deal_id: uuid.UUID | None
+    employee_agent_id: uuid.UUID | None = None
     document_id: uuid.UUID | None
     status: str
     created_at: datetime

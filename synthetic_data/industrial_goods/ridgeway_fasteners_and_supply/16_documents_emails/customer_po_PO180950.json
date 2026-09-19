@@ -1,0 +1,59 @@
+[
+  {
+    "DOCUMENT_TYPE": "Customer Purchase Order",
+    "SOURCE": "Email attachment (PDF, OCR)",
+    "CUSTOMER_PO_NUMBER": "PO180950",
+    "PO_DATE": "Jun 25, 2025 ",
+    "BUYER": "Great Lakes Poultry LLC",
+    "SHIP_TO": "Great Lakes Poultry LLC - Plant 1",
+    "PAYMENT_TERMS": "Net 60",
+    "LINES": [
+      {
+        "line": 1,
+        "customer_part_number": "CP-35620",
+        "our_item_id": "HEX60-080",
+        "description": "Hex Bolt Gr 5 Zinc 1/4-20 x 2in",
+        "qty": 27,
+        "unit_price": 37.43,
+        "requested_date": "2025-07-12"
+      },
+      {
+        "line": 2,
+        "customer_part_number": "CP-83971",
+        "our_item_id": "CAB1250-008",
+        "description": "Cable Tie UV Black size 4 x 5in",
+        "qty": 50,
+        "unit_price": 38.86,
+        "requested_date": "2025-07-15"
+      },
+      {
+        "line": 3,
+        "customer_part_number": "CP-78920",
+        "our_item_id": "",
+        "description": "Hose Clamp SS M10 x 3in",
+        "qty": 1,
+        "unit_price": 17.13,
+        "requested_date": "2025-07-22"
+      },
+      {
+        "line": 4,
+        "customer_part_number": "CP-46226",
+        "our_item_id": "DRIsize4-017",
+        "description": "Drill Bit Cobalt 1/2-13 x 6in",
+        "qty": 200,
+        "unit_price": 90.94,
+        "requested_date": "2025-07-06"
+      },
+      {
+        "line": 5,
+        "customer_part_number": "CP-33423",
+        "our_item_id": "ABRM12-095",
+        "description": "Abrasive Flap Disc #60 x 4in",
+        "qty": 12,
+        "unit_price": 31.77,
+        "requested_date": "2025-07-07"
+      }
+    ],
+    "NOTES": "Please reference our PO number on all packages and invoices."
+  }
+]

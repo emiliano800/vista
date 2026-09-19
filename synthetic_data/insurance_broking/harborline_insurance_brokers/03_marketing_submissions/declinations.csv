@@ -1,0 +1,30 @@
+Submission Id,Carrier Code,Declined Date,Reason Code,Reason Text
+HAR-S00006,MKL,2025-12-26,CLASS_EXCLUDED,Roofing exposure excluded
+HAR-S00008,GRD,2026-01-17,PRICE,Loss ratio >70% over 5 years
+HAR-S00019,GRD,2025-12-15,CAPACITY,Roofing exposure excluded
+HAR-S00026,TRV,2025-03-22 ,LOSS_HISTORY,Incomplete submission - no loss runs
+HAR-S00027,LIB,2025-02-27,CLASS_EXCLUDED,Loss ratio >70% over 5 years
+HAR-S00029,TRV,2025-12-18,APPETITE,Outside appetite for class
+HAR-S00041 ,NAT,2025-12-25,PRICE,Roofing exposure excluded
+HAR-S00043,TRV,2025-11-01,CLASS_EXCLUDED,Incomplete submission - no loss runs
+HAR-S00044,NAT,2026-01-04,CAPACITY,Capacity exhausted in territory
+HAR-S00047,LIB,09/04/25,INCOMPLETE_SUBMISSION,Roofing exposure excluded
+HAR-S00048,CNA,2025-07-31,CLASS_EXCLUDED,Outside appetite for class
+HAR-S00051,MKL,2025-05-25,CAPACITY,Incomplete submission - no loss runs
+HAR-S00052,TRV,02/13/2026,INCOMPLETE_SUBMISSION,Capacity exhausted in territory
+HAR-S00060,LIB,2025-05-07,APPETITE,Outside appetite for class
+HAR-S00062,LIB,2025-02-14,CAPACITY,Outside appetite for class
+HAR-S00065,HIG,2025-11-26,CLASS_EXCLUDED,Outside appetite for class
+HAR-S00070,CNA,2025-08-23,CAPACITY,Loss ratio >70% over 5 years
+HAR-S00071,HIG,2025-07-06,PRICE,Incomplete submission - no loss runs
+HAR-S00074,CNA,2025-05-24,CAPACITY,Roofing exposure excluded
+HAR-S00081,LIB,2025-06-15,LOSS_HISTORY,Roofing exposure excluded
+HAR-S00085,MKL,2025-02-13,PRICE,Loss ratio >70% over 5 years
+HAR-S00086,LIB,2025-11-22,APPETITE,Loss ratio >70% over 5 years
+HAR-S00087,HIG,2025-11-20,INCOMPLETE_SUBMISSION,Incomplete submission - no loss runs 
+HAR-S00088,NAT,2026-01-04,LOSS_HISTORY,Loss ratio >70% over 5 years
+HAR-S00089,AMT,2025-11-04,LOSS_HISTORY,Incomplete submission - no loss runs
+HAR-S00090,LIB,2026-01-21,CAPACITY,Loss ratio >70% over 5 years 
+HAR-S00092,LIB,2025-03-22,APPETITE,Loss ratio >70% over 5 years
+HAR-S00098,GRD,2025-08-17,CLASS_EXCLUDED,Outside appetite for class
+HAR-S00106,TRV,2025-10-26,INCOMPLETE_SUBMISSION,Outside appetite for class

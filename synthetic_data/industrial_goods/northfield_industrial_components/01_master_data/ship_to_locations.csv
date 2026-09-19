@@ -1,0 +1,52 @@
+ship_to_id,customer_id,name,street,city,state,zip,dock_hours,appointment_required
+NIC-CUST0001-S1,NIC-CUST0001,Iron City Chemical Inc. - Plant 9,8736 River Rd,Rockford,IL,61195,07:00-15:30,N
+NIC-CUST0002-S1,NIC-CUST0002,Rock River Plastics Inc. - Plant 8,4165 Front St,Fort Wayne,IN,46878,07:00-15:30,N
+NIC-CUST0003-S1,NIC-CUST0003,Cardinal Conveyor Corp. - Plant 3,2222 Market St,Fort Wayne,IN,46832,07:00-15:30,N
+NIC-CUST0005-S1,NIC-CUST0005,Rock River Water Authority Corp. - Plant 2,5244 Enterprise Ct,Peoria,IL,61646,07:00-15:30,Y
+NIC-CUST0005-S2,NIC-CUST0005,Rock River Water Authority Corp. - Warehouse 8,2119 Front St,Fort Wayne,IN,46864,07:00-15:30,N
+NIC-CUST0006-S1,NIC-CUST0006,Prairie Poultry Co. - Plant 7,1808 River Rd,Peoria,IL,61662,07:00-15:30,N
+NIC-CUST0007-S1,NIC-CUST0007,Allegheny Foods Co. - Plant 5,4558 River Rd,Peoria,IL,61643,07:00-15:30,Y
+NIC-CUST0007-S2,NIC-CUST0007,Allegheny Foods Co. - Warehouse 11,4440 Commerce Blvd,Milwaukee,WI,53248,07:00-15:30,N
+NIC-CUST0008-S1,NIC-CUST0008,Riverbend Conveyor LP - Plant 7,6827 Washington St,Rockford,IL,61186,07:00-15:30,N
+NIC-CUST0009-S1,NIC-CUST0009,Great Lakes Automotive LLC - Plant 4,3729 River Rd,Rockford,IL,61140,07:00-15:30,N
+NIC-CUST0009-S2,NIC-CUST0009,Great Lakes Automotive LLC - Warehouse 8,1944 Elm St,Rockford,IL,61131,07:00-15:30,N
+NIC-CUST0010-S1,NIC-CUST0010,Pioneer Lumber Co. - Plant 1,1193 Elm St,Milwaukee,WI,53279,07:00-15:30,Y
+NIC-CUST0011-S1,NIC-CUST0011,Cumberland Materials LP - Plant 12,8800 Front St,Peoria,IL,61636,07:00-15:30,Y
+NIC-CUST0012-S1,NIC-CUST0012,Riverbend Poultry LLC - Plant 12,9454 Union St,Fort Wayne,IN,46817,07:00-15:30,Y
+NIC-CUST0012-S2,NIC-CUST0012,Riverbend Poultry LLC - Warehouse 8,4185 Technology Way,Peoria,IL,61677,07:00-15:30,N
+NIC-CUST0013-S1,NIC-CUST0013,Fox River Lumber LP - Plant 6,630 Main St,Milwaukee,WI,53295,07:00-15:30,N
+NIC-CUST0014-S1,NIC-CUST0014,Prairie Climate LLC - Plant 7,3590 Park Pl,Fort Wayne,IN,46847,07:00-15:30,N
+NIC-CUST0015-S1,NIC-CUST0015,Iron City Conveyor Inc. - Plant 6,528 Airport Rd,Peoria,IL,61630,07:00-15:30,N
+NIC-CUST0016-S1,NIC-CUST0016,Tennessee Valley Materials Inc. - Plant 9,6943 Union St,Fort Wayne,IN,46899,07:00-15:30,N
+NIC-CUST0017-S1,NIC-CUST0017,Prairie Materials Co. - Plant 9,621 River Rd,Peoria,IL,61666,07:00-15:30,Y
+NIC-CUST0017-S2,NIC-CUST0017,Prairie Materials Co. - Warehouse 11,7888 Maple Dr,Milwaukee,WI,53223,07:00-15:30,Y
+NIC-CUST0018-S1,NIC-CUST0018,Summit Foods Co. - Plant 12,4489 Enterprise Ct,Peoria,IL,61645,07:00-15:30,N
+NIC-CUST0018-S2,NIC-CUST0018,Summit Foods Co. - Warehouse 9,1795 Washington St,Milwaukee,WI,53255,07:00-15:30,N
+NIC-CUST0019-S1,NIC-CUST0019,Susquehanna Water Authority LLC - Plant 2,3880 Mill St,Rockford,IL,61160,07:00-15:30,Y
+NIC-CUST0019-S2,NIC-CUST0019,Susquehanna Water Authority LLC - Warehouse 5,875 Oak Ave,Rockford,IL,61158,07:00-15:30,Y
+NIC-CUST0020-S1,NIC-CUST0020,Blue Ridge Poultry Inc. - Plant 11,7826 Maple Dr,Peoria,IL,61659,07:00-15:30,N
+NIC-CUST0021-S1,NIC-CUST0021,Pioneer Paper Co. - Plant 11,5408 Commerce Blvd,Fort Wayne,IN,46834,07:00-15:30,Y
+NIC-CUST0021-S2,NIC-CUST0021,Pioneer Paper Co. - Warehouse 4,5947 Enterprise Ct,Rockford,IL,61197,07:00-15:30,N
+NIC-CUST0022-S1,NIC-CUST0022,Lehigh Valley Paper LP - Plant 7,8105 Maple Dr,Rockford,IL,61191,07:00-15:30,N
+NIC-CUST0023-S1,NIC-CUST0023,Blue Ridge Lumber LLC - Plant 11,6421 Maple Dr,Milwaukee,WI,53258,07:00-15:30,N
+NIC-CUST0024-S1,NIC-CUST0024,Tri-County Poultry LP - Plant 11,2734 Airport Rd,Milwaukee,WI,53225,07:00-15:30,N
+NIC-CUST0025-S1,NIC-CUST0025,Rock River Plastics LLC - Plant 10,1002 Washington St,Milwaukee,WI,53281,07:00-15:30,N
+NIC-CUST0026-S1,NIC-CUST0026,Fox River Paper LP - Plant 7,3411 Harbor Dr,Peoria,IL,61645,07:00-15:30,Y
+NIC-CUST0027-S1,NIC-CUST0027,Midwest Paper Inc. - Plant 11,7546 River Rd,Rockford,IL,61187,07:00-15:30,N
+NIC-CUST0028-S1,NIC-CUST0028,Keystone Automotive Corp. - Plant 9,5260 Harbor Dr,Peoria,IL,61634,07:00-15:30,N
+NIC-CUST0028-S2,NIC-CUST0028,Keystone Automotive Corp. - Warehouse 11,9752 Washington St,Fort Wayne,IN,46864,07:00-15:30,N
+NIC-CUST0029-S1,NIC-CUST0029,Great Lakes Lumber LLC - Plant 2,7669 Oak Ave,Fort Wayne,IN,46833,07:00-15:30,N
+NIC-CUST0029-S2,NIC-CUST0029,Great Lakes Lumber LLC - Warehouse 6,8087 Main St,Milwaukee,WI,53269,07:00-15:30,N
+NIC-CUST0030-S1,NIC-CUST0030,Rock River Steel Inc. - Plant 8,3350 Union St,Milwaukee,WI,53283,07:00-15:30,N
+NIC-CUST0031-S1,NIC-CUST0031,Midwest Climate Corp. - Plant 12,7181 Washington St,Fort Wayne,IN,46865,07:00-15:30,N
+NIC-CUST0032-S1,NIC-CUST0032,Rock River Foods Co. - Plant 7,6962 Front St,Peoria,IL,61676,07:00-15:30,Y
+NIC-CUST0033-S1,NIC-CUST0033,Midwest Ag Equipment LP - Plant 8,8902 River Rd,Peoria,IL,61664,07:00-15:30,N
+NIC-CUST0034-S1,NIC-CUST0034,Cardinal Poultry Inc. - Plant 1,1651 Market St,Peoria,IL,61646,07:00-15:30,N
+NIC-CUST0035-S1,NIC-CUST0035,Keystone Chemical Corp. - Plant 5,1813 Park Pl,Fort Wayne,IN,46864,07:00-15:30,N
+NIC-CUST0036-S1,NIC-CUST0036,Cardinal Lumber LP - Plant 8,47 Union St,Fort Wayne,IN,46863,07:00-15:30,N
+NIC-CUST0036-S2,NIC-CUST0036,Cardinal Lumber LP - Warehouse 1,3380 Front St,Fort Wayne,IN,46858,07:00-15:30,N
+NIC-CUST0037-S1,NIC-CUST0037,Allegheny Climate Inc. - Plant 9,7723 Harbor Dr,Peoria,IL,61643,07:00-15:30,N
+NIC-CUST0038-S1,NIC-CUST0038,Appalachian Lumber Corp. - Plant 6,1516 Lincoln Ave,Milwaukee,WI,53277,07:00-15:30,N
+NIC-CUST0039-S1,NIC-CUST0039,Summit Conveyor LLC - Plant 4,5670 Elm St,Milwaukee,WI,53276,07:00-15:30,Y
+NIC-CUST0040-S1,NIC-CUST0040,Allegheny Paper LP - Plant 5,8300 Union St,Fort Wayne,IN,46895,07:00-15:30,N
+NIC-CUST0004-S1,NIC-CUST0004,"Cardinal Foods Group - Plant 07 - Rochelle, IL",4836 Main St,Peoria,IL,61660,06:00-14:00,Y

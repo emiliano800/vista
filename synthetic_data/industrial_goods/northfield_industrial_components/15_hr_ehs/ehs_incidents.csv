@@ -1,0 +1,18 @@
+incident_id,date,type,employee_id,location,description,days_away,osha_300_logged,root_cause,corrective_action,status
+EHS-001,2026-03-07,Property damage,E015,Yard,Slip on coolant spill,0,N,Procedure not followed,Toolbox talk,Closed
+EHS-002,2025-10-10,Recordable,E027,Machine Shop,Laceration from burr on housing,0,Y,Equipment,Toolbox talk,Closed
+EHS-003,2025-08-21,Recordable,E037,Machine Shop,Chip in eye - no glasses,3,Y,Equipment,Re-train,Closed
+EHS-004,2025-10-21,First aid,E048,Warehouse,Forklift near-miss at aisle intersection,0,N,Housekeeping,Re-train,Closed
+EHS-005,2025-11-27,Property damage,E028,Assembly,Pallet fell from rack,0,N,Training,Re-train,Closed
+EHS-006,2025-10-01,Near miss,E037,Assembly,Strain lifting motor,0,N,Equipment,Guard added,Closed
+EHS-007,2026-02-15,Property damage,E011,Machine Shop,Chip in eye - no glasses,0,N,Housekeeping,Toolbox talk,Closed
+EHS-008,2025-05-11,Near miss,E016,Yard,Chip in eye - no glasses,0,N,Housekeeping,Mirror installed,Closed
+EHS-009,2025-11-14,First aid,E045,Machine Shop,Strain lifting motor,0,N,Housekeeping,Re-train,Closed
+EHS-010,2025-10-16,Near miss,E041,Warehouse,Slip on coolant spill,0,N,PPE not worn,Guard added,Closed
+EHS-011,2025-11-06,First aid,E012,Yard,Chip in eye - no glasses,0,N,Training,Spill kit relocated,Closed
+EHS-012,2025-10-12,Near miss,E054,Yard,Chip in eye - no glasses,0,N,Procedure not followed,Spill kit relocated,Closed
+EHS-013,2026-02-12,Property damage,E049,Warehouse,Laceration from burr on housing,0,N,Training,Re-train,Closed
+EHS-014,2025-11-20,Near miss,E011,Dock,Pallet fell from rack,0,N,Training,Re-train,Closed
+EHS-015,2026-02-13,Recordable,E038,Yard,Laceration from burr on housing,1,Y,PPE not worn,Spill kit relocated,Closed
+EHS-016,2025-06-17,Near miss,E052,Dock,Strain lifting motor,0,N,Procedure not followed,Mirror installed,Closed
+EHS-017,2026-02-02,Recordable,E012,Warehouse,Pallet fell from rack,0,Y,Equipment,Re-train,Closed

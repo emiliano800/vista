@@ -1,0 +1,182 @@
+ap_invoice_id,vendor_id,vendor_name,invoice_number,invoice_date,due_date,amount,gl_account,approved_by,status,paid_date,payment_method,category
+AP00001,V001,Iron Mountain Inc.,515826,2025-04-20,2025-05-20,239,6700,Mark Anderson,Paid,2025-05-11,Corporate Card,Records Storage / Shredding
+AP00002,V002,Grainger,86805,2025-04-18,2025-05-18,226,6700,Sarah Hernandez,Paid,2025-05-27,ACH,MRO Supplies
+AP00003,V003,Staples Business Advantage,382708,2025-04-23,2025-05-23,592,6700,Daniel Anderson,Paid,2025-05-20,ACH,Office Supplies
+AP00004,V004,Landlord - Constitution Plaza Assoc.,803654,2025-04-15,2025-05-15,14000,6300,Karen Delgado,Paid,2025-05-25,ACH,Rent
+AP00005,V005,PPL Electric,278528,2025-04-09,2025-05-09,2268,6700,Sarah Hernandez,Paid,2025-05-12,Corporate Card,Utilities
+AP00006,V006,Frontier,175425,2025-04-14,2025-05-14,1541,6700,Brian Wilson,Paid,2025-05-13,ACH,Telecom / Internet
+AP00007,V010,Shred-it,235372,2025-04-20,2025-05-20,135,6700,Joseph Garcia,Paid,2025-05-24,Check,Shredding
+AP00008,V011,Aramark Refreshments,172277,2025-04-23,2025-05-23,278,6700,Brian Wilson,Paid,2025-06-03,ACH,Office
+AP00009,V001,Iron Mountain Inc.,292338,2025-05-12,2025-06-11,410,6700,Daniel Delgado,Paid,2025-06-12,ACH,Records Storage / Shredding
+AP00010,V002,Grainger,844443,2025-05-12,2025-06-11,185,6700,Sarah Hernandez,Paid,2025-06-20,Corporate Card,MRO Supplies
+AP00011,V003,Staples Business Advantage,156656,2025-05-23,2025-06-22,705,6700,Jennifer Young,Paid,2025-06-28,ACH,Office Supplies
+AP00012,V004,Landlord - Constitution Plaza Assoc.,218445,2025-05-06,2025-06-05,12000,6300,Robert Miller,Paid,2025-05-27,Corporate Card,Rent
+AP00013,V005,PPL Electric,449908,2025-05-06,2025-06-05,1242,6700,Daniel Anderson,Paid,2025-06-07,Corporate Card,Utilities
+AP00014,V006,Frontier,771733,2025-05-29,2025-06-28,1303,6700,Thomas Walker,Paid,2025-06-30,Check,Telecom / Internet
+AP00015,V009,Swiss Re Corporate Solutions,436646,2025-05-16,2025-06-15,4583.33,6650,Donna Robinson,Paid,2025-06-12,Check,E&O Insurance
+AP00016,V010,Shred-it,894695,2025-05-24,2025-06-23,77,6700,Emily Hernandez,Paid,2025-06-30,Corporate Card,Shredding
+AP00017,V011,Aramark Refreshments,725054,2025-05-18,2025-06-17,275,6700,Hiro Wright,Paid,2025-06-29,Check,Office
+AP00018,V001,Iron Mountain Inc.,399967,2025-06-21,2025-07-21,348,6700,Donna Robinson,Paid,2025-08-02,Check,Records Storage / Shredding
+AP00019,V002,Grainger,600394,2025-06-27,2025-07-27,434,6700,Elena Lee,Paid,2025-08-01,ACH,MRO Supplies
+AP00020,V003,Staples Business Advantage,436593,2025-06-07,2025-07-07,575,6700,Linda Thompson,Paid,2025-07-07,Corporate Card,Office Supplies
+AP00021,V004,Landlord - Constitution Plaza Assoc.,870845,2025-06-18,2025-07-18,13000,6300,Michael Delgado,Paid,2025-08-02,Check,Rent
+AP00022,V005,PPL Electric,512309,2025-06-03,2025-07-03,1778,6700,Lisa Okafor,Paid,2025-07-12,ACH,Utilities
+AP00023,V006,Frontier,824739,2025-06-19,2025-07-19,456,6700,Daniel Anderson,Paid,2025-07-25,Corporate Card,Telecom / Internet
+AP00024,V008,IIABCT,134153,2025-06-22,2025-07-22,1056,6500,Daniel Anderson,Paid,2025-07-26,ACH,Association Dues
+AP00025,V010,Shred-it,428924,2025-06-08,2025-07-08,89,6700,Joseph Garcia,Paid,2025-07-22,ACH,Shredding
+AP00026,V011,Aramark Refreshments,476255,2025-06-12,2025-07-12,193,6700,Emily Hernandez,Paid,2025-07-13,Check,Office
+AP00027,V012,Local Print Shop,542838,2025-06-06,2025-07-06,2989,6700,Matthew Jones,Paid,2025-06-30,Corporate Card,Marketing
+AP00028,V001,Iron Mountain Inc.,757039,2025-07-08,2025-08-07,616,6700,Mark Anderson,Paid,2025-08-11,Check,Records Storage / Shredding
+AP00029,V002,Grainger,973945,2025-07-28,2025-08-27,119,6700,Mark Anderson,Paid,2025-09-10,Check,MRO Supplies
+AP00030,V003,Staples Business Advantage,512254,2025-07-28,2025-08-27,135,6700,Donna Robinson,Paid,2025-08-19,ACH,Office Supplies
+AP00031,V004,Landlord - Constitution Plaza Assoc.,156316,2025-07-19,2025-08-18,14000,6300,Jennifer Young,Paid,2025-08-25,Check,Rent
+AP00032,V005,PPL Electric,35131,2025-07-23,2025-08-22,1399,6700,Brian Wilson,Paid,2025-08-25,Check,Utilities
+AP00033,V006,Frontier,536931,2025-07-07,2025-08-06,1498,6700,Karen Clark,Paid,2025-07-30,Check,Telecom / Internet
+AP00034,V007,Marsh Berry (consulting),393186,2025-07-25,2025-08-24,3825,6500,Carlos Smith,Paid,2025-08-20,Check,Professional Fees
+AP00035,V010,Shred-it,21038,2025-07-06,2025-08-05,100,6700,Michael Delgado,Paid,2025-08-09,Corporate Card,Shredding
+AP00036,V011,Aramark Refreshments,548315,2025-07-31,2025-08-30,247,6700,Joseph Garcia,Paid,2025-09-10,ACH,Office
+AP00037,V001,Iron Mountain Inc.,602690,2025-08-30,2025-09-29,362,6700,Lisa Okafor,Paid,2025-10-06,ACH,Records Storage / Shredding
+AP00038,V002,Grainger,934212,2025-08-08,2025-09-07,476,6700,Thomas Walker,Paid,2025-09-19,Check,MRO Supplies
+AP00039,V003,Staples Business Advantage,888448,2025-08-12,2025-09-11,197,6700,Omar Clark,Paid,2025-09-26,Check,Office Supplies
+AP00040,V004,Landlord - Constitution Plaza Assoc.,144197,2025-08-28,2025-09-27,13000,6300,Jessica Young,Paid,2025-10-11,Check,Rent
+AP00041,V005,PPL Electric,578846,2025-08-21,2025-09-20,955,6700,Matthew Choi,Paid,2025-09-21,ACH,Utilities
+AP00042,V006,Frontier,114453,2025-08-09,2025-09-08,1509,6700,Hiro Wright,Paid,2025-09-06,Check,Telecom / Internet
+AP00043,V007,Marsh Berry (consulting),892332,2025-08-18,2025-09-17,4365,6500,Michael Delgado,Paid,2025-09-21,Corporate Card,Professional Fees
+AP00044,V009,Swiss Re Corporate Solutions,121349,2025-08-26,2025-09-25,4583.33,6650,Mark Miller,Paid,2025-09-30,Check,E&O Insurance
+AP00045,V010,Shred-it,535709,2025-08-26,2025-09-25,90,6700,Thomas Walker,Paid,2025-09-19,ACH,Shredding
+AP00046,V011,Aramark Refreshments,377240,2025-08-29,2025-09-28,282,6700,Carlos Nakamura,Paid,2025-09-24,Corporate Card,Office
+AP00047,V012,Local Print Shop,208255,2025-08-11,2025-09-10,1671,6700,Emily Scott,Paid,2025-09-21,ACH,Marketing
+AP00048,V001,Iron Mountain Inc.,970354,2025-09-07,2025-10-07,329,6700,Robert Miller,Paid,2025-10-12,ACH,Records Storage / Shredding
+AP00049,V002,Grainger,108356,2025-09-14,2025-10-14,119,6700,Omar Clark,Paid,2025-10-29,Check,MRO Supplies
+AP00050,V003,Staples Business Advantage,113981,2025-09-07,2025-10-07,344,6700,Sarah Hernandez,Paid,2025-10-14,ACH,Office Supplies
+AP00051,V004,Landlord - Constitution Plaza Assoc.,879195,2025-09-18,2025-10-18,20000,6300,Daniel Anderson,Paid,2025-10-22,Check,Rent
+AP00052,V005,PPL Electric,352115,2025-09-07,2025-10-07,1935,6700,Sarah Hernandez,Paid,2025-10-08,Check,Utilities
+AP00053,V006,Frontier,529150,2025-09-17,2025-10-17,1584,6700,Matthew Choi,Paid,2025-10-30,Corporate Card,Telecom / Internet
+AP00054,V010,Shred-it,610887,2025-09-05,2025-10-05,103,6700,Susan Rodriguez,Paid,2025-10-11,Corporate Card,Shredding
+AP00055,V011,Aramark Refreshments,488045,2025-09-17,2025-10-17,314,6700,Susan Rodriguez,Paid,2025-10-14,ACH,Office
+AP00056,V001,Iron Mountain Inc.,343760,2025-10-22,2025-11-21,390,6700,Mark Walker,Paid,2025-12-01,Corporate Card,Records Storage / Shredding
+AP00057,V002,Grainger,83138,2025-10-17,2025-11-16,323,6700,Mark Miller,Paid,2025-11-16,ACH,MRO Supplies
+AP00058,V003,Staples Business Advantage,339304,2025-10-14,2025-11-13,346,6700,Joseph Garcia,Paid,2025-11-03,Corporate Card,Office Supplies
+AP00059,V004,Landlord - Constitution Plaza Assoc.,165189,2025-10-15,2025-11-14,17000,6300,Lisa Okafor,Paid,2025-11-13,Corporate Card,Rent
+AP00060,V005,PPL Electric,378880,2025-10-15,2025-11-14,1690,6700,Carlos Smith,Paid,2025-11-29,ACH,Utilities
+AP00061,V006,Frontier,914235,2025-10-29,2025-11-28,1737,6700,Karen Delgado,Paid,2025-12-11,Corporate Card,Telecom / Internet
+AP00062,V010,Shred-it,878102,2025-10-08,2025-11-07,108,6700,Sarah Hernandez,Paid,2025-11-12,Corporate Card,Shredding
+AP00063,V011,Aramark Refreshments,126083,2025-10-13,2025-11-12,165,6700,Sarah Hernandez,Paid,2025-11-20,Check,Office
+AP00064,V012,Local Print Shop,903235,2025-10-28,2025-11-27,2356,6700,Mark Anderson,Paid,2025-11-28,ACH,Marketing
+AP00065,V001,Iron Mountain Inc.,138666,2025-11-30,2025-12-30,190,6700,Joseph Garcia,Paid,2025-12-23,ACH,Records Storage / Shredding
+AP00066,V002,Grainger,790012,2025-11-12,2025-12-12,346,6700,Joseph Garcia,Paid,2025-12-10,ACH,MRO Supplies
+AP00067,V003,Staples Business Advantage,362902,2025-11-09,2025-12-09,390,6700,Mark Walker,Paid,2025-12-15,ACH,Office Supplies
+AP00068,V004,Landlord - Constitution Plaza Assoc.,394971,2025-11-27,2025-12-27,17000,6300,Jennifer Young,Paid,2026-01-04,ACH,Rent
+AP00069,V005,PPL Electric,583331,2025-11-20,2025-12-20,1450,6700,Thomas Walker,Paid,2025-12-15,Corporate Card,Utilities
+AP00070,V006,Frontier,656530,2025-11-10,2025-12-10,1230,6700,Daniel Delgado,Paid,2025-12-21,ACH,Telecom / Internet
+AP00071,V009,Swiss Re Corporate Solutions,293236,2025-11-19,2025-12-19,4583.33,6650,Hiro Wright,Paid,2025-12-24,ACH,E&O Insurance
+AP00072,V010,Shred-it,787492,2025-11-13,2025-12-13,138,6700,Elena Lee,Paid,2025-12-24,Check,Shredding
+AP00073,V011,Aramark Refreshments,365743,2025-11-07,2025-12-07,124,6700,Sarah Hernandez,Paid,2025-12-21,ACH,Office
+AP00074,V001,Iron Mountain Inc.,743429,2025-12-06,2026-01-05,434,6700,Susan Rodriguez,Paid,2025-12-26,ACH,Records Storage / Shredding
+AP00075,V002,Grainger,772412,2025-12-05,2026-01-04,138,6700,Jennifer Young,Paid,2026-01-05,Check,MRO Supplies
+AP00076,V003,Staples Business Advantage,466542,2025-12-19,2026-01-18,406,6700,Emily Scott,Paid,2026-01-23,Check,Office Supplies
+AP00077,V004,Landlord - Constitution Plaza Assoc.,938787,2025-12-18,2026-01-17,8000,6300,Jennifer Kowalski,Paid,2026-01-10,ACH,Rent
+AP00078,V005,PPL Electric,526071,2025-12-13,2026-01-12,1054,6700,Daniel Anderson,Paid,2026-01-23,Corporate Card,Utilities
+AP00079,V006,Frontier,357323,2025-12-24,2026-01-23,590,6700,Jessica Young,Paid,2026-01-29,Check,Telecom / Internet
+AP00080,V007,Marsh Berry (consulting),134590,2025-12-15,2026-01-14,8817,6500,Donna Robinson,Paid,2026-01-06,ACH,Professional Fees
+AP00081,V008,IIABCT,149982,2025-12-22,2026-01-21,1193,6500,Donna Robinson,Paid,2026-02-04,ACH,Association Dues
+AP00082,V010,Shred-it,156618,2025-12-23,2026-01-22,83,6700,Betty Delgado,Paid,2026-02-03,Corporate Card,Shredding
+AP00083,V011,Aramark Refreshments,195072,2025-12-11,2026-01-10,98,6700,Joseph Garcia,Paid,2026-01-06,ACH,Office
+AP00084,V001,Iron Mountain Inc.,338870,2026-01-11,2026-02-10,380,6700,Mark Walker,Paid,2026-02-04,ACH,Records Storage / Shredding
+AP00085,V002,Grainger,383047,2026-01-27,2026-02-26,355,6700,Linda Thompson,Paid,2026-03-10,Corporate Card,MRO Supplies
+AP00086,V003,Staples Business Advantage,280038,2026-01-11,2026-02-10,183,6700,Thomas Walker,Paid,2026-02-08,ACH,Office Supplies
+AP00087,V004,Landlord - Constitution Plaza Assoc.,400707,2026-01-11,2026-02-10,18000,6300,Jennifer Kowalski,Paid,2026-02-07,Check,Rent
+AP00088,V005,PPL Electric,359803,2026-01-20,2026-02-19,2073,6700,Jennifer Kowalski,Paid,2026-02-10,Check,Utilities
+AP00089,V006,Frontier,776321,2026-01-15,2026-02-14,719,6700,Matthew Jones,Paid,2026-02-08,Check,Telecom / Internet
+AP00090,V008,IIABCT,163624,2026-01-16,2026-02-15,2474,6500,James Hernandez,Paid,2026-02-20,ACH,Association Dues
+AP00091,V010,Shred-it,764777,2026-01-13,2026-02-12,75,6700,Brian Wilson,Paid,2026-02-05,Check,Shredding
+AP00092,V011,Aramark Refreshments,630621,2026-01-31,2026-03-02,368,6700,Matthew Jones,Paid,2026-03-16,ACH,Office
+AP00093,V001,Iron Mountain Inc.,342929,2026-02-12,2026-03-14,596,6700,Elena Lee,Paid,2026-03-26,Corporate Card,Records Storage / Shredding
+AP00094,V002,Grainger,921740,2026-02-13,2026-03-15,133,6700,Thomas Walker,Paid,2026-03-22,ACH,MRO Supplies
+AP00095,V003,Staples Business Advantage,451015,2026-02-01,2026-03-03,381,6700,Carlos Nakamura,Paid,2026-03-04,ACH,Office Supplies
+AP00096,V004,Landlord - Constitution Plaza Assoc.,730122,2026-02-11,2026-03-13,7000,6300,Michael Delgado,Paid,2026-03-14,ACH,Rent
+AP00097,V005,PPL Electric,518648,2026-02-28,2026-03-30,958,6700,Elena Lee,Pending approval,,ACH,Utilities
+AP00098,V006,Frontier,667550,2026-02-16,2026-03-18,1060,6700,Donna Robinson,Paid,2026-03-24,ACH,Telecom / Internet
+AP00099,V010,Shred-it,93796,2026-02-07,2026-03-09,79,6700,James Hernandez,Paid,2026-03-16,Corporate Card,Shredding
+AP00100,V011,Aramark Refreshments,120418,2026-02-04,2026-03-06,169,6700,Donna Robinson,Paid,2026-02-26,Check,Office
+AP00101,V012,Local Print Shop,629734,2026-02-13,2026-03-15,2873,6700,Omar Clark,Paid,2026-03-17,ACH,Marketing
+AP00102,V001,Iron Mountain Inc.,718286,2026-03-17,2026-04-16,232,6700,Elena Lee,Paid,,Corporate Card,Records Storage / Shredding
+AP00103,V002,Grainger,943840,2026-03-31,2026-04-30,303,6700,Carlos Smith,Approved - scheduled,,Corporate Card,MRO Supplies
+AP00104,V003,Staples Business Advantage,868503,2026-03-29,2026-04-28,380,6700,Hiro Wright,Approved - scheduled,,Check,Office Supplies
+AP00105,V004,Landlord - Constitution Plaza Assoc.,750718,2026-03-30,2026-04-29,20000,6300,Michael Delgado,Approved - scheduled,,Corporate Card,Rent
+AP00106,V005,PPL Electric,846115,2026-03-24,2026-04-23,817,6700,Joseph Garcia,Pending approval,,ACH,Utilities
+AP00107,V006,Frontier,124140,2026-03-15,2026-04-14,1396,6700,Karen Delgado,Paid,,Check,Telecom / Internet
+AP00108,V007,Marsh Berry (consulting),824673,2026-03-12,2026-04-11,8687,6500,Matthew Choi,Approved - scheduled,,Corporate Card,Professional Fees
+AP00109,V010,Shred-it,862922,2026-03-30,2026-04-29,68,6700,Emily Scott,Pending approval,,Corporate Card,Shredding
+AP00110,V011,Aramark Refreshments,972364,2026-03-15,2026-04-14,129,6700,Luis Harris,Approved - scheduled,,Check,Office
+AP00111,,Applied Systems,INV-364169,2026-01-27,2026-02-26,9936.0,6400,Karen Delgado,Paid,2026-02-23,Corporate Card,Software Subscriptions
+AP00112,,Applied Systems,INV-1055911,2025-07-12,2025-08-11,9936.0,6400,Karen Delgado,Paid,2025-08-05,Corporate Card,Software Subscriptions
+AP00113,,Applied Systems,INV-3137341,2025-07-09,2025-08-08,9936.0,6400,Karen Delgado,Paid,2025-07-30,Corporate Card,Software Subscriptions
+AP00114,,Applied Systems,INV-3274223,2025-11-11,2025-12-11,9936.0,6400,Karen Delgado,Paid,2025-12-01,Corporate Card,Software Subscriptions
+AP00115,,Applied Systems,INV-1728698,2026-03-17,2026-04-16,9936.0,6400,Karen Delgado,Paid,2026-04-13,Corporate Card,Software Subscriptions
+AP00116,,Applied Systems,INV-126270,2025-10-26,2025-11-25,9936.0,6400,Karen Delgado,Paid,2025-11-14,Corporate Card,Software Subscriptions
+AP00117,,Applied Systems,INV-9658984,2025-06-23,2025-07-23,9936.0,6400,Karen Delgado,Paid,2025-07-12,Corporate Card,Software Subscriptions
+AP00118,,Applied Systems,INV-544339,2025-10-14,2025-11-13,9936.0,6400,Karen Delgado,Paid,2025-11-12,Corporate Card,Software Subscriptions
+AP00119,,Applied Systems,INV-5969985,2025-05-26,2025-06-25,9936.0,6400,Karen Delgado,Paid,2025-06-06,Corporate Card,Software Subscriptions
+AP00120,,Applied Systems,INV-3479985,2025-09-13,2025-10-13,9936.0,6400,Karen Delgado,Paid,2025-10-10,Corporate Card,Software Subscriptions
+AP00121,,Applied Systems,INV-5364664,2025-08-18,2025-09-17,9936.0,6400,Karen Delgado,Paid,2025-09-11,Corporate Card,Software Subscriptions
+AP00122,,Applied Systems,INV-9055507,2025-04-05,2025-05-05,9936.0,6400,Karen Delgado,Paid,2025-04-11,Corporate Card,Software Subscriptions
+AP00123,,IVANS (Applied),INV-6294510,2025-10-19,2025-11-18,1620.0,6400,Michael Delgado,Paid,2025-10-27,Corporate Card,Software Subscriptions
+AP00124,,Zywave,INV-6463555,2026-02-08,2026-03-10,6500.0,6400,Sarah Hernandez,Paid,2026-03-02,Corporate Card,Software Subscriptions
+AP00125,,Applied Systems,INV-5566686,2025-07-27,2025-08-26,291.0,6400,Emily Scott,Paid,2025-08-18,Corporate Card,Software Subscriptions
+AP00126,,Applied Systems,INV-3264114,2025-05-09,2025-06-08,291.0,6400,Emily Scott,Paid,2025-05-17,Corporate Card,Software Subscriptions
+AP00127,,Applied Systems,INV-1789250,2025-11-01,2025-12-01,291.0,6400,Emily Scott,Paid,2025-11-19,Corporate Card,Software Subscriptions
+AP00128,,Applied Systems,INV-3979769,2025-10-07,2025-11-06,291.0,6400,Emily Scott,Paid,2025-10-19,Corporate Card,Software Subscriptions
+AP00129,,Applied Systems,INV-9945901,2026-03-19,2026-04-18,291.0,6400,Emily Scott,Paid,2026-04-07,Corporate Card,Software Subscriptions
+AP00130,,Applied Systems,INV-9216048,2025-12-12,2026-01-11,291.0,6400,Emily Scott,Paid,2025-12-27,Corporate Card,Software Subscriptions
+AP00131,,Applied Systems,INV-2775367,2026-01-30,2026-03-01,291.0,6400,Emily Scott,Paid,2026-02-28,Corporate Card,Software Subscriptions
+AP00132,,Applied Systems,INV-9318864,2026-02-23,2026-03-25,291.0,6400,Emily Scott,Paid,2026-02-27,Corporate Card,Software Subscriptions
+AP00133,,Applied Systems,INV-4930006,2025-06-20,2025-07-20,291.0,6400,Emily Scott,Paid,2025-06-22,Corporate Card,Software Subscriptions
+AP00134,,Applied Systems,INV-3204955,2025-07-01,2025-07-31,291.0,6400,Emily Scott,Paid,2025-07-26,Corporate Card,Software Subscriptions
+AP00135,,Applied Systems,INV-6697045,2025-10-05,2025-11-04,291.0,6400,Emily Scott,Paid,2025-11-03,Corporate Card,Software Subscriptions
+AP00136,,Applied Systems,INV-1842838,2025-12-25,2026-01-24,291.0,6400,Emily Scott,Paid,2026-01-03,Corporate Card,Software Subscriptions
+AP00137,,DocuSign,INV-7630533,2025-05-14,2025-06-13,3460.8,6400,Elena Lee,Paid,2025-06-09,Corporate Card,Software Subscriptions
+AP00138,,Microsoft,INV-5031241,2025-07-05,2025-08-04,6480.0,6400,Michael Delgado,Paid,2025-07-19,Corporate Card,Software Subscriptions
+AP00139,,Salesforce,INV-6078610,2025-04-19,2025-05-19,20160.0,6400,James Hernandez,Paid,2025-05-15,Corporate Card,Software Subscriptions
+AP00140,,Zoom,INV-4459457,2025-12-08,2026-01-07,4680.0,6400,Daniel Anderson,Paid,2025-12-28,Corporate Card,Software Subscriptions
+AP00141,,RingCentral,INV-8339742,2025-06-03,2025-07-03,1214.4,6400,Mark Anderson,Paid,2025-06-10,Corporate Card,Software Subscriptions
+AP00142,,RingCentral,INV-4397450,2025-08-16,2025-09-15,1214.4,6400,Mark Anderson,Paid,2025-08-26,Corporate Card,Software Subscriptions
+AP00143,,RingCentral,INV-2393004,2025-07-16,2025-08-15,1214.4,6400,Mark Anderson,Paid,2025-08-07,Corporate Card,Software Subscriptions
+AP00144,,RingCentral,INV-3408768,2025-12-15,2026-01-14,1214.4,6400,Mark Anderson,Paid,2025-12-25,Corporate Card,Software Subscriptions
+AP00145,,RingCentral,INV-4994784,2025-12-03,2026-01-02,1214.4,6400,Mark Anderson,Paid,2025-12-23,Corporate Card,Software Subscriptions
+AP00146,,RingCentral,INV-9838628,2025-08-19,2025-09-18,1214.4,6400,Mark Anderson,Paid,2025-08-30,Corporate Card,Software Subscriptions
+AP00147,,RingCentral,INV-3713471,2025-06-22,2025-07-22,1214.4,6400,Mark Anderson,Paid,2025-07-02,Corporate Card,Software Subscriptions
+AP00148,,RingCentral,INV-1564615,2026-02-13,2026-03-15,1214.4,6400,Mark Anderson,Paid,2026-03-01,Corporate Card,Software Subscriptions
+AP00149,,RingCentral,INV-271288,2025-12-02,2026-01-01,1214.4,6400,Mark Anderson,Paid,2025-12-28,Corporate Card,Software Subscriptions
+AP00150,,RingCentral,INV-495851,2025-08-15,2025-09-14,1214.4,6400,Mark Anderson,Paid,2025-08-25,Corporate Card,Software Subscriptions
+AP00151,,RingCentral,INV-960933,2025-08-31,2025-09-30,1214.4,6400,Mark Anderson,Paid,2025-09-14,Corporate Card,Software Subscriptions
+AP00152,,RingCentral,INV-1317055,2025-12-10,2026-01-09,1214.4,6400,Mark Anderson,Paid,2025-12-20,Corporate Card,Software Subscriptions
+AP00153,,Sage,INV-3314705,2025-06-11,2025-07-11,16800.0,6400,Robert Miller,Paid,2025-06-18,Corporate Card,Software Subscriptions
+AP00154,,ADP,INV-212010,2025-08-17,2025-09-16,36763.2,6400,Carlos Nakamura,Paid,2025-09-07,Corporate Card,Software Subscriptions
+AP00155,,BILL,INV-8013588,2025-05-12,2025-06-11,104.0,6400,Donna Robinson,Paid,2025-06-11,Corporate Card,Software Subscriptions
+AP00156,,BILL,INV-2244377,2025-12-05,2026-01-04,104.0,6400,Donna Robinson,Paid,2025-12-11,Corporate Card,Software Subscriptions
+AP00157,,BILL,INV-2074848,2025-04-01,2025-05-01,104.0,6400,Donna Robinson,Paid,2025-04-30,Corporate Card,Software Subscriptions
+AP00158,,BILL,INV-5142047,2026-01-23,2026-02-22,104.0,6400,Donna Robinson,Paid,2026-02-07,Corporate Card,Software Subscriptions
+AP00159,,BILL,INV-4459089,2025-10-01,2025-10-31,104.0,6400,Donna Robinson,Paid,2025-10-25,Corporate Card,Software Subscriptions
+AP00160,,BILL,INV-6747328,2026-01-01,2026-01-31,104.0,6400,Donna Robinson,Paid,2026-01-09,Corporate Card,Software Subscriptions
+AP00161,,BILL,INV-4472242,2025-06-26,2025-07-26,104.0,6400,Donna Robinson,Paid,2025-07-06,Corporate Card,Software Subscriptions
+AP00162,,BILL,INV-454707,2026-01-06,2026-02-05,104.0,6400,Donna Robinson,Paid,2026-01-18,Corporate Card,Software Subscriptions
+AP00163,,BILL,INV-194435,2026-03-11,2026-04-10,104.0,6400,Donna Robinson,Paid,2026-03-27,Corporate Card,Software Subscriptions
+AP00164,,BILL,INV-9609396,2025-12-05,2026-01-04,104.0,6400,Donna Robinson,Paid,2025-12-08,Corporate Card,Software Subscriptions
+AP00165,,BILL,INV-4226823,2026-03-14,2026-04-13,104.0,6400,Donna Robinson,Paid,2026-03-30,Corporate Card,Software Subscriptions
+AP00166,,BILL,INV-1360843,2025-06-17,2025-07-17,104.0,6400,Donna Robinson,Paid,2025-07-02,Corporate Card,Software Subscriptions
+AP00167,,Expensify,INV-794305,2025-09-20,2025-10-20,760.32,6400,Mark Walker,Paid,2025-09-25,Corporate Card,Software Subscriptions
+AP00168,,Box,INV-5738187,2025-04-16,2025-05-16,13386.0,6400,Daniel Anderson,Paid,2025-05-05,Corporate Card,Software Subscriptions
+AP00169,,Salesforce,INV-2902297,2025-10-25,2025-11-24,6969.0,6400,Carlos Smith,Paid,2025-10-28,Corporate Card,Software Subscriptions
+AP00170,,KnowBe4,INV-6772201,2025-05-01,2025-05-31,123.05,6400,Jennifer Kowalski,Paid,2025-05-30,Corporate Card,Software Subscriptions
+AP00171,,KnowBe4,INV-4338527,2026-03-23,2026-04-22,123.05,6400,Jennifer Kowalski,Paid,2026-04-19,Corporate Card,Software Subscriptions
+AP00172,,KnowBe4,INV-6203617,2025-06-14,2025-07-14,123.05,6400,Jennifer Kowalski,Paid,2025-07-10,Corporate Card,Software Subscriptions
+AP00173,,KnowBe4,INV-5828991,2026-03-28,2026-04-27,123.05,6400,Jennifer Kowalski,Paid,2026-04-14,Corporate Card,Software Subscriptions
+AP00174,,KnowBe4,INV-8298704,2025-06-07,2025-07-07,123.05,6400,Jennifer Kowalski,Paid,2025-07-06,Corporate Card,Software Subscriptions
+AP00175,,KnowBe4,INV-5413752,2025-05-15,2025-06-14,123.05,6400,Jennifer Kowalski,Paid,2025-06-05,Corporate Card,Software Subscriptions
+AP00176,,KnowBe4,INV-9035060,2025-04-30,2025-05-30,123.05,6400,Jennifer Kowalski,Paid,2025-05-03,Corporate Card,Software Subscriptions
+AP00177,,KnowBe4,INV-1318900,2026-02-05,2026-03-07,123.05,6400,Jennifer Kowalski,Paid,2026-03-02,Corporate Card,Software Subscriptions
+AP00178,,KnowBe4,INV-6399510,2026-03-22,2026-04-21,123.05,6400,Jennifer Kowalski,Paid,2026-04-03,Corporate Card,Software Subscriptions
+AP00179,,KnowBe4,INV-6369213,2026-03-25,2026-04-24,123.05,6400,Jennifer Kowalski,Paid,2026-04-09,Corporate Card,Software Subscriptions
+AP00180,,KnowBe4,INV-2576834,2025-06-09,2025-07-09,123.05,6400,Jennifer Kowalski,Paid,2025-06-23,Corporate Card,Software Subscriptions
+AP00181,,KnowBe4,INV-4769564,2026-01-08,2026-02-07,123.05,6400,Jennifer Kowalski,Paid,2026-01-18,Corporate Card,Software Subscriptions

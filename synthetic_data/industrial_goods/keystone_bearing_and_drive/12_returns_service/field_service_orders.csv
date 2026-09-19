@@ -1,0 +1,14 @@
+Service Order Id,Customer Id,Request Date,Type,Technician Id,Hours,Billable,Rate,Parts Used,Status
+FSO-001,KBD-CUST0005,2025-12-20,Vibration analysis,E040,13.5,Y,145.0,,Scheduled
+FSO-002,KBD-CUST0027,2025-05-28,Laser alignment,E040,11.0,Y,145.0,,Scheduled
+FSO-003,KBD-CUST0022,2025-07-02,Warranty inspection,E040,15.5,Y,145.0,,Complete
+FSO-004,KBD-CUST0004,"Oct 12, 2025",Laser alignment,E040,12.5,Y,145.0,Shim kit,Complete
+FSO-005,KBD-CUST0016 ,2026-03-07,Warranty inspection,E041,9.5,Y,145.0,,Complete
+FSO-006,KBD-CUST0020,22-Oct-2025,Install support,E040,13.5,N,145.0,Shim kit,Complete
+FSO-007,KBD-CUST0031,2025-04-10,Warranty inspection,E041,14.5,Y,145.0,Bearing 6205,Complete
+FSO-008,KBD-CUST0029,2025-06-22,Warranty inspection,E040,7.0,Y,145.0,Shim kit,Complete
+FSO-009,KBD-CUST0025,2025-12-06,Laser alignment,E040,12.0,Y,145.0,,Complete
+FSO-010,KBD-CUST0012,2026-01-30,Drive package commissioning,E041,9.0,Y,145.0,Bearing 6205,Complete
+FSO-011,KBD-CUST0021,01/15/26,Laser alignment,E041,13.5,Y,145.0,Shim kit,Complete
+FSO-012,KBD-CUST0001,2025-12-12,Vibration analysis,E041,13.0,Y,145.0,,Complete
+FSO-013,KBD-CUST0008,2025-10-26,Laser alignment,E041,7.5,Y,145.0,,Complete

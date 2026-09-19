@@ -1,0 +1,41 @@
+customer_id,customer_name,segment,naics_prefix,bill_to_street,bill_to_city,bill_to_state,bill_to_zip,payment_terms,credit_limit,credit_hold,tax_exempt,resale_cert_on_file,sales_rep_id,price_level,customer_since,preferred_carrier,status
+NIC-CUST0001,Iron City Chemical Inc.,Chemical Blending,325,8736 River Rd,Rockford,IL,61195,Net 30,75000,N,N,N,E068,C,2017-06-03,Company Truck,Active
+NIC-CUST0002,Rock River Plastics Inc.,Plastics Extrusion,326,4165 Front St,Fort Wayne,IN,46878,Net 30,25000,N,Y,Y,E066,C,2021-08-17,UPS Ground,Active
+NIC-CUST0003,Cardinal Conveyor Corp.,Conveyor / Material Handling OEM,333,2222 Market St,Fort Wayne,IN,46832,Net 30,25000,N,N,Y,E067,D,1992-03-16,FedEx Ground,Active
+NIC-CUST0004,"Cardinal Foods Group - Plant 07 - Rochelle, IL",Food & Beverage Processing,311,4836 Main St,Peoria,IL,61660,Net 60,100000,N,Y,N,E070,C,1990-01-26,Customer Pickup,Active
+NIC-CUST0005,Rock River Water Authority Corp.,Water / Wastewater Utility,221,5244 Enterprise Ct,Peoria,IL,61646,Net 30,100000,N,N,N,E072,B,2002-12-15,LTL - XPO,Active
+NIC-CUST0006,Prairie Poultry Co.,Poultry Processing,311,1808 River Rd,Peoria,IL,61662,Net 45,50000,N,N,Y,E072,A,2010-09-27,UPS Ground,Active
+NIC-CUST0007,Allegheny Foods Co.,Food & Beverage Processing,311,4558 River Rd,Peoria,IL,61643,Net 45,25000,N,N,Y,E070,C,2006-12-28,Customer Pickup,Active
+NIC-CUST0008,Riverbend Conveyor LP,Conveyor / Material Handling OEM,333,6827 Washington St,Rockford,IL,61186,2% 10 Net 30,50000,N,Y,Y,E071,D,2004-06-01,UPS Ground,Active
+NIC-CUST0009,Great Lakes Automotive LLC,Automotive Tier 2,336,3729 River Rd,Rockford,IL,61140,Net 45,250000,N,Y,N,E064,D,1989-01-28,LTL - Estes,Active
+NIC-CUST0010,Pioneer Lumber Co.,Lumber / Wood Products,321,1193 Elm St,Milwaukee,WI,53279,COD,150000,N,Y,Y,E068,B,1991-01-03,UPS Ground,Active
+NIC-CUST0011,Cumberland Materials LP,Aggregates / Cement,327,8800 Front St,Peoria,IL,61636,2% 10 Net 30,25000,N,Y,Y,E070,D,1984-06-22,Company Truck,Active
+NIC-CUST0012,Riverbend Poultry LLC,Poultry Processing,311,9454 Union St,Fort Wayne,IN,46817,2% 10 Net 30,250000,N,N,Y,E068,A,2016-05-13,LTL - XPO,Active
+NIC-CUST0013,Fox River Lumber LP,Lumber / Wood Products,321,630 Main St,Milwaukee,WI,53295,Net 30,25000,N,Y,Y,E072,B,2001-06-25,FedEx Ground,Active
+NIC-CUST0014,Prairie Climate LLC,HVAC Equipment OEM,333,3590 Park Pl,Fort Wayne,IN,46847,Net 60,25000,N,Y,Y,E067,D,2012-09-18,Company Truck,Active
+NIC-CUST0015,Iron City Conveyor Inc.,Conveyor / Material Handling OEM,333,528 Airport Rd,Peoria,IL,61630,Net 60,100000,N,Y,N,E069,D,2005-06-10,UPS Ground,Active
+NIC-CUST0016,Tennessee Valley Materials Inc.,Aggregates / Cement,327,6943 Union St,Fort Wayne,IN,46899,Net 60,250000,N,N,N,E067,B,1998-04-13,Company Truck,Inactive
+NIC-CUST0017,Prairie Materials Co.,Aggregates / Cement,327,621 River Rd,Peoria,IL,61666,Net 30,150000,N,Y,Y,E069,C,2019-10-20,UPS Ground,Active
+NIC-CUST0018,Summit Foods Co.,Food & Beverage Processing,311,4489 Enterprise Ct,Peoria,IL,61645,Net 45,50000,N,Y,N,E069,C,2012-03-13,FedEx Ground,Active
+NIC-CUST0019,Susquehanna Water Authority LLC,Water / Wastewater Utility,221,3880 Mill St,Rockford,IL,61160,COD,250000,N,Y,Y,E072,D,1984-11-09,LTL - Estes,Active
+NIC-CUST0020,Blue Ridge Poultry Inc.,Poultry Processing,311,7826 Maple Dr,Peoria,IL,61659,Net 30,150000,N,N,Y,E068,B,1984-03-28,Customer Pickup,Active
+NIC-CUST0021,Pioneer Paper Co.,Pulp & Paper,322,5408 Commerce Blvd,Fort Wayne,IN,46834,Net 30,25000,N,N,Y,E072,A,2000-08-12,LTL - XPO,Active
+NIC-CUST0022,Lehigh Valley Paper LP,Pulp & Paper,322,8105 Maple Dr,Rockford,IL,61191,Net 30,75000,N,N,N,E070,A,1989-09-08,LTL - Estes,Active
+NIC-CUST0023,Blue Ridge Lumber LLC,Lumber / Wood Products,321,6421 Maple Dr,Milwaukee,WI,53258,2% 10 Net 30,250000,N,Y,N,E067,A,1983-02-19,Customer Pickup,Active
+NIC-CUST0024,Tri-County Poultry LP,Poultry Processing,311,2734 Airport Rd,Milwaukee,WI,53225,Net 30,100000,N,Y,Y,E067,C,2017-07-29,Company Truck,Active
+NIC-CUST0025,Rock River Plastics LLC,Plastics Extrusion,326,1002 Washington St,Milwaukee,WI,53281,Net 60,250000,N,Y,N,E066,C,2021-10-16,FedEx Ground,Active
+NIC-CUST0026,Fox River Paper LP,Pulp & Paper,322,3411 Harbor Dr,Peoria,IL,61645,Net 60,150000,N,Y,N,E066,B,1983-12-21,Customer Pickup,Active
+NIC-CUST0027,Midwest Paper Inc.,Pulp & Paper,322,7546 River Rd,Rockford,IL,61187,Net 45,150000,N,N,Y,E065,A,2005-04-16,UPS Ground,Inactive
+NIC-CUST0028,Keystone Automotive Corp.,Automotive Tier 2,336,5260 Harbor Dr,Peoria,IL,61634,Net 60,100000,N,N,Y,E067,D,2011-07-15,Customer Pickup,Inactive
+NIC-CUST0029,Great Lakes Lumber LLC,Lumber / Wood Products,321,7669 Oak Ave,Fort Wayne,IN,46833,Net 30,25000,N,Y,Y,E064,B,2018-02-06,Customer Pickup,Active
+NIC-CUST0030,Rock River Steel Inc.,Steel Processing,331,3350 Union St,Milwaukee,WI,53283,Net 45,25000,N,Y,Y,E069,C,1990-06-15,LTL - Estes,Active
+NIC-CUST0031,Midwest Climate Corp.,HVAC Equipment OEM,333,7181 Washington St,Fort Wayne,IN,46865,2% 10 Net 30,75000,N,Y,Y,E070,C,2017-09-04,LTL - XPO,Active
+NIC-CUST0032,Rock River Foods Co.,Food & Beverage Processing,311,6962 Front St,Peoria,IL,61676,Net 60,250000,N,Y,Y,E070,B,1984-07-28,Customer Pickup,Inactive
+NIC-CUST0033,Midwest Ag Equipment LP,Agricultural Equipment,333,8902 River Rd,Peoria,IL,61664,Net 30,75000,N,Y,Y,E071,A,2024-08-07,LTL - XPO,Active
+NIC-CUST0034,Cardinal Poultry Inc.,Poultry Processing,311,1651 Market St,Peoria,IL,61646,Net 45,100000,N,N,Y,E072,C,1984-01-22,Customer Pickup,Active
+NIC-CUST0035,Keystone Chemical Corp.,Chemical Blending,325,1813 Park Pl,Fort Wayne,IN,46864,Net 30,250000,N,Y,N,E070,B,2012-08-03,Customer Pickup,Active
+NIC-CUST0036,Cardinal Lumber LP,Lumber / Wood Products,321,47 Union St,Fort Wayne,IN,46863,Net 45,100000,N,Y,Y,E071,D,2004-03-02,UPS Ground,Active
+NIC-CUST0037,Allegheny Climate Inc.,HVAC Equipment OEM,333,7723 Harbor Dr,Peoria,IL,61643,Net 60,250000,N,Y,N,E066,D,2021-12-27,LTL - XPO,Active
+NIC-CUST0038,Appalachian Lumber Corp.,Lumber / Wood Products,321,1516 Lincoln Ave,Milwaukee,WI,53277,Net 45,250000,N,N,Y,E064,B,2009-07-31,UPS Ground,Active
+NIC-CUST0039,Summit Conveyor LLC,Conveyor / Material Handling OEM,333,5670 Elm St,Milwaukee,WI,53276,Net 30,250000,N,Y,Y,E072,A,2005-01-08,Company Truck,Active
+NIC-CUST0040,Allegheny Paper LP,Pulp & Paper,322,8300 Union St,Fort Wayne,IN,46895,Net 30,50000,N,Y,N,E064,D,1992-01-31,FedEx Ground,Active

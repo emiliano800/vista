@@ -49,7 +49,8 @@ def get_run(run_id: uuid.UUID, principal: Principal = Depends(current_principal)
         run = session.get(AgentRun, run_id)
         if run is None:
             raise HTTPException(status_code=404, detail="run not found")
-        require_deal_role(session, run.deal_id, principal.user_id, "viewer")
+        if run.deal_id is not None:
+            require_deal_role(session, run.deal_id, principal.user_id, "viewer")
         events = session.scalars(
             select(AgentRunEvent).where(AgentRunEvent.run_id == run_id).order_by(AgentRunEvent.seq)
         ).all()
@@ -59,7 +60,9 @@ def get_run(run_id: uuid.UUID, principal: Principal = Depends(current_principal)
 def _run_out(run: AgentRun, events: list[AgentRunEvent]) -> RunOut:
     return RunOut(
         id=run.id,
+        run_type=run.run_type,
         deal_id=run.deal_id,
+        employee_agent_id=run.employee_agent_id,
         document_id=run.document_id,
         status=run.status,
         created_at=run.created_at,

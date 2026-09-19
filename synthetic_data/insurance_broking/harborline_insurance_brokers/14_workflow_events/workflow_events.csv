@@ -1,0 +1,519 @@
+Event Id,Workflow Type,Object Type,Object Id,Timestamp,Actor,Action,Previous State,New State,Source Document,Confidence,Requires Review
+EV000153,marketing,submission,HAR-S00084,2025-01-28T14:00:00,E008,submitted,draft,submitted,HAR-S00084_package.pdf,1.0,N
+EV000154,marketing,submission,HAR-S00084,2025-01-29T10:00:00,carrier:NAT ,acknowledged,submitted,acknowledged,,1.0,N
+EV000114,marketing,submission,HAR-S00062,2025-01-31T11:00:00 ,E010,submitted,draft ,submitted,HAR-S00062_package.pdf,1.0,N
+EV000115,marketing,submission,HAR-S00062,2025-02-03T10:00:00,carrier:LIB,acknowledged,submitted,acknowledged,,1.0,N
+EV000151,marketing,submission,HAR-S00082,2025-02-10T10:00:00,carrier:LIB,acknowledged,submitted,acknowledged,,1.0,N
+EV000150,marketing,submission,HAR-S00082,2025-02-10T13:00:00,E008,submitted,draft,submitted,HAR-S00082_package.pdf,1.0,N
+EV000155,marketing,submission ,HAR-S00085,2025-02-10T14:00:00,E008,submitted,draft,submitted,HAR-S00085_package.pdf,1.0,N
+EV000156,marketing,submission,HAR-S00085,2025-02-12T10:00:00,carrier:MKL,acknowledged,submitted,acknowledged,,1.0,N
+EV000152,marketing,submission,HAR-S00083,2025-02-18T12:00:00,E008,submitted,draft,submitted,HAR-S00083_package.pdf,1.0,N
+EV000048,marketing,submission,HAR-S00027,2025-02-20T08:00:00,E009,submitted,draft,submitted,HAR-S00027_package.pdf,1.0,N
+EV000252,quote,quote,HAR-S00084-Q1,2025-02-21T11:00:00,carrier:NAT,quote_received,,received,HAR-S00084-Q1.pdf,0.92,N
+EV000049,marketing,submission,HAR-S00027,2025-02-22T10:00:00,carrier:LIB,acknowledged,submitted,acknowledged,,1.0,N
+EV000027,marketing,submission,HAR-S00016,2025-02-23T14:00:00,E012,submitted,draft,submitted,HAR-S00016_package.pdf,1.0,N
+EV000028,marketing,submission,HAR-S00016,2025-02-25T10:00:00,carrier:HIG,acknowledged,submitted ,acknowledged,,1.0,N
+EV000191,marketing,submission,HAR-S00103,2025-03-03T15:00:00,E010,submitted,draft,submitted,HAR-S00103_package.pdf,1.0,N
+EV000192,marketing,submission ,HAR-S00103,2025-03-05T10:00:00,carrier:HIG,acknowledged,submitted,acknowledged,,1.0,N
+EV000044,marketing,submission,HAR-S00025,2025-03-05T11:00:00,E009,submitted,draft,submitted,HAR-S00025_package.pdf,1.0,N
+EV000045,marketing,submission,HAR-S00025,2025-03-06T10:00:00,carrier:PRG,acknowledged,submitted,acknowledged,,1.0,N
+EV000113,marketing,submission,HAR-S00061,2025-03-08T14:00:00,E010,submitted,draft,submitted,HAR-S00061_package.pdf,1.0,N
+EV000046,marketing,submission,HAR-S00026,2025-03-09T08:00:00,E009,submitted,draft,submitted,HAR-S00026_package.pdf,1.0,N
+EV000047,marketing,submission,HAR-S00026,2025-03-11T10:00:00,carrier:TRV,acknowledged,submitted,acknowledged,,1.0,N
+EV000170,marketing,submission,HAR-S00092,2025-03-11T10:00:00,carrier:LIB,acknowledged,submitted,acknowledged,,1.0,N
+EV000169,marketing,submission,HAR-S00092,2025-03-11T16:00:00,E009,submitted,draft,submitted,HAR-S00092_package.pdf,1.0,N
+EV000251,quote,quote,HAR-S00082-Q1,2025-03-12T11:00:00,carrier:LIB,quote_received,,received,HAR-S00082-Q1.pdf,0.92,N
+EV000263,quote,quote,HAR-S00103-Q1,2025-03-13T11:00:00,carrier:HIG,quote_received,,received,HAR-S00103-Q1.pdf,0.92,Y
+EV000212,quote,quote,HAR-S00016-Q1,2025-03-16T13:00:00,carrier:HIG,quote_received,,received,HAR-S00016-Q1.pdf,0.92,N
+EV000099,marketing,submission,HAR-S00054,2025-03-18T09:00:00,E010,submitted,draft,submitted,HAR-S00054_package.pdf,1.0,N
+EV000100 ,marketing,submission,HAR-S00054,2025-03-21T10:00:00,carrier:TRV,acknowledged,submitted,acknowledged,,1.0,N
+EV000219,quote,quote,HAR-S00025-Q1,2025-03-21T13:00:00,carrier:PRG,quote_received,,received,HAR-S00025-Q1.pdf,0.92,Y
+EV000050,marketing,submission,HAR-S00028,2025-03-21T17:00:00,E009,submitted,draft,submitted,HAR-S00028_package.pdf,1.0,N
+EV000051,marketing,submission,HAR-S00028,2025-03-23T10:00:00,carrier:NAT,acknowledged,submitted,acknowledged,,1.0,N
+EV000235,quote,quote,HAR-S00054-Q1,2025-03-28T11:00:00,carrier:TRV,quote_received,,received,HAR-S00054-Q1.pdf,0.92,N
+EV000220,quote,quote,HAR-S00028-Q1,2025-03-30T14:00:00,carrier:NAT,quote_received,,received,HAR-S00028-Q1.pdf,0.92,N
+EV000056,marketing,submission,HAR-S00031,2025-03-31T11:00:00,E010,submitted,draft,submitted,HAR-S00031_package.pdf,1.0,N
+EV000057,marketing,submission,HAR-S00031,2025-04-02T10:00:00,carrier:CNA,acknowledged,submitted,acknowledged,,1.0,N
+EV000398,billing,payment,HAR-PMT00014,2025-04-14T14:00:00,accounting,cash_applied,received,applied,PF711005,1.0,N
+EV000097 ,marketing,submission,HAR-S00053,2025-04-16T10:00:00,E010,submitted,draft,submitted,HAR-S00053_package.pdf,1.0,N
+EV000222,quote,quote,HAR-S00031-Q1,2025-04-17T14:00:00,carrier:CNA,quote_received,,received,HAR-S00031-Q1.pdf,0.92,N
+EV000098,marketing,submission,HAR-S00053,2025-04-18T10:00:00,carrier:LIB,acknowledged,submitted,acknowledged,,1.0,N
+EV000389,billing ,payment,HAR-PMT00005,2025-04-23T14:00:00,accounting,cash_applied,received,applied,CHK 23882,1.0,N
+EV000189,marketing,submission,HAR-S00102,2025-04-23T17:00:00,E010,submitted,draft,submitted,HAR-S00102_package.pdf,1.0,N
+EV000190,marketing,submission,HAR-S00102,2025-04-24T10:00:00,carrier:TRV,acknowledged,submitted,acknowledged,,1.0,N 
+EV000146,marketing,submission,HAR-S00079,2025-04-26T16:00:00,E007,submitted,draft,submitted,HAR-S00079_package.pdf,1.0,N
+EV000234,quote,quote,HAR-S00053-Q1,2025-04-30T10:00:00,carrier:LIB,quote_received,,received,HAR-S00053-Q1.pdf,0.92,N
+EV000404,billing,payment,HAR-PMT00020,2025-05-03T14:00:00,accounting,cash_applied,received,applied,ACH709839515,1.0,N
+EV000111,marketing,submission,HAR-S00060,2025-05-03T16:00:00,E007,submitted,draft,submitted,HAR-S00060_package.pdf,1.0,N
+EV000112 ,marketing,submission,HAR-S00060,2025-05-05T10:00:00,carrier:LIB,acknowledged,submitted,acknowledged,,1.0,N
+EV000262,quote,quote,HAR-S00102-Q1,2025-05-09T14:00:00,carrier:TRV,quote_received,,received,HAR-S00102-Q1.pdf,0.92,N
+EV000058,marketing,submission,HAR-S00032,2025-05-10T11:00:00,E010,submitted ,draft,submitted,HAR-S00032_package.pdf,1.0,N
+EV000101,marketing,submission,HAR-S00055,2025-05-11T08:00:00,E010,submitted,draft,submitted,HAR-S00055_package.pdf,1.0,N
+EV000059,marketing,submission,HAR-S00032,2025-05-11T10:00:00,carrier:MKL,acknowledged,submitted,acknowledged,,1.0,N
+EV000102,marketing,submission,HAR-S00055,2025-05-11T10:00:00,carrier:MKL,acknowledged,submitted,acknowledged,,1.0,N
+EV000136,marketing,submission,HAR-S00074,2025-05-11T11:00:00,E010,submitted,draft,submitted,HAR-S00074_package.pdf,1.0,N
+EV000137,marketing,submission,HAR-S00074,2025-05-13T10:00:00,carrier:CNA,acknowledged,submitted,acknowledged,,1.0,N
+EV000093,marketing,submission,HAR-S00051,2025-05-14T09:00:00,E013,submitted,draft,submitted,HAR-S00051_package.pdf,1.0,N
+EV000094,marketing,submission ,HAR-S00051,2025-05-15T10:00:00,carrier:MKL,acknowledged,submitted,acknowledged,,1.0,N
+EV000148,marketing,submission,HAR-S00081,2025-05-28T12:00:00,E009,submitted,draft,submitted,HAR-S00081_package.pdf,1.0,N
+EV000149,marketing,submission,HAR-S00081,2025-05-29T10:00:00,carrier:LIB,acknowledged,submitted,acknowledged,,1.0,N 
+EV000135,marketing,submission,HAR-S00073,2025-05-29T13:00:00,E010,submitted,draft,submitted,HAR-S00073_package.pdf,1.0,N
+EV000236,quote,quote,HAR-S00055-Q1,2025-05-29T15:00:00 ,carrier:MKL,quote_received,,received,HAR-S00055-Q1.pdf,0.92,N
+EV000037,marketing,submission,HAR-S00021,2025-05-29T16:00:00,E011,submitted,draft,submitted,HAR-S00021_package.pdf,1.0,N
+EV000147,marketing,submission,HAR-S00080,2025-05-31T14:00:00,E009,submitted,draft,submitted,HAR-S00080_package.pdf,1.0,N
+EV000416,billing,payment,HAR-PMT00032,2025-06-01T14:00:00,accounting,cash_applied,received,applied,CHK 14463,1.0,N
+EV000012,marketing,submission,HAR-S00007,2025-06-01T16:00:00 ,E007 ,submitted ,draft,submitted,HAR-S00007_package.pdf,1.0,N
+EV000040,marketing,submission,HAR-S00023,2025-06-03T12:00:00,E011,submitted,draft,submitted,HAR-S00023_package.pdf,1.0,N
+EV000041,marketing,submission,HAR-S00023,2025-06-04T10:00:00,carrier:NAT,acknowledged,submitted,acknowledged,,1.0,N
+EV000067,marketing,submission,HAR-S00037,2025-06-04T12:00:00,E006,submitted,draft,submitted,HAR-S00037_package.pdf,1.0,N
+EV000091,marketing,submission,HAR-S00050,2025-06-04T16:00:00,E010,submitted,draft,submitted,HAR-S00050_package.pdf,1.0,N
+EV000013,marketing,submission,HAR-S00007,2025-06-05T10:00:00,carrier:CNA,acknowledged,submitted,acknowledged,,1.0,N
+EV000223,quote,quote,HAR-S00032-Q1,2025-06-05T14:00:00,carrier:MKL,quote_received,,received,HAR-S00032-Q1.pdf,0.92,N
+EV000035,marketing,submission,HAR-S00020,2025-06-06T11:00:00,E011,submitted,draft,submitted ,HAR-S00020_package.pdf,1.0,N
+EV000092,marketing,submission,HAR-S00050,2025-06-08T10:00:00,carrier:GRD,acknowledged,submitted,acknowledged,,1.0,N
+EV000207,quote,quote,HAR-S00007-Q1,2025-06-09T15:00:00,carrier:CNA,quote_received,,received,HAR-S00007-Q1.pdf,0.92,N
+EV000036,marketing,submission,HAR-S00020,2025-06-10T10:00:00,carrier:LIB,acknowledged,submitted,acknowledged,,1.0,N
+EV000217,quote,quote,HAR-S00023-Q1,2025-06-14T12:00:00,carrier:NAT,quote_received,,received,HAR-S00023-Q1.pdf,0.92,Y
+EV000068,marketing ,submission,HAR-S00038,2025-06-18T08:00:00,E006,submitted,draft,submitted,HAR-S00038_package.pdf,1.0,N
+EV000233,quote ,quote,HAR-S00050-Q1,2025-06-18T13:00:00,carrier:GRD,quote_received,,received,HAR-S00050-Q1.pdf,0.92,N
+EV000069,marketing,submission,HAR-S00038,2025-06-19T10:00:00,carrier:HIG,acknowledged,submitted,acknowledged,,1.0,N
+EV000133,marketing,submission,HAR-S00072,2025-06-19T12:00:00,E010,submitted,draft,submitted,HAR-S00072_package.pdf,1.0,N
+EV000144,marketing,submission,HAR-S00078,2025-06-21T09:00:00,E007,submitted,draft,submitted,HAR-S00078_package.pdf,1.0,N
+EV000134,marketing,submission,HAR-S00072,2025-06-21T10:00:00,carrier:TRV,acknowledged,submitted,acknowledged,,1.0,N
+EV000145,marketing,submission,HAR-S00078,2025-06-25T10:00:00,carrier:CNA,acknowledged,submitted,acknowledged,,1.0,N
+EV000131,marketing,submission,HAR-S00071,2025-06-30T09:00:00,E010,submitted,draft,submitted,HAR-S00071_package.pdf,1.0,N
+EV000402,billing,payment,HAR-PMT00018,2025-06-30T14:00:00,accounting,cash_applied,received,applied,ACH159268629,1.0,N
+EV000132,marketing,submission,HAR-S00071,2025-07-01T10:00:00,carrier:HIG,acknowledged,submitted,acknowledged,,1.0,N
+EV000215,quote,quote,HAR-S00020-Q1,2025-07-05T11:00:00,carrier:LIB,quote_received,,received,HAR-S00020-Q1.pdf,0.92,N
+EV000138,marketing,submission,HAR-S00075,2025-07-05T17:00:00,E007,submitted,draft,submitted,HAR-S00075_package.pdf,1.0,N
+EV000139,marketing,submission,HAR-S00075,2025-07-07T10:00:00,carrier:MKL,acknowledged,submitted,acknowledged,,1.0,N
+EV000227,quote,quote,HAR-S00038-Q1,2025-07-08T12:00:00,carrier:HIG,quote_received,,received,HAR-S00038-Q1.pdf ,0.92,N
+EV000250,quote,quote,HAR-S00078-Q1,2025-07-10T09:00:00,carrier:CNA,quote_received,,received,HAR-S00078-Q1.pdf,0.92,N
+EV000246,quote,quote,HAR-S00072-Q1,2025-07-11T13:00:00,carrier:TRV,quote_received,,received,HAR-S00072-Q1.pdf,0.92,N
+EV000038,marketing,submission,HAR-S00022,2025-07-13T12:00:00,E011,submitted,draft,submitted,HAR-S00022_package.pdf,1.0,N
+EV000127,marketing,submission,HAR-S00069,2025-07-14T13:00:00,E010,submitted,draft,submitted,HAR-S00069_package.pdf,1.0,N
+EV000039,marketing,submission,HAR-S00022,2025-07-15T10:00:00,carrier:TRV,acknowledged,submitted,acknowledged,,1.0,N
+EV000356,endorsements,endorsement_request,HAR-END0011,2025-07-15T10:00:00,E010,sent_to_carrier,requested,pending_carrier,,1.0,N
+EV000143,marketing,submission,HAR-S00077,2025-07-16T10:00:00,carrier:HIG,acknowledged,submitted,acknowledged,,1.0,N
+EV000142,marketing,submission,HAR-S00077,2025-07-16T11:00:00,E007,submitted,draft,submitted,HAR-S00077_package.pdf,1.0,N
+EV000420,billing,payment,HAR-PMT00036,2025-07-16T14:00:00,accounting,cash_applied,received,applied,CHK 31783,1.0,N
+EV000368,endorsements,endorsement_request,HAR-END0019,2025-07-17T10:00:00,E007,sent_to_carrier,requested ,pending_carrier,,1.0,N
+EV000400,billing,payment,HAR-PMT00016,2025-07-17T14:00:00,accounting,cash_applied,received,applied,ACH354583914,1.0,N
+EV000087,marketing,submission,HAR-S00048,2025-07-18T10:00:00,E010,submitted,draft,submitted,HAR-S00048_package.pdf,1.0,N
+EV000128,marketing,submission,HAR-S00069,2025-07-18T10:00:00,carrier:NAT,acknowledged,submitted,acknowledged,,1.0,N
+EV000088,marketing,submission,HAR-S00048,2025-07-19T10:00:00,carrier:CNA,acknowledged,submitted,acknowledged,,1.0,N
+EV000089,marketing,submission,HAR-S00049,2025-07-19T15:00:00,E010,submitted,draft,submitted,HAR-S00049_package.pdf,1.0,N
+EV000006,marketing,submission,HAR-S00004,2025-07-19T16:00:00 ,E012 ,submitted,draft,submitted ,HAR-S00004_package.pdf,1.0,N
+EV000090,marketing,submission,HAR-S00049,2025-07-20T10:00:00,carrier:MKL,acknowledged,submitted,acknowledged,,1.0,N
+EV000007,marketing,submission,HAR-S00004,2025-07-23T10:00:00,carrier:TRV,acknowledged,submitted ,acknowledged,,1.0,N
+EV000359,endorsements,endorsement_request,HAR-END0013,2025-07-25T10:00:00,E010,sent_to_carrier,requested,pending_carrier,,1.0,N
+EV000346,endorsements,endorsement_request,HAR-END0005,2025-07-26T10:00:00,E007,sent_to_carrier,requested,pending_carrier,,1.0,N
+EV000180,marketing,submission,HAR-S00097,2025-07-27T10:00:00,carrier:HIG,acknowledged,submitted,acknowledged,,1.0,N
+EV000216,quote,quote,HAR-S00022-Q1,2025-07-27T10:00:00,carrier:TRV,quote_received,,received,HAR-S00022-Q1.pdf,0.92,N
+EV000347,endorsements,endorsement_request,HAR-END0006,2025-07-27T10:00:00,E009,sent_to_carrier,requested,pending_carrier,,1.0,N
+EV000179,marketing,submission,HAR-S00097,2025-07-27T16:00:00,E008,submitted,draft,submitted,HAR-S00097_package.pdf,1.0,N
+EV000232,quote,quote,HAR-S00049-Q1,2025-07-28T10:00:00,carrier:MKL,quote_received,,received,HAR-S00049-Q1.pdf,0.92,N
+EV000365,endorsements,endorsement_request,HAR-END0017,2025-07-28T10:00:00,E009,sent_to_carrier,requested,pending_carrier,,1.0,N
+EV000023,marketing,submission,HAR-S00014,2025-07-28T16:00:00,E012 ,submitted,draft,submitted,HAR-S00014_package.pdf,1.0,N
+EV000024,marketing,submission,HAR-S00014,2025-07-29T10:00:00,carrier:TRV,acknowledged,submitted,acknowledged,,1.0,N
+EV000249,quote,quote,HAR-S00077-Q1,2025-08-01T09:00:00,carrier:HIG ,quote_received,,received,HAR-S00077-Q1.pdf,0.92,Y
+EV000025,marketing,submission,HAR-S00015,2025-08-01T10:00:00,E012,submitted,draft,submitted ,HAR-S00015_package.pdf,1.0,N
+EV000129,marketing,submission,HAR-S00070,2025-08-02T09:00:00,E010,submitted,draft,submitted,HAR-S00070_package.pdf,1.0,N
+EV000403,billing,payment,HAR-PMT00019,2025-08-02T14:00:00,accounting,cash_applied,received,applied,ACH512880193,1.0,N
+EV000245,quote,quote,HAR-S00069-Q1,2025-08-03T09:00:00,carrier:NAT ,quote_received,,received,HAR-S00069-Q1.pdf,0.92,Y
+EV000130,marketing,submission,HAR-S00070,2025-08-03T10:00:00,carrier:CNA,acknowledged,submitted,acknowledged,,1.0,N
+EV000247,quote,quote,HAR-S00075-Q1,2025-08-03T11:00:00,carrier:MKL,quote_received,,received,HAR-S00075-Q1.pdf,0.92,Y
+EV000181,marketing,submission,HAR-S00098,2025-08-03T14:00:00,E008,submitted,draft,submitted,HAR-S00098_package.pdf,1.0,N
+EV000026,marketing,submission,HAR-S00015,2025-08-05T10:00:00,carrier:HIG,acknowledged,submitted,acknowledged,,1.0,N
+EV000258,quote,quote,HAR-S00097-Q1,2025-08-05T12:00:00,carrier:HIG,quote_received,,received,HAR-S00097-Q1.pdf,0.92,Y
+EV000210,quote,quote,HAR-S00014-Q1,2025-08-06T12:00:00,carrier:TRV,quote_received,,received,HAR-S00014-Q1.pdf,0.92,N
+EV000182,marketing,submission,HAR-S00098,2025-08-07T10:00:00,carrier:GRD,acknowledged,submitted,acknowledged,,1.0,N
+EV000187,marketing,submission,HAR-S00101,2025-08-08T17:00:00,E011,submitted,draft,submitted,HAR-S00101_package.pdf,1.0,N
+EV000188,marketing,submission,HAR-S00101,2025-08-11T10:00:00,carrier:LIB,acknowledged,submitted,acknowledged,,1.0,N
+EV000379,endorsements,endorsement_request,HAR-END0025,2025-08-11T10:00:00,E010,sent_to_carrier,requested,pending_carrier,,1.0,N
+EV000085,marketing,submission,HAR-S00047,2025-08-15T08:00:00,E013,submitted,draft,submitted,HAR-S00047_package.pdf,1.0,N
+EV000086,marketing,submission,HAR-S00047,2025-08-15T10:00:00,carrier:LIB,acknowledged,submitted,acknowledged,,1.0,N
+EV000211,quote,quote,HAR-S00015-Q1,2025-08-15T14:00:00,carrier:HIG,quote_received,,received,HAR-S00015-Q1.pdf,0.92,N
+EV000081,marketing,submission,HAR-S00045,2025-08-16T13:00:00,E013,submitted,draft,submitted,HAR-S00045_package.pdf,1.0,N
+EV000348,endorsements,endorsement_request,HAR-END0006,2025-08-17T11:00:00,carrier:LIB,endorsement_received,pending_carrier,issued_-_discrepancy,END-948859.pdf,0.9,Y
+EV000369,endorsements,endorsement_request,HAR-END0019,2025-08-17T11:00:00,carrier:TRV,endorsement_received,pending_carrier,issued,END-535400.pdf,0.9,N
+EV000205,quote,quote,HAR-S00004-Q1,2025-08-17T12:00:00,carrier:TRV,quote_received,,received,HAR-S00004-Q1.pdf,0.92,N
+EV000082,marketing,submission,HAR-S00045,2025-08-19T10:00:00,carrier:TRV,acknowledged,submitted,acknowledged,,1.0,N
+EV000380,endorsements,endorsement_request,HAR-END0025,2025-08-19T11:00:00,carrier:NAT ,endorsement_received,pending_carrier,issued,END-759322.pdf,0.9,N
+EV000394,billing,payment,HAR-PMT00010,2025-08-20T14:00:00,accounting,cash_applied ,received,applied,CHK 60087,1.0,N
+EV000387,billing,payment,HAR-PMT00003,2025-08-23T14:00:00,accounting,cash_applied,received,applied,CHK 37613,1.0,N
+EV000185,marketing,submission,HAR-S00100,2025-08-24T12:00:00,E011,submitted,draft,submitted,HAR-S00100_package.pdf,1.0,N
+EV000186,marketing ,submission,HAR-S00100,2025-08-25T10:00:00,carrier:TRV,acknowledged,submitted,acknowledged,,1.0,N
+EV000399,billing,payment,HAR-PMT00015,2025-08-26T14:00:00,accounting,cash_applied,received,applied,CHK 85890,1.0,N
+EV000140,marketing,submission,HAR-S00076,2025-08-27T12:00:00,E007,submitted,draft,submitted,HAR-S00076_package.pdf,1.0,N
+EV000201,marketing,submission,HAR-S00108,2025-08-27T12:00:00,E009,submitted,draft,submitted,HAR-S00108_package.pdf,1.0,N
+EV000141,marketing,submission,HAR-S00076,2025-08-28T10:00:00,carrier:CNA,acknowledged,submitted,acknowledged,,1.0,N
+EV000083,marketing,submission,HAR-S00046,2025-08-28T17:00:00,E013,submitted,draft,submitted,HAR-S00046_package.pdf,1.0,N
+EV000202,marketing ,submission,HAR-S00108,2025-08-29T10:00:00,carrier:LIB,acknowledged,submitted,acknowledged,,1.0,N
+EV000261,quote,quote,HAR-S00101-Q1,2025-08-29T15:00:00,carrier:LIB,quote_received,,received,HAR-S00101-Q1.pdf,0.92,N
+EV000084,marketing,submission,HAR-S00046,2025-08-30T10:00:00,carrier:MKL,acknowledged,submitted,acknowledged,,1.0,N
+EV000230,quote,quote,HAR-S00045-Q1,2025-09-02T10:00:00,carrier:TRV,quote_received,,received,HAR-S00045-Q1.pdf,0.92,N
+EV000260,quote,quote,HAR-S00100-Q1,2025-09-05T10:00:00,carrier:TRV,quote_received,,received,HAR-S00100-Q1.pdf,0.92,N
+EV000199,marketing,submission,HAR-S00107,2025-09-07T13:00:00,E009,submitted,draft,submitted,HAR-S00107_package.pdf,1.0,N
+EV000066,marketing,submission,HAR-S00036,2025-09-07T16:00:00,E010,submitted,draft,submitted,HAR-S00036_package.pdf,1.0,N
+EV000393,billing,payment,HAR-PMT00009,2025-09-08T14:00:00,accounting,cash_applied,received,applied,PF409124,1.0,N
+EV000065,marketing,submission,HAR-S00035,2025-09-09T10:00:00,carrier:LIB,acknowledged,submitted,acknowledged,,1.0,N
+EV000200,marketing,submission,HAR-S00107,2025-09-09T10:00:00,carrier:MKL,acknowledged,submitted,acknowledged,,1.0,N
+EV000231,quote,quote,HAR-S00046-Q1,2025-09-09T13:00:00,carrier:MKL,quote_received,,received,HAR-S00046-Q1.pdf,0.92,N
+EV000064,marketing,submission,HAR-S00035,2025-09-09T14:00:00,E010,submitted,draft,submitted,HAR-S00035_package.pdf,1.0,N
+EV000248,quote,quote,HAR-S00076-Q1,2025-09-10T10:00:00,carrier:CNA,quote_received,,received,HAR-S00076-Q1.pdf,0.92,Y
+EV000410,billing,payment,HAR-PMT00026,2025-09-13T14:00:00,accounting,cash_applied,received,applied,ACH577333439,1.0,N
+EV000267,quote,quote,HAR-S00108-Q1,2025-09-14T14:00:00,carrier:LIB,quote_received,,received,HAR-S00108-Q1.pdf,0.92,N
+EV000362,endorsements,endorsement_request,HAR-END0015,2025-09-16T10:00:00,E006,sent_to_carrier,requested,pending_carrier,,1.0,N
+EV000266,quote,quote,HAR-S00107-Q1,2025-09-21T16:00:00,carrier:MKL,quote_received,,received,HAR-S00107-Q1.pdf,0.92,N 
+EV000372,endorsements,endorsement_request,HAR-END0021,2025-09-23T10:00:00,E008,sent_to_carrier,requested,pending_carrier,,1.0,N
+EV000414,billing,payment,HAR-PMT00030,2025-09-23T14:00:00,accounting ,cash_applied,received,applied,ACH252964376,1.0,N
+EV000413,billing,payment,HAR-PMT00029,2025-09-24T14:00:00,accounting,cash_applied,received,applied,CHK 58096,1.0,N
+EV000226,quote,quote,HAR-S00035-Q1,2025-09-25T11:00:00,carrier:LIB,quote_received,,received,HAR-S00035-Q1.pdf,0.92,N
+EV000373,endorsements,endorsement_request,HAR-END0021,2025-10-01T11:00:00,carrier:NAT,endorsement_received,pending_carrier,issued_-_discrepancy,END-972257.pdf,0.9,Y
+EV000330,certificates,certificate_request,HAR-CERT0032,2025-10-04T08:00:00,system:email_intake,request_received,,open,email,0.88,N
+EV000331,certificates,certificate_request,HAR-CERT0032,2025-10-05T01:00:00,E010,certificate_issued,open,issued,HAR-COI0032.pdf,1.0,N
+EV000197,marketing,submission,HAR-S00106,2025-10-05T13:00:00,E009,submitted,draft,submitted,HAR-S00106_package.pdf,1.0,N
+EV000310,certificates,certificate_request,HAR-CERT0022,2025-10-08T11:00:00,system:email_intake,request_received,,open,email,0.88,N
+EV000311,certificates,certificate_request,HAR-CERT0022,2025-10-08T13:00:00,E010,exception_flagged,open,exception,,0.97,Y
+EV000062,marketing,submission,HAR-S00034,2025-10-08T16:00:00,E010,submitted,draft,submitted,HAR-S00034_package.pdf,1.0,N
+EV000198,marketing,submission,HAR-S00106,2025-10-09T10:00:00,carrier:TRV,acknowledged,submitted,acknowledged,,1.0,N
+EV000374,endorsements,endorsement_request,HAR-END0022,2025-10-10T10:00:00,E010,sent_to_carrier,requested,pending_carrier,,1.0,N
+EV000063,marketing,submission,HAR-S00034,2025-10-12T10:00:00,carrier:TRV,acknowledged,submitted,acknowledged,,1.0,N
+EV000126,marketing,submission,HAR-S00068,2025-10-15T10:00:00,carrier:MKL,acknowledged,submitted,acknowledged,,1.0,N
+EV000125,marketing,submission,HAR-S00068,2025-10-15T14:00:00,E006,submitted,draft,submitted,HAR-S00068_package.pdf,1.0,N
+EV000401,billing,payment,HAR-PMT00017,2025-10-18T14:00:00 ,accounting,cash_applied,received,applied,ACH155944873,1.0,N
+EV000225,quote,quote,HAR-S00034-Q1,2025-10-21T09:00:00,carrier:TRV,quote_received,,received,HAR-S00034-Q1.pdf,0.92,N
+EV000116,marketing,submission,HAR-S00063,2025-10-21T13:00:00,E010 ,submitted,draft,submitted,HAR-S00063_package.pdf,1.0,N
+EV000388,billing,payment,HAR-PMT00004,2025-10-21T14:00:00,accounting,cash_applied,received,applied,CHK 16686,1.0,N
+EV000042,marketing,submission,HAR-S00024,2025-10-21T17:00:00,E009,submitted,draft,submitted,HAR-S00024_package.pdf,1.0,N
+EV000043,marketing,submission,HAR-S00024,2025-10-22T10:00:00 ,carrier:LIB,acknowledged,submitted,acknowledged,,1.0,N
+EV000193,marketing,submission,HAR-S00104,2025-10-25T09:00:00,E007,submitted,draft,submitted,HAR-S00104_package.pdf,1.0,N
+EV000274,certificates ,certificate_request,HAR-CERT0004,2025-10-25T09:00:00,system:email_intake,request_received,,open,email,0.88,N
+EV000308,certificates,certificate_request,HAR-CERT0021,2025-10-25T10:00:00,system:email_intake,request_received,,open,email,0.88,N
+EV000377,endorsements,endorsement_request,HAR-END0024,2025-10-25T10:00:00,E009,sent_to_carrier,requested,pending_carrier,,1.0,N
+EV000275 ,certificates,certificate_request,HAR-CERT0004,2025-10-25T14:00:00,E011,certificate_issued,open,issued,HAR-COI0004.pdf,1.0,N
+EV000309,certificates,certificate_request,HAR-CERT0021,2025-10-26T09:00:00,E011,certificate_issued,open,issued,HAR-COI0021.pdf,1.0,N
+EV000375,endorsements,endorsement_request,HAR-END0022,2025-10-26T11:00:00,carrier:MKL,endorsement_received,pending_carrier,issued,END-526475.pdf,0.9,N
+EV000078,marketing,submission,HAR-S00043,2025-10-28T10:00:00,carrier:TRV,acknowledged,submitted,acknowledged,,1.0,N
+EV000164,marketing,submission,HAR-S00089,2025-10-28T10:00:00,carrier:AMT,acknowledged,submitted ,acknowledged,,1.0,N
+EV000194,marketing,submission,HAR-S00104,2025-10-28T10:00:00,carrier:HIG,acknowledged,submitted,acknowledged,,1.0,N
+EV000163,marketing,submission,HAR-S00089,2025-10-28T14:00:00,E008,submitted,draft,submitted,HAR-S00089_package.pdf,1.0,N
+EV000077,marketing,submission,HAR-S00043,2025-10-28T17:00:00,E013,submitted,draft,submitted,HAR-S00043_package.pdf,1.0,N
+EV000121,marketing,submission,HAR-S00066,2025-10-29T09:00:00,E010,submitted,draft,submitted,HAR-S00066_package.pdf,1.0,N
+EV000122,marketing,submission,HAR-S00066,2025-10-31T10:00:00,carrier:TRV,acknowledged,submitted,acknowledged,,1.0,N
+EV000332,certificates,certificate_request,HAR-CERT0033,2025-11-01T11:00:00,system:email_intake,request_received,,open,email,0.88,N
+EV000292,certificates,certificate_request,HAR-CERT0013 ,2025-11-01T16:00:00,system:email_intake,request_received,,open,email,0.88,N
+EV000366,endorsements,endorsement_request,HAR-END0018,2025-11-02T10:00:00,E013,sent_to_carrier,requested,pending_carrier,,1.0,N
+EV000333,certificates,certificate_request,HAR-CERT0033,2025-11-02T13:00:00,E007,certificate_issued,open,issued,HAR-COI0033.pdf,1.0,N
+EV000363,endorsements,endorsement_request,HAR-END0016,2025-11-03T10:00:00,E007,sent_to_carrier ,requested,pending_carrier,,1.0,N
+EV000428,commissions,commission_line,HIG-COMM-202510:HIG-BOP-5356761,2025-11-03T10:00:00,accounting,statement_line_matched,,Matched,HIG-COMM-202510.pdf,0.95,N
+EV000429,commissions,commission_line,HIG-COMM-202510:HIG-WC-9046805,2025-11-03T10:00:00,accounting,statement_line_matched,,Matched,HIG-COMM-202510.pdf,0.95,N
+EV000440,commissions,commission_line,CNA-COMM-202510:CNA-PROP-2985547,2025-11-03T10:00:00,accounting,statement_line_matched,,Matched,CNA-COMM-202510.pdf,0.95,N
+EV000441,commissions,commission_line,CNA-COMM-202510:CNA-PL-1865311,2025-11-03T10:00:00,accounting,statement_line_matched,,Matched,CNA-COMM-202510.pdf,0.95,N
+EV000448,commissions,commission_line,PRG-COMM-202510:PRG-AUTO-4207370,2025-11-03T10:00:00,accounting,statement_line_matched,,Matched,PRG-COMM-202510.pdf,0.95,N
+EV000452,commissions,commission_line,MKL-COMM-202510:MKL-UMB-2387966,2025-11-03T10:00:00,accounting,statement_line_matched,,Matched,MKL-COMM-202510.pdf,0.95,N
+EV000293,certificates,certificate_request,HAR-CERT0013,2025-11-04T05:00:00,E010,certificate_issued,open,issued,HAR-COI0013.pdf,1.0,N
+EV000159,marketing,submission,HAR-S00087,2025-11-04T10:00:00,E008,submitted,draft,submitted,HAR-S00087_package.pdf,1.0,N
+EV000160,marketing,submission,HAR-S00087,2025-11-04T10:00:00,carrier:HIG,acknowledged,submitted,acknowledged,,1.0,N
+EV000157 ,marketing,submission,HAR-S00086,2025-11-04T17:00:00,E008,submitted,draft,submitted,HAR-S00086_package.pdf,1.0,N
+EV000378,endorsements,endorsement_request,HAR-END0024,2025-11-05T11:00:00,carrier:MKL,endorsement_received,pending_carrier,issued,END-938805.pdf ,0.9,N
+EV000397,billing,payment,HAR-PMT00013,2025-11-05T14:00:00,accounting,cash_applied,received,applied,ACH883862396,1.0,N
+EV000076,marketing,submission,HAR-S00042,2025-11-06T10:00:00,carrier:HIG,acknowledged,submitted,acknowledged,,1.0,N
+EV000158,marketing,submission,HAR-S00086,2025-11-06T10:00:00,carrier:LIB,acknowledged,submitted,acknowledged,,1.0,N
+EV000075,marketing,submission,HAR-S00042,2025-11-06T17:00:00,E013,submitted ,draft,submitted,HAR-S00042_package.pdf,1.0,N
+EV000119,marketing,submission,HAR-S00065,2025-11-08T11:00:00,E010,submitted,draft,submitted,HAR-S00065_package.pdf ,1.0,N
+EV000318,certificates,certificate_request,HAR-CERT0026,2025-11-10T09:00:00,system:email_intake,request_received,,open,email,0.88,N
+EV000367,endorsements,endorsement_request,HAR-END0018,2025-11-10T11:00:00,carrier:HIG,endorsement_received,pending_carrier,issued,END-287913.pdf,0.9,N
+EV000120,marketing,submission,HAR-S00065,2025-11-11T10:00:00,carrier:HIG,acknowledged,submitted,acknowledged,,1.0,N
+EV000395,billing,payment,HAR-PMT00011,2025-11-11T14:00:00,accounting,cash_applied,received,applied,CHK 36509,1.0,N
+EV000123,marketing,submission,HAR-S00067,2025-11-12T08:00:00,E006,submitted,draft,submitted,HAR-S00067_package.pdf,1.0,N
+EV000319,certificates,certificate_request,HAR-CERT0026,2025-11-12T11:00:00,E006,certificate_issued,open,issued,HAR-COI0026.pdf,1.0,N
+EV000032,marketing,submission,HAR-S00018,2025-11-13T10:00:00,carrier:NAT,acknowledged,submitted,acknowledged,,1.0,N
+EV000244,quote ,quote,HAR-S00068-Q1 ,2025-11-13T11:00:00,carrier:MKL,quote_received,,received,HAR-S00068-Q1.pdf,0.92,N
+EV000031,marketing,submission,HAR-S00018,2025-11-13T17:00:00,E011,submitted,draft,submitted,HAR-S00018_package.pdf,1.0,N
+EV000003,marketing,submission,HAR-S00002,2025-11-14T15:00:00,E012,submitted,draft,submitted,HAR-S00002_package.pdf,1.0,N
+EV000264,quote,quote,HAR-S00104-Q1,2025-11-14T15:00:00,carrier:HIG,quote_received,,received,HAR-S00104-Q1.pdf,0.92,N
+EV000124,marketing,submission,HAR-S00067,2025-11-16T10:00:00,carrier:CNA,acknowledged,submitted,acknowledged ,,1.0,N
+EV000183,marketing,submission,HAR-S00099,2025-11-16T12:00:00,E011,submitted,draft,submitted,HAR-S00099_package.pdf,1.0,N
+EV000218,quote,quote,HAR-S00024-Q1,2025-11-17T12:00:00,carrier:LIB,quote_received,,received,HAR-S00024-Q1.pdf,0.92,N
+EV000296,certificates,certificate_request,HAR-CERT0015,2025-11-18T13:00:00,system:email_intake,request_received,,open,email,0.88,N
+EV000297,certificates,certificate_request,HAR-CERT0015,2025-11-18T21:00:00,E012,certificate_issued,open,issued,HAR-COI0015.pdf,1.0,N
+EV000184,marketing,submission ,HAR-S00099,2025-11-19T10:00:00,carrier:CNA,acknowledged,submitted,acknowledged,,1.0,N
+EV000294,certificates,certificate_request,HAR-CERT0014,2025-11-20T14:00:00,system:email_intake,request_received,,open,email,0.88,N
+EV000295,certificates,certificate_request,HAR-CERT0014,2025-11-20T16:00:00,E009,exception_flagged,open,exception,,0.97,Y
+EV000117,marketing,submission,HAR-S00064,2025-11-21T09:00:00,E010,submitted,draft,submitted,HAR-S00064_package.pdf,1.0,N
+EV000381,endorsements,endorsement_request,HAR-END0026,2025-11-21T10:00:00,E011,sent_to_carrier,requested,pending_carrier,,1.0,N
+EV000229,quote,quote,HAR-S00042-Q1,2025-11-22T12:00:00,carrier:HIG,quote_received,,received,HAR-S00042-Q1.pdf,0.92,Y
+EV000214,quote,quote,HAR-S00018-Q1,2025-11-24T09:00:00,carrier:NAT,quote_received,,received,HAR-S00018-Q1.pdf,0.92,N
+EV000242,quote,quote,HAR-S00066-Q1,2025-11-24T16:00:00,carrier:TRV,quote_received,,received,HAR-S00066-Q1.pdf,0.92,N
+EV000118,marketing,submission,HAR-S00064,2025-11-25T10:00:00,carrier:CNA,acknowledged,submitted,acknowledged,,1.0,N
+EV000060,marketing,submission,HAR-S00033,2025-11-25T15:00:00,E010,submitted ,draft,submitted,HAR-S00033_package.pdf,1.0,N
+EV000103,marketing,submission,HAR-S00056,2025-11-26T14:00:00,E007,submitted ,draft,submitted,HAR-S00056_package.pdf,1.0,N
+EV000300,certificates,certificate_request,HAR-CERT0017,2025-11-27T11:00:00,system:email_intake,request_received,,open,email,0.88,N
+EV000301,certificates,certificate_request,HAR-CERT0017,2025-11-27T13:00:00,E011,exception_flagged,open,exception,,0.97,Y
+EV000328,certificates,certificate_request,HAR-CERT0031,2025-11-28T15:00:00,system:email_intake,request_received,,open,email,0.88,N
+EV000061,marketing,submission,HAR-S00033,2025-11-29T10:00:00,carrier:CNA,acknowledged,submitted,acknowledged,,1.0,N
+EV000104,marketing,submission,HAR-S00056,2025-11-29T10:00:00,carrier:GRD,acknowledged,submitted,acknowledged,,1.0,N
+EV000001,marketing,submission,HAR-S00001,2025-11-29T14:00:00,E012,submitted,draft,submitted,HAR-S00001_package.pdf,1.0,N
+EV000329,certificates,certificate_request,HAR-CERT0031,2025-11-29T22:00:00,E009,certificate_issued,open,issued,HAR-COI0031.pdf,1.0,N
+EV000072,marketing,submission,HAR-S00040,2025-11-30T14:00:00,E013,submitted,draft,submitted,HAR-S00040_package.pdf,1.0,N
+EV000422,billing,payment,HAR-PMT00038,2025-11-30T14:00:00,accounting,cash_applied,received,applied,ACH928223733,1.0,N
+EV000259,quote,quote,HAR-S00099-Q1,2025-11-30T15:00:00,carrier:CNA,quote_received,,received,HAR-S00099-Q1.pdf,0.92,N
+EV000002,marketing,submission,HAR-S00001,2025-12-01T10:00:00,carrier:LIB,acknowledged,submitted,acknowledged,,1.0,N
+EV000384,endorsements,endorsement_request,HAR-END0028,2025-12-01T10:00:00,E009,sent_to_carrier,requested,pending_carrier,,1.0,N
+EV000322,certificates,certificate_request,HAR-CERT0028,2025-12-01T11:00:00,system:email_intake,request_received,,open,email,0.88,N
+EV000323,certificates,certificate_request,HAR-CERT0028,2025-12-01T13:00:00,E012,exception_flagged,open,exception,,0.97,Y
+EV000195,marketing,submission,HAR-S00105,2025-12-02T08:00:00,E007,submitted,draft,submitted,HAR-S00105_package.pdf,1.0,N
+EV000196,marketing,submission,HAR-S00105,2025-12-02T10:00:00,carrier:LIB,acknowledged,submitted,acknowledged,,1.0,N
+EV000412,billing,payment,HAR-PMT00028,2025-12-02T14:00:00,accounting,cash_applied,received,applied,CHK 11047,1.0,N
+EV000241,quote,quote,HAR-S00064-Q1,2025-12-03T10:00:00,carrier:CNA,quote_received,,received,HAR-S00064-Q1.pdf,0.92,N
+EV000430,commissions,commission_line,HIG-COMM-202511:HIG-GL-1962926,2025-12-03T10:00:00,accounting,statement_line_matched,,Matched,HIG-COMM-202511.pdf,0.95,N
+EV000431,commissions,commission_line,HIG-COMM-202511:HIG-WC-9031274,2025-12-03T10:00:00,accounting,statement_line_matched,,Matched,HIG-COMM-202511.pdf,0.95,N
+EV000442,commissions,commission_line ,CNA-COMM-202511:CNA-CYB-7096491,2025-12-03T10:00:00,accounting,statement_line_matched,,Matched,CNA-COMM-202511.pdf,0.95,N
+EV000444,commissions,commission_line,NAT-COMM-202511:NAT-WC-4260708,2025-12-03T10:00:00,accounting,statement_line_matched,,Matched,NAT-COMM-202511.pdf,0.95,N
+EV000449,commissions,commission_line,AMT-COMM-202511:AMT-WC-7809356,2025-12-03T10:00:00,accounting,statement_line_matched,,Matched,AMT-COMM-202511.pdf,0.95,N
+EV000453,commissions,commission_line,MKL-COMM-202511:MKL-PL-5526497,2025-12-03T10:00:00,accounting,statement_line_matched,,Matched,MKL-COMM-202511.pdf,0.95,N
+EV000454,commissions,commission_line,MKL-COMM-202511:MKL-PL-9312741,2025-12-03T10:00:00,accounting,statement_line_matched,,Matched,MKL-COMM-202511.pdf,0.95,N
+EV000364,endorsements,endorsement_request,HAR-END0016,2025-12-03T11:00:00,carrier:CNA,endorsement_received,pending_carrier,issued,END-882307.pdf,0.9,N
+EV000419,billing,payment,HAR-PMT00035,2025-12-03T14:00:00,accounting,cash_applied,received,applied,CHK 18738,1.0,N
+EV000175,marketing,submission,HAR-S00095,2025-12-04T14:00:00,E009,submitted,draft,submitted,HAR-S00095_package.pdf,1.0,N
+EV000176,marketing,submission,HAR-S00095,2025-12-05T10:00:00,carrier:LIB,acknowledged,submitted,acknowledged,,1.0,N
+EV000345,endorsements,endorsement_request,HAR-END0004,2025-12-05T10:00:00,E009,sent_to_carrier,requested,pending_carrier,,1.0,N
+EV000272,certificates,certificate_request,HAR-CERT0003,2025-12-05T17:00:00,system:email_intake,request_received,,open,email,0.88,N
+EV000273,certificates,certificate_request,HAR-CERT0003,2025-12-05T19:00:00,E009,exception_flagged,open,exception,,0.97,Y
+EV000243,quote,quote,HAR-S00067-Q1,2025-12-06T11:00:00,carrier:CNA,quote_received,,received,HAR-S00067-Q1.pdf,0.92,N
+EV000073,marketing,submission,HAR-S00041,2025-12-06T15:00:00,E013,submitted,draft,submitted,HAR-S00041_package.pdf,1.0,N
+EV000496,renewals,renewal_task,REN-HAR-P00066-T120,2025-12-06T15:00:00,E012,task_completed,open,complete,,1.0,N
+EV000020,marketing,submission,HAR-S00012,2025-12-07T12:00:00,E008,submitted,draft,submitted,HAR-S00012_package.pdf,1.0,N
+EV000351,endorsements,endorsement_request ,HAR-END0008,2025-12-08T10:00:00,E012,sent_to_carrier,requested,pending_carrier,,1.0,N
+EV000033,marketing,submission,HAR-S00019,2025-12-08T17:00:00,E011,submitted,draft,submitted,HAR-S00019_package.pdf,1.0,N
+EV000034,marketing,submission,HAR-S00019,2025-12-09T10:00:00,carrier:GRD,acknowledged,submitted,acknowledged,,1.0,N
+EV000265,quote,quote,HAR-S00105-Q1,2025-12-09T11:00:00,carrier:LIB,quote_received,,received,HAR-S00105-Q1.pdf,0.92,N
+EV000074,marketing,submission,HAR-S00041,2025-12-10T10:00:00,carrier:NAT,acknowledged,submitted,acknowledged,,1.0,N
+EV000304,certificates,certificate_request,HAR-CERT0019,2025-12-10T16:00:00,system:email_intake,request_received,,open,email,0.88,N
+EV000305,certificates,certificate_request,HAR-CERT0019,2025-12-10T18:00:00,E010,exception_flagged,open,exception,,0.97,Y
+EV000021,marketing,submission,HAR-S00012,2025-12-11T10:00:00,carrier:AMT,acknowledged,submitted,acknowledged,,1.0,N
+EV000349,endorsements,endorsement_request,HAR-END0007,2025-12-11T10:00:00,E009,sent_to_carrier,requested,pending_carrier ,,1.0,N
+EV000022,marketing,submission,HAR-S00013,2025-12-11T11:00:00,E008,submitted,draft,submitted,HAR-S00013_package.pdf,1.0,N
+EV000302,certificates,certificate_request,HAR-CERT0018,2025-12-13T13:00:00,system:email_intake,request_received,,open,email,0.88,N
+EV000203,quote,quote,HAR-S00001-Q1,2025-12-13T15:00:00,carrier:LIB,quote_received,,received,HAR-S00001-Q1.pdf,0.92,N
+EV000303,certificates,certificate_request,HAR-CERT0018,2025-12-13T15:00:00,E007,exception_flagged,open,exception,,0.97,Y
+EV000502,renewals,renewal_task,REN-HAR-P00079-T120,2025-12-13T15:00:00,E008,task_completed,open,complete,,1.0,N
+EV000018,marketing,submission,HAR-S00011,2025-12-13T16:00:00,E007,submitted,draft,submitted,HAR-S00011_package.pdf,1.0,N
+EV000324,certificates,certificate_request,HAR-CERT0029,2025-12-13T16:00:00,system:email_intake,request_received,,open,email,0.88,N
+EV000325,certificates,certificate_request,HAR-CERT0029,2025-12-13T18:00:00,E007,exception_flagged,open,exception,,0.97,Y
+EV000052,marketing,submission,HAR-S00029,2025-12-14T08:00:00,E009,submitted,draft,submitted,HAR-S00029_package.pdf,1.0,N
+EV000161,marketing,submission,HAR-S00088,2025-12-14T10:00:00,E008,submitted,draft,submitted,HAR-S00088_package.pdf,1.0,N
+EV000474,renewals,renewal_task,REN-HAR-P00040-T120,2025-12-14T15:00:00,E013,task_completed,open,complete,,1.0,N
+EV000019,marketing,submission,HAR-S00011,2025-12-15T10:00:00,carrier:NAT,acknowledged,submitted,acknowledged,,1.0,N
+EV000053,marketing,submission,HAR-S00029,2025-12-15T10:00:00 ,carrier:TRV,acknowledged,submitted,acknowledged,,1.0,N
+EV000326,certificates,certificate_request,HAR-CERT0030,2025-12-15T14:00:00,system:email_intake,request_received,,open,email,0.88,N
+EV000327,certificates,certificate_request,HAR-CERT0030,2025-12-16T00:00:00,E006,certificate_issued,open,issued,HAR-COI0030.pdf,1.0,N
+EV000162,marketing,submission,HAR-S00088,2025-12-17T10:00:00,carrier:NAT,acknowledged,submitted,acknowledged,,1.0,N
+EV000350,endorsements,endorsement_request,HAR-END0007,2025-12-17T11:00:00,carrier:HIG,endorsement_received,pending_carrier,issued_-_discrepancy,END-478899.pdf,0.9,Y
+EV000171,marketing,submission,HAR-S00093,2025-12-17T16:00:00,E009,submitted,draft,submitted,HAR-S00093_package.pdf,1.0,N
+EV000172,marketing,submission,HAR-S00093,2025-12-19T10:00:00,carrier:HIG,acknowledged,submitted,acknowledged,,1.0,N
+EV000286,certificates,certificate_request,HAR-CERT0010,2025-12-19T12:00:00,system:email_intake,request_received,,open,email,0.88,N
+EV000237,quote,quote,HAR-S00056-Q1,2025-12-19T14:00:00,carrier:GRD,quote_received,,received,HAR-S00056-Q1.pdf,0.92,N
+EV000487,renewals,renewal_task,REN-HAR-P00054-T120,2025-12-19T15:00:00,E010,task_completed,open,complete,,1.0,N
+EV000079,marketing,submission,HAR-S00044,2025-12-20T10:00:00,E013,submitted,draft,submitted,HAR-S00044_package.pdf,1.0,N
+EV000287,certificates,certificate_request,HAR-CERT0010,2025-12-21T04:00:00,E010,certificate_issued,open,issued,HAR-COI0010.pdf,1.0,N
+EV000080,marketing,submission,HAR-S00044,2025-12-21T10:00:00,carrier:NAT,acknowledged,submitted,acknowledged,,1.0,N
+EV000029,marketing,submission,HAR-S00017,2025-12-21T12:00:00,E011,submitted,draft,submitted,HAR-S00017_package.pdf,1.0,N
+EV000509,renewals,renewal_task,REN-HAR-P00083-T120,2025-12-21T15:00:00,E009,task_completed,open,complete,,1.0,N
+EV000357,endorsements,endorsement_request,HAR-END0012,2025-12-22T10:00:00,E010,sent_to_carrier,requested,pending_carrier,,1.0,N
+EV000224,quote,quote,HAR-S00033-Q1 ,2025-12-22T15:00:00 ,carrier:CNA,quote_received,,received,HAR-S00033-Q1.pdf,0.92,N
+EV000010,marketing,submission,HAR-S00006,2025-12-23T11:00:00,E007,submitted,draft,submitted,HAR-S00006_package.pdf,1.0,N
+EV000030,marketing,submission,HAR-S00017,2025-12-24T10:00:00,carrier:TRV,acknowledged,submitted,acknowledged,,1.0,N
+EV000354,endorsements,endorsement_request,HAR-END0010,2025-12-24T10:00:00,E010,sent_to_carrier,requested,pending_carrier,,1.0,N
+EV000382,endorsements,endorsement_request,HAR-END0026,2025-12-24T11:00:00,carrier:LIB,endorsement_received,pending_carrier,issued,END-327708.pdf,0.9,N
+EV000460,renewals,renewal_task,REN-HAR-P00001-T120,2025-12-24T15:00:00,E009,task_completed,open,complete,,1.0,N
+EV000011,marketing,submission,HAR-S00006,2025-12-25T10:00:00,carrier:MKL,acknowledged,submitted,acknowledged,,1.0,N
+EV000177,marketing,submission,HAR-S00096,2025-12-25T17:00:00,E009,submitted,draft,submitted,HAR-S00096_package.pdf,1.0,N
+EV000391,billing,payment,HAR-PMT00007 ,2025-12-26T14:00:00,accounting,cash_applied,received,applied,CHK 40417,1.0,N
+EV000178,marketing,submission,HAR-S00096,2025-12-27T10:00:00,carrier:TRV,acknowledged,submitted,acknowledged,,1.0,N
+EV000208,quote,quote,HAR-S00011-Q1,2025-12-31T12:00:00,carrier:NAT,quote_received,,received,HAR-S00011-Q1.pdf,0.92,N
+EV000016,marketing,submission,HAR-S00009,2025-12-31T17:00:00,E007,submitted,draft,submitted,HAR-S00009_package.pdf ,1.0,N
+EV000256,quote,quote,HAR-S00095-Q1,2026-01-01T10:00:00,carrier:LIB,quote_received,,received,HAR-S00095-Q1.pdf,0.92,N
+EV000497,renewals,renewal_task ,REN-HAR-P00066-T90,2026-01-01T15:00:00,E012,task_completed,open,complete,,1.0,N
+EV000105,marketing,submission,HAR-S00057,2026-01-01T17:00:00,E007,submitted,draft,submitted,HAR-S00057_package.pdf,1.0,N
+EV000017,marketing,submission,HAR-S00010,2026-01-02T09:00:00,E007,submitted,draft,submitted,HAR-S00010_package.pdf,1.0,N
+EV000209,quote,quote,HAR-S00012-Q1,2026-01-02T10:00:00,carrier:AMT,quote_received,,received,HAR-S00012-Q1.pdf,0.92,N
+EV000054,marketing,submission ,HAR-S00030,2026-01-02T12:00:00,E009,submitted,draft,submitted,HAR-S00030_package.pdf,1.0,N
+EV000014,marketing,submission,HAR-S00008,2026-01-03T10:00:00,E007,submitted,draft,submitted,HAR-S00008_package.pdf,1.0,N
+EV000432,commissions,commission_line,HIG-COMM-202512:HIG-WC-6629466,2026-01-03T10:00:00,accounting,statement_line_matched,,Matched,HIG-COMM-202512.pdf,0.95,N
+EV000355,endorsements,endorsement_request,HAR-END0010,2026-01-03T11:00:00,carrier:PRG,endorsement_received,pending_carrier,issued,END-468105.pdf,0.9,N
+EV000465,renewals,renewal_task,REN-HAR-P00017-T120,2026-01-03T15:00:00,E012,task_completed,open,complete,,1.0,N
+EV000336,certificates,certificate_request,HAR-CERT0035,2026-01-03T17:00:00,system:email_intake,request_received,,open,email,0.88,N
+EV000337,certificates,certificate_request,HAR-CERT0035,2026-01-03T19:00:00,E007,exception_flagged,open,exception,,0.97,Y
+EV000109,marketing,submission,HAR-S00059,2026-01-04T09:00:00,E007,submitted,draft,submitted,HAR-S00059_package.pdf,1.0,N
+EV000015,marketing,submission,HAR-S00008,2026-01-04T10:00:00,carrier:GRD,acknowledged,submitted,acknowledged,,1.0,N
+EV000004,marketing,submission,HAR-S00003,2026-01-04T14:00:00,E012,submitted,draft,submitted,HAR-S00003_package.pdf,1.0,N
+EV000106,marketing,submission,HAR-S00057,2026-01-05T10:00:00,carrier:AMT,acknowledged,submitted,acknowledged,,1.0,N
+EV000055,marketing,submission,HAR-S00030 ,2026-01-06T10:00:00,carrier:GRD,acknowledged,submitted,acknowledged,,1.0,N
+EV000005,marketing,submission,HAR-S00003,2026-01-07T10:00:00,carrier:AMT,acknowledged,submitted,acknowledged,,1.0,N
+EV000213,quote,quote,HAR-S00017-Q1,2026-01-07T16:00:00,carrier:TRV,quote_received,,received,HAR-S00017-Q1.pdf,0.92,N
+EV000110,marketing,submission,HAR-S00059,2026-01-08T10:00:00,carrier:NAT,acknowledged,submitted ,acknowledged,,1.0,N
+EV000475,renewals,renewal_task,REN-HAR-P00040-T90,2026-01-08T15:00:00,E013,task_completed,open,complete,,1.0,N 
+EV000282,certificates,certificate_request,HAR-CERT0008,2026-01-10T14:00:00,system:email_intake,request_received,,open,email,0.88,N
+EV000283,certificates,certificate_request,HAR-CERT0008,2026-01-10T16:00:00,E011,exception_flagged,open,exception,,0.97,Y
+EV000167,marketing,submission,HAR-S00091,2026-01-11T10:00:00,E008,submitted,draft,submitted,HAR-S00091_package.pdf,1.0,N
+EV000503,renewals ,renewal_task,REN-HAR-P00079-T90,2026-01-12T15:00:00,E008,task_completed,open,complete,,1.0,N
+EV000254,quote,quote,HAR-S00093-Q1,2026-01-12T16:00:00,carrier:HIG,quote_received,,received,HAR-S00093-Q1.pdf,0.92,N
+EV000168,marketing,submission,HAR-S00091,2026-01-13T10:00:00,carrier:MKL,acknowledged,submitted,acknowledged,,1.0,N
+EV000257,quote,quote,HAR-S00096-Q1,2026-01-13T15:00:00,carrier:TRV,quote_received,,received,HAR-S00096-Q1.pdf,0.92,N
+EV000488,renewals,renewal_task,REN-HAR-P00054-T90,2026-01-13T15:00:00,E010,task_completed,open,complete ,,1.0,N
+EV000204,quote,quote,HAR-S00003-Q1,2026-01-15T09:00:00,carrier:AMT,quote_received ,,received,HAR-S00003-Q1.pdf,0.92,N
+EV000165,marketing,submission,HAR-S00090,2026-01-15T12:00:00,E008,submitted,draft,submitted,HAR-S00090_package.pdf,1.0,N
+EV000424 ,billing,payment,HAR-PMT00040,2026-01-15T14:00:00,accounting ,cash_unapplied,received,unapplied,CHK 57720,1.0,Y
+EV000070,marketing,submission,HAR-S00039,2026-01-15T16:00:00,E013,submitted,draft,submitted,HAR-S00039_package.pdf,1.0,N
+EV000467,renewals,renewal_task,REN-HAR-P00024-T120,2026-01-16T15:00:00,E009,task_completed,open,complete,,1.0,N
+EV000276,certificates,certificate_request,HAR-CERT0005,2026-01-17T11:00:00,system:email_intake,request_received,,open,email,0.88,N
+EV000392,billing,payment,HAR-PMT00008,2026-01-17T14:00:00,accounting,cash_applied,received,applied,PF697081,1.0,N
+EV000268,certificates,certificate_request,HAR-CERT0001,2026-01-18T09:00:00,system:email_intake,request_received,,open,email,0.88,N
+EV000071,marketing,submission,HAR-S00039,2026-01-18T10:00:00,carrier:TRV,acknowledged,submitted,acknowledged,,1.0,N
+EV000166,marketing,submission,HAR-S00090,2026-01-18T10:00:00,carrier:LIB,acknowledged,submitted,acknowledged,,1.0,N
+EV000221,quote,quote,HAR-S00030-Q1,2026-01-18T13:00:00,carrier:GRD,quote_received,,received,HAR-S00030-Q1.pdf,0.92,N
+EV000269,certificates,certificate_request,HAR-CERT0001,2026-01-18T17:00:00,E007,certificate_issued,open,issued,HAR-COI0001.pdf,1.0,N
+EV000277,certificates,certificate_request,HAR-CERT0005,2026-01-19T02:00:00,E008,certificate_issued,open,issued,HAR-COI0005.pdf,1.0,N
+EV000240,quote,quote,HAR-S00059-Q1,2026-01-19T10:00:00,carrier:NAT,quote_received,,received,HAR-S00059-Q1.pdf,0.92,N
+EV000360,endorsements,endorsement_request,HAR-END0014,2026-01-19T10:00:00,E011,sent_to_carrier,requested,pending_carrier,,1.0,N
+EV000108,marketing,submission,HAR-S00058,2026-01-21T10:00:00,carrier:TRV,acknowledged,submitted,acknowledged,,1.0,N
+EV000314,certificates,certificate_request,HAR-CERT0024,2026-01-21T10:00:00,system:email_intake,request_received,,open,email,0.88,N
+EV000343,endorsements,endorsement_request,HAR-END0003,2026-01-21T10:00:00,E009,sent_to_carrier,requested,pending_carrier,,1.0,N
+EV000107,marketing,submission,HAR-S00058,2026-01-21T14:00:00,E007,submitted ,draft,submitted,HAR-S00058_package.pdf ,1.0,N
+EV000173,marketing,submission,HAR-S00094,2026-01-21T15:00:00,E009,submitted,draft,submitted,HAR-S00094_package.pdf,1.0,N
+EV000284,certificates,certificate_request,HAR-CERT0009,2026-01-21T17:00:00,system:email_intake,request_received,,open,email,0.88,N
+EV000174,marketing,submission,HAR-S00094,2026-01-22T10:00:00,carrier:CNA,acknowledged,submitted,acknowledged,,1.0,N
+EV000228,quote,quote,HAR-S00039-Q1,2026-01-22T12:00:00,carrier:TRV,quote_received,,received,HAR-S00039-Q1.pdf,0.92,Y
+EV000315,certificates,certificate_request,HAR-CERT0024,2026-01-23T00:00:00,E006,certificate_issued,open,issued,HAR-COI0024.pdf,1.0,N
+EV000383,endorsements,endorsement_request,HAR-END0027,2026-01-23T10:00:00,E013,sent_to_carrier,requested,pending_carrier,,1.0,N
+EV000461,renewals,renewal_task,REN-HAR-P00001-T90,2026-01-23T15:00:00,E009,task_completed,open,complete,,1.0,N
+EV000510,renewals,renewal_task,REN-HAR-P00083-T90,2026-01-23T15:00:00,E009,task_completed,open,complete,,1.0,N
+EV000285,certificates,certificate_request,HAR-CERT0009,2026-01-24T16:00:00,E007,certificate_issued,open,issued,HAR-COI0009.pdf,1.0,N
+EV000288,certificates,certificate_request,HAR-CERT0011,2026-01-25T09:00:00,system:email_intake,request_received,,open,email,0.88,N
+EV000289,certificates,certificate_request,HAR-CERT0011,2026-01-25T11:00:00,E010,exception_flagged,open,exception,,0.97,Y
+EV000498,renewals,renewal_task ,REN-HAR-P00066-T75,2026-01-25T15:00:00,E012,task_completed,open,complete,,1.0,N
+EV000376,endorsements,endorsement_request,HAR-END0023,2026-01-26T10:00:00,E009,sent_to_carrier,requested,pending_carrier,,1.0,N
+EV000466,renewals,renewal_task,REN-HAR-P00017-T90,2026-01-26T15:00:00,E012,task_completed,open,complete,,1.0,N
+EV000341,endorsements,endorsement_request,HAR-END0002,2026-01-27T10:00:00,E013,sent_to_carrier,requested,pending_carrier,,1.0,N
+EV000358,endorsements,endorsement_request,HAR-END0012,2026-01-27T11:00:00,carrier:LIB,endorsement_received,pending_carrier,issued,END-136702.pdf,0.9,N
+EV000298,certificates,certificate_request,HAR-CERT0016,2026-01-27T15:00:00,system:email_intake,request_received,,open,email,0.88,N
+EV000238,quote,quote,HAR-S00057-Q1,2026-01-27T16:00:00,carrier:AMT,quote_received,,received,HAR-S00057-Q1.pdf,0.92,N
+EV000299,certificates,certificate_request ,HAR-CERT0016,2026-01-27T17:00:00,E011,exception_flagged,open,exception,,0.97,Y
+EV000476,renewals,renewal_task,REN-HAR-P00040-T75,2026-01-28T15:00:00,E013,task_completed,open,complete,,1.0,N
+EV000504,renewals,renewal_task,REN-HAR-P00079-T75,2026-01-30T15:00:00,E008,task_completed,open,complete,,1.0,N
+EV000095,marketing,submission,HAR-S00052 ,2026-02-01T08:00:00,E011,submitted,draft,submitted,HAR-S00052_package.pdf,1.0,N
+EV000096,marketing,submission,HAR-S00052,2026-02-01T10:00:00,carrier:TRV,acknowledged,submitted,acknowledged,,1.0,N
+EV000361,endorsements,endorsement_request,HAR-END0014,2026-02-01T11:00:00,carrier:TRV,endorsement_received,pending_carrier,issued,END-417082.pdf,0.9,N
+EV000396,billing,payment,HAR-PMT00012,2026-02-01T14:00:00,accounting,cash_applied,received,applied,PF327160,1.0,N
+EV000489,renewals,renewal_task,REN-HAR-P00054-T75,2026-02-01T15:00:00,E010,task_completed,open,complete,,1.0,N
+EV000433,commissions,commission_line,LIB-COMM-202601:LIB-AUTO-7275574,2026-02-03T10:00:00,accounting,statement_line_matched,,Matched,LIB-COMM-202601.pdf,0.95,N
+EV000434,commissions,commission_line,LIB-COMM-202601:LIB-AUTO-3567307,2026-02-03T10:00:00,accounting,statement_line_matched,,Matched,LIB-COMM-202601.pdf,0.95,N
+EV000435,commissions,commission_line,LIB-COMM-202601:LIB-WC-7551335,2026-02-03T10:00:00,accounting,statement_line_matched,,Matched,LIB-COMM-202601.pdf,0.95,N
+EV000443,commissions ,commission_line,CNA-COMM-202601:CNA-CYB-9479742,2026-02-03T10:00:00,accounting,statement_line_matched,,Matched,CNA-COMM-202601.pdf,0.95,N
+EV000455,commissions,commission_line,GRD-COMM-202601:GRD-WC-3894019,2026-02-03T10:00:00,accounting,statement_line_matched,,Matched,GRD-COMM-202601.pdf,0.95,N
+EV000456,commissions,commission_line,GRD-COMM-202601:GRD-WC-8470777,2026-02-03T10:00:00,accounting,statement_line_matched,,Matched,GRD-COMM-202601.pdf,0.95,N
+EV000457,commissions,commission_line,GRD-COMM-202601:GRD-WC-9264864,2026-02-03T10:00:00,accounting,statement_line_matched,,Matched,GRD-COMM-202601.pdf,0.95,N
+EV000407,billing,payment,HAR-PMT00023,2026-02-03T14:00:00,accounting,cash_applied ,received,applied,CHK 38440,1.0,N
+EV000492,renewals,renewal_task,REN-HAR-P00062-T120,2026-02-03T15:00:00,E006,task_completed,open,complete,,1.0,N
+EV000390,billing,payment,HAR-PMT00006,2026-02-04T14:00:00,accounting,cash_applied,received,applied,CHK 37034,1.0,N
+EV000405,billing,payment ,HAR-PMT00021,2026-02-04T14:00:00,accounting,cash_applied ,received,applied,ACH158688831,1.0,N
+EV000499,renewals,renewal_task,REN-HAR-P00066-T60,2026-02-05T15:00:00,E012 ,task_completed,open,complete,,1.0,N
+EV000306,certificates,certificate_request,HAR-CERT0020,2026-02-06T10:00:00,system:email_intake,request_received,,open,email,0.88,N
+EV000307,certificates,certificate_request,HAR-CERT0020,2026-02-06T13:00:00,E009,certificate_issued,open,issued,HAR-COI0020.pdf,1.0,N
+EV000423,billing,payment,HAR-PMT00039,2026-02-06T14:00:00,accounting,cash_unapplied,received,unapplied,CHK 96712,1.0,Y
+EV000494,renewals,renewal_task,REN-HAR-P00065-T120,2026-02-08T15:00:00,E012,task_completed,open,complete,,1.0,N
+EV000511,renewals,renewal_task,REN-HAR-P00083-T75,2026-02-08T15:00:00,E009,task_completed,open,complete,,1.0,N
+EV000316,certificates,certificate_request,HAR-CERT0025,2026-02-09T09:00:00,system:email_intake,request_received,,open,email,0.88,N
+EV000253,quote,quote,HAR-S00091-Q1,2026-02-09T14:00:00,carrier:MKL,quote_received,,received,HAR-S00091-Q1.pdf,0.92,N
+EV000008,marketing,submission,HAR-S00005,2026-02-09T16:00:00,E007,submitted ,draft,submitted,HAR-S00005_package.pdf,1.0,N
+EV000468,renewals,renewal_task,REN-HAR-P00024-T90,2026-02-10T15:00:00,E009,task_completed,open,complete,,1.0,N
+EV000477,renewals,renewal_task,REN-HAR-P00040-T60,2026-02-10T15:00:00,E013,task_completed,open,complete,,1.0,N
+EV000505,renewals,renewal_task,REN-HAR-P00079-T60,2026-02-10T15:00:00,E008,task_completed,open,complete,,1.0,N
+EV000317,certificates,certificate_request,HAR-CERT0025,2026-02-11T06:00:00,E009,certificate_issued,open,issued,HAR-COI0025.pdf,1.0,N
+EV000462,renewals ,renewal_task,REN-HAR-P00001-T75,2026-02-11T15:00:00,E009,task_completed,open,complete,,1.0,N
+EV000518,renewals,renewal_task,REN-HAR-P00095-T120,2026-02-11T15:00:00,E007,task_completed,open,complete,,1.0,N
+EV000239,quote,quote,HAR-S00058-Q1,2026-02-12T10:00:00,carrier:TRV,quote_received,,received,HAR-S00058-Q1.pdf,0.92,N
+EV000501,renewals,renewal_task,REN-HAR-P00075-T120,2026-02-12T15:00:00,E007,task_completed,open,complete,,1.0,N
+EV000009,marketing,submission,HAR-S00005,2026-02-13T10:00:00,carrier:LIB,acknowledged,submitted,acknowledged,,1.0,N
+EV000411,billing,payment,HAR-PMT00027,2026-02-13T14:00:00,accounting,cash_applied,received,applied,ACH664719562,1.0,N
+EV000385,billing,payment,HAR-PMT00001,2026-02-15T14:00:00,accounting,cash_applied,received,applied,PF138020,1.0,N
+EV000472,renewals,renewal_task,REN-HAR-P00031-T90,2026-02-15T15:00:00,E006,task_completed,open ,complete,,1.0,N
+EV000490,renewals,renewal_task,REN-HAR-P00054-T60,2026-02-16T15:00:00,E010,task_completed,open,complete,,1.0,N
+EV000409,billing,payment,HAR-PMT00025,2026-02-18T14:00:00,accounting,cash_applied,received,applied,ACH246887041,1.0,N
+EV000480,renewals,renewal_task,REN-HAR-P00042-T120,2026-02-18T15:00:00,E013,task_completed,open,complete,,1.0,N
+EV000483,renewals,renewal_task,REN-HAR-P00048-T120,2026-02-18T15:00:00,E010,task_completed,open,complete ,,1.0,N
+EV000255,quote,quote,HAR-S00094-Q1,2026-02-20T09:00:00,carrier:CNA,quote_received,,received,HAR-S00094-Q1.pdf,0.92,N
+EV000516,renewals,renewal_task,REN-HAR-P00092-T120,2026-02-20T15:00:00,E010,task_completed,open,complete,,1.0,N
+EV000280,certificates,certificate_request,HAR-CERT0007,2026-02-21T10:00:00,system:email_intake,request_received,,open,email,0.88,N
+EV000334,certificates,certificate_request,HAR-CERT0034,2026-02-21T17:00:00,system:email_intake,request_received,,open,email,0.88,N
+EV000335,certificates,certificate_request,HAR-CERT0034,2026-02-21T19:00:00,E009,exception_flagged,open,exception,,0.97,Y
+EV000281,certificates,certificate_request,HAR-CERT0007,2026-02-22T19:00:00,E010,certificate_issued,open,issued,HAR-COI0007.pdf,1.0,N
+EV000290,certificates,certificate_request ,HAR-CERT0012,2026-02-24T12:00:00,system:email_intake,request_received,,open,email,0.88,N
+EV000206,quote,quote,HAR-S00005-Q1,2026-02-25T13:00:00,carrier:LIB,quote_received,,received,HAR-S00005-Q1.pdf,0.92,N
+EV000418,billing,payment,HAR-PMT00034,2026-02-25T14:00:00,accounting,cash_applied,received,applied,CHK 67353,1.0,N
+EV000421,billing,payment,HAR-PMT00037,2026-02-25T14:00:00,accounting,cash_applied,received,applied,ACH460472095,1.0,N
+EV000291,certificates,certificate_request,HAR-CERT0012,2026-02-25T15:00:00,E011,certificate_issued,open,issued,HAR-COI0012.pdf,1.0,N
+EV000312,certificates,certificate_request,HAR-CERT0023 ,2026-02-26T14:00:00,system:email_intake,request_received,,open,email,0.88,N
+EV000313,certificates,certificate_request,HAR-CERT0023,2026-02-26T16:00:00,E010,exception_flagged,open,exception,,0.97,Y
+EV000344,endorsements,endorsement_request,HAR-END0003,2026-02-27T11:00:00,carrier:NAT,endorsement_received,pending_carrier,issued_-_discrepancy,END-724637.pdf,0.9,Y
+EV000507,renewals,renewal_task,REN-HAR-P00081-T120,2026-02-27T15:00:00,E008,task_completed,open ,complete,,1.0,N
+EV000512,renewals,renewal_task,REN-HAR-P00083-T60,2026-02-28T15:00:00,E009,task_completed,open,complete,,1.0,N
+EV000278,certificates,certificate_request,HAR-CERT0006,2026-02-28T17:00:00,system:email_intake,request_received,,open,email,0.88,N
+EV000279,certificates,certificate_request,HAR-CERT0006,2026-02-28T19:00:00,E012,exception_flagged,open,exception,,0.97,Y
+EV000463,renewals,renewal_task,REN-HAR-P00001-T60,2026-03-01T15:00:00,E009,task_completed,open,complete,,1.0,N
+EV000473,renewals,renewal_task,REN-HAR-P00031-T75,2026-03-01T15:00:00,E006,task_completed,open,complete,,1.0,N
+EV000270,certificates,certificate_request,HAR-CERT0002,2026-03-01T17:00:00,system:email_intake,request_received,,open,email,0.88,N
+EV000271,certificates,certificate_request,HAR-CERT0002,2026-03-01T19:00:00,E010,exception_flagged,open,exception,,0.97,Y
+EV000469,renewals,renewal_task,REN-HAR-P00024-T75,2026-03-02T15:00:00,E009,task_completed,open,complete,,1.0,N
+EV000370,endorsements,endorsement_request,HAR-END0020,2026-03-03T10:00:00,E011,sent_to_carrier,requested,pending_carrier,,1.0,N
+EV000425,commissions,commission_line,TRV-COMM-202602:TRV-AUTO-6605955,2026-03-03T10:00:00,accounting,statement_line_matched,,Matched,TRV-COMM-202602.pdf,0.95,N
+EV000436,commissions,commission_line,LIB-COMM-202602:LIB-GL-1970641,2026-03-03T10:00:00,accounting,statement_line_matched,,Matched,LIB-COMM-202602.pdf,0.95,N
+EV000437,commissions,commission_line,LIB-COMM-202602:LIB-WC-2782069,2026-03-03T10:00:00,accounting,statement_line_matched,,Matched,LIB-COMM-202602.pdf,0.95,N 
+EV000445,commissions,commission_line,NAT-COMM-202602:NAT-WC-4834651,2026-03-03T10:00:00,accounting,statement_line_matched,,Matched,NAT-COMM-202602.pdf ,0.95,N
+EV000450,commissions,commission_line,AMT-COMM-202602:AMT-WC-2131117,2026-03-03T10:00:00,accounting,statement_line_matched,,Matched,AMT-COMM-202602.pdf,0.95,N
+EV000458,commissions,commission_line,GRD-COMM-202602:GRD-WC-1918578,2026-03-03T10:00:00,accounting,statement_line_matched,,Matched,GRD-COMM-202602.pdf,0.95,N
+EV000459,commissions,commission_line,GRD-COMM-202602:GRD-BOP-9955713,2026-03-03T10:00:00,accounting,statement_line_exception,,Unmatched - policy not in book,GRD-COMM-202602.pdf,0.95,Y
+EV000471,renewals,renewal_task,REN-HAR-P00026-T120,2026-03-04T15:00:00,E010,task_completed,open,complete,,1.0,N
+EV000342,endorsements,endorsement_request,HAR-END0002,2026-03-05T11:00:00,carrier:TRV,endorsement_received,pending_carrier,issued,END-232243.pdf ,0.9,N
+EV000406,billing,payment,HAR-PMT00022,2026-03-06T14:00:00,accounting,cash_applied,received,applied,PF964584,1.0,N 
+EV000493,renewals,renewal_task,REN-HAR-P00062-T90,2026-03-07T15:00:00,E006,task_completed,open,complete,,1.0,N
+EV000495,renewals,renewal_task,REN-HAR-P00065-T90,2026-03-08T15:00:00,E012 ,task_completed,open,complete,,1.0,N
+EV000514,renewals,renewal_task,REN-HAR-P00091-T90,2026-03-09T15:00:00,E010,task_completed,open,complete,,1.0,N
+EV000352,endorsements,endorsement_request,HAR-END0009,2026-03-10T10:00:00,E007,sent_to_carrier,requested,pending_carrier,,1.0,N
+EV000479,renewals,renewal_task,REN-HAR-P00041-T120,2026-03-10T15:00:00,E013,task_completed,open,complete,,1.0,N
+EV000371,endorsements,endorsement_request,HAR-END0020,2026-03-13T11:00:00,carrier:NAT,endorsement_received,pending_carrier,issued,END-721255.pdf,0.9,N
+EV000470,renewals,renewal_task,REN-HAR-P00024-T60,2026-03-13T15:00:00,E009,task_completed,open,complete,,1.0,N
+EV000478 ,renewals,renewal_task,REN-HAR-P00040-T30,2026-03-17T15:00:00,E013,task_completed,open,complete,,1.0,N
+EV000485,renewals,renewal_task,REN-HAR-P00049-T120,2026-03-17T15:00:00,E007,task_completed,open,complete,,1.0,N
+EV000491,renewals,renewal_task,REN-HAR-P00054-T30,2026-03-17T15:00:00,E010,task_completed,open,complete,,1.0,N
+EV000340,endorsements,endorsement_request,HAR-END0001,2026-03-18T10:00:00,E009,sent_to_carrier,requested,pending_carrier,,1.0,N
+EV000482,renewals,renewal_task,REN-HAR-P00047-T120,2026-03-18T15:00:00,E010,task_completed,open,complete,,1.0,N
+EV000320,certificates,certificate_request,HAR-CERT0027,2026-03-19T09:00:00,system:email_intake,request_received,,open,email,0.88,N
+EV000506,renewals,renewal_task,REN-HAR-P00079-T30,2026-03-19T15:00:00,E008,task_completed,open,complete,,1.0,N
+EV000386,billing,payment,HAR-PMT00002,2026-03-20T14:00:00,accounting,cash_applied,received,applied,CHK 94756,1.0,N
+EV000481,renewals,renewal_task,REN-HAR-P00042-T90,2026-03-20T15:00:00,E013,task_completed,open,complete,,1.0,N
+EV000486 ,renewals,renewal_task,REN-HAR-P00053-T120,2026-03-20T15:00:00,E007 ,task_completed,open,complete,,1.0,N
+EV000517,renewals,renewal_task,REN-HAR-P00092-T90,2026-03-21T15:00:00,E010,task_completed,open,complete,,1.0,N
+EV000321,certificates,certificate_request,HAR-CERT0027,2026-03-22T05:00:00,E009,certificate_issued,open,issued,HAR-COI0027.pdf,1.0,N
+EV000408,billing,payment,HAR-PMT00024,2026-03-22T14:00:00,accounting,cash_applied,received ,applied,ACH906625820,1.0,N
+EV000500,renewals,renewal_task,REN-HAR-P00066-T10,2026-03-24T15:00:00,E012,task_completed,open,complete,,1.0,N
+EV000484,renewals,renewal_task,REN-HAR-P00048-T90,2026-03-25T15:00:00,E010,task_completed,open,complete,,1.0,N
+EV000508,renewals,renewal_task,REN-HAR-P00081-T90,2026-03-25T15:00:00,E008,task_completed,open,complete,,1.0,N
+EV000513,renewals ,renewal_task,REN-HAR-P00083-T30,2026-03-26T15:00:00,E009,task_completed,open,complete,,1.0,N
+EV000515,renewals,renewal_task,REN-HAR-P00091-T75,2026-03-26T15:00:00,E010,task_completed,open,complete,,1.0,N
+EV000417,billing,payment,HAR-PMT00033,2026-03-28T14:00:00,accounting,cash_applied,received,applied,CHK 85245,1.0,N
+EV000353,endorsements,endorsement_request,HAR-END0009,2026-03-29T11:00:00,carrier:PRG,endorsement_received,pending_carrier,issued,END-739844.pdf,0.9,N
+EV000338,certificates,certificate_request,HAR-CERT0036,2026-03-30T14:00:00,system:email_intake,request_received,,open,email,0.88,N
+EV000339,certificates,certificate_request,HAR-CERT0036,2026-03-30T16:00:00,E011,exception_flagged,open,exception,,0.97,Y
+EV000464,renewals,renewal_task,REN-HAR-P00001-T30,2026-03-31T15:00:00,E009,task_completed,open,complete,,1.0,N
+EV000426,commissions,commission_line,TRV-COMM-202603:TRV-WC-9728990 ,2026-04-03T10:00:00,accounting,statement_line_matched,,Matched,TRV-COMM-202603.pdf,0.95,N
+EV000427,commissions ,commission_line,TRV-COMM-202603:TRV-UMB-8785458,2026-04-03T10:00:00,accounting,statement_line_matched,,Matched,TRV-COMM-202603.pdf,0.95,N
+EV000438,commissions,commission_line ,LIB-COMM-202603:LIB-WC-6993923,2026-04-03T10:00:00,accounting,statement_line_matched,,Matched,LIB-COMM-202603.pdf,0.95,N
+EV000439,commissions,commission_line,LIB-COMM-202603:LIB-AUTO-9319868,2026-04-03T10:00:00,accounting,statement_line_matched,,Matched,LIB-COMM-202603.pdf ,0.95,N
+EV000446 ,commissions,commission_line,NAT-COMM-202603:NAT-WC-4302519,2026-04-03T10:00:00,accounting,statement_line_matched,,Matched,NAT-COMM-202603.pdf,0.95,N
+EV000447,commissions,commission_line,NAT-COMM-202603:NAT-WC-8917179,2026-04-03T10:00:00,accounting,statement_line_matched,,Matched,NAT-COMM-202603.pdf ,0.95,N
+EV000451,commissions,commission_line,AMT-COMM-202603:AMT-BOP-3744466,2026-04-03T10:00:00,accounting,statement_line_matched,,Matched,AMT-COMM-202603.pdf,0.95,N
+EV000415,billing,payment,HAR-PMT00031,2026-04-11T14:00:00,accounting,cash_applied,received,applied,ACH858909059,1.0,N

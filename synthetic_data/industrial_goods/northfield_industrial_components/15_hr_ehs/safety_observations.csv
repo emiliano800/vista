@@ -1,0 +1,40 @@
+observation_id,date,observer_id,area,category,note
+SO-001,2026-02-03,E081,Assembly,Safe,Good housekeeping
+SO-002,2025-08-29,E068,Machine Shop,Safe,Missing guard
+SO-003,2025-11-07,E028,Dock,At-Risk,Proper lifting
+SO-004,2025-07-19,E020,Machine Shop,Safe,Speeding forklift
+SO-005,2025-07-19,E095,Assembly,At-Risk,Good housekeeping
+SO-006,2025-08-26,E028,Machine Shop,Safe,Good housekeeping
+SO-007,2025-09-06,E049,Dock,Safe,Blocked fire extinguisher
+SO-008,2025-08-19,E086,Assembly,At-Risk,Good housekeeping
+SO-009,2025-05-19,E089,Dock,At-Risk,Good housekeeping
+SO-010,2025-08-19,E017,Warehouse,At-Risk,Blocked fire extinguisher
+SO-011,2025-07-24,E064,Warehouse,Safe,Proper lifting
+SO-012,2025-07-05,E033,Machine Shop,Safe,Speeding forklift
+SO-013,2026-02-10,E033,Warehouse,Safe,Blocked fire extinguisher
+SO-014,2025-07-18,E079,Machine Shop,At-Risk,Eyewear worn
+SO-015,2025-08-11,E106,Assembly,Safe,Speeding forklift
+SO-016,2025-11-23,E064,Machine Shop,Safe,Missing guard
+SO-017,2025-07-04,E031,Warehouse,Safe,Good housekeeping
+SO-018,2025-09-22,E029,Dock,Safe,Proper lifting
+SO-019,2025-04-01,E079,Dock,Safe,Proper lifting
+SO-020,2025-04-15,E085,Dock,Safe,Speeding forklift
+SO-021,2025-07-31,E075,Assembly,At-Risk,Eyewear worn
+SO-022,2025-08-17,E080,Assembly,Safe,Speeding forklift
+SO-023,2025-11-11,E096,Dock,Safe,Eyewear worn
+SO-024,2025-09-05,E093,Machine Shop,Safe,Eyewear worn
+SO-025,2025-11-08,E089,Machine Shop,Safe,Blocked fire extinguisher
+SO-026,2025-10-04,E084,Assembly,At-Risk,Proper lifting
+SO-027,2025-06-01,E071,Dock,Safe,Blocked fire extinguisher
+SO-028,2026-01-19,E092,Dock,Safe,Speeding forklift
+SO-029,2025-08-29,E091,Warehouse,Safe,Eyewear worn
+SO-030,2026-01-30,E044,Machine Shop,At-Risk,Eyewear worn
+SO-031,2025-06-06,E010,Assembly,At-Risk,Eyewear worn
+SO-032,2025-04-08,E030,Assembly,Safe,Eyewear worn
+SO-033,2025-11-14,E052,Machine Shop,At-Risk,Blocked fire extinguisher
+SO-034,2025-10-16,E037,Dock,Safe,Good housekeeping
+SO-035,2025-09-13,E103,Dock,Safe,Blocked fire extinguisher
+SO-036,2025-05-10,E087,Dock,Safe,Missing guard
+SO-037,2025-11-28,E043,Dock,Safe,Speeding forklift
+SO-038,2026-01-02,E023,Warehouse,At-Risk,Blocked fire extinguisher
+SO-039,2025-05-24,E083,Machine Shop,At-Risk,Proper lifting

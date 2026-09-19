@@ -1,0 +1,2163 @@
+{
+  "as_of_date": "2026-03-31",
+  "sectors": {
+    "insurance_broking": [
+      {
+        "slug": "meridian_risk_partners",
+        "name": "Meridian Risk Partners, LLC",
+        "short": "Meridian",
+        "tier": "high",
+        "files": [
+          {
+            "folder": "00_company",
+            "file": "company_profile.json",
+            "rows": 0
+          },
+          {
+            "folder": "00_company",
+            "file": "operating_procedures.md",
+            "rows": null
+          },
+          {
+            "folder": "01_clients_crm",
+            "file": "clients.csv",
+            "rows": 38
+          },
+          {
+            "folder": "01_clients_crm",
+            "file": "contacts.csv",
+            "rows": 75
+          },
+          {
+            "folder": "01_clients_crm",
+            "file": "locations.csv",
+            "rows": 71
+          },
+          {
+            "folder": "01_clients_crm",
+            "file": "account_activities.csv",
+            "rows": 220
+          },
+          {
+            "folder": "02_policies_exposures",
+            "file": "policies.csv",
+            "rows": 122
+          },
+          {
+            "folder": "02_policies_exposures",
+            "file": "coverages.csv",
+            "rows": 402
+          },
+          {
+            "folder": "02_policies_exposures",
+            "file": "vehicles.csv",
+            "rows": 153
+          },
+          {
+            "folder": "02_policies_exposures",
+            "file": "drivers.csv",
+            "rows": 118
+          },
+          {
+            "folder": "02_policies_exposures",
+            "file": "payroll_exposures.csv",
+            "rows": 82
+          },
+          {
+            "folder": "03_marketing_submissions",
+            "file": "carriers.csv",
+            "rows": 8
+          },
+          {
+            "folder": "03_marketing_submissions",
+            "file": "underwriters.csv",
+            "rows": 12
+          },
+          {
+            "folder": "03_marketing_submissions",
+            "file": "submissions.csv",
+            "rows": 142
+          },
+          {
+            "folder": "03_marketing_submissions",
+            "file": "quotes.csv",
+            "rows": 92
+          },
+          {
+            "folder": "03_marketing_submissions",
+            "file": "declinations.csv",
+            "rows": 21
+          },
+          {
+            "folder": "04_renewals",
+            "file": "renewals.csv",
+            "rows": 61
+          },
+          {
+            "folder": "04_renewals",
+            "file": "renewal_tasks.csv",
+            "rows": 366
+          },
+          {
+            "folder": "05_certificates",
+            "file": "certificate_requests.csv",
+            "rows": 61
+          },
+          {
+            "folder": "05_certificates",
+            "file": "certificates_issued.csv",
+            "rows": 30
+          },
+          {
+            "folder": "06_endorsements",
+            "file": "endorsement_requests.csv",
+            "rows": 45
+          },
+          {
+            "folder": "07_claims",
+            "file": "claims.csv",
+            "rows": 40
+          },
+          {
+            "folder": "07_claims",
+            "file": "loss_run_requests.csv",
+            "rows": 25
+          },
+          {
+            "folder": "08_billing_ar",
+            "file": "invoices.csv",
+            "rows": 47
+          },
+          {
+            "folder": "08_billing_ar",
+            "file": "installment_schedules.csv",
+            "rows": 188
+          },
+          {
+            "folder": "08_billing_ar",
+            "file": "payments.csv",
+            "rows": 42
+          },
+          {
+            "folder": "08_billing_ar",
+            "file": "ar_aging.csv",
+            "rows": 11
+          },
+          {
+            "folder": "09_carrier_payables_commissions",
+            "file": "carrier_statements.csv",
+            "rows": 18
+          },
+          {
+            "folder": "09_carrier_payables_commissions",
+            "file": "commission_statements.csv",
+            "rows": 31
+          },
+          {
+            "folder": "09_carrier_payables_commissions",
+            "file": "producer_commissions.csv",
+            "rows": 122
+          },
+          {
+            "folder": "10_compliance_licensing",
+            "file": "licenses.csv",
+            "rows": 30
+          },
+          {
+            "folder": "10_compliance_licensing",
+            "file": "carrier_appointments.csv",
+            "rows": 8
+          },
+          {
+            "folder": "10_compliance_licensing",
+            "file": "surplus_lines_filings.csv",
+            "rows": 18
+          },
+          {
+            "folder": "11_finance_gl",
+            "file": "chart_of_accounts.csv",
+            "rows": 29
+          },
+          {
+            "folder": "11_finance_gl",
+            "file": "general_ledger.csv",
+            "rows": 96
+          },
+          {
+            "folder": "11_finance_gl",
+            "file": "vendors.csv",
+            "rows": 12
+          },
+          {
+            "folder": "11_finance_gl",
+            "file": "ap_vendor_invoices.csv",
+            "rows": 181
+          },
+          {
+            "folder": "11_finance_gl",
+            "file": "bank_statement_premium_trust.csv",
+            "rows": 53
+          },
+          {
+            "folder": "11_finance_gl",
+            "file": "software_subscriptions.csv",
+            "rows": 16
+          },
+          {
+            "folder": "12_hr_payroll",
+            "file": "employees.csv",
+            "rows": 32
+          },
+          {
+            "folder": "12_hr_payroll",
+            "file": "payroll_register.csv",
+            "rows": 372
+          },
+          {
+            "folder": "12_hr_payroll",
+            "file": "pto_balances.csv",
+            "rows": 31
+          },
+          {
+            "folder": "13_documents_emails",
+            "file": "document_index.csv",
+            "rows": 202
+          },
+          {
+            "folder": "13_documents_emails",
+            "file": "acord_125_MER-C0001.json",
+            "rows": 0
+          },
+          {
+            "folder": "13_documents_emails",
+            "file": "cert_request_MER-C0002.eml",
+            "rows": null
+          },
+          {
+            "folder": "13_documents_emails",
+            "file": "renewal_exposure_request_MER-C0001.eml",
+            "rows": null
+          },
+          {
+            "folder": "13_documents_emails",
+            "file": "carrier_question_TRV.eml",
+            "rows": null
+          },
+          {
+            "folder": "13_documents_emails",
+            "file": "commission_inquiry_LIB.eml",
+            "rows": null
+          },
+          {
+            "folder": "14_workflow_events",
+            "file": "workflow_events.csv",
+            "rows": 726
+          }
+        ],
+        "dropped_datasets": [],
+        "merged_into_legacy_workbook": []
+      },
+      {
+        "slug": "harborline_insurance_brokers",
+        "name": "Harborline Insurance Brokers, Inc.",
+        "short": "Harborline",
+        "tier": "medium",
+        "files": [
+          {
+            "folder": "00_company",
+            "file": "company_profile.json",
+            "rows": 0
+          },
+          {
+            "folder": "00_company",
+            "file": "operating_procedures.md",
+            "rows": null
+          },
+          {
+            "folder": "01_clients_crm",
+            "file": "clients.csv",
+            "rows": 30
+          },
+          {
+            "folder": "01_clients_crm",
+            "file": "contacts.csv",
+            "rows": 55
+          },
+          {
+            "folder": "01_clients_crm",
+            "file": "locations.csv",
+            "rows": 56
+          },
+          {
+            "folder": "02_policies_exposures",
+            "file": "policies.csv",
+            "rows": 99
+          },
+          {
+            "folder": "02_policies_exposures",
+            "file": "coverages.csv",
+            "rows": 345
+          },
+          {
+            "folder": "02_policies_exposures",
+            "file": "vehicles.csv",
+            "rows": 78
+          },
+          {
+            "folder": "02_policies_exposures",
+            "file": "drivers.csv",
+            "rows": 58
+          },
+          {
+            "folder": "02_policies_exposures",
+            "file": "payroll_exposures.csv",
+            "rows": 67
+          },
+          {
+            "folder": "03_marketing_submissions",
+            "file": "carriers.csv",
+            "rows": 9
+          },
+          {
+            "folder": "03_marketing_submissions",
+            "file": "underwriters.csv",
+            "rows": 18
+          },
+          {
+            "folder": "03_marketing_submissions",
+            "file": "submissions.csv",
+            "rows": 108
+          },
+          {
+            "folder": "03_marketing_submissions",
+            "file": "quotes.csv",
+            "rows": 65
+          },
+          {
+            "folder": "03_marketing_submissions",
+            "file": "declinations.csv",
+            "rows": 29
+          },
+          {
+            "folder": "04_renewals",
+            "file": "renewals.csv",
+            "rows": 32
+          },
+          {
+            "folder": "04_renewals",
+            "file": "renewal_tasks.csv",
+            "rows": 192
+          },
+          {
+            "folder": "05_certificates",
+            "file": "certificate_requests.csv",
+            "rows": 36
+          },
+          {
+            "folder": "05_certificates",
+            "file": "certificates_issued.csv",
+            "rows": 19
+          },
+          {
+            "folder": "06_endorsements",
+            "file": "endorsement_requests.csv",
+            "rows": 28
+          },
+          {
+            "folder": "07_claims",
+            "file": "claims.csv",
+            "rows": 26
+          },
+          {
+            "folder": "07_claims",
+            "file": "loss_run_requests.csv",
+            "rows": 15
+          },
+          {
+            "folder": "08_billing_ar",
+            "file": "invoices.csv",
+            "rows": 42
+          },
+          {
+            "folder": "08_billing_ar",
+            "file": "payments.csv",
+            "rows": 40
+          },
+          {
+            "folder": "09_carrier_payables_commissions",
+            "file": "carrier_statements.csv",
+            "rows": 25
+          },
+          {
+            "folder": "09_carrier_payables_commissions",
+            "file": "commission_statements.csv",
+            "rows": 35
+          },
+          {
+            "folder": "09_carrier_payables_commissions",
+            "file": "producer_commissions.csv",
+            "rows": 99
+          },
+          {
+            "folder": "10_compliance_licensing",
+            "file": "licenses.csv",
+            "rows": 18
+          },
+          {
+            "folder": "10_compliance_licensing",
+            "file": "carrier_appointments.csv",
+            "rows": 9
+          },
+          {
+            "folder": "10_compliance_licensing",
+            "file": "surplus_lines_filings.csv",
+            "rows": 11
+          },
+          {
+            "folder": "11_finance_gl",
+            "file": "chart_of_accounts.csv",
+            "rows": 29
+          },
+          {
+            "folder": "11_finance_gl",
+            "file": "general_ledger.csv",
+            "rows": 96
+          },
+          {
+            "folder": "11_finance_gl",
+            "file": "vendors.csv",
+            "rows": 13
+          },
+          {
+            "folder": "11_finance_gl",
+            "file": "ap_vendor_invoices.csv",
+            "rows": 160
+          },
+          {
+            "folder": "11_finance_gl",
+            "file": "bank_statement_premium_trust.csv",
+            "rows": 53
+          },
+          {
+            "folder": "11_finance_gl",
+            "file": "software_subscriptions.csv",
+            "rows": 12
+          },
+          {
+            "folder": "12_hr_payroll",
+            "file": "employees.csv",
+            "rows": 21
+          },
+          {
+            "folder": "12_hr_payroll",
+            "file": "payroll_register.csv",
+            "rows": 240
+          },
+          {
+            "folder": "13_documents_emails",
+            "file": "document_index.csv",
+            "rows": 160
+          },
+          {
+            "folder": "13_documents_emails",
+            "file": "acord_125_HAR-C0001.json",
+            "rows": 0
+          },
+          {
+            "folder": "13_documents_emails",
+            "file": "cert_request_HAR-C0002.eml",
+            "rows": null
+          },
+          {
+            "folder": "13_documents_emails",
+            "file": "renewal_exposure_request_HAR-C0001.eml",
+            "rows": null
+          },
+          {
+            "folder": "13_documents_emails",
+            "file": "carrier_question_TRV.eml",
+            "rows": null
+          },
+          {
+            "folder": "14_workflow_events",
+            "file": "workflow_events.csv",
+            "rows": 518
+          },
+          {
+            "folder": "00_legacy_exports",
+            "file": "MASTER_WORKBOOK_v7_FINAL (2).xlsx",
+            "rows": 174,
+            "sheets": [
+              "installment_schedules",
+              "ar_aging"
+            ]
+          }
+        ],
+        "dropped_datasets": [
+          "account_activities",
+          "pto_balances"
+        ],
+        "merged_into_legacy_workbook": [
+          "installment_schedules",
+          "ar_aging"
+        ]
+      },
+      {
+        "slug": "castlebrook_agency",
+        "name": "Castlebrook Agency",
+        "short": "Castlebrook",
+        "tier": "low",
+        "files": [
+          {
+            "folder": "00_company",
+            "file": "company_profile.json",
+            "rows": 0
+          },
+          {
+            "folder": "00_company",
+            "file": "operating_procedures.md",
+            "rows": null
+          },
+          {
+            "folder": "03_marketing_submissions",
+            "file": "carriers.csv",
+            "rows": 8
+          },
+          {
+            "folder": "03_marketing_submissions",
+            "file": "submissions.csv",
+            "rows": 102
+          },
+          {
+            "folder": "03_marketing_submissions",
+            "file": "quotes.csv",
+            "rows": 55
+          },
+          {
+            "folder": "05_certificates",
+            "file": "certificate_requests.csv",
+            "rows": 19
+          },
+          {
+            "folder": "06_endorsements",
+            "file": "endorsement_requests.csv",
+            "rows": 13
+          },
+          {
+            "folder": "07_claims",
+            "file": "claims.csv",
+            "rows": 15
+          },
+          {
+            "folder": "07_claims",
+            "file": "loss_run_requests.csv",
+            "rows": 8
+          },
+          {
+            "folder": "08_billing_ar",
+            "file": "invoices.csv",
+            "rows": 29
+          },
+          {
+            "folder": "08_billing_ar",
+            "file": "payments.csv",
+            "rows": 28
+          },
+          {
+            "folder": "09_carrier_payables_commissions",
+            "file": "carrier_statements.csv",
+            "rows": 19
+          },
+          {
+            "folder": "11_finance_gl",
+            "file": "chart_of_accounts.csv",
+            "rows": 30
+          },
+          {
+            "folder": "11_finance_gl",
+            "file": "vendors.csv",
+            "rows": 13
+          },
+          {
+            "folder": "11_finance_gl",
+            "file": "ap_vendor_invoices.csv",
+            "rows": 141
+          },
+          {
+            "folder": "11_finance_gl",
+            "file": "bank_statement_premium_trust.csv",
+            "rows": 38
+          },
+          {
+            "folder": "11_finance_gl",
+            "file": "software_subscriptions.csv",
+            "rows": 7
+          },
+          {
+            "folder": "12_hr_payroll",
+            "file": "employees.csv",
+            "rows": 14
+          },
+          {
+            "folder": "12_hr_payroll",
+            "file": "payroll_register.csv",
+            "rows": 149
+          },
+          {
+            "folder": "13_documents_emails",
+            "file": "document_index.csv",
+            "rows": 117
+          },
+          {
+            "folder": "13_documents_emails",
+            "file": "acord_125_CAS-C0001.json",
+            "rows": 0
+          },
+          {
+            "folder": "13_documents_emails",
+            "file": "acord_127_vehicle_schedule.json",
+            "rows": 0
+          },
+          {
+            "folder": "13_documents_emails",
+            "file": "cert_request_CAS-C0002.eml",
+            "rows": null
+          },
+          {
+            "folder": "13_documents_emails",
+            "file": "renewal_exposure_request_CAS-C0001.eml",
+            "rows": null
+          },
+          {
+            "folder": "13_documents_emails",
+            "file": "carrier_question_TRV.eml",
+            "rows": null
+          },
+          {
+            "folder": "13_documents_emails",
+            "file": "po_style_vehicle_add.eml",
+            "rows": null
+          },
+          {
+            "folder": "00_legacy_exports",
+            "file": "MASTER_WORKBOOK_v7_FINAL (2).xlsx",
+            "rows": 906,
+            "sheets": [
+              "clients",
+              "contacts",
+              "locations",
+              "policies",
+              "coverages",
+              "vehicles",
+              "drivers",
+              "payroll_exposures",
+              "renewals",
+              "licenses",
+              "carrier_appointments"
+            ]
+          }
+        ],
+        "dropped_datasets": [
+          "account_activities",
+          "underwriters",
+          "declinations",
+          "renewal_tasks",
+          "certificates_issued",
+          "installment_schedules",
+          "ar_aging",
+          "commission_statements",
+          "producer_commissions",
+          "surplus_lines_filings",
+          "general_ledger",
+          "pto_balances",
+          "workflow_events"
+        ],
+        "merged_into_legacy_workbook": [
+          "clients",
+          "contacts",
+          "locations",
+          "policies",
+          "coverages",
+          "vehicles",
+          "drivers",
+          "payroll_exposures",
+          "renewals",
+          "licenses",
+          "carrier_appointments"
+        ]
+      }
+    ],
+    "industrial_goods": [
+      {
+        "slug": "northfield_industrial_components",
+        "name": "Northfield Industrial Components, Inc.",
+        "short": "Northfield",
+        "tier": "high",
+        "files": [
+          {
+            "folder": "16_documents_emails",
+            "file": "customer_po_PUR-792542.json",
+            "rows": 1
+          },
+          {
+            "folder": "16_documents_emails",
+            "file": "supplier_price_increase_NIC-V001.eml",
+            "rows": null
+          },
+          {
+            "folder": "16_documents_emails",
+            "file": "customer_expedite_SO-26006.eml",
+            "rows": null
+          },
+          {
+            "folder": "00_company",
+            "file": "company_profile.json",
+            "rows": 0
+          },
+          {
+            "folder": "00_company",
+            "file": "operating_procedures.md",
+            "rows": null
+          },
+          {
+            "folder": "01_master_data",
+            "file": "customers.csv",
+            "rows": 40
+          },
+          {
+            "folder": "01_master_data",
+            "file": "customer_contacts.csv",
+            "rows": 87
+          },
+          {
+            "folder": "01_master_data",
+            "file": "ship_to_locations.csv",
+            "rows": 51
+          },
+          {
+            "folder": "01_master_data",
+            "file": "items.csv",
+            "rows": 136
+          },
+          {
+            "folder": "01_master_data",
+            "file": "units_of_measure.csv",
+            "rows": 9
+          },
+          {
+            "folder": "01_master_data",
+            "file": "item_classifications.csv",
+            "rows": 6
+          },
+          {
+            "folder": "01_master_data",
+            "file": "price_lists.csv",
+            "rows": 140
+          },
+          {
+            "folder": "01_master_data",
+            "file": "customer_price_agreements.csv",
+            "rows": 24
+          },
+          {
+            "folder": "01_master_data",
+            "file": "bills_of_material.csv",
+            "rows": 168
+          },
+          {
+            "folder": "01_master_data",
+            "file": "routings.csv",
+            "rows": 194
+          },
+          {
+            "folder": "01_master_data",
+            "file": "work_centers.csv",
+            "rows": 7
+          },
+          {
+            "folder": "02_sales_quote_to_order",
+            "file": "rfqs.csv",
+            "rows": 197
+          },
+          {
+            "folder": "02_sales_quote_to_order",
+            "file": "sales_quotes.csv",
+            "rows": 197
+          },
+          {
+            "folder": "02_sales_quote_to_order",
+            "file": "sales_quote_lines.csv",
+            "rows": 611
+          },
+          {
+            "folder": "02_sales_quote_to_order",
+            "file": "sales_orders.csv",
+            "rows": 420
+          },
+          {
+            "folder": "02_sales_quote_to_order",
+            "file": "sales_order_lines.csv",
+            "rows": 1301
+          },
+          {
+            "folder": "02_sales_quote_to_order",
+            "file": "order_acknowledgments.csv",
+            "rows": 420
+          },
+          {
+            "folder": "02_sales_quote_to_order",
+            "file": "order_changes.csv",
+            "rows": 54
+          },
+          {
+            "folder": "02_sales_quote_to_order",
+            "file": "credit_checks.csv",
+            "rows": 219
+          },
+          {
+            "folder": "03_procurement",
+            "file": "suppliers.csv",
+            "rows": 18
+          },
+          {
+            "folder": "03_procurement",
+            "file": "supplier_contacts.csv",
+            "rows": 18
+          },
+          {
+            "folder": "03_procurement",
+            "file": "supplier_quotes.csv",
+            "rows": 50
+          },
+          {
+            "folder": "03_procurement",
+            "file": "purchase_requisitions.csv",
+            "rows": 113
+          },
+          {
+            "folder": "03_procurement",
+            "file": "purchase_orders.csv",
+            "rows": 260
+          },
+          {
+            "folder": "03_procurement",
+            "file": "purchase_order_lines.csv",
+            "rows": 665
+          },
+          {
+            "folder": "03_procurement",
+            "file": "po_acknowledgments.csv",
+            "rows": 199
+          },
+          {
+            "folder": "03_procurement",
+            "file": "supplier_scorecards.csv",
+            "rows": 54
+          },
+          {
+            "folder": "03_procurement",
+            "file": "supplier_contracts.csv",
+            "rows": 5
+          },
+          {
+            "folder": "04_receiving_ap",
+            "file": "advance_ship_notices.csv",
+            "rows": 136
+          },
+          {
+            "folder": "04_receiving_ap",
+            "file": "receipts.csv",
+            "rows": 247
+          },
+          {
+            "folder": "04_receiving_ap",
+            "file": "receipt_lines.csv",
+            "rows": 571
+          },
+          {
+            "folder": "04_receiving_ap",
+            "file": "supplier_invoices.csv",
+            "rows": 247
+          },
+          {
+            "folder": "04_receiving_ap",
+            "file": "supplier_invoice_lines.csv",
+            "rows": 571
+          },
+          {
+            "folder": "04_receiving_ap",
+            "file": "three_way_match.csv",
+            "rows": 247
+          },
+          {
+            "folder": "04_receiving_ap",
+            "file": "ap_aging.csv",
+            "rows": 47
+          },
+          {
+            "folder": "04_receiving_ap",
+            "file": "ap_payments.csv",
+            "rows": 200
+          },
+          {
+            "folder": "05_inventory",
+            "file": "inventory_balances.csv",
+            "rows": 127
+          },
+          {
+            "folder": "05_inventory",
+            "file": "inventory_transactions.csv",
+            "rows": 1756
+          },
+          {
+            "folder": "05_inventory",
+            "file": "cycle_counts.csv",
+            "rows": 60
+          },
+          {
+            "folder": "05_inventory",
+            "file": "lot_traceability.csv",
+            "rows": 120
+          },
+          {
+            "folder": "05_inventory",
+            "file": "reservations.csv",
+            "rows": 80
+          },
+          {
+            "folder": "05_inventory",
+            "file": "reorder_parameters.csv",
+            "rows": 92
+          },
+          {
+            "folder": "05_inventory",
+            "file": "transfers.csv",
+            "rows": 44
+          },
+          {
+            "folder": "06_warehouse_fulfillment",
+            "file": "pick_lists.csv",
+            "rows": 1145
+          },
+          {
+            "folder": "06_warehouse_fulfillment",
+            "file": "shipments.csv",
+            "rows": 391
+          },
+          {
+            "folder": "06_warehouse_fulfillment",
+            "file": "bills_of_lading.csv",
+            "rows": 308
+          },
+          {
+            "folder": "06_warehouse_fulfillment",
+            "file": "proof_of_delivery.csv",
+            "rows": 307
+          },
+          {
+            "folder": "06_warehouse_fulfillment",
+            "file": "freight_invoices.csv",
+            "rows": 308
+          },
+          {
+            "folder": "07_demand_planning",
+            "file": "demand_forecast.csv",
+            "rows": 210
+          },
+          {
+            "folder": "07_demand_planning",
+            "file": "mrp_recommendations.csv",
+            "rows": 18
+          },
+          {
+            "folder": "08_manufacturing",
+            "file": "work_orders.csv",
+            "rows": 220
+          },
+          {
+            "folder": "08_manufacturing",
+            "file": "work_order_operations.csv",
+            "rows": 1072
+          },
+          {
+            "folder": "08_manufacturing",
+            "file": "labor_transactions.csv",
+            "rows": 1979
+          },
+          {
+            "folder": "08_manufacturing",
+            "file": "material_issues.csv",
+            "rows": 972
+          },
+          {
+            "folder": "08_manufacturing",
+            "file": "scrap.csv",
+            "rows": 38
+          },
+          {
+            "folder": "08_manufacturing",
+            "file": "downtime.csv",
+            "rows": 95
+          },
+          {
+            "folder": "08_manufacturing",
+            "file": "wip_balances.csv",
+            "rows": 20
+          },
+          {
+            "folder": "08_manufacturing",
+            "file": "production_completions.csv",
+            "rows": 187
+          },
+          {
+            "folder": "09_quality",
+            "file": "inspections.csv",
+            "rows": 188
+          },
+          {
+            "folder": "09_quality",
+            "file": "nonconformance_reports.csv",
+            "rows": 16
+          },
+          {
+            "folder": "09_quality",
+            "file": "corrective_actions.csv",
+            "rows": 8
+          },
+          {
+            "folder": "09_quality",
+            "file": "certificates_of_conformance.csv",
+            "rows": 60
+          },
+          {
+            "folder": "09_quality",
+            "file": "calibration_records.csv",
+            "rows": 25
+          },
+          {
+            "folder": "10_maintenance",
+            "file": "equipment.csv",
+            "rows": 15
+          },
+          {
+            "folder": "10_maintenance",
+            "file": "maintenance_work_orders.csv",
+            "rows": 69
+          },
+          {
+            "folder": "10_maintenance",
+            "file": "pm_schedule.csv",
+            "rows": 15
+          },
+          {
+            "folder": "11_billing_ar",
+            "file": "customer_invoices.csv",
+            "rows": 391
+          },
+          {
+            "folder": "11_billing_ar",
+            "file": "customer_invoice_lines.csv",
+            "rows": 1145
+          },
+          {
+            "folder": "11_billing_ar",
+            "file": "customer_payments.csv",
+            "rows": 331
+          },
+          {
+            "folder": "11_billing_ar",
+            "file": "ar_aging.csv",
+            "rows": 79
+          },
+          {
+            "folder": "11_billing_ar",
+            "file": "disputes_deductions.csv",
+            "rows": 19
+          },
+          {
+            "folder": "11_billing_ar",
+            "file": "credit_holds.csv",
+            "rows": 4
+          },
+          {
+            "folder": "12_returns_service",
+            "file": "rmas.csv",
+            "rows": 27
+          },
+          {
+            "folder": "12_returns_service",
+            "file": "warranty_claims.csv",
+            "rows": 1
+          },
+          {
+            "folder": "12_returns_service",
+            "file": "field_service_orders.csv",
+            "rows": 7
+          },
+          {
+            "folder": "13_engineering_compliance",
+            "file": "engineering_change_orders.csv",
+            "rows": 15
+          },
+          {
+            "folder": "13_engineering_compliance",
+            "file": "item_revisions.csv",
+            "rows": 14
+          },
+          {
+            "folder": "13_engineering_compliance",
+            "file": "trade_compliance.csv",
+            "rows": 40
+          },
+          {
+            "folder": "13_engineering_compliance",
+            "file": "customs_entries.csv",
+            "rows": 11
+          },
+          {
+            "folder": "14_finance_gl",
+            "file": "chart_of_accounts.csv",
+            "rows": 34
+          },
+          {
+            "folder": "14_finance_gl",
+            "file": "general_ledger.csv",
+            "rows": 3993
+          },
+          {
+            "folder": "14_finance_gl",
+            "file": "inventory_valuation.csv",
+            "rows": 20
+          },
+          {
+            "folder": "14_finance_gl",
+            "file": "standard_cost_roll.csv",
+            "rows": 39
+          },
+          {
+            "folder": "14_finance_gl",
+            "file": "cost_variances.csv",
+            "rows": 48
+          },
+          {
+            "folder": "14_finance_gl",
+            "file": "budget_vs_actual.csv",
+            "rows": 60
+          },
+          {
+            "folder": "14_finance_gl",
+            "file": "bank_statement_operating.csv",
+            "rows": 543
+          },
+          {
+            "folder": "14_finance_gl",
+            "file": "corporate_vendors.csv",
+            "rows": 8
+          },
+          {
+            "folder": "14_finance_gl",
+            "file": "ap_vendor_invoices_indirect.csv",
+            "rows": 78
+          },
+          {
+            "folder": "14_finance_gl",
+            "file": "software_subscriptions.csv",
+            "rows": 12
+          },
+          {
+            "folder": "15_hr_ehs",
+            "file": "employees.csv",
+            "rows": 106
+          },
+          {
+            "folder": "15_hr_ehs",
+            "file": "payroll_register.csv",
+            "rows": 1259
+          },
+          {
+            "folder": "15_hr_ehs",
+            "file": "pto_balances.csv",
+            "rows": 102
+          },
+          {
+            "folder": "15_hr_ehs",
+            "file": "training_certifications.csv",
+            "rows": 279
+          },
+          {
+            "folder": "15_hr_ehs",
+            "file": "ehs_incidents.csv",
+            "rows": 17
+          },
+          {
+            "folder": "15_hr_ehs",
+            "file": "safety_observations.csv",
+            "rows": 39
+          },
+          {
+            "folder": "16_documents_emails",
+            "file": "document_index.csv",
+            "rows": 275
+          },
+          {
+            "folder": "17_workflow_events",
+            "file": "workflow_events.csv",
+            "rows": 2942
+          }
+        ],
+        "dropped_datasets": [],
+        "merged_into_legacy_workbook": [],
+        "stats": {
+          "customers": 40,
+          "items": 136,
+          "sales_orders": 420,
+          "purchase_orders": 260,
+          "shipments": 391,
+          "customer_invoices": 391,
+          "work_orders": 220,
+          "gl_lines": 3993,
+          "employees": 106
+        },
+        "shared_item_prices": {
+          "6205-2RS1": {
+            "item_id": "P-10000",
+            "supplier": "Motion Industries",
+            "unit_cost": 4.1,
+            "annual_qty": 0
+          },
+          "6308-2Z": {
+            "item_id": "P-10007",
+            "supplier": "Motion Industries",
+            "unit_cost": 11.8,
+            "annual_qty": 666
+          },
+          "LM11949/LM11910": {
+            "item_id": "P-10014",
+            "supplier": "Motion Industries",
+            "unit_cost": 8.95,
+            "annual_qty": 648
+          },
+          "B62": {
+            "item_id": "P-10021",
+            "supplier": "Motion Industries",
+            "unit_cost": 14.2,
+            "annual_qty": 250
+          },
+          "TXT315": {
+            "item_id": "P-10028",
+            "supplier": "Motion Industries",
+            "unit_cost": 1265.0,
+            "annual_qty": 1156
+          },
+          "243": {
+            "item_id": "P-10035",
+            "supplier": "W.W. Grainger, Inc.",
+            "unit_cost": 21.4,
+            "annual_qty": 5252
+          },
+          "7447": {
+            "item_id": "P-10042",
+            "supplier": "MSC Industrial Supply",
+            "unit_cost": 28.5,
+            "annual_qty": 570
+          },
+          "G10": {
+            "item_id": "P-10049",
+            "supplier": "Cintas Corporation",
+            "unit_cost": 9.85,
+            "annual_qty": 4382
+          },
+          "SF18-80": {
+            "item_id": "P-10056",
+            "supplier": "Uline",
+            "unit_cost": 24.6,
+            "annual_qty": 999
+          },
+          "S-4123": {
+            "item_id": "P-10063",
+            "supplier": "Uline",
+            "unit_cost": 31.0,
+            "annual_qty": 1089
+          },
+          "SF401AF": {
+            "item_id": "P-10070",
+            "supplier": "Cintas Corporation",
+            "unit_cost": 3.15,
+            "annual_qty": 2045
+          },
+          "49012": {
+            "item_id": "P-10077",
+            "supplier": "W.W. Grainger, Inc.",
+            "unit_cost": 27.8,
+            "annual_qty": 3922
+          },
+          "HHCS-0500-13-200-G8": {
+            "item_id": "P-10084",
+            "supplier": "Apex Fastener Corp",
+            "unit_cost": 38.4,
+            "annual_qty": 535
+          },
+          "HN-0500-13-G8": {
+            "item_id": "P-10091",
+            "supplier": "Apex Fastener Corp",
+            "unit_cost": 19.2,
+            "annual_qty": 578
+          },
+          "A36-PL-0.500": {
+            "item_id": "P-10098",
+            "supplier": "Ryerson",
+            "unit_cost": 0.68,
+            "annual_qty": 3862
+          },
+          "1045-RB-2.000": {
+            "item_id": "P-10105",
+            "supplier": "Ryerson",
+            "unit_cost": 0.94,
+            "annual_qty": 1095
+          }
+        },
+        "parcel_freight_cost_per_lb": 0.595
+      },
+      {
+        "slug": "keystone_bearing_and_drive",
+        "name": "Keystone Bearing & Drive Co.",
+        "short": "Keystone",
+        "tier": "medium",
+        "files": [
+          {
+            "folder": "16_documents_emails",
+            "file": "customer_po_P821082.json",
+            "rows": 1
+          },
+          {
+            "folder": "16_documents_emails",
+            "file": "supplier_price_increase_KBD-V001.eml",
+            "rows": null
+          },
+          {
+            "folder": "16_documents_emails",
+            "file": "customer_expedite_SO-26006.eml",
+            "rows": null
+          },
+          {
+            "folder": "00_company",
+            "file": "company_profile.json",
+            "rows": 0
+          },
+          {
+            "folder": "00_company",
+            "file": "operating_procedures.md",
+            "rows": null
+          },
+          {
+            "folder": "01_master_data",
+            "file": "customers.csv",
+            "rows": 32
+          },
+          {
+            "folder": "01_master_data",
+            "file": "customer_contacts.csv",
+            "rows": 66
+          },
+          {
+            "folder": "01_master_data",
+            "file": "ship_to_locations.csv",
+            "rows": 42
+          },
+          {
+            "folder": "01_master_data",
+            "file": "items.csv",
+            "rows": 101
+          },
+          {
+            "folder": "01_master_data",
+            "file": "units_of_measure.csv",
+            "rows": 9
+          },
+          {
+            "folder": "01_master_data",
+            "file": "item_classifications.csv",
+            "rows": 6
+          },
+          {
+            "folder": "01_master_data",
+            "file": "price_lists.csv",
+            "rows": 368
+          },
+          {
+            "folder": "01_master_data",
+            "file": "customer_price_agreements.csv",
+            "rows": 24
+          },
+          {
+            "folder": "01_master_data",
+            "file": "bills_of_material.csv",
+            "rows": 55
+          },
+          {
+            "folder": "02_sales_quote_to_order",
+            "file": "rfqs.csv",
+            "rows": 119
+          },
+          {
+            "folder": "02_sales_quote_to_order",
+            "file": "sales_quotes.csv",
+            "rows": 119
+          },
+          {
+            "folder": "02_sales_quote_to_order",
+            "file": "sales_quote_lines.csv",
+            "rows": 351
+          },
+          {
+            "folder": "02_sales_quote_to_order",
+            "file": "sales_orders.csv",
+            "rows": 520
+          },
+          {
+            "folder": "02_sales_quote_to_order",
+            "file": "sales_order_lines.csv",
+            "rows": 1565
+          },
+          {
+            "folder": "02_sales_quote_to_order",
+            "file": "order_acknowledgments.csv",
+            "rows": 520
+          },
+          {
+            "folder": "02_sales_quote_to_order",
+            "file": "order_changes.csv",
+            "rows": 57
+          },
+          {
+            "folder": "02_sales_quote_to_order",
+            "file": "credit_checks.csv",
+            "rows": 257
+          },
+          {
+            "folder": "03_procurement",
+            "file": "suppliers.csv",
+            "rows": 19
+          },
+          {
+            "folder": "03_procurement",
+            "file": "supplier_contacts.csv",
+            "rows": 18
+          },
+          {
+            "folder": "03_procurement",
+            "file": "supplier_quotes.csv",
+            "rows": 50
+          },
+          {
+            "folder": "03_procurement",
+            "file": "purchase_orders.csv",
+            "rows": 300
+          },
+          {
+            "folder": "03_procurement",
+            "file": "purchase_order_lines.csv",
+            "rows": 780
+          },
+          {
+            "folder": "03_procurement",
+            "file": "po_acknowledgments.csv",
+            "rows": 228
+          },
+          {
+            "folder": "03_procurement",
+            "file": "supplier_scorecards.csv",
+            "rows": 54
+          },
+          {
+            "folder": "03_procurement",
+            "file": "supplier_contracts.csv",
+            "rows": 5
+          },
+          {
+            "folder": "04_receiving_ap",
+            "file": "advance_ship_notices.csv",
+            "rows": 159
+          },
+          {
+            "folder": "04_receiving_ap",
+            "file": "receipts.csv",
+            "rows": 289
+          },
+          {
+            "folder": "04_receiving_ap",
+            "file": "receipt_lines.csv",
+            "rows": 696
+          },
+          {
+            "folder": "04_receiving_ap",
+            "file": "supplier_invoices.csv",
+            "rows": 289
+          },
+          {
+            "folder": "04_receiving_ap",
+            "file": "supplier_invoice_lines.csv",
+            "rows": 696
+          },
+          {
+            "folder": "04_receiving_ap",
+            "file": "three_way_match.csv",
+            "rows": 289
+          },
+          {
+            "folder": "04_receiving_ap",
+            "file": "ap_aging.csv",
+            "rows": 53
+          },
+          {
+            "folder": "04_receiving_ap",
+            "file": "ap_payments.csv",
+            "rows": 236
+          },
+          {
+            "folder": "05_inventory",
+            "file": "inventory_balances.xlsx",
+            "rows": 97
+          },
+          {
+            "folder": "05_inventory",
+            "file": "inventory_transactions.csv",
+            "rows": 2086
+          },
+          {
+            "folder": "05_inventory",
+            "file": "cycle_counts.csv",
+            "rows": 60
+          },
+          {
+            "folder": "05_inventory",
+            "file": "reorder_parameters.csv",
+            "rows": 85
+          },
+          {
+            "folder": "05_inventory",
+            "file": "transfers.csv",
+            "rows": 44
+          },
+          {
+            "folder": "06_warehouse_fulfillment",
+            "file": "pick_lists.csv",
+            "rows": 1350
+          },
+          {
+            "folder": "06_warehouse_fulfillment",
+            "file": "shipments.csv",
+            "rows": 488
+          },
+          {
+            "folder": "06_warehouse_fulfillment",
+            "file": "bills_of_lading.csv",
+            "rows": 385
+          },
+          {
+            "folder": "06_warehouse_fulfillment",
+            "file": "proof_of_delivery.csv",
+            "rows": 369
+          },
+          {
+            "folder": "06_warehouse_fulfillment",
+            "file": "freight_invoices.csv",
+            "rows": 385
+          },
+          {
+            "folder": "07_demand_planning",
+            "file": "demand_forecast.csv",
+            "rows": 240
+          },
+          {
+            "folder": "07_demand_planning",
+            "file": "mrp_recommendations.csv",
+            "rows": 10
+          },
+          {
+            "folder": "08_manufacturing",
+            "file": "work_orders.csv",
+            "rows": 60
+          },
+          {
+            "folder": "08_manufacturing",
+            "file": "material_issues.csv",
+            "rows": 271
+          },
+          {
+            "folder": "08_manufacturing",
+            "file": "scrap.csv",
+            "rows": 4
+          },
+          {
+            "folder": "08_manufacturing",
+            "file": "wip_balances.csv",
+            "rows": 3
+          },
+          {
+            "folder": "08_manufacturing",
+            "file": "production_completions.csv",
+            "rows": 52
+          },
+          {
+            "folder": "09_quality",
+            "file": "inspections.csv",
+            "rows": 92
+          },
+          {
+            "folder": "09_quality",
+            "file": "nonconformance_reports.csv",
+            "rows": 5
+          },
+          {
+            "folder": "09_quality",
+            "file": "corrective_actions.csv",
+            "rows": 2
+          },
+          {
+            "folder": "09_quality",
+            "file": "certificates_of_conformance.csv",
+            "rows": 52
+          },
+          {
+            "folder": "10_maintenance",
+            "file": "equipment.csv",
+            "rows": 11
+          },
+          {
+            "folder": "10_maintenance",
+            "file": "maintenance_work_orders.csv",
+            "rows": 29
+          },
+          {
+            "folder": "10_maintenance",
+            "file": "pm_schedule.csv",
+            "rows": 11
+          },
+          {
+            "folder": "11_billing_ar",
+            "file": "customer_invoices.csv",
+            "rows": 487
+          },
+          {
+            "folder": "11_billing_ar",
+            "file": "customer_invoice_lines.csv",
+            "rows": 1347
+          },
+          {
+            "folder": "11_billing_ar",
+            "file": "customer_payments.csv",
+            "rows": 398
+          },
+          {
+            "folder": "11_billing_ar",
+            "file": "ar_aging.xlsx",
+            "rows": 112
+          },
+          {
+            "folder": "11_billing_ar",
+            "file": "disputes_deductions.csv",
+            "rows": 23
+          },
+          {
+            "folder": "11_billing_ar",
+            "file": "credit_holds.csv",
+            "rows": 1
+          },
+          {
+            "folder": "12_returns_service",
+            "file": "rmas.csv",
+            "rows": 26
+          },
+          {
+            "folder": "12_returns_service",
+            "file": "field_service_orders.csv",
+            "rows": 13
+          },
+          {
+            "folder": "13_engineering_compliance",
+            "file": "trade_compliance.csv",
+            "rows": 40
+          },
+          {
+            "folder": "13_engineering_compliance",
+            "file": "customs_entries.csv",
+            "rows": 11
+          },
+          {
+            "folder": "14_finance_gl",
+            "file": "chart_of_accounts.csv",
+            "rows": 34
+          },
+          {
+            "folder": "14_finance_gl",
+            "file": "general_ledger.csv",
+            "rows": 4747
+          },
+          {
+            "folder": "14_finance_gl",
+            "file": "inventory_valuation.csv",
+            "rows": 20
+          },
+          {
+            "folder": "14_finance_gl",
+            "file": "cost_variances.csv",
+            "rows": 12
+          },
+          {
+            "folder": "14_finance_gl",
+            "file": "budget_vs_actual.csv",
+            "rows": 60
+          },
+          {
+            "folder": "14_finance_gl",
+            "file": "bank_statement_operating.csv",
+            "rows": 646
+          },
+          {
+            "folder": "14_finance_gl",
+            "file": "corporate_vendors.csv",
+            "rows": 7
+          },
+          {
+            "folder": "14_finance_gl",
+            "file": "ap_vendor_invoices_indirect.csv",
+            "rows": 57
+          },
+          {
+            "folder": "14_finance_gl",
+            "file": "software_subscriptions.csv",
+            "rows": 12
+          },
+          {
+            "folder": "15_hr_ehs",
+            "file": "employees.csv",
+            "rows": 45
+          },
+          {
+            "folder": "15_hr_ehs",
+            "file": "payroll_register.csv",
+            "rows": 540
+          },
+          {
+            "folder": "15_hr_ehs",
+            "file": "pto_balances.csv",
+            "rows": 41
+          },
+          {
+            "folder": "15_hr_ehs",
+            "file": "training_certifications.csv",
+            "rows": 114
+          },
+          {
+            "folder": "15_hr_ehs",
+            "file": "ehs_incidents.csv",
+            "rows": 6
+          },
+          {
+            "folder": "16_documents_emails",
+            "file": "document_index.csv",
+            "rows": 275
+          },
+          {
+            "folder": "17_workflow_events",
+            "file": "workflow_events.csv",
+            "rows": 3041
+          }
+        ],
+        "dropped_datasets": [
+          "work_centers",
+          "purchase_requisitions",
+          "reservations",
+          "calibration_records",
+          "standard_cost_roll",
+          "safety_observations"
+        ],
+        "merged_into_legacy_workbook": [],
+        "stats": {
+          "customers": 32,
+          "items": 101,
+          "sales_orders": 520,
+          "purchase_orders": 300,
+          "shipments": 488,
+          "customer_invoices": 487,
+          "work_orders": 60,
+          "gl_lines": 4747,
+          "employees": 45
+        },
+        "shared_item_prices": {
+          "6205-2RS1": {
+            "item_id": "SKF-6205-2RS1",
+            "supplier": "Applied Industrial Technologies",
+            "unit_cost": 3.55,
+            "annual_qty": 313
+          },
+          "6308-2Z": {
+            "item_id": "SKF-6308-2Z",
+            "supplier": "Applied Industrial Technologies",
+            "unit_cost": 10.25,
+            "annual_qty": 1152
+          },
+          "LM11949/LM11910": {
+            "item_id": "TIM-LM11949-LM11910",
+            "supplier": "Applied Industrial Technologies",
+            "unit_cost": 7.6,
+            "annual_qty": 686
+          },
+          "B62": {
+            "item_id": "GAT-B62",
+            "supplier": "Kaman Industrial Technologies",
+            "unit_cost": 12.7,
+            "annual_qty": 3929
+          },
+          "TXT315": {
+            "item_id": "DOD-TXT315",
+            "supplier": "Applied Industrial Technologies",
+            "unit_cost": 1180.0,
+            "annual_qty": 1145
+          },
+          "243": {
+            "item_id": "HEN-243",
+            "supplier": "GRAINGER",
+            "unit_cost": 22.1,
+            "annual_qty": 2480
+          },
+          "G10": {
+            "item_id": "KIM-G10",
+            "supplier": "GRAINGER",
+            "unit_cost": 11.4,
+            "annual_qty": 2046
+          },
+          "SF18-80": {
+            "item_id": "SIG-SF18-80",
+            "supplier": "Uline",
+            "unit_cost": 24.6,
+            "annual_qty": 896
+          },
+          "S-4123": {
+            "item_id": "ULI-S-4123",
+            "supplier": "Uline",
+            "unit_cost": 31.0,
+            "annual_qty": 850
+          },
+          "SF401AF": {
+            "item_id": "3M-SF401AF",
+            "supplier": "GRAINGER",
+            "unit_cost": 4.05,
+            "annual_qty": 1686
+          },
+          "HHCS-0500-13-200-G8": {
+            "item_id": "BRI-HHCS-0500-13-200-G8",
+            "supplier": "Fastenal",
+            "unit_cost": 44.75,
+            "annual_qty": 1037
+          }
+        },
+        "parcel_freight_cost_per_lb": 0.657
+      },
+      {
+        "slug": "ridgeway_fasteners_and_supply",
+        "name": "Ridgeway Fasteners & Supply",
+        "short": "Ridgeway",
+        "tier": "low",
+        "files": [
+          {
+            "folder": "16_documents_emails",
+            "file": "customer_po_PO180950.json",
+            "rows": 1
+          },
+          {
+            "folder": "16_documents_emails",
+            "file": "supplier_price_increase_RFS-V001.eml",
+            "rows": null
+          },
+          {
+            "folder": "16_documents_emails",
+            "file": "customer_expedite_15761.eml",
+            "rows": null
+          },
+          {
+            "folder": "16_documents_emails",
+            "file": "counter_sale_pricing_question.eml",
+            "rows": null
+          },
+          {
+            "folder": "16_documents_emails",
+            "file": "vmi_count_sheet_photo_transcription.txt",
+            "rows": null
+          },
+          {
+            "folder": "01_master_data",
+            "file": "QuickBooks_Item_List_export.csv",
+            "rows": 159
+          },
+          {
+            "folder": "00_company",
+            "file": "company_profile.json",
+            "rows": 0
+          },
+          {
+            "folder": "00_company",
+            "file": "operating_procedures.md",
+            "rows": null
+          },
+          {
+            "folder": "03_procurement",
+            "file": "po_acknowledgments.csv",
+            "rows": 165
+          },
+          {
+            "folder": "04_receiving_ap",
+            "file": "receipts.csv",
+            "rows": 209
+          },
+          {
+            "folder": "04_receiving_ap",
+            "file": "supplier_invoices.csv",
+            "rows": 209
+          },
+          {
+            "folder": "04_receiving_ap",
+            "file": "supplier_invoice_lines.csv",
+            "rows": 489
+          },
+          {
+            "folder": "04_receiving_ap",
+            "file": "ap_payments.csv",
+            "rows": 163
+          },
+          {
+            "folder": "06_warehouse_fulfillment",
+            "file": "pick_lists.csv",
+            "rows": 1624
+          },
+          {
+            "folder": "06_warehouse_fulfillment",
+            "file": "shipments.csv",
+            "rows": 380
+          },
+          {
+            "folder": "11_billing_ar",
+            "file": "customer_invoices.csv",
+            "rows": 380
+          },
+          {
+            "folder": "11_billing_ar",
+            "file": "customer_invoice_lines.csv",
+            "rows": 1624
+          },
+          {
+            "folder": "11_billing_ar",
+            "file": "customer_payments.csv",
+            "rows": 322
+          },
+          {
+            "folder": "11_billing_ar",
+            "file": "ar_aging.csv",
+            "rows": 79
+          },
+          {
+            "folder": "11_billing_ar",
+            "file": "disputes_deductions.csv",
+            "rows": 21
+          },
+          {
+            "folder": "12_returns_service",
+            "file": "rmas.csv",
+            "rows": 26
+          },
+          {
+            "folder": "14_finance_gl",
+            "file": "chart_of_accounts.csv",
+            "rows": 35
+          },
+          {
+            "folder": "14_finance_gl",
+            "file": "bank_statement_operating.csv",
+            "rows": 498
+          },
+          {
+            "folder": "14_finance_gl",
+            "file": "ap_vendor_invoices_indirect.csv",
+            "rows": 59
+          },
+          {
+            "folder": "14_finance_gl",
+            "file": "software_subscriptions.csv",
+            "rows": 8
+          },
+          {
+            "folder": "15_hr_ehs",
+            "file": "payroll_register.csv",
+            "rows": 301
+          },
+          {
+            "folder": "16_documents_emails",
+            "file": "document_index.csv",
+            "rows": 254
+          },
+          {
+            "folder": "00_legacy_exports",
+            "file": "RIDGEWAY MASTER (Fishbowl sync) v7 FINAL (2).xlsx",
+            "rows": 3554,
+            "sheets": [
+              "customers",
+              "customer_contacts",
+              "ship_to_locations",
+              "items",
+              "sales_orders",
+              "sales_order_lines",
+              "suppliers",
+              "purchase_orders",
+              "purchase_order_lines",
+              "inventory_balances",
+              "vmi_bin_counts",
+              "corporate_vendors",
+              "employees"
+            ]
+          }
+        ],
+        "dropped_datasets": [
+          "units_of_measure",
+          "item_classifications",
+          "price_lists",
+          "customer_price_agreements",
+          "rfqs",
+          "sales_quotes",
+          "sales_quote_lines",
+          "order_acknowledgments",
+          "order_changes",
+          "credit_checks",
+          "supplier_contacts",
+          "supplier_quotes",
+          "purchase_requisitions",
+          "supplier_scorecards",
+          "supplier_contracts",
+          "advance_ship_notices",
+          "receipt_lines",
+          "three_way_match",
+          "ap_aging",
+          "inventory_transactions",
+          "cycle_counts",
+          "reservations",
+          "reorder_parameters",
+          "transfers",
+          "bills_of_lading",
+          "proof_of_delivery",
+          "freight_invoices",
+          "credit_holds",
+          "general_ledger",
+          "inventory_valuation",
+          "cost_variances",
+          "budget_vs_actual",
+          "pto_balances",
+          "training_certifications",
+          "ehs_incidents",
+          "safety_observations",
+          "workflow_events"
+        ],
+        "merged_into_legacy_workbook": [
+          "customers",
+          "customer_contacts",
+          "ship_to_locations",
+          "items",
+          "sales_orders",
+          "sales_order_lines",
+          "suppliers",
+          "purchase_orders",
+          "purchase_order_lines",
+          "inventory_balances",
+          "vmi_bin_counts",
+          "corporate_vendors",
+          "employees"
+        ],
+        "stats": {
+          "customers": 25,
+          "items": 153,
+          "sales_orders": 380,
+          "purchase_orders": 210,
+          "shipments": 366,
+          "customer_invoices": 366,
+          "work_orders": 0,
+          "gl_lines": 3517,
+          "employees": 25
+        },
+        "shared_item_prices": {
+          "6205-2RS1": {
+            "item_id": "BRG-6205",
+            "supplier": "Fastenal",
+            "unit_cost": 5.2,
+            "annual_qty": 315
+          },
+          "6308-2Z": {
+            "item_id": "6308-882",
+            "supplier": "Fastenal",
+            "unit_cost": 14.9,
+            "annual_qty": 402
+          },
+          "B62": {
+            "item_id": "B62-454",
+            "supplier": "Grainger Industrial Supply",
+            "unit_cost": 17.85,
+            "annual_qty": 2535
+          },
+          "243": {
+            "item_id": "243-180",
+            "supplier": "Fastenal",
+            "unit_cost": 24.95,
+            "annual_qty": 424
+          },
+          "7447": {
+            "item_id": "7447-552",
+            "supplier": "Grainger Industrial Supply",
+            "unit_cost": 33.2,
+            "annual_qty": 2384
+          },
+          "G10": {
+            "item_id": "G10-708",
+            "supplier": "Grainger Industrial Supply",
+            "unit_cost": 12.95,
+            "annual_qty": 1730
+          },
+          "SF18-80": {
+            "item_id": "SF18-434",
+            "supplier": "Uline",
+            "unit_cost": 27.1,
+            "annual_qty": 1118
+          },
+          "S-4123": {
+            "item_id": "S-291",
+            "supplier": "Uline",
+            "unit_cost": 31.0,
+            "annual_qty": 213
+          },
+          "SF401AF": {
+            "item_id": "SF401AF-239",
+            "supplier": "Fastenal",
+            "unit_cost": 4.6,
+            "annual_qty": 676
+          },
+          "49012": {
+            "item_id": "49012-174",
+            "supplier": "Grainger Industrial Supply",
+            "unit_cost": 29.95,
+            "annual_qty": 2028
+          },
+          "HHCS-0500-13-200-G8": {
+            "item_id": "HHCS-254",
+            "supplier": "Brighton-Best International",
+            "unit_cost": 29.1,
+            "annual_qty": 258
+          },
+          "HN-0500-13-G8": {
+            "item_id": "HN-789",
+            "supplier": "Brighton-Best International",
+            "unit_cost": 14.6,
+            "annual_qty": 350
+          }
+        },
+        "parcel_freight_cost_per_lb": 0.848
+      }
+    ]
+  }
+}

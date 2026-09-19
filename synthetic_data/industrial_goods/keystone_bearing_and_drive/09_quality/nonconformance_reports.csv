@@ -1,0 +1,6 @@
+Ncr Id,Opened Date,Source,Reference,Item Id,Supplier Id,Qty Affected,Defect Code,Description,Disposition,Owner Id,Status,Closed Date,Capa Required
+NCR-0001,2025-12-11,Receiving,RCV-40150,GEAR-1060,KBD-V001,22,DIM-OOT,Chipped teeth on gear,Return to vendor ,E045,Closed,2025-12-16,Y
+NCR-0002,04/20/2025,Receiving,RCV-40258,SHEA-1072,KBD-V011,24,SURFACE,Chipped teeth on gear,Return to vendor,E045,Open,,N
+NCR-0003,2026-02-11,Receiving,RCV-40230,SHEA-1088,KBD-V017,25,THREAD,No material cert with shipment,Return to vendor,E045,Open,,Y
+NCR-0004,2025-10-08,Final,WO-70015,CONV-1052,,33,DIM-OOT,Thread gauge no-go accepted ,Use-as-is,E045,Closed,2025-10-31,N
+NCR-0005,2025-11-26,Final,WO-70058,CONV-1013,,1,WRONG-PART,Wrong revision received,Rework,E045,Closed,2025-12-17,N

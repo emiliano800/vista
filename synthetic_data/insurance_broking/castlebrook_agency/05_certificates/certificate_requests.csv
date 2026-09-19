@@ -1,0 +1,20 @@
+CERTIFICATE_REQUES,CLIENT_ID,GL_POLICY_ID,CERTIFICATE_HOLDER,REQUESTED_DATE,REQUESTED_BY,PROJECT_DESCRIPTIO,REQUIRED_GL_EACH_O,REQUIRED_UMBRELLA_,ADDITIONAL_INSURED,WAIVER_OF_SUBROGAT,PRIMARY_NONCONTRIB,STATUS,ISSUED_DATE,HANDLED_BY,TURNAROUND_HOURS,EXCEPTION_NOTE
+CAS-CERT0001,CAS-C0004,CAS-P00011,Kiewit Corporation,2026-02-06,Phone,Service contract 2026,1000000,0,N,N,Y,Issued,2026-02-06,E006,24,
+CAS-CERT0002,CAS-C0017,CAS-P00047,Whiting-Turner Contracting,12/25/25,Holder direct,Tenant improvement - Suite 200,1000000,0,Y,Y,N ,Issued,12/25/25,E006,53,
+CAS-CERT0003,CAS-C0015,CAS-P00040,Gilbane Building Company,03/26/26,CLIENT EMAIL,Site work - Phase 2,2000000,5000000,N,N,Y,Exception - limits not supported,,E004,36,"Holder requires $5,000,000 umbrella; account carries $2,000,000."
+CAS-CERT0004,CAS-C0004,CAS-P00011,CBRE Property Management,"Mar 29, 2026",Client email,Tenant improvement - Suite 200,,1000000,Y,N,N,Issued,2026-03-31,E006,16,
+CAS-CERT0005,CAS-C0017,CAS-P00047,"Prologis, L.P.",2026-03-26,Client portal,Annual vendor compliance,2000000,0,Y,Y,Y,Issued,2026-03-27,E006,58,
+CAS-CERT0006,CAS-C0009,CAS-P00020,Whiting-Turner Contracting,14-Mar-2026,Client portal,Ongoing operations,2000000,0,N,Y,N,Issued,2026-03-17,E005,10,
+CAS-CERT0007,CAS-C0004,CAS-P00011,City of Scranton,06-Feb-2026,Client portal,Ongoing operations,1000000,5000000,Y,N,N,Exception - limits not supported,,E006,7,"Holder requires $5,000,000 umbrella; account carries $2,000,000."
+CAS-CERT0008,CAS-C0004,CAS-P00011,State DOT,07-Dec-2025,Client portal,Annual vendor compliance,1000000,0,N,Y,N,Issued,2025-12-08,E006,43,
+CAS-CERT0009,CAS-C0018,CAS-P00051,Amazon.com Services LLC,"Nov 13, 2025",Client email,Service contract 2026,1000000,2000000,N,Y,N,Exception - limits not supported,,E007,61,"Holder requires $2,000,000 umbrella; account carries $0."
+,CAS-C0016,CAS-P00044,Brookfield Properties,2025-11-03,Phone ,Annual vendor compliance,1000000,2000000,Y,Y,N,Exception - limits not supported,,E005,35,"Holder requires $2,000,000 umbrella; account carries $0."
+CAS-CERT0011,CAS-C0012,CAS-P00032,JLL Property Management,"Feb 23, 2026",Client portal,Bid requirement,1000000,0,Y ,N,N,Issued,2026-02-24,E006,35,
+CAS-CERT0012,CAS-C0012 ,CAS-P00032,Gilbane Building Company,01/04/26,Client email,Tenant improvement - Suite 200,2000000,1000000,N,Y,Y,EXCEPTION - LIMITS NOT SUPPORTED,,E006,65,"Holder requires $1,000,000 umbrella; account carries $0."
+CAS-CERT0012,CAS-C0012 ,CAS-P00032,Gilbane Building Company,01/04/26,Client email,Tenant improvement - Suite 200,2000000,1000000,N,Y,Y,EXCEPTION - LIMITS NOT SUPPORTED,,E006,65,"Holder requires $1,000,000 umbrella; account carries $0."
+CAS-CERT0013,CAS-C0015,CAS-P00040,CBRE Property Management,2025-11-22,Client portal,Service contract 2026,,5000000,N,N,N,Exception - limits not supported ,,E004,40,"Holder requires $5,000,000 umbrella; account carries $2,000,000."
+CAS-CERT0014,CAS-C0023,CAS-P00064,Gilbane Building Company,,Client portal,Ongoing operations,1000000,0,Y,N,N,Issued,2026-01-20,E006 ,7,
+CAS-CERT0015,CAS-C0018,CAS-P00051,Whiting-Turner Contracting,10/20/25,Phone,Ongoing operations,1000000,1000000,Y ,Y,Y,Exception - limits not supported,,E007,23,"Holder requires $1,000,000 umbrella; account carries $0."
+CAS-CERT0016,CAS-C0018,CAS-P00051,CBRE Property Management,2025-12-22,Client portal,Bid requirement,1000000,0,N,N,N,Issued,22-Dec-2025,E007,26,
+CAS-CERT0017,CAS-C0009,CAS-P00020,Turner Construction Company,2025-10-10 ,Phone,Bid requirement,2000000,2000000,Y,Y,N,Exception - limits not supported,,E005,65,"Holder requires $2,000,000 umbrella; account carries $0."
+CAS-CERT0018,CAS-C0016,CAS-P00044,JLL Property Management,2025-12-31,Phone,Site work - Phase 2,1000000,0,Y,N,Y,Issued,03-Jan-2026,E005,67,

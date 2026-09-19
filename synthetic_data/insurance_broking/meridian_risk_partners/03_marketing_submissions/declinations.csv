@@ -1,0 +1,22 @@
+submission_id,carrier_code,declined_date,reason_code,reason_text
+MER-S00002,CHB,2025-07-06,CAPACITY,Outside appetite for class
+MER-S00008,AMT,2026-01-15,PRICE,Incomplete submission - no loss runs
+MER-S00011,CNA,2025-07-06,CLASS_EXCLUDED,Outside appetite for class
+MER-S00019,CNA,2025-12-31,CLASS_EXCLUDED,Outside appetite for class
+MER-S00041,AMT,2025-11-17,APPETITE,Capacity exhausted in territory
+MER-S00048,AMT,2025-11-25,LOSS_HISTORY,Loss ratio >70% over 5 years
+MER-S00053,BEZ,2025-11-17,CLASS_EXCLUDED,Capacity exhausted in territory
+MER-S00057,CHB,2025-10-19,INCOMPLETE_SUBMISSION,Capacity exhausted in territory
+MER-S00059,CHB,2025-04-01,CLASS_EXCLUDED,Roofing exposure excluded
+MER-S00060,TRV,2025-04-18,LOSS_HISTORY,Loss ratio >70% over 5 years
+MER-S00064,HIG,2025-06-19,INCOMPLETE_SUBMISSION,Roofing exposure excluded
+MER-S00070,LIB,2025-07-12,CAPACITY,Roofing exposure excluded
+MER-S00073,CNA,2025-06-15,PRICE,Capacity exhausted in territory
+MER-S00078,AMT,2025-03-10,INCOMPLETE_SUBMISSION,Loss ratio >70% over 5 years
+MER-S00087,AMT,2025-03-18,APPETITE,Loss ratio >70% over 5 years
+MER-S00090,TRV,2025-06-20,CAPACITY,Outside appetite for class
+MER-S00094,HIG,2025-09-26,CLASS_EXCLUDED,Roofing exposure excluded
+MER-S00111,CHB,2025-03-09,INCOMPLETE_SUBMISSION,Roofing exposure excluded
+MER-S00117,HIG,2025-05-21,CLASS_EXCLUDED,Loss ratio >70% over 5 years
+MER-S00139,HIG,2025-07-22,CLASS_EXCLUDED,Roofing exposure excluded
+MER-S00140,AMT,2025-05-23,LOSS_HISTORY,Outside appetite for class

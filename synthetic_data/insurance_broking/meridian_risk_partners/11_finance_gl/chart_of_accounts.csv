@@ -1,0 +1,30 @@
+account_number,account_name,account_type
+1000,Operating Cash,Asset
+1100,Accounts Receivable,Asset
+1500,Prepaid Expenses,Asset
+1700,Fixed Assets,Asset
+1750,Accumulated Depreciation,Asset
+2000,Accounts Payable,Liability
+2100,Accrued Expenses,Liability
+2300,Payroll Liabilities,Liability
+3000,Retained Earnings,Equity
+6000,Salaries & Wages,Expense
+6100,Payroll Taxes,Expense
+6200,Employee Benefits,Expense
+6300,Rent,Expense
+6400,Software Subscriptions,Expense
+6500,Professional Fees,Expense
+6600,Insurance Expense,Expense
+6700,Office & Supplies,Expense
+6800,Travel & Entertainment,Expense
+6900,Depreciation Expense,Expense
+1200,Premiums Receivable (Agency Bill),Asset
+1300,Fiduciary / Premium Trust Cash,Asset
+2200,Premiums Payable to Carriers,Liability
+2250,Producer Commissions Payable,Liability
+4000,Commission Income - Agency Bill,Revenue
+4010,Commission Income - Direct Bill,Revenue
+4100,Contingent Commission Income,Revenue
+4200,Fee Income,Revenue
+5000,Producer Commission Expense,Expense
+6650,E&O Insurance,Expense

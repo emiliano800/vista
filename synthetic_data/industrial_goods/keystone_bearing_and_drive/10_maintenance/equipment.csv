@@ -1,0 +1,12 @@
+Asset Id,Description,Location,Manufacturer,Serial Number,Install Date,Criticality,Pm Interval Days,Status
+A-001,Toyota Forklift 8FGU25,Yard ,Toyota,306202,2014-12-06,Medium,180,In Service
+A-002,Crown Reach Truck,Warehouse,Crown,109139,2020-07-29,Medium,30,In Service
+A-003,Order Picker,Warehouse,Order,618562,2013-01-21,Medium,180,In Service
+A-004,Stretch Wrapper,Assembly,Stretch,539275,2008-03-08,Low,180,In Service
+A-005,Dock Leveler 1,Warehouse,Dock,970007,2023-10-08,High,30,In Service
+A-006,Dock Leveler 2,Dock,Dock,686707,2013-05-29,Medium,90,In Service
+A-007,Assembly Press 10T,Dock,Assembly,890883,2017-08-03,High,180,In Service
+A-008,Air Compressor,Warehouse,Air,730220,23-Jan-2014,Medium,365,In Service
+A-009,Delivery Truck 1 (Isuzu NPR),Machine Shop,Delivery,683483,2018-07-23,High,180,In Service
+A-010,Delivery Truck 2 (Isuzu NPR),Dock,Delivery,943098,2023-10-29,High,30,In Service
+A-011,Delivery Truck 3 (Ford Transit),Yard,Delivery,931017,2018-12-07,High,90,In Service

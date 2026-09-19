@@ -1,0 +1,93 @@
+Inspection Id,Type,Reference,Item Id,Inspection Date,Inspector Id,Sample Size,Defects Found,Result,Plan
+INS-00001,Receiving,RCV-40136,GEAR-1016,2025-07-07,E045,2,0,Accept,AQL 1.0 Level II
+INS-00002,Receiving,RCV-40168,SPRO-1070,2025-11-08,E045,8,0,Accept,AQL 1.0 Level II
+INS-00003,Receiving,RCV-40064,3M-SF401AF,2025-10-08,E045,5,0,Accept ,AQL 1.0 Level II
+INS-00004,Receiving,RCV-40161,SPRO-1050,2025-12-27,E045,5,0,Accept,AQL 1.0 Level II
+INS-00005,Receiving,RCV-40172,SPRO-1076,2026-01-10,E045,2,0,Accept,AQL 1.0 Level II
+INS-00006,Receiving,RCV-40266,SPRO-1087,03/25/26,E045,8,0,Accept,AQL 1.0 Level II
+INS-00007,Receiving,RCV-40041,SPRO-1050,2025-12-24,E045,13,0,Accept,AQL 1.0 Level II
+INS-00008,Receiving,RCV-40166,HEN-243,01/10/2026,E045,13,0,Accept,AQL 1.0 Level II
+INS-00009,Receiving,RCV-40150,GEAR-1060,2025-12-11,E045,2,1,Reject,AQL 1.0 Level II
+INS-00010,Receiving,RCV-40189,TIMI-1075,2025-12-13,E045,13,0,Accept,AQL 1.0 Level II
+INS-00011,Receiving,RCV-40249,AC-1074,2025-09-15,E045,2,0,Accept,AQL 1.0 Level II
+INS-00012,Receiving,RCV-40261,TIMI-1017,2026-03-03,E045,8,0,Accept,AQL 1.0 Level II
+INS-00013,Receiving,RCV-40112,SPRO-1050,2026-03-28,E045,13,0,Accept,AQL 1.0 Level II
+INS-00014 ,Receiving,RCV-40149,SHEA-1025,2025-11-02,E045,8,0,Accept,AQL 1.0 Level II
+INS-00015,Receiving,RCV-40232,GEAR-1067,2026-03-30,E045,8,0,Accept,AQL 1.0 Level II 
+INS-00016,Receiving,RCV-40193,SHEA-1025,2025-10-01,E045,13,0,Accept,AQL 1.0 Level II
+INS-00017,Receiving,RCV-40054,3M-SF401AF,2025-09-07,E045,13,0,Accept,AQL 1.0 Level II
+INS-00018,Receiving,RCV-40229,ROLL-1079,2025-09-07,E045,13,0,Accept,AQL 1.0 Level II
+INS-00019,Receiving,RCV-40237,SPRO-1009,2025-06-15,E045,5,0,Accept,AQL 1.0 Level II 
+INS-00020,Receiving,RCV-40212,GEAR-1066,2025-07-20,E045,8,0,Accept,AQL 1.0 Level II
+INS-00021,Receiving,RCV-40183,SPRO-1087,2026-01-03,E045,8,0,Accept,AQL 1.0 Level II
+INS-00022,Receiving,RCV-40062,SPRO-1002,2026-01-23,E045,13,0,Accept,AQL 1.0 Level II
+INS-00023,Receiving,RCV-40174,TIMI-1056,2026-02-05,E045,13,0,Accept ,AQL 1.0 Level II 
+INS-00024,Receiving,RCV-40236,SPRO-1004,2025-09-11,E045,8,0,Accept,AQL 1.0 Level II
+INS-00025,Receiving,RCV-40218,MOUN-1008,2026-01-02,E045,13,0,Accept,AQL 1.0 Level II
+INS-00026,Receiving,RCV-40043,GEAR-1010,2025-12-23,E045,2,0,Accept,AQL 1.0 Level II
+INS-00027,Receiving,RCV-40220,AC-1033,05-Jan-2026,E045,8,0,Accept,AQL 1.0 Level II
+INS-00028,Receiving,RCV-40039,SHEA-1064,2025-07-12,E045,13,0,Accept,AQL 1.0 Level II
+INS-00029,Receiving,RCV-40181,ROLL-1044,28-Mar-2026,E045,13,0,Accept,AQL 1.0 Level II
+INS-00030,Receiving,RCV-40258,SHEA-1072,2025-04-20,E045,2,3,Reject,AQL 1.0 Level II
+INS-00031,Receiving,RCV-40195,BRI-HHCS-0500-13-200-G8,2025-07-11,E045,5,0,Accept,AQL 1.0 Level II
+INS-00032,Receiving,RCV-40267,SPRO-1002,2025-07-24,E045,13,0,Accept,AQL 1.0 Level II
+INS-00033,Receiving,RCV-40066,SHEA-1038,2025-10-07,E045,2,0,Accept,AQL 1.0 Level II
+INS-00034,Receiving,RCV-40023,MOUN-1029,2026-02-23,E045,2,0,Accept,AQL 1.0 Level II
+INS-00035,Receiving,RCV-40006,SHEA-1037,2025-05-29,E045,8,0,Accept,AQL 1.0 Level II
+INS-00036,Receiving,RCV-40264,KIM-G10,2025-04-28,E045,5,0,Accept,AQL 1.0 Level II
+INS-00037,Receiving,RCV-40021,SHEA-1038,2025-07-04,E045,2,0,Accept,AQL 1.0 Level II
+INS-00038,Receiving,RCV-40175,TIMI-1058,2026-02-10,E045,13,0,Accept,AQL 1.0 Level II
+INS-00039,Receiving,RCV-40230,SHEA-1088,2026-02-11,E045,8,4,Reject,AQL 1.0 Level II
+INS-00040,Receiving,RCV-40059,MOUN-1034,2026-01-13,E045,8,0,Accept,AQL 1.0 Level II
+INS-00041,Final,WO-70001,CONV-1043,2025-11-01,E045,2,0,Accept,100% dimensional on criticals
+INS-00042,Final,WO-70003,CONV-1051,12/25/2025,E045,1,0,Accept,100% dimensional on criticals
+INS-00043,Final,WO-70004,CONV-1046,2025-05-16,E045,2,0,Accept,100% dimensional on criticals
+INS-00044,Final,WO-70005,CONV-1022,12/09/2025,E045,2,0,Accept,100% dimensional on criticals
+INS-00045,Final,WO-70007,CONV-1051,2025-08-12,E045,1,0,Accept,100% dimensional on criticals
+INS-00046,Final,WO-70008,CONV-1039,2025-05-17,E045,1,0,Accept,100% dimensional on criticals
+INS-00047,Final,WO-70009,CONV-1043,2025-10-25,E045,1,0,Accept,100% dimensional on criticals
+INS-00048,Final,WO-70010,CONV-1051,2025-11-02,E045,1,0,Accept,100% dimensional on criticals
+INS-00049,Final,WO-70011,CONV-1023,2025-11-17,E045,2,0,Accept,100% dimensional on criticals
+INS-00050,Final,WO-70012,CONV-1039,2025-04-19,E045,4,0,Accept,100% dimensional on criticals
+INS-00051,Final,WO-70013,CONV-1065,15-Nov-2025,E045,2,0,Accept,100% dimensional on criticals
+INS-00052,Final,WO-70014,CONV-1089,2025-06-29,E045,2,0,Accept,100% dimensional on criticals
+INS-00053,Final,WO-70015,CONV-1052,2025-10-08,E045,4,2,Reject,100% dimensional on criticals
+INS-00054,Final,WO-70016,CONV-1052,2025-11-08,E045,1,0,Accept,100% dimensional on criticals
+INS-00055,Final,WO-70017,CONV-1039,2025-08-07,E045,4,0,Accept,100% dimensional on criticals
+INS-00056,Final,WO-70018,CONV-1043,01/25/26,E045,4,0,Accept,100% dimensional on criticals
+INS-00057 ,Final,WO-70019,CONV-1043,2025-08-25,E045,1,0,Accept,100% dimensional on criticals
+INS-00058,Final,WO-70020,CONV-1065,2025-12-05,E045,1,0,Accept,100% dimensional on criticals
+INS-00059,Final,WO-70022,CONV-1052,2025-07-31,E045,1,0,Accept,100% dimensional on criticals
+INS-00060,Final,WO-70023,CONV-1013,2026-03-09,E045,1,0,Accept,100% dimensional on criticals 
+INS-00061,Final,WO-70024,CONV-1023,2025-05-14,E045,1,0,Accept,100% dimensional on criticals
+INS-00062,Final,WO-70025,CONV-1065,09-Aug-2025,E045,4,0,Accept,100% dimensional on criticals
+INS-00063,Final,WO-70026,CONV-1023,2025-07-04,E045,1,0,Accept,100% dimensional on criticals
+INS-00064,Final,WO-70027,CONV-1051,2025-09-13,E045,2,0,Accept,100% dimensional on criticals
+INS-00065,Final,WO-70028,CONV-1089,2026-03-06,E045,1,0,Accept,100% dimensional on criticals
+INS-00066,Final,WO-70029,CONV-1046,2025-09-23 ,E045,1,0,Accept,100% dimensional on criticals
+INS-00067,Final,WO-70030,CONV-1052,2026-01-08,E045,1,0,Accept,100% dimensional on criticals
+INS-00068,Final,WO-70031,CONV-1051,2025-07-01,E045,2,0,Accept,100% dimensional on criticals 
+INS-00069,Final ,WO-70032,CONV-1039,2025-12-13,E045,1,0,Accept,100% dimensional on criticals
+INS-00070,Final,WO-70033,CONV-1052,2025-12-22,E045,4,0,Accept,100% dimensional on criticals
+INS-00071,Final,WO-70034,CONV-1089,2025-09-20,E045,2,0,Accept,100% dimensional on criticals
+INS-00072,Final,WO-70036,CONV-1065,2025-12-19,E045,1,0,Accept,100% dimensional on criticals
+INS-00073,Final,WO-70037,CONV-1089,2025-04-19,E045,4,0,Accept,100% dimensional on criticals
+INS-00074,Final,WO-70038,CONV-1039,06-Sep-2025,E045,2,0,Accept,100% dimensional on criticals
+INS-00075,Final,WO-70039,CONV-1051,2026-02-18,E045,1,0,Accept,100% dimensional on criticals
+INS-00076,Final,WO-70040,CONV-1022,2026-01-31,E045,2,0,Accept,100% dimensional on criticals
+INS-00077,Final,WO-70041,CONV-1042,2026-02-07,E045,4,0,Accept,100% dimensional on criticals
+INS-00078,Final,WO-70043,CONV-1022,2025-05-10,E045,1,0,Accept,100% dimensional on criticals
+INS-00079,Final,WO-70045,CONV-1051,2026-01-13,E045,4,0,Accept,100% dimensional on criticals
+INS-00080,Final,WO-70046,CONV-1022,2025-11-03,E045 ,4,0,Accept,100% dimensional on criticals
+INS-00081,Final,WO-70049,CONV-1023,2026-03-09,E045,4,0,Accept,100% dimensional on criticals 
+INS-00082,Final,WO-70050,CONV-1051,2025-07-27,E045,1,0,Accept,100% dimensional on criticals
+INS-00083,Final,WO-70051,CONV-1051,2025-12-09,E045,2,0,Accept,100% dimensional on criticals
+INS-00084,Final,WO-70052,CONV-1065,"Oct 30, 2025",E045,2,0,Accept,100% dimensional on criticals
+INS-00085,Final,WO-70053,CONV-1022,2026-02-04,E045,1,0,Accept,100% dimensional on criticals
+INS-00086,Final,WO-70054,CONV-1089,2025-06-12,E045,2,0,Accept,100% dimensional on criticals
+INS-00087,Final,WO-70055,CONV-1042,2026-02-21,E045,1,0,Accept,100% dimensional on criticals
+INS-00088,Final,WO-70056,CONV-1023,2025-05-14,E045,2,0,Accept,100% dimensional on criticals
+INS-00089,Final,WO-70057,CONV-1051,2025-10-13,E045,1,0,Accept,100% dimensional on criticals
+INS-00090,Final,WO-70058,CONV-1013,2025-11-26,E045,1,3,Reject,100% dimensional on criticals
+INS-00091,Final,WO-70059,CONV-1046,2025-12-02,E045,4,0,Accept,100% dimensional on criticals
+INS-00092,Final,WO-70060,CONV-1013,2025-08-20,E045,4,0,Accept,100% dimensional on criticals

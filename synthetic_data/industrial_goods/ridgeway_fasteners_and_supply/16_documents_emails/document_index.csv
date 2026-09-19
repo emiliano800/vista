@@ -1,0 +1,255 @@
+DOCUMENT_ID,TYPE,REFERENCE,FILE_NAME,FOLDER,UPLOADED,UPLOADED_BY,SOURCE
+DOC-00001,Purchase Order,8783,8783.pdf,Purchasing/2025/Grainger Ind,2025-04-01,E003,QB print
+DOC-00002,PURCHASE ORDER,8547,8547.pdf,Purchasing/2026/Brighton-Bes,2026-02-21,E003,
+DOC-00003,Purchase Order,8928,8928.pdf,Purchasing/2026/Grainger Ind,,E003,QB print
+DOC-00004,Purchase Order,7266,7266.pdf,Purchasing/2026/Parker Hanni,2026-01-11,E003,QB print
+DOC-00005,Purchase Order,7957,7957.pdf ,Purchasing/2025/Garlock Seal,2025-10-28,E003,QB print
+DOC-00006,Purchase Order,5668,5668.pdf,Purchasing/2026/Alro Steel,2026-02-02,E003,QB print
+DOC-00007,Purchase Order,5659,5659.pdf,Purchasing/2025/Parker Hanni,2025-11-06,E003,QB print
+DOC-00008,Purchase Order,5112,5112.pdf,Purchasing/2025/Regal Rexnor,2025-08-17,E003,QB print
+DOC-00009,Purchase Order,5458,5458.pdf,Purchasing/2026/Baldor-Relia,2026-03-11,E003,QB print
+DOC-00116,Customer Invoice,27172,27172.pdf,AR/2025-09,2025-09-24,E002,QB print
+DOC-00241,Supplier Contract,RFS-SC001,baldor-reliance_agreement_2025.pdf,Purchasing/Contracts,2025-01-01,E003,Scanned
+DOC-00010,Purchase Order,8433,8433.pdf,Purchasing/2025/Brighton-Bes,2025-11-24,E003,QB print
+DOC-00011,Purchase Order,5997,5997.pdf,Purchasing/2026/Baldor-Relia,2026-02-26,E003,QB print
+DOC-00012,Purchase Order,6500,6500.pdf,Purchasing/2025/Alro Steel,2025-08-25,E003,QB PRINT
+DOC-00013,Purchase Order,8406,8406.pdf,Purchasing/2026/Alro Steel,2026-03-24,E003,QB print
+DOC-00014,Purchase Order,6202,6202.pdf,Purchasing/2025/Kaman Indust,2025-12-10,E003,QB PRINT
+DOC-00015,Purchase Order,5300,5300.pdf,Purchasing/2025/Alro Steel,2025-07-19,E003,QB print
+DOC-00016,Purchase Order,6454,6454.pdf,Purchasing/2026/Applied Indu,2026-01-30,E003,QB print
+DOC-00017,Purchase Order,8816,8816.pdf,Purchasing/2025/Alro Steel,2025-08-21,E003,QB print
+DOC-00018,Purchase Order,8712,8712.pdf,Purchasing/2026/McMaster-Car,2026-02-27,E003,QB print
+DOC-00019,Purchase Order,8699,8699.pdf,Purchasing/2026/Ryerson,2026-02-22,E003,QB print
+DOC-00020,Purchase Order,8926,8926.pdf,Purchasing/2026/Garlock Seal,2026-01-24,E003,QB print
+DOC-00021,Purchase Order,8534,8534.pdf,Purchasing/2025/Sandvik Coro ,2025-11-13,E003,QB print
+DOC-00022,Purchase Order,5233,5233.pdf,Purchasing/2025/MSC Industri,2025-11-08,E003,QB print
+DOC-00023,Purchase Order,6267,6267.pdf,Purchasing/2025/Uline,2025-12-17 ,E003,QB print
+DOC-00024,Purchase Order,7622,7622.pdf,Purchasing/2025/Garlock Seal,2025-10-15,E003,QB print
+DOC-00025,Purchase Order,8744,8744.pdf,Purchasing/2025/Motion Indus,,E003,QB print
+DOC-00026,Purchase Order,8271,8271.pdf,Purchasing/2025/Fastenal,2025-12-02,E003,QB print
+DOC-00027,Purchase Order,7681,7681.pdf,Purchasing/2025/Brighton-Bes,2025-05-07,E003,QB print
+DOC-00028,Purchase Order,5191,5191.pdf,Purchasing/2025/Apex Fastene,2025-07-11,E003,QB print
+DOC-00029,Purchase Order,6172,6172.pdf,Purchasing/2025/Baldor-Relia,2025-04-03,E003,QB print
+DOC-00030,Purchase Order,6637 ,6637.pdf,Purchasing/2025/Fastenal,2025-12-18,E003,QB print
+DOC-00031,Purchase Order,5673,5673.pdf,Purchasing/2026/Regal Rexnor,2026-03-21,E003,QB print 
+DOC-00032,Purchase Order,7717 ,7717.pdf,Purchasing/2025/Baldor-Relia,2025-11-13,E003,QB print
+DOC-00033,Purchase Order,7729,7729.pdf,Purchasing/2025/Uline,2025-07-18,E003,QB print
+DOC-00034,Purchase Order,5900,5900.pdf,Purchasing/2026/Regal Rexnor,2026-01-08,E003,QB PRINT
+DOC-00035,Purchase Order,6090,6090.pdf ,Purchasing/2026/Kaman Indust,2026-02-08,E003,QB print
+DOC-00036,Purchase Order,7981,7981.pdf ,PURCHASING/2026/MOTION INDUS,2026-01-14 ,E003,QB print
+DOC-00037,Purchase Order,6424,6424.pdf,Purchasing/2026/Motion Indus,2026-03-09,,QB PRINT
+DOC-00038,Purchase Order ,8668 ,8668.pdf,Purchasing/2026/Ryerson,2026-01-07,E003,QB print
+DOC-00039,Purchase Order,7938,7938.pdf,Purchasing/2026/Parker Hanni,2026-03-21,E003,QB print
+DOC-00040,Purchase Order,7593,7593.pdf,Purchasing/2025/Alro Steel,2025-10-17,E003,QB print
+DOC-00041,Purchase Order,6854,6854.pdf,Purchasing/2025/Haas Automat,2025-06-22,E003,QB print
+DOC-00042,Purchase Order,5815,5815.pdf,Purchasing/2026/Brighton-Bes,2026-01-19,E003,QB print
+DOC-00043,Purchase Order,6679,6679.pdf,Purchasing/2026/Baldor-Relia,2026-01-28,E003,QB print
+DOC-00044,Purchase Order,5210,5210.pdf,Purchasing/2025/Sandvik Coro,2025-05-07,E003,QB print
+DOC-00045,Purchase Order,6081,6081.pdf,Purchasing/2025/McMaster-Car,2025-10-03,E003,QB print
+DOC-00046,Purchase Order ,7227,7227.pdf ,Purchasing/2026/Baldor-Relia,2026-03-15,E003,QB print 
+DOC-00047,Purchase Order,5257,5257.pdf,Purchasing/2026/Baldor-Relia,2026-03-21,E003,QB print
+DOC-00048,Purchase Order ,8125,8125.pdf,Purchasing/2025/Grainger Ind,2025-11-17,E003,QB print
+DOC-00049,Purchase Order,7005,7005.pdf,Purchasing/2025/Grainger Ind,2025-05-12,E003,QB print
+DOC-00050,Purchase Order,8380,8380.pdf,Purchasing/2025/Parker Hanni,2025-04-17,E003,QB print
+DOC-00051,PURCHASE ORDER,7009,7009.pdf,,2026-01-18,,QB print
+DOC-00052,Purchase Order,5862,5862.pdf,Purchasing/2025/Parker Hanni,2025-10-18,E003,QB print
+DOC-00053,PURCHASE ORDER,5441,5441.pdf,Purchasing/2026/Apex Fastene,2026-03-29,E003,QB print
+DOC-00054,Purchase Order ,8302,8302.pdf,Purchasing/2025/Fastenal,2025-12-17,E003,QB print
+DOC-00055,Purchase Order,8847,8847.pdf,Purchasing/2025/McMaster-Car,2025-08-12,E003,QB print
+DOC-00056,Purchase Order,8980,8980.pdf,Purchasing/2025/MSC Industri,2025-05-14,E003,QB print
+DOC-00057,Purchase Order,8057,8057.pdf,Purchasing/2025/Parker Hanni,2025-12-25,E003,QB print
+DOC-00058,Purchase Order,8203,8203.pdf,Purchasing/2025/Parker Hanni,2025-10-02,E003,QB print
+DOC-00059,Purchase Order,6571,6571.pdf,Purchasing/2025/Haas Automat,2025-05-19,E003,QB print
+DOC-00060,Purchase Order,6309,6309.pdf,Purchasing/2025/Kaman Indust,2025-12-15,E003,QB print
+DOC-00061 ,Customer Invoice,25881,25881.pdf,AR/2025-10,2025-10-14,E002,QB print
+DOC-00062,Customer Invoice,25101,25101.pdf,AR/2025-06,2025-06-24,,QB print
+DOC-00063,Customer Invoice,27556,27556.pdf,AR/2025-06,2025-06-22,E002,QB print
+DOC-00064,Customer Invoice,29444,29444.pdf ,AR/2026-02,2026-02-19,E002 ,QB print
+DOC-00065,Customer Invoice,28678,28678.pdf,AR/2025-07,2025-07-25 ,E002,QB print
+DOC-00066,Customer Invoice,23086,23086.pdf,AR/2025-09,2025-09-29,E002,QB print
+DOC-00067,Customer Invoice,28952,28952.PDF,AR/2025-05,2025-05-25,E002,QB print
+DOC-00241,Supplier Contract,RFS-SC001,baldor-reliance_agreement_2025.pdf,Purchasing/Contracts,2025-01-01,E003,Scanned
+DOC-00068,Customer Invoice,29845,29845.pdf,AR/2025-07,2025-07-02,E002,QB print
+DOC-00069,Customer Invoice,26126,26126.pdf,AR/2026-03,2026-03-06,E002,QB print
+DOC-00070,,20760,20760.pdf,AR/2025-11,2025-11-18,E002,QB print
+DOC-00071,Customer Invoice,22865,22865.PDF,AR/2025-11,2025-11-21,E002,QB print
+DOC-00072,Customer Invoice,29700,29700.pdf,AR/2025-10,2025-10-31,E002,QB print
+DOC-00073,Customer Invoice,29342,29342.pdf,AR/2025-09,2025-09-13,E002,QB print
+DOC-00074,Customer Invoice,27319,27319.pdf,AR/2025-10,2025-10-06,E002,QB print
+DOC-00075,Customer Invoice,28893,28893.pdf,AR/2025-08,2025-08-17,E002,QB print
+DOC-00106,Customer Invoice,22528,22528.pdf,AR/2025-06,2025-06-12,E002,
+DOC-00076,CUSTOMER INVOICE,28809,28809.pdf,AR/2025-11,2025-11-29,E002,QB print
+DOC-00077,Customer Invoice,22296,22296.pdf,AR/2026-01,2026-01-19,E002,QB print
+DOC-00078,Customer Invoice,26305,26305.pdf,AR/2025-10,2025-10-22,E002,QB print
+DOC-00079,Customer Invoice,28966,,AR/2025-05,2025-05-25,E002,QB print
+DOC-00080,Customer Invoice,27041,27041.pdf,AR/2025-10,2025-10-20,E002,QB print
+DOC-00081,Customer Invoice,28171,28171.pdf,AR/2025-08,2025-08-14,E002,QB print 
+DOC-00082,Customer Invoice,23807,23807.pdf,AR/2025-09,2025-09-03,E002,QB print
+DOC-00083,Customer Invoice,24246,24246.pdf,AR/2025-10,2025-10-18,E002,QB print
+DOC-00084,Customer Invoice,21553,21553.pdf,AR/2025-11 ,2025-11-30,E002,QB print
+DOC-00085,Customer Invoice,23401,23401.pdf,AR/2025-06,2025-06-18,E002,
+DOC-00086,Customer Invoice,21610,21610.pdf,AR/2025-07,2025-07-19,E002,QB print
+DOC-00087,Customer Invoice,21062,21062.pdf,AR/2025-10,2025-10-29,E002,QB print
+DOC-00088,Customer Invoice,21821,21821.pdf,AR/2025-11,2025-11-14,E002,QB print
+DOC-00089,Customer Invoice,25515,25515.pdf,AR/2026-03,2026-03-07,E002,QB print
+DOC-00090,Customer Invoice,21377,21377.pdf,AR/2025-08,2025-08-16,E002,QB print
+DOC-00091,Customer Invoice,20204,20204.pdf,AR/2025-07,2025-07-10,E002,QB print
+DOC-00092,Customer Invoice,26776,26776.pdf,AR/2025-04,2025-04-28,E002,QB print
+DOC-00093,Customer Invoice,20784 ,20784.pdf,AR/2025-05,2025-05-03,E002,QB print
+DOC-00094,Customer Invoice,20418,20418.pdf,AR/2025-09,2025-09-24,E002,QB print
+DOC-00095,CUSTOMER INVOICE,29985,29985.pdf,AR/2025-09,2025-09-02,E002,QB print
+DOC-00096,Customer Invoice,27331,27331.pdf,AR/2025-11,2025-11-17,E002,QB print
+DOC-00097,Customer Invoice,28687,28687.pdf,AR/2025-11,2025-11-24,E002,QB print
+DOC-00098,Customer Invoice,22593,22593.pdf,AR/2025-09,2025-09-12,E002,QB print
+DOC-00099,Customer Invoice,26986,26986.pdf,AR/2025-08,2025-08-12,E002,QB print
+DOC-00100,Customer Invoice,,22258.pdf,AR/2025-07,2025-07-05,E002,QB print
+DOC-00101,Customer Invoice ,27986,27986.pdf,AR/2026-02,2026-02-11,E002,QB print
+DOC-00102,Customer Invoice,24856,24856.pdf,AR/2025-07,2025-07-25,E002,QB print
+DOC-00114,Customer Invoice,24664,24664.pdf,AR/2026-03,,E002,QB print
+DOC-00103,Customer Invoice,28868,28868.pdf,AR/2025-05,2025-05-04,E002,QB print
+DOC-00104,Customer Invoice,21331,21331.pdf,AR/2025-07,2025-07-20,,QB print
+DOC-00105,Customer Invoice,21224,21224.pdf,AR/2025-06,2025-06-02,E002,QB print
+DOC-00106,Customer Invoice,22528,22528.pdf,AR/2025-06,2025-06-12,E002,
+DOC-00107,Customer Invoice,20481,20481.pdf,AR/2025-12,2025-12-08,E002,QB print
+DOC-00108,Customer Invoice,29746,29746.pdf,AR/2025-10,2025-10-06,E002,QB print
+DOC-00109,Customer Invoice,28553,28553.pdf,AR/2025-06,2025-06-01,E002,QB print
+DOC-00110,Customer Invoice ,22543,22543.pdf,AR/2026-03,2026-03-22,E002,QB print
+DOC-00111,Customer Invoice,27864,27864.pdf,AR/2026-03,2026-03-02,E002,QB print
+DOC-00112,Customer Invoice,28172,28172.pdf,AR/2025-09,2025-09-18,E002,QB print
+DOC-00113,Customer Invoice,29171,29171.pdf,AR/2026-03,2026-03-27,E002,QB print
+DOC-00114,Customer Invoice,24664,24664.pdf,AR/2026-03,,E002,QB print
+DOC-00115,Customer Invoice,24618,24618.pdf,,2025-10-23,E002,QB print
+DOC-00031,Purchase Order,5673,5673.pdf,Purchasing/2026/Regal Rexnor,2026-03-21,E003,QB print 
+DOC-00116,Customer Invoice,27172,27172.pdf,AR/2025-09,2025-09-24,E002,QB print
+DOC-00117,Customer Invoice,26267,26267.pdf,AR/2026-03,2026-03-09,E002,QB print
+DOC-00118,CUSTOMER INVOICE,29602,29602.pdf,AR/2025-12,2025-12-18,E002,QB print
+DOC-00119,Customer Invoice,26622,26622.pdf,AR/2025-06,2025-06-20,E002,QB print
+DOC-00116,Customer Invoice,27172,27172.pdf,AR/2025-09,2025-09-24,E002,QB print
+DOC-00120,Customer Invoice,28763,28763.pdf,AR/2026-01,2026-01-28,E002,QB print
+DOC-00121,Customer Invoice,20529,20529.pdf,AR/2025-10,2025-10-17,E002,QB print
+DOC-00122,Customer Invoice,29491,29491.pdf,AR/2025-06,2025-06-24,E002,QB print 
+DOC-00123,Customer Invoice,28184,28184.pdf,AR/2026-01,2026-01-07,E002,QB print
+DOC-00124,Customer Invoice,28093,28093.pdf,AR/2026-01,2026-01-15,E002,QB print
+DOC-00125,Customer Invoice,28496,28496.pdf,AR/2025-06,2025-06-23,E002,QB print
+DOC-00126,Customer Invoice,25378,25378.pdf,AR/2025-08,2025-08-02,E002,QB print
+DOC-00127,,26221,26221.pdf,AR/2025-08,2025-08-25,E002,QB print
+DOC-00128,Customer Invoice,25858,25858.pdf,AR/2025-10,2025-10-31,E002,QB print
+DOC-00129,Customer Invoice,27586,27586.pdf,AR/2025-12,2025-12-03,E002,QB print
+DOC-00130,Customer Invoice,29016,29016.pdf,AR/2025-07,2025-07-14,E002,QB print
+DOC-00131,Customer Invoice,28354,28354.pdf,AR/2025-06,2025-06-09,E002,QB print
+DOC-00132,Customer Invoice,24445,24445.pdf,AR/2026-03,2026-03-20,E002,QB PRINT
+DOC-00133,Customer Invoice,25424,25424.pdf,AR/2025-06,2025-06-04,E002,QB print
+DOC-00134,Customer Invoice,29526,29526.pdf,AR/2026-03,2026-03-25,E002,QB print
+DOC-00135,Customer Invoice,23807 ,23807.pdf,AR/2026-02,2026-02-27,E002,QB print
+DOC-00136,Customer Invoice,26282,26282.pdf,AR/2025-06,2025-06-23,E002,QB print
+DOC-00137,Customer Invoice,29631,29631.pdf,AR/2026-02,2026-02-05,E002,QB print
+DOC-00138,Customer Invoice,21903 ,,AR/2025-11,2025-11-02,E002,QB print
+DOC-00139,Customer Invoice,25966,25966.pdf,AR/2025-09,2025-09-15,E002,QB print
+DOC-00140,Customer Invoice,28981,28981.pdf,AR/2025-05,2025-05-29,E002,QB print
+DOC-00141,Packing Slip,SH-50001,PS-SH-50001.pdf,Shipping/2025-10,2025-10-14,E020,Scanned
+DOC-00142,Packing Slip ,SH-50002,PS-SH-50002.pdf,Shipping/2025-06,2025-06-24,E012,Scanned
+DOC-00143,Packing Slip,SH-50003,PS-SH-50003.pdf,Shipping/2025-06,2025-06-22,E013,Scanned
+DOC-00144 ,Packing Slip,SH-50004,PS-SH-50004.pdf,Shipping/2026-02,2026-02-19,E018,Scanned
+DOC-00145,Packing Slip,SH-50005,PS-SH-50005.pdf,Shipping/2025-07,2025-07-25,E021,Scanned
+DOC-00146,Packing Slip,SH-50006,PS-SH-50006.pdf,Shipping/2025-09 ,2025-09-29,E017,Scanned
+DOC-00147,Packing Slip,SH-50007,PS-SH-50007.pdf,Shipping/2025-05,2025-05-25,E021 ,Scanned 
+DOC-00148,Packing Slip,SH-50008,PS-SH-50008.pdf,Shipping/2025-07,2025-07-02,E019,Scanned 
+DOC-00149,Packing Slip,SH-50009,PS-SH-50009.pdf,Shipping/2026-03,2026-03-06,E015,Scanned
+DOC-00150,Packing Slip,SH-50010,PS-SH-50010.pdf,Shipping/2025-11,2025-11-18,E012,Scanned
+DOC-00151,Packing Slip,SH-50011,PS-SH-50011.pdf,Shipping/2025-11,2025-11-21,,Scanned
+DOC-00152,Packing Slip,SH-50012,PS-SH-50012.pdf,Shipping/2025-10,2025-10-31,E020,Scanned
+DOC-00153,Packing Slip,SH-50013,PS-SH-50013.pdf,Shipping/2025-09,2025-09-13,E019,Scanned 
+DOC-00154,Packing Slip,SH-50014,PS-SH-50014.pdf,Shipping/2025-10,2025-10-06,E012,Scanned
+DOC-00155,Packing Slip,SH-50015,PS-SH-50015.pdf,Shipping/2025-08,2025-08-17,E018,Scanned
+DOC-00156,Packing Slip,SH-50016,PS-SH-50016.pdf,Shipping/2025-11,,E014,Scanned
+DOC-00157,Packing Slip,SH-50017,PS-SH-50017.pdf,Shipping/2026-01,2026-01-19,E019,Scanned
+DOC-00158,Packing Slip,SH-50018,PS-SH-50018.PDF,Shipping/2025-10,2025-10-22,E020,Scanned
+DOC-00159,Packing Slip,SH-50019,PS-SH-50019.pdf,Shipping/2025-05,2025-05-25,E014,Scanned
+DOC-00160,Packing Slip,SH-50020,PS-SH-50020.pdf ,Shipping/2025-10,2025-10-20,E016,Scanned
+DOC-00161,Packing Slip,SH-50021,PS-SH-50021.pdf,Shipping/2025-08,2025-08-14,E013,Scanned
+DOC-00162,Packing Slip,SH-50022,PS-SH-50022.pdf,Shipping/2025-09,2025-09-03,E017,Scanned
+DOC-00163,Packing Slip,SH-50023,PS-SH-50023.pdf,Shipping/2025-10,2025-10-18,E020,Scanned
+DOC-00164,PACKING SLIP,SH-50024,PS-SH-50024.pdf,Shipping/2025-11,2025-11-30,E017,Scanned
+DOC-00165,Packing Slip,SH-50025,PS-SH-50025.pdf,Shipping/2025-06,2025-06-18,E021,Scanned
+DOC-00166,Packing Slip,SH-50026,PS-SH-50026.pdf,Shipping/2025-07,2025-07-19 ,E013,Scanned
+DOC-00167,Packing Slip,SH-50027,PS-SH-50027.pdf,Shipping/2025-10,2025-10-29,E015,Scanned
+DOC-00168,Packing Slip,SH-50028,PS-SH-50028.pdf,Shipping/2025-11,2025-11-14,E016,Scanned
+DOC-00169,Packing Slip,SH-50029,PS-SH-50029.pdf,Shipping/2026-03,2026-03-07,E020,Scanned
+DOC-00170,Packing Slip,SH-50030,PS-SH-50030.pdf,Shipping/2025-08,2025-08-16,E021,Scanned
+DOC-00171,Packing Slip,SH-50031,PS-SH-50031.pdf,Shipping/2025-07,2025-07-10,E018,Scanned
+DOC-00172 ,Packing Slip,SH-50032,PS-SH-50032.pdf,Shipping/2025-04,2025-04-28,E017,Scanned
+DOC-00008,Purchase Order,5112,5112.pdf,Purchasing/2025/Regal Rexnor,2025-08-17,E003,QB print
+DOC-00173,Packing Slip,SH-50033,PS-SH-50033.pdf,Shipping/2025-05,2025-05-03,E013,Scanned
+DOC-00174,Packing Slip,SH-50034,PS-SH-50034.pdf,Shipping/2025-09,2025-09-24,E016,SCANNED
+DOC-00175,Packing Slip,SH-50035,PS-SH-50035.pdf,Shipping/2025-09,2025-09-02,E013,Scanned
+DOC-00176,Packing Slip,SH-50036,PS-SH-50036.pdf,Shipping/2025-11,2025-11-17,E013,Scanned
+DOC-00177,Packing Slip,SH-50037,PS-SH-50037.pdf,Shipping/2025-11,2025-11-24,E015,Scanned
+DOC-00178,Packing Slip,SH-50038,PS-SH-50038.pdf,Shipping/2025-09,2025-09-12,E021,Scanned
+DOC-00179,Packing Slip,SH-50039,PS-SH-50039.pdf,SHIPPING/2025-08,2025-08-12,,Scanned
+DOC-00180,Packing Slip,SH-50040,PS-SH-50040.PDF,Shipping/2025-07,2025-07-05,E012,Scanned
+DOC-00181,Packing Slip,SH-50041,PS-SH-50041.pdf,Shipping/2026-02,2026-02-11,E012,Scanned
+DOC-00182,Packing Slip,SH-50042,PS-SH-50042.pdf,Shipping/2025-07,2025-07-25,E019,Scanned
+DOC-00183,Packing Slip,SH-50043,PS-SH-50043.pdf,Shipping/2025-05,2025-05-04,E014,Scanned
+DOC-00184,Packing Slip,SH-50044,PS-SH-50044.pdf ,Shipping/2025-07,2025-07-20,E017,Scanned
+DOC-00185,Packing Slip,SH-50045,PS-SH-50045.pdf,Shipping/2025-06,2025-06-02,E012,Scanned
+DOC-00186 ,Packing Slip,SH-50046,PS-SH-50046.pdf,Shipping/2025-06,2025-06-12,E013,Scanned
+DOC-00187,Packing Slip,SH-50047,PS-SH-50047.pdf,Shipping/2025-12,2025-12-08,E015,Scanned
+DOC-00188,PACKING SLIP,SH-50048,PS-SH-50048.pdf,Shipping/2025-10,2025-10-06,E020,Scanned
+DOC-00189,Packing Slip,SH-50049,PS-SH-50049.pdf,Shipping/2025-06,2025-06-01,E012,Scanned
+DOC-00190,Packing Slip,SH-50050,PS-SH-50050.pdf,Shipping/2026-03,2026-03-22,E020,Scanned
+DOC-00191,Packing Slip,SH-50051,PS-SH-50051.pdf,Shipping/2026-03,2026-03-02,E021,Scanned
+DOC-00192,Packing Slip,SH-50052,PS-SH-50052.pdf,Shipping/2025-09,2025-09-18,E016,SCANNED
+DOC-00193,Packing Slip,SH-50053,PS-SH-50053.pdf,Shipping/2026-03,2026-03-27,E018,Scanned
+DOC-00194,Packing Slip,SH-50054,PS-SH-50054.pdf,Shipping/2026-03,2026-03-20,E016 ,Scanned
+DOC-00195,Packing Slip,SH-50055,PS-SH-50055.pdf,Shipping/2025-10,2025-10-23,E016,Scanned
+DOC-00196,Packing Slip,SH-50056,PS-SH-50056.pdf,Shipping/2025-09,2025-09-24,E014,Scanned
+DOC-00197,PACKING SLIP,SH-50057,PS-SH-50057.pdf,Shipping/2026-03,2026-03-09,E016,Scanned
+DOC-00198,Packing Slip,SH-50058,PS-SH-50058.pdf,Shipping/2025-12,2025-12-18,E012,Scanned
+DOC-00199,Packing Slip,SH-50059,PS-SH-50059.pdf,Shipping/2025-06,2025-06-20,E018,Scanned
+DOC-00200,Packing Slip ,SH-50060,PS-SH-50060.pdf,Shipping/2026-01,2026-01-28,E013,Scanned
+DOC-00201,Supplier Packing Slip,RCV-40001,PS293420.pdf,Receiving/2025-04 ,2025-04-13,E018,Scanned
+DOC-00202,Supplier Packing Slip,RCV-40002,PS174571.pdf,Receiving/2026-03,2026-03-18,E014,Scanned
+DOC-00203,Supplier Packing Slip,RCV-40003,PS801504.pdf,,2026-03-22,E015,Scanned
+DOC-00204,Supplier Packing Slip,RCV-40004,PS204941.pdf,Receiving/2026-01,2026-01-22,E013,Scanned
+DOC-00205,Supplier Packing Slip,RCV-40005,PS898098.pdf,Receiving/2025-12,2025-12-09,E014,Scanned
+DOC-00206,Supplier Packing Slip,RCV-40006,PS932715.pdf,Receiving/2026-02,2026-02-25,E018,Scanned
+DOC-00207,Supplier Packing Slip,RCV-40007,PS817149.pdf,Receiving/2025-12,2025-12-22,E017,Scanned
+DOC-00208,Supplier Packing Slip,RCV-40008,PS758121.pdf,Receiving/2025-09,2025-09-22,E014,Scanned
+DOC-00209,Supplier Packing Slip,RCV-40009,PS366150.pdf,Receiving/2026-03,2026-03-31,E017,Scanned
+DOC-00210,Supplier Packing Slip,RCV-40010,PS959809.pdf,Receiving/2025-12,2025-12-31 ,E018,Scanned
+DOC-00211,Supplier Packing Slip,,PS757404.pdf,Receiving/2025-09,2025-09-17,E021,Scanned
+DOC-00212,Supplier Packing Slip,RCV-40012,PS219964.pdf,Receiving/2025-12,2025-12-20,E021,Scanned
+DOC-00213,Supplier Packing Slip,RCV-40013,PS142968.pdf,Receiving/2025-08,2025-08-10,E016,Scanned
+DOC-00214,Supplier Packing Slip,RCV-40014,PS729356.pdf,Receiving/2026-02,,E016,Scanned
+DOC-00215,Supplier Packing Slip,RCV-40015,PS271333.pdf,Receiving/2025-09,2025-09-30,E016,Scanned
+DOC-00216,Supplier Packing Slip,RCV-40016,PS903881.pdf,Receiving/2026-03,2026-03-05,E019,Scanned
+DOC-00217,Supplier Packing Slip ,RCV-40017,PS525864.pdf,Receiving/2026-03,2026-03-19,E012,Scanned
+DOC-00218,Supplier Packing Slip,RCV-40018,PS945627.pdf,Receiving/2026-02,2026-02-07,E014,Scanned
+DOC-00219,Supplier Packing Slip,RCV-40019,PS966561.pdf,Receiving/2025-12,2025-12-20,E016,Scanned
+DOC-00220,Supplier Packing Slip,RCV-40020,PS583144.pdf,Receiving/2025-11,2025-11-18,E013 ,Scanned
+DOC-00221,,RCV-40021,PS869533.pdf,Receiving/2026-01,2026-01-19,E020,Scanned
+DOC-00222,Supplier Packing Slip,RCV-40022,PS595575.pdf,Receiving/2025-11,2025-11-20,E021,Scanned
+DOC-00223,Supplier Packing Slip,RCV-40023,PS649277.pdf,Receiving/2025-12 ,2025-12-09,E012,Scanned
+DOC-00224,Supplier Packing Slip,RCV-40024,PS741392.pdf,Receiving/2025-05,2025-05-17,,Scanned
+DOC-00225,Supplier Packing Slip,RCV-40025,PS523029.pdf,Receiving/2025-07,2025-07-31,E013,Scanned
+DOC-00226,Supplier Packing Slip,RCV-40026,PS638743.pdf,Receiving/2025-12,2025-12-25,E018,Scanned
+DOC-00227,Supplier Packing Slip,RCV-40027,PS378060.pdf,Receiving/2026-03,2026-03-27,E018,Scanned
+DOC-00067,Customer Invoice,28952,28952.PDF,AR/2025-05,2025-05-25,E002,QB print
+DOC-00228,Supplier Packing Slip,,PS626297.pdf,Receiving/2025-11,2025-11-26,E018 ,
+DOC-00229,Supplier Packing Slip,RCV-40029,PS950787.pdf,Receiving/2025-08,2025-08-14,E016,Scanned
+DOC-00230,Supplier Packing Slip,RCV-40030,PS955231.pdf,Receiving/2026-02,2026-02-01,E014,Scanned
+DOC-00231,Supplier Packing Slip,RCV-40031,PS276588.pdf,Receiving/2026-02,2026-02-21,E019 ,Scanned 
+DOC-00232,Supplier Packing Slip,RCV-40032,PS758116.pdf,Receiving/2026-02,2026-02-14,E014,Scanned
+DOC-00233,SUPPLIER PACKING SLIP,RCV-40033,PS419322.pdf,Receiving/2026-03,2026-03-26,E021,Scanned
+DOC-00234,Supplier Packing Slip,RCV-40034,PS768121.pdf,Receiving/2026-02,2026-02-15,E015,Scanned
+DOC-00235,Supplier Packing Slip,RCV-40035 ,PS941916.pdf,Receiving/2025-11,2025-11-09,E021,Scanned
+DOC-00236,Supplier Packing Slip,RCV-40036,PS404697.pdf,Receiving/2025-07,2025-07-27,E018,Scanned
+DOC-00237,,RCV-40037,PS851752.pdf,Receiving/2026-02,2026-02-04,E013,Scanned
+DOC-00238,Supplier Packing Slip,RCV-40038,PS988500.pdf,Receiving/2026-02,2026-02-11,E020,Scanned
+DOC-00239,Supplier Packing Slip,RCV-40039,PS464875.pdf,Receiving/2025-05,2025-05-26,E015,Scanned
+DOC-00240,Supplier Packing Slip,RCV-40040,PS946722.pdf,Receiving/2025-11,2025-11-15,E018,Scanned
+DOC-00241,Supplier Contract,RFS-SC001,baldor-reliance_agreement_2025.pdf,Purchasing/Contracts,2025-01-01,E003,Scanned
+DOC-00242,Supplier Contract,RFS-SC002,applied_agreement_2025.pdf,Purchasing/Contracts,2025-01-01,E003,Scanned
+DOC-00243,Supplier Contract,RFS-SC003,motion_agreement_2025.pdf,Purchasing/Contracts,2025-01-01,E003,
+DOC-00244,Supplier Contract,RFS-SC004,brighton-best_agreement_2025.pdf ,Purchasing/Contracts,2025-01-01,E003,Scanned
+DOC-00245,Supplier Contract,RFS-SC005,haas_agreement_2025.pdf,Purchasing/Contracts,2025-01-01,E003,Scanned

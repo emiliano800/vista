@@ -1,0 +1,7 @@
+Class Code,Description,Gl Inventory Account
+RAW,Raw material,1200
+COMP,Purchased component,1200
+FG,Finished good - manufactured,1220
+RESALE,Purchased for resale,1230
+MRO,Maintenance / consumables (expensed),6700
+PKG,Packaging,1200

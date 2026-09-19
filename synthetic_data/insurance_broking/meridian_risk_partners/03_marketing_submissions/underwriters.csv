@@ -1,0 +1,13 @@
+underwriter_id,carrier_code,underwriter_name,email,phone,lines,territory,appetite_notes
+UW-TRV-429,TRV,James Schneider,jschneider@travelers.com,(275) 607-5565,PROP,CT,Strong on real estate; avoids habitational frame
+UW-HIG-250,HIG,Elena Johnson,ejohnson@the.com,(956) 220-4498,GL,CT,Aggressive on trucking fleets 10-50 units
+UW-HIG-949,HIG,Steven Taylor,staylor@the.com,(529) 863-1763,PROP,CT,Strong on real estate; avoids habitational frame
+UW-HIG-850,HIG,Steven Wright,swright@the.com,(421) 716-6742,BOP,CT,Cyber: requires MFA + EDR
+UW-LIB-237,LIB,David Fitzgerald,dfitzgerald@liberty.com,(734) 479-7540,AUTO,CT,Aggressive on trucking fleets 10-50 units
+UW-CNA-914,CNA,Patricia Allen,pallen@cna.com,(364) 949-4298,GL,CT,Cyber: requires MFA + EDR
+UW-CHB-619,CHB,Wei Anderson,wanderson@chubb.com,(735) 662-9598,CYB,CT,"Contractors ok, no residential GC"
+UW-CHB-671,CHB,Aisha Delgado,adelgado@chubb.com,(393) 594-1442,UMB,CT,Prefers <$5M revenue; no roofing
+UW-AMT-168,AMT,Ashley Garcia,agarcia@amtrust.com,(608) 539-2633,WC,CT,Cyber: requires MFA + EDR
+UW-AMT-425,AMT,Thomas Martinez,tmartinez@amtrust.com,(581) 343-8111,WC,CT,Aggressive on trucking fleets 10-50 units
+UW-MKL-375,MKL,Richard Brown,rbrown@markel.com,(972) 828-6138,PL,CT,"Contractors ok, no residential GC"
+UW-BEZ-566,BEZ,Jennifer Fitzgerald,jfitzgerald@beazley.com,(880) 812-5712,CYB,CT,Strong on real estate; avoids habitational frame
