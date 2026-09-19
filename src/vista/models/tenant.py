@@ -2,7 +2,7 @@ import uuid
 from datetime import datetime
 from decimal import Decimal
 
-from sqlalchemy import BigInteger, DateTime, ForeignKey, Integer, Numeric, String, UniqueConstraint, func
+from sqlalchemy import BigInteger, DateTime, ForeignKey, Integer, Numeric, String, Text, UniqueConstraint, func
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
@@ -43,12 +43,40 @@ class Document(TenantBase):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
 
+class Employee(TenantBase):
+    __tablename__ = "employees"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    name: Mapped[str] = mapped_column(String(255))
+    email: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    role_title: Mapped[str] = mapped_column(String(255))  # all the agent needs to know
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class EmployeeAgent(TenantBase):
+    __tablename__ = "employee_agents"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    employee_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("employees.id"), unique=True)
+    status: Mapped[str] = mapped_column(String(16), default="active")  # active|paused
+    scopes: Mapped[list] = mapped_column(JSONB, default=list)  # e.g. ["documents", "email:ro"]
+    schedule: Mapped[str] = mapped_column(String(16), default="daily")  # hourly|daily|weekly
+    last_run_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
 class AgentRun(TenantBase):
     __tablename__ = "agent_runs"
 
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     job_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True))  # platform.jobs.id
-    deal_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("deals.id"))
+    run_type: Mapped[str] = mapped_column(
+        String(32), default="deal_analysis"
+    )  # deal_analysis|employee_discovery|company_summary
+    deal_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("deals.id"), nullable=True)
+    employee_agent_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("employee_agents.id"), nullable=True
+    )
     document_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("documents.id"), nullable=True)
     requested_by: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True))
     status: Mapped[str] = mapped_column(String(16), default="queued")  # queued|running|succeeded|failed
@@ -65,6 +93,35 @@ class AgentRunEvent(TenantBase):
     seq: Mapped[int] = mapped_column(Integer)
     event_type: Mapped[str] = mapped_column(String(64))  # step|tool_call|model_call|error|result
     data: Mapped[dict] = mapped_column(JSONB, default=dict)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class Finding(TenantBase):
+    __tablename__ = "findings"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    run_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("agent_runs.id"))
+    employee_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("employees.id"), nullable=True)
+    agent_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("employee_agents.id"), nullable=True
+    )
+    kind: Mapped[str] = mapped_column(
+        String(32)
+    )  # observed_fact|inefficiency|proposed_automation
+    title: Mapped[str] = mapped_column(String(512))
+    detail: Mapped[str] = mapped_column(Text, default="")
+    evidence: Mapped[dict] = mapped_column(JSONB, default=dict)  # source refs / assumptions
+    status: Mapped[str] = mapped_column(String(16), default="open")  # open|reviewed|dismissed|actioned
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class CompanySummary(TenantBase):
+    __tablename__ = "company_summaries"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    run_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("agent_runs.id"))
+    content: Mapped[str] = mapped_column(Text)
+    stats: Mapped[dict] = mapped_column(JSONB, default=dict)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
 
