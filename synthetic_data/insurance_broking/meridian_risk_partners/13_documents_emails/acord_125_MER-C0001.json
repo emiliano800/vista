@@ -1,1 +1,52 @@
-[]
+{
+  "form": "ACORD 125 (2016/03) - Commercial Insurance Application",
+  "agency": {
+    "name": "Meridian Risk Partners, LLC",
+    "address": "Hartford, CT"
+  },
+  "applicant": {
+    "named_insured": "Liberty Electric Inc.",
+    "fein": "43-2902929",
+    "naics": "238210",
+    "mailing_address": "1206 Mill St, Hartford, CT 06170",
+    "entity_type": "Corporation",
+    "years_in_business": 40,
+    "annual_revenue": 22100000,
+    "employees_full_time": 188
+  },
+  "policy_information": {
+    "proposed_effective_date": "2025-08-30",
+    "proposed_expiration_date": "2026-08-30",
+    "lines_requested": [
+      "GL",
+      "WC",
+      "AUTO",
+      "UMB"
+    ],
+    "billing_plan": "Agency Bill"
+  },
+  "premises": [
+    {
+      "loc": 1,
+      "address": "1206 Mill St, Hartford, CT 06170",
+      "occupancy": "Warehouse",
+      "sq_ft": 99602
+    }
+  ],
+  "loss_history_5yr": [
+    {
+      "date": "2021-09-02",
+      "type": "Liability",
+      "paid": 80933
+    },
+    {
+      "date": "2025-06-26",
+      "type": "E&O",
+      "paid": 44121
+    }
+  ],
+  "signature": {
+    "producer": "Joseph Garcia",
+    "date": "2025-07-21"
+  }
+}

@@ -1,0 +1,66 @@
+/* Structural rules shared by all six demo front ends. Visual theming lives in each company's styles.css. */
+*, *::before, *::after { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+body { -webkit-font-smoothing: antialiased; }
+a { color: inherit; text-decoration: none; }
+h1, h2, h3, h4, p { margin: 0; }
+
+.vt-nav-group { margin-bottom: 14px; }
+.vt-nav-group-label { font-size: 11px; text-transform: uppercase; letter-spacing: .08em; opacity: .6; padding: 6px 12px; }
+.vt-nav-item { display: flex; align-items: center; gap: 8px; padding: 7px 12px; cursor: pointer; border-radius: 4px; white-space: nowrap; }
+.vt-nav-icon { width: 18px; text-align: center; opacity: .8; }
+
+.vt-module-head { margin-bottom: 16px; }
+.vt-module-desc { opacity: .7; margin-top: 4px; font-size: 13px; }
+
+.vt-kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin-bottom: 18px; }
+.vt-kpi { padding: 14px 16px; }
+.vt-kpi-value { font-size: 24px; font-weight: 600; line-height: 1.1; }
+.vt-kpi-label { font-size: 12px; opacity: .7; margin-top: 4px; }
+.vt-kpi-sub { font-size: 11px; opacity: .55; margin-top: 2px; }
+
+.vt-tables { display: flex; flex-direction: column; gap: 18px; }
+.vt-card { overflow: hidden; }
+.vt-card-head { display: flex; justify-content: space-between; align-items: flex-end; gap: 12px; padding: 12px 16px; flex-wrap: wrap; }
+.vt-card-title { font-size: 15px; font-weight: 600; }
+.vt-source { font-size: 11px; opacity: .6; margin-top: 2px; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+.vt-toolbar { display: flex; align-items: center; gap: 10px; }
+.vt-search { padding: 6px 10px; font: inherit; font-size: 13px; min-width: 220px; }
+.vt-count { font-size: 12px; opacity: .65; white-space: nowrap; }
+
+.vt-table-wrap { overflow-x: auto; }
+.vt-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.vt-table th, .vt-table td { padding: 7px 10px; text-align: left; white-space: nowrap; vertical-align: middle; }
+.vt-table th { cursor: pointer; user-select: none; font-weight: 600; font-size: 12px; }
+.vt-table th.vt-sorted-asc::after { content: ' ▲'; font-size: 9px; }
+.vt-table th.vt-sorted-desc::after { content: ' ▼'; font-size: 9px; }
+.vt-table .vt-num { text-align: right; font-variant-numeric: tabular-nums; }
+.vt-row { cursor: pointer; }
+.vt-empty { padding: 14px 16px; opacity: .65; font-size: 13px; text-align: left; }
+.vt-missing .vt-card-title { padding: 12px 16px 0; }
+
+.vt-pill { display: inline-block; padding: 1px 8px; border-radius: 999px; font-size: 11px; font-weight: 600; }
+
+.vt-pager { display: flex; align-items: center; justify-content: flex-end; gap: 12px; padding: 8px 16px; font-size: 12px; }
+.vt-btn { font: inherit; font-size: 12px; padding: 4px 10px; cursor: pointer; }
+.vt-btn:disabled { opacity: .4; cursor: default; }
+
+.vt-detail { position: fixed; top: 0; right: 0; bottom: 0; width: min(560px, 92vw); overflow-y: auto; z-index: 50; padding: 20px; box-shadow: -8px 0 30px rgba(0,0,0,.18); }
+.vt-detail-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; margin-bottom: 14px; }
+.vt-detail-kicker { font-size: 11px; text-transform: uppercase; letter-spacing: .08em; opacity: .6; }
+.vt-detail-title { font-size: 18px; font-weight: 600; margin-top: 2px; }
+.vt-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 16px; margin: 0 0 18px; }
+.vt-field dt { font-size: 11px; opacity: .6; }
+.vt-field dd { margin: 0; font-size: 13px; word-break: break-word; }
+.vt-related { margin-top: 16px; }
+.vt-related h4 { font-size: 13px; margin-bottom: 6px; display: flex; gap: 8px; align-items: center; }
+.vt-mini { font-size: 12px; }
+.vt-mini th, .vt-mini td { padding: 4px 8px; }
+
+.vt-docs-body { display: grid; grid-template-columns: 280px 1fr; min-height: 420px; }
+.vt-doc-list { list-style: none; margin: 0; padding: 8px; overflow-y: auto; max-height: 70vh; }
+.vt-doc-item { padding: 7px 10px; cursor: pointer; font-size: 13px; border-radius: 4px; display: flex; gap: 8px; align-items: center; word-break: break-all; }
+.vt-doc-ext { font-size: 10px; text-transform: uppercase; padding: 1px 5px; border-radius: 3px; opacity: .8; flex: none; }
+.vt-doc-view { padding: 12px 16px; overflow: auto; }
+.vt-doc-text { white-space: pre-wrap; font-size: 12.5px; line-height: 1.45; margin-top: 8px; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+.vt-cols { white-space: normal; max-width: 520px; opacity: .7; font-size: 12px; }

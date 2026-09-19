@@ -1,1 +1,40 @@
-[]
+{
+  "form": "ACORD 125 (2016/03) - Commercial Insurance Application",
+  "agency": {
+    "name": "Castlebrook Agency",
+    "address": "Scranton, PA"
+  },
+  "applicant": {
+    "named_insured": "Keystone State Associates Inc.",
+    "fein": "90-9391855",
+    "naics": "541211",
+    "mailing_address": "2169 Main St, Albany, NY 12281",
+    "entity_type": "Corporation",
+    "years_in_business": 27,
+    "annual_revenue": 15100000,
+    "employees_full_time": 123
+  },
+  "policy_information": {
+    "proposed_effective_date": "2025-05-17",
+    "proposed_expiration_date": "2026-05-17",
+    "lines_requested": [
+      "PL",
+      "CYB",
+      "BOP"
+    ],
+    "billing_plan": "Direct Bill"
+  },
+  "premises": [
+    {
+      "loc": 1,
+      "address": "2169 Main St, Albany, NY 12281",
+      "occupancy": "Manufacturing",
+      "sq_ft": 92822
+    }
+  ],
+  "loss_history_5yr": [],
+  "signature": {
+    "producer": "Sandra Wright",
+    "date": "2025-04-07"
+  }
+}

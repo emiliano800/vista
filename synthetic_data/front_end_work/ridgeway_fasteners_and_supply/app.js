@@ -1,0 +1,166 @@
+(function () {
+  const { rows, sum, count, money, fmtInt, num } = VistaUI;
+  const T = VISTA_DATA.tables;
+
+  VistaUI.mount({
+    nav: '#nav', content: '#content',
+    modules: [
+      { id: 'home', group: 'Company', label: 'Home Page',
+        description: 'Ridgeway Fasteners & Supply · Chattanooga, TN · Fastener / MRO distributor with VMI bins · QuickBooks Desktop + Fishbowl + Excel',
+        kpis: [
+          { label: 'Customers (incl. dupes)', value: () => fmtInt(rows('customers').length) },
+          { label: 'Sales orders', value: () => fmtInt(T.sales_orders.total) },
+          { label: 'Open invoices ($)', value: () => money(sum(rows('customer_invoices'), 'OPEN_BAL')) },
+          { label: 'Inventory value', value: () => money(sum(rows('inventory_balances'), 'EXTENDED_VALUE')) },
+          { label: 'Unpaid bills', value: () => money(sum(rows('supplier_invoices').filter((s) => s.STATUS !== 'Paid'), 'INVOICE_TOTAL')) },
+        ],
+        tables: [
+          { title: 'Reminders: overdue invoices', table: 'ar_aging', filter: (a) => num(a.DAYS_PAST_DUE) > 0, columns: ['CUSTOMER_ID', 'INVOICE_NUMBER', 'INVOICE_DATE', 'DUE_DATE', 'DAYS_PAST_DUE', 'BALANCE', 'AGING_BUCKET', 'PROMISE_TO_PAY'] },
+          { title: 'Activity log', table: 'workflow_events', note: 'No system activity log exists for this company.' },
+        ] },
+      { id: 'customers', group: 'Customers', label: 'Customer Center',
+        kpis: [
+          { label: 'Customers', value: () => fmtInt(rows('customers').length) },
+          { label: 'Contacts', value: () => fmtInt(rows('customer_contacts').length) },
+          { label: 'On credit hold', value: () => fmtInt(count(rows('customers'), (c) => c.CREDIT_HOLD === 'Y')) },
+        ],
+        tables: [
+          { title: 'Customers & Jobs (workbook sheet)', table: 'customers', note: 'Duplicate customer rows and truncated headers present.',
+            columns: ['CUSTOMER_ID', 'CUSTOMER_NAME', 'SEGMENT', 'BILL_TO_CITY', 'BILL_TO_STATE', 'PAYMENT_TERMS', 'CREDIT_LIMIT', 'CREDIT_HOLD', 'SALES_REP_ID', 'PRICE_LEVEL', 'CUSTOMER_SINCE'],
+            detail: { key: 'CUSTOMER_ID', titleCol: 'CUSTOMER_NAME', related: [
+              { table: 'customer_contacts', fk: 'CUSTOMER_ID', title: 'Contacts', columns: ['FULL_NAME', 'TITLE', 'EMAIL', 'PHONE'] },
+              { table: 'ship_to_locations', fk: 'CUSTOMER_ID', title: 'Ship-to', columns: ['NAME', 'CITY', 'STATE'] },
+              { table: 'sales_orders', fk: 'CUSTOMER_ID', title: 'Sales orders', columns: ['PO_NUM', 'SO_NUM', 'ORDER_DATE', 'ORDER_TOTAL', 'ORDER_STATUS'] },
+              { table: 'customer_invoices', fk: 'CUSTOMER_ID', title: 'Invoices', columns: ['NUM', 'INVOICE_DATE', 'AMOUNT', 'OPEN_BAL', 'STATUS'] },
+              { table: 'ar_aging', fk: 'CUSTOMER_ID', title: 'Open AR', columns: ['INVOICE_NUMBER', 'DUE_DATE', 'DAYS_PAST_DUE', 'BALANCE'] },
+              { table: 'rmas', fk: 'CUSTOMER_ID', title: 'Returns', columns: ['RMA_NUMBER', 'ITEM_ID', 'REASON_CODE', 'STATUS'] },
+            ] } },
+          { title: 'Contacts', table: 'customer_contacts' },
+          { title: 'Ship-to locations', table: 'ship_to_locations' },
+        ] },
+      { id: 'sales', group: 'Customers', label: 'Sales Orders',
+        kpis: [
+          { label: 'Sales orders', value: () => fmtInt(T.sales_orders.total) },
+          { label: 'Order value (sample)', value: () => money(sum(rows('sales_orders'), 'ORDER_TOTAL')) },
+          { label: 'Shipments', value: () => fmtInt(T.shipments.total) },
+        ],
+        tables: [
+          { title: 'Sales orders (workbook sheet)', table: 'sales_orders', note: 'Heads-up: PO_NUM holds the SO number and SO_NUM holds the customer PO — columns are swapped in this export.',
+            columns: ['PO_NUM', 'SO_NUM', 'CUSTOMER_ID', 'ORDER_DATE', 'SALES_REP_ID', 'ORDER_SOURCE', 'SHIP_VIA', 'ORDER_TOTAL', 'CREDIT_HOLD', 'ORDER_STATUS', 'INVOICED'],
+            detail: { key: 'PO_NUM', related: [
+              { table: 'sales_order_lines', fk: 'INV_NO', title: 'Lines (INV_NO = order number)', columns: ['LINE', 'ITEM_ID', 'DESCRIPTION', 'QTY', 'UOM', 'RATE', 'EXTENDED_PRICE', 'PROMISED_DATE', 'LINE_STATUS'] },
+              { table: 'shipments', fk: 'SO_NUMBER', title: 'Shipments', columns: ['SHIPMENT_ID', 'SHIP_DATE', 'CARRIER', 'TRACKING_NUMBER', 'STATUS'] },
+              { table: 'customer_invoices', fk: 'SO_NUMBER', title: 'Invoices', columns: ['NUM', 'INVOICE_DATE', 'AMOUNT', 'OPEN_BAL', 'STATUS'] },
+            ] } },
+          { title: 'Sales order lines', table: 'sales_order_lines' },
+          { title: 'Quotes / RFQs', table: 'sales_quotes' },
+          { title: 'Credit checks', table: 'credit_checks' },
+        ] },
+      { id: 'invoices', group: 'Customers', label: 'Invoices & Receive Payments',
+        kpis: [
+          { label: 'Invoices', value: () => fmtInt(T.customer_invoices.total) },
+          { label: 'Open balance', value: () => money(sum(rows('customer_invoices'), 'OPEN_BAL')) },
+          { label: 'Payments received', value: () => money(sum(rows('customer_payments'), 'AMOUNT')) },
+          { label: 'Disputes', value: () => fmtInt(rows('disputes_deductions').length) },
+        ],
+        tables: [
+          { title: 'A/R aging', table: 'ar_aging' },
+          { title: 'Invoices', table: 'customer_invoices', columns: ['NUM', 'CUSTOMER_ID', 'SO_NUMBER', 'CUSTOMER_PO_NUMBER', 'INVOICE_DATE', 'DUE_DATE', 'PAYMENT_TERMS', 'AMOUNT', 'AMOUNT_PAID', 'OPEN_BAL', 'STATUS'],
+            detail: { key: 'NUM', related: [{ table: 'customer_invoice_lines', fk: 'INVOICE_NUMBER', title: 'Lines' }, { table: 'customer_payments', fk: 'APPLIED_TO_INVOICE', title: 'Payments' }, { table: 'disputes_deductions', fk: 'INVOICE_NUMBER', title: 'Disputes' }] } },
+          { title: 'Receive payments', table: 'customer_payments' },
+          { title: 'Disputes & deductions', table: 'disputes_deductions' },
+          { title: 'Returns (RMAs)', table: 'rmas' },
+        ] },
+      { id: 'items', group: 'Fishbowl', label: 'Item List',
+        kpis: [
+          { label: 'Items (workbook)', value: () => fmtInt(rows('items').length) },
+          { label: 'QuickBooks items', value: () => fmtInt(rows('QuickBooks_Item_List_export').length) },
+          { label: 'VMI bins', value: () => fmtInt(rows('vmi_bin_counts').length) },
+        ],
+        tables: [
+          { title: 'Items (workbook sheet)', table: 'items', columns: ['ITEM_ID', 'DESCRIPTION', 'ITEM_CLASS', 'MANUFACTURER', 'MANUFACTURER_PART_', 'STOCK_UOM', 'PRIMARY_SUPPLIER', 'COST', 'PRICE', 'ABC_CLASS', 'MIN', 'MAX', 'LEAD_TIME_DAYS', 'STATUS'],
+            note: 'COST/PRICE strings may contain $ signs; MIN/MAX are reorder point / max.',
+            detail: { key: 'ITEM_ID', titleCol: 'DESCRIPTION', related: [
+              { table: 'inventory_balances', fk: 'ITEM_ID', title: 'Inventory', columns: ['WAREHOUSE', 'BIN_LOCATION', 'ON_HAND_QTY', 'AVAILABLE_QTY', 'UNIT_COST'] },
+              { table: 'vmi_bin_counts', fk: 'ITEM', title: 'VMI bins', columns: ['CUSTOMER', 'BIN', 'MIN', 'MAX', 'COUNT', 'LAST COUNT'] },
+              { table: 'purchase_order_lines', fk: 'ITEM_ID', title: 'Recent PO lines', columns: ['PO_NUMBER', 'ORDERED_QTY', 'UNIT_COST', 'PROMISED_DATE', 'LINE_STATUS'] },
+            ] } },
+          { title: 'QuickBooks Item List export', table: 'QuickBooks_Item_List_export' },
+          { title: 'Price lists', table: 'price_lists' },
+        ] },
+      { id: 'inventory', group: 'Fishbowl', label: 'Inventory & VMI',
+        kpis: [
+          { label: 'Inventory value', value: () => money(sum(rows('inventory_balances'), 'EXTENDED_VALUE')) },
+          { label: 'Stocked SKUs', value: () => fmtInt(rows('inventory_balances').length) },
+          { label: 'VMI bins below min', value: () => fmtInt(count(rows('vmi_bin_counts'), (b) => num(b.COUNT) < num(b.MIN))) },
+        ],
+        tables: [
+          { title: 'Inventory balances (workbook sheet)', table: 'inventory_balances' },
+          { title: 'VMI bin counts (transcribed count sheets)', table: 'vmi_bin_counts', note: 'Free-text NOTES column; counts entered by techs.' },
+          { title: 'Cycle counts', table: 'cycle_counts' },
+          { title: 'Inventory transactions', table: 'inventory_transactions' },
+          { title: 'Reorder parameters', table: 'reorder_parameters' },
+        ] },
+      { id: 'shipping', group: 'Fishbowl', label: 'Pick / Pack / Ship',
+        tables: [
+          { title: 'Shipments', table: 'shipments', note: 'FRT = freight cost; FRT_BILLED = freight billed to customer.', detail: { key: 'SHIPMENT_ID', related: [{ table: 'pick_lists', fk: 'SHIPMENT_ID', title: 'Picks' }] } },
+          { title: 'Pick lists', table: 'pick_lists' },
+          { title: 'Bills of lading', table: 'bills_of_lading' },
+          { title: 'Freight invoices', table: 'freight_invoices' },
+        ] },
+      { id: 'vendors', group: 'Vendors', label: 'Vendor Center',
+        kpis: [
+          { label: 'Vendors', value: () => fmtInt(rows('suppliers').length) },
+          { label: 'Purchase orders', value: () => fmtInt(T.purchase_orders.total) },
+          { label: 'PO spend', value: () => money(sum(rows('purchase_orders'), 'PO_TOTAL')) },
+          { label: 'Unpaid bills', value: () => fmtInt(count(rows('supplier_invoices'), (s) => s.STATUS !== 'Paid')) },
+        ],
+        tables: [
+          { title: 'Vendors (workbook sheet)', table: 'suppliers', detail: { key: 'SUPPLIER_ID', titleCol: 'SUPPLIER_NAME', related: [
+              { table: 'purchase_orders', fk: 'SUPPLIER_ID', title: 'Purchase orders', columns: ['PO_NUMBER', 'PO_DATE', 'PO_TOTAL', 'PO_STATUS'] },
+              { table: 'supplier_invoices', fk: 'SUPPLIER_ID', title: 'Bills', columns: ['SUPPLIER_INVOICE_N', 'INVOICE_DATE', 'INVOICE_TOTAL', 'STATUS'] },
+              { table: 'supplier_scorecards', fk: 'SUPPLIER_ID', title: 'Scorecards' },
+            ] } },
+          { title: 'Purchase orders (workbook sheet)', table: 'purchase_orders', detail: { key: 'PO_NUMBER', related: [
+              { table: 'purchase_order_lines', fk: 'PO_NUMBER', title: 'Lines', columns: ['LINE', 'ITEM_ID', 'DESCRIPTION', 'ORDERED_QTY', 'UNIT_COST', 'EXTENDED_COST', 'RECEIVED_QTY', 'LINE_STATUS'] },
+              { table: 'po_acknowledgments', fk: 'PO_NUMBER', title: 'Acknowledgment' },
+              { table: 'receipts', fk: 'PO_NUMBER', title: 'Receipts', columns: ['RECEIPT_ID', 'RECEIPT_DATE', 'PACKING_SLIP_NUMBE', 'CONDITION'] },
+              { table: 'supplier_invoices', fk: 'PO_NUMBER', title: 'Bills', columns: ['SUPPLIER_INVOICE_N', 'INVOICE_DATE', 'INVOICE_TOTAL', 'STATUS', 'MATCH_STATUS'] },
+            ] } },
+          { title: 'Enter bills (vendor invoices)', table: 'supplier_invoices' },
+          { title: 'Item receipts', table: 'receipts' },
+          { title: 'Pay bills', table: 'ap_payments' },
+          { title: 'Three-way match', table: 'three_way_match' },
+          { title: 'A/P aging', table: 'ap_aging' },
+        ] },
+      { id: 'banking', group: 'Company', label: 'Banking & Chart of Accounts',
+        kpis: [
+          { label: 'Bank lines', value: () => fmtInt(T.bank_statement_operating.total) },
+          { label: 'Software spend / yr', value: () => money(sum(rows('software_subscriptions'), 'ANNUAL_COST')) },
+          { label: 'Indirect bills', value: () => money(sum(rows('ap_vendor_invoices_indirect'), 'AMOUNT')) },
+        ],
+        tables: [
+          { title: 'Operating account register', table: 'bank_statement_operating' },
+          { title: 'Chart of accounts', table: 'chart_of_accounts' },
+          { title: 'General ledger', table: 'general_ledger' },
+          { title: 'Corporate vendors', table: 'corporate_vendors' },
+          { title: 'Indirect vendor bills', table: 'ap_vendor_invoices_indirect' },
+          { title: 'Software subscriptions', table: 'software_subscriptions' },
+        ] },
+      { id: 'employees', group: 'Company', label: 'Employee Center',
+        tables: [
+          { title: 'Employees (workbook sheet)', table: 'employees', detail: { key: 'EMPLOYEE_ID', titleCol: 'FULL_NAME', related: [{ table: 'payroll_register', fk: 'EMPLOYEE_ID', title: 'Payroll' }, { table: 'pto_balances', fk: 'EMPLOYEE_ID', title: 'PTO' }, { table: 'training_certifications', fk: 'EMPLOYEE_ID', title: 'Training' }] } },
+          { title: 'Payroll register', table: 'payroll_register' },
+          { title: 'EHS incidents', table: 'ehs_incidents' },
+        ] },
+      { id: 'quality', group: 'Company', label: 'Quality & Returns',
+        tables: [
+          { title: 'Returns (RMAs)', table: 'rmas' },
+          { title: 'Inspections', table: 'inspections' },
+          { title: 'Nonconformance reports', table: 'nonconformance_reports' },
+        ] },
+      { id: 'docs', group: 'Company', label: 'Doc Center', docs: true, tables: [{ title: 'Document index', table: 'document_index' }] },
+      { id: 'explorer', group: 'Company', label: 'All Files', explorer: true },
+    ],
+  });
+})();
