@@ -1,0 +1,851 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Groundwork — Company Portal</title>
+<link rel="icon" href='data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><rect width="24" height="24" rx="6" fill="%233D63DD"/><path d="M6 17 L6 10 L12 5.5 L18 10 L18 17" stroke="white" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>'>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&display=swap">
+<style>
+:root { --accent: #3D63DD; }
+* { box-sizing: border-box; }
+body { margin: 0; background: #F4F4F1; color: #1F1E1B; font-family: 'Instrument Sans', system-ui, -apple-system, 'Segoe UI', sans-serif; -webkit-font-smoothing: antialiased; min-width: 768px; }
+a { color: #3056C9; text-decoration: none; }
+a:hover { color: #24409B; }
+button { font-family: inherit; }
+strong { font-weight: 600; }
+.card { background: #FFF; border: 1px solid #E7E6E0; border-radius: 8px; box-shadow: 0 1px 2px rgba(24,24,18,.04); }
+.btnP { background: var(--accent); color: #FFF; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; transition: filter .15s; }
+.btnP:hover { filter: brightness(.92); }
+.btnP:disabled { cursor: not-allowed; opacity: .45; filter: none; }
+.btnG { background: #FFF; border: 1px solid #DCDBD4; color: #1F1E1B; border-radius: 8px; font-weight: 600; cursor: pointer; transition: background .15s; }
+.btnG:hover { background: #F6F6F3; }
+.navlink { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 8px; color: #4B4A44; font-size: 14px; font-weight: 500; }
+.navlink:hover { background: #EEEEE9; color: #1F1E1B; }
+.navlink.on { background: #EEEEE9; color: #1F1E1B; }
+.tip { position: relative; display: inline-block; width: 100%; }
+.tip .tipbox { opacity: 0; pointer-events: none; transition: opacity .15s; position: absolute; bottom: calc(100% + 10px); left: 50%; transform: translateX(-50%); width: 250px; background: #26251F; color: #F2F1EA; font-size: 12.5px; line-height: 1.5; padding: 10px 12px; border-radius: 8px; z-index: 30; text-align: left; font-weight: 400; }
+.tip:hover .tipbox { opacity: 1; }
+.sidebar { width: 248px; flex-shrink: 0; }
+.statgrid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; }
+.dashcols { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 20px; align-items: start; }
+.modgrid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; align-items: start; }
+.xtrgrid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; align-items: start; }
+@media (max-width: 1180px) {
+  .statgrid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .modgrid, .xtrgrid { grid-template-columns: minmax(0, 1fr); }
+  .dashcols { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 980px) { .sidebar { width: 212px; } }
+.approw { opacity: .3; transition: opacity .4s; }
+.approw.found { opacity: 1; }
+.sectorcard { cursor: pointer; transition: border-color .15s; }
+.sectorcard:hover { border-color: #B9B8B0; }
+.devbtn { background: transparent; border: 1px solid #4A4942; color: #D8D7CF; border-radius: 6px; padding: 5px 9px; font-size: 12px; font-weight: 500; cursor: pointer; text-align: left; }
+.devbtn:hover { background: #33322B; }
+.devbtn.on { background: #F4F4F1; border-color: #F4F4F1; color: #1F1E1B; }
+@keyframes sweep { 0% { left: -30%; } 100% { left: 100%; } }
+.scanbeam { position: absolute; top: 0; bottom: 0; width: 30%; background: linear-gradient(90deg, transparent, rgba(61,99,221,.30), transparent); animation: sweep 1.1s linear infinite; }
+@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: .3; } }
+.pulse { animation: pulse 1.6s ease-in-out infinite; }
+@keyframes fadeUp { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+.fadeUp { animation: fadeUp .35s ease both; }
+@keyframes spinrot { to { transform: rotate(360deg); } }
+.spin { animation: spinrot 1s linear infinite; transform-origin: center; }
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script>
+'use strict';
+
+/* ============================== data ============================== */
+
+const CO = 'Summit Air & Heating';
+
+const SECTORS = [
+  { id: 'hvac',   name: 'HVAC & Mechanical Services',            short: 'HVAC & Mechanical',   desc: 'Install and service jobs, dispatch, parts purchasing', tag: true },
+  { id: 'mfg',    name: 'Light Manufacturing',                    short: 'Light Manufacturing', desc: 'Work orders, bills of materials, raw-material purchasing', tag: false },
+  { id: 'retail', name: 'Retail & Point of Sale',                 short: 'Retail & POS',        desc: 'Register sales, inventory counts, merchandising', tag: false },
+  { id: 'svc',    name: 'Other Field or Professional Services',   short: 'Services',            desc: 'Project- or job-based service work', tag: false }
+];
+
+const APPS = [
+  { mono: 'QB', name: 'QuickBooks Desktop Premier 2024', detail: 'Accounting · in daily use' },
+  { mono: 'ST', name: 'ServiceTitan',                    detail: 'Field-service dispatch · web app' },
+  { mono: 'XL', name: 'Microsoft Excel',                 detail: 'Spreadsheets · 214 workbooks found' },
+  { mono: 'OL', name: 'Microsoft Outlook',               detail: 'Email & scheduling' },
+  { mono: 'AC', name: 'Adobe Acrobat',                   detail: 'PDFs · invoices & purchase orders' },
+  { mono: 'CH', name: 'Google Chrome',                   detail: 'Web browser' }
+];
+
+const DAYS = {
+  1: {
+    hours: '4.6', shots: '312', data: '260 MB', appSub: 'all found in the setup scan',
+    dist: [
+      ['QuickBooks Desktop', '1h 38m', 36], ['ServiceTitan', '1h 12m', 26], ['Microsoft Excel', '48m', 17],
+      ['Microsoft Outlook', '34m', 12], ['Google Chrome', '18m', 7], ['Everything else', '6m', 2]
+    ],
+    feed: [
+      ['Opened company file summit_air.qbw', 'QuickBooks', '9:04 AM'],
+      ['Switched to Outlook — morning email', 'Outlook', '9:26 AM'],
+      ['Opened vendor_pricing_johnstone.xlsx', 'Excel', '10:02 AM'],
+      ['Saved estimate_E-5512_HarborPoint.pdf', 'Acrobat', '10:40 AM'],
+      ['Switched to ServiceTitan dispatch board', 'ServiceTitan', '11:05 AM']
+    ]
+  },
+  4: {
+    hours: '26.4', shots: '2,180', data: '1.3 GB', appSub: 'no new apps since day 1',
+    dist: [
+      ['QuickBooks Desktop', '8h 58m', 34], ['ServiceTitan', '7h 24m', 28], ['Microsoft Excel', '4h 45m', 18],
+      ['Microsoft Outlook', '3h 10m', 12], ['Google Chrome', '1h 35m', 6], ['Everything else', '32m', 2]
+    ],
+    feed: [
+      ['Saved AP_Aging_September.xlsx to /Accounting/Reports', 'Excel', '2:41 PM'],
+      ['Switched to QuickBooks Desktop', 'QuickBooks', '2:38 PM'],
+      ['Opened invoice_24118_MeadowbrookHOA.pdf', 'Acrobat', '2:22 PM'],
+      ['Exported vendor list — vendors_sep.csv', 'QuickBooks', '1:57 PM'],
+      ['Created purchase order PO-20431', 'ServiceTitan', '1:31 PM'],
+      ['Opened job_costing_master_2026.xlsx', 'Excel', '11:48 AM'],
+      ['Batch-printed 6 work orders', 'ServiceTitan', '11:12 AM']
+    ]
+  },
+  7: {
+    hours: '46.9', shots: '3,940', data: '2.4 GB', appSub: 'no new apps since day 1',
+    dist: [
+      ['QuickBooks Desktop', '16h 12m', 35], ['ServiceTitan', '12h 40m', 27], ['Microsoft Excel', '8h 26m', 18],
+      ['Microsoft Outlook', '5h 37m', 12], ['Google Chrome', '2h 48m', 6], ['Everything else', '56m', 2]
+    ],
+    feed: [
+      ['Reconciled September bank feed', 'QuickBooks', '4:12 PM'],
+      ['Saved payroll_export_wk38.csv', 'Excel', '3:50 PM'],
+      ['Emailed remittance to R.E. Michel', 'Outlook', '3:22 PM'],
+      ['Saved PO-20446_CarrierEnterprise.pdf', 'Acrobat', '2:58 PM'],
+      ['Updated warehouse_stock_counts.xlsx', 'Excel', '2:31 PM'],
+      ['Switched to ServiceTitan — closed 4 jobs', 'ServiceTitan', '2:04 PM'],
+      ['Applied customer payment on invoice 24102', 'QuickBooks', '1:47 PM']
+    ]
+  }
+};
+
+const EVIDENCE = [
+  { t: 'ServiceTitan', d: 'dispatch software used almost exclusively by HVAC and plumbing contractors' },
+  { t: 'QuickBooks Desktop + Excel', d: 'an accounting-heavy back office with job-costing workbooks' },
+  { t: 'Your file names', d: 'job_costing_master_2026.xlsx, PO-20418_JohnstoneSupply.pdf, and 40 more like them' }
+];
+
+const A_STEPS = ['Locating QuickBooks data & exports', 'Reading the chart of accounts', 'Mapping AP / AR patterns', 'Identifying recurring vendors'];
+const S_STEPS = ['Scanning vendor spreadsheets', 'Parsing purchase orders', 'Locating inventory files', 'Inferring supplier relationships'];
+const T_STEPS = ['Mapping expense categories', 'Locating depreciation schedules', 'Detecting entity type', 'Flagging items for manual review'];
+
+const ATTENTION = [
+  { t: '6 vendor payments we could not match to an invoice', d: 'Mostly ACH debits to Ferguson between June and July.' },
+  { t: '2 expense categories need a label', d: '"Misc — Shop" and "Owner Reimb." are ambiguous for tax mapping.' },
+  { t: 'Confirm your 2025 vehicle-expense method', d: 'We found both standard-rate mileage logs and actual-expense receipts.' }
+];
+
+/* ============================== state ============================== */
+
+const state = {
+  screen: 'welcome',           // welcome | scan | sector | confirm | dash | submit
+  scanPct: 0, scanDone: false,
+  sector: 'hvac', showAlt: false,
+  day: 1, paused: false,
+  sub: 'upload',               // upload | process | done
+  uploadPct: 0,
+  aPct: 0, sPct: 0, tPct: 0, procDone: false,
+  qbPrompt: false, qb: 'missing', // missing | uploaded | skipped
+  devOpen: false
+};
+
+let timers = [];
+function clearTimers() { timers.forEach(t => { clearInterval(t); clearTimeout(t); }); timers = []; }
+function setState(patch) { Object.assign(state, patch); render(); }
+function go(patch) { clearTimers(); setState(patch); }
+
+function startScan() {
+  clearTimers();
+  setState({ screen: 'scan', scanPct: 0, scanDone: false });
+  const t = setInterval(() => {
+    const p = Math.min(100, state.scanPct + 2.1);
+    const patch = { scanPct: p };
+    if (p >= 100) { patch.scanDone = true; clearInterval(t); }
+    setState(patch);
+  }, 60);
+  timers.push(t);
+}
+
+function startSubmit() {
+  clearTimers();
+  setState({ screen: 'submit', sub: 'upload', uploadPct: 0, aPct: 0, sPct: 0, tPct: 0, procDone: false, qbPrompt: false, qb: 'missing' });
+  const t = setInterval(() => {
+    const p = Math.min(100, state.uploadPct + 2.3);
+    if (p >= 100) {
+      clearInterval(t);
+      setState({ uploadPct: 100 });
+      timers.push(setTimeout(() => startProcessing(null), 600));
+    } else {
+      setState({ uploadPct: p });
+    }
+  }, 55);
+  timers.push(t);
+}
+
+function startProcessing(from) {
+  clearTimers();
+  setState(Object.assign({ screen: 'submit', sub: 'process' }, from || {}));
+  const t = setInterval(() => {
+    const a = Math.min(100, state.aPct + 2.2);
+    const sp = Math.min(100, state.sPct + 1.65);
+    const tx = Math.min(100, state.tPct + 1.25);
+    const patch = { aPct: a, sPct: sp, tPct: tx };
+    if (a >= 60 && !state.qbPrompt) patch.qbPrompt = true;
+    if (a >= 100 && sp >= 100 && tx >= 100) { patch.procDone = true; clearInterval(t); }
+    setState(patch);
+  }, 60);
+  timers.push(t);
+}
+
+/* handlers referenced from generated markup */
+function scanNext() { if (state.scanDone) go({ screen: 'sector' }); }
+function pickSector(id) { setState({ sector: id }); }
+function sectorYes() { go({ screen: 'confirm' }); }
+function showAlt() { setState({ showAlt: true }); }
+function backToSector() { go({ screen: 'sector' }); }
+function begin() { go({ screen: 'dash', day: 1, paused: false }); }
+function pauseToggle() { setState({ paused: !state.paused }); }
+function submitWeek() { if (state.day >= 3) startSubmit(); }
+function qbUpload() { setState({ qb: 'uploaded' }); }
+function qbSkip() { setState({ qb: 'skipped' }); }
+function viewResults() { go({ screen: 'submit', sub: 'done' }); }
+function devToggle() { setState({ devOpen: !state.devOpen }); }
+function noop() {}
+
+/* dev jumps */
+const DEV_JUMPS = {
+  welcome:  () => go({ screen: 'welcome' }),
+  scan:     () => go({ screen: 'scan', scanPct: 100, scanDone: true }),
+  sector:   () => go({ screen: 'sector' }),
+  confirm:  () => go({ screen: 'confirm' }),
+  day1:     () => go({ screen: 'dash', day: 1 }),
+  day4:     () => go({ screen: 'dash', day: 4 }),
+  day7:     () => go({ screen: 'dash', day: 7 }),
+  pause:    () => setState({ paused: !state.paused }),
+  upload:   () => startSubmit(),
+  process:  () => startProcessing({ uploadPct: 100, aPct: 0, sPct: 0, tPct: 0, procDone: false, qbPrompt: false, qb: 'missing' }),
+  procdone: () => go({ screen: 'submit', sub: 'process', uploadPct: 100, aPct: 100, sPct: 100, tPct: 100, procDone: true, qbPrompt: true }),
+  results:  () => go({ screen: 'submit', sub: 'done', uploadPct: 100, aPct: 100, sPct: 100, tPct: 100, procDone: true })
+};
+function devGo(key) { DEV_JUMPS[key](); }
+
+/* ============================== svg helpers ============================== */
+
+const svgCheck = (color, size) => `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M5 12.5 L10 17.5 L19 7" stroke="${color}" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+const svgShield = (color, size, checked) => `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 3 L20 6 V11 C20 16 16.5 19.5 12 21 C7.5 19.5 4 16 4 11 V6 Z" stroke="${color}" stroke-width="1.8" stroke-linejoin="round"/>${checked ? `<path d="M8.8 12 L11 14.2 L15.4 9.6" stroke="${color}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>` : ''}</svg>`;
+const svgSpin = (size) => `<svg class="spin" width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 3 A9 9 0 1 1 4.2 7.5" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>`;
+const svgLogo = `<div style="width:26px;height:26px;border-radius:7px;background:var(--accent);display:flex;align-items:center;justify-content:center;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 18 L4 10 L12 4 L20 10 L20 18" stroke="#FFF" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></div>`;
+
+/* ============================== views ============================== */
+
+function WizardSteps() {
+  const order = { welcome: 0, scan: 1, sector: 2, confirm: 3 };
+  const cur = order[state.screen] ?? 0;
+  const labels = ['Welcome', 'Software scan', 'Your business', 'Review'];
+  return `<div style="display:flex;align-items:center;gap:8px;margin-bottom:28px;">` + labels.map((label, i) => {
+    const done = i < cur, on = i === cur;
+    const bg = done ? '#178A50' : on ? 'var(--accent)' : '#FFF';
+    const bd = done ? '#178A50' : on ? 'var(--accent)' : '#DCDBD4';
+    const fg = done || on ? '#FFF' : '#8A897F';
+    return `<div style="display:flex;align-items:center;gap:8px;">
+      <div style="display:flex;align-items:center;gap:7px;">
+        <div style="width:22px;height:22px;border-radius:999px;display:flex;align-items:center;justify-content:center;font-size:11.5px;font-weight:700;background:${bg};color:${fg};border:1.5px solid ${bd};">${done ? svgCheck('#FFF', 11) : i + 1}</div>
+        <span style="font-size:13px;font-weight:600;color:${on ? '#1F1E1B' : '#8A897F'};">${label}</span>
+      </div>
+      ${i < 3 ? '<div style="width:34px;height:1.5px;background:#DCDBD4;"></div>' : ''}
+    </div>`;
+  }).join('') + `</div>`;
+}
+
+function checkRow(text) {
+  return `<div style="display:flex;gap:10px;"><span style="flex-shrink:0;margin-top:2px;">${svgCheck('#178A50', 16)}</span><span>${text}</span></div>`;
+}
+
+function Welcome() {
+  return `<div class="card fadeUp" style="width:640px;max-width:100%;padding:40px 44px;border-radius:12px;">
+    <div style="width:44px;height:44px;border-radius:10px;background:color-mix(in srgb, var(--accent) 9%, white);display:flex;align-items:center;justify-content:center;margin-bottom:20px;">${svgShield('var(--accent)', 22, true)}</div>
+    <h1 style="margin:0 0 10px;font-size:26px;font-weight:700;letter-spacing:-0.015em;">Welcome, ${CO}</h1>
+    <p style="margin:0 0 22px;font-size:15px;line-height:1.6;color:#4B4A44;">
+      As part of joining Crestline, a small helper program was installed on this computer. Over one work week it quietly notes <strong>how your back office runs</strong> — which programs you use and how work flows between them — so Crestline's team can set up accounting, purchasing, and tax on their side <strong>without weeks of meetings or homework for you</strong>.
+    </p>
+    <div style="display:flex;flex-direction:column;gap:14px;padding:18px 20px;background:#FAFAF7;border:1px solid #ECEBE5;border-radius:8px;margin-bottom:14px;">
+      <div style="font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#8A897F;">What it does</div>
+      <div style="display:flex;gap:10px;font-size:14px;line-height:1.5;color:#33322C;">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" style="flex-shrink:0;margin-top:2px;" aria-hidden="true"><rect x="3" y="5" width="18" height="13" rx="2" stroke="#5F5E58" stroke-width="1.8"/><path d="M9 21 H15" stroke="#5F5E58" stroke-width="1.8" stroke-linecap="round"/></svg>
+        <span>Takes a snapshot of the active window every 30–60 seconds and notes which program is in front.</span>
+      </div>
+      <div style="display:flex;gap:10px;font-size:14px;line-height:1.5;color:#33322C;">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" style="flex-shrink:0;margin-top:2px;" aria-hidden="true"><path d="M13 3 L5 13 H11 L10 21 L19 10 H13 Z" stroke="#5F5E58" stroke-width="1.8" stroke-linejoin="round"/></svg>
+        <span>Counts clicks and keystrokes to understand the rhythm of your work, and notes when files are created, opened, or saved.</span>
+      </div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:14px;padding:18px 20px;background:#F2F8F3;border:1px solid #D8EBDC;border-radius:8px;margin-bottom:26px;">
+      <div style="font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#2E7D46;">What it never does</div>
+      <div style="display:flex;flex-direction:column;gap:10px;font-size:14px;line-height:1.5;color:#24352A;">
+        ${checkRow('It never records audio or video, and never reads what you type — only how much.')}
+        ${checkRow('Password fields are always blacked out in every snapshot.')}
+        ${checkRow('It only runs 7 AM – 7 PM, Monday to Saturday, and you can pause it any time — no questions asked.')}
+        ${checkRow('Everything stays on this computer until you press Submit at the end of the week.')}
+      </div>
+    </div>
+    <div style="display:flex;align-items:center;justify-content:space-between;">
+      <span style="font-size:13px;color:#8A897F;">Setup takes about 2 minutes.</span>
+      <button class="btnP" style="padding:11px 22px;font-size:14.5px;" onclick="startScan()">Get started</button>
+    </div>
+  </div>`;
+}
+
+function Scan() {
+  const shown = state.scanDone ? 6 : Math.floor(state.scanPct / 16.7);
+  const pct = Math.round(state.scanPct);
+  return `<div class="card fadeUp" style="width:640px;max-width:100%;padding:40px 44px;border-radius:12px;">
+    <h1 style="margin:0 0 8px;font-size:24px;font-weight:700;letter-spacing:-0.015em;">${state.scanDone ? 'Scan complete' : 'Looking at what’s installed…'}</h1>
+    <p style="margin:0 0 24px;font-size:14.5px;line-height:1.55;color:#5F5E58;">${state.scanDone
+      ? 'We found 6 programs that matter for the handoff. This list shapes what the analysis pays attention to.'
+      : 'The agent is reading the list of installed programs — names and versions only, no file contents.'}</p>
+    <div style="position:relative;height:8px;border-radius:999px;background:#ECEBE5;overflow:hidden;margin-bottom:8px;">
+      <div style="position:absolute;left:0;top:0;bottom:0;border-radius:999px;background:var(--accent);width:${pct}%;transition:width .1s linear;"></div>
+      ${state.scanDone ? '' : '<div class="scanbeam"></div>'}
+    </div>
+    <div style="font-size:12.5px;color:#8A897F;margin-bottom:24px;">${state.scanDone ? '6 of 6 programs identified' : pct + '% · checking installed software'}</div>
+    <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:28px;">
+      ${APPS.map((a, i) => `<div class="approw${i < shown ? ' found' : ''}" style="display:flex;align-items:center;gap:12px;padding:11px 14px;border:1px solid #ECEBE5;border-radius:8px;background:#FDFDFB;">
+        <div style="width:34px;height:34px;border-radius:8px;background:#F0F0EB;border:1px solid #E4E3DC;display:flex;align-items:center;justify-content:center;font-size:11.5px;font-weight:700;color:#55544D;flex-shrink:0;">${a.mono}</div>
+        <div style="flex-grow:1;min-width:0;">
+          <div style="font-size:14px;font-weight:600;">${a.name}</div>
+          <div style="font-size:12.5px;color:#8A897F;">${a.detail}</div>
+        </div>
+        ${i < shown ? '<span style="font-size:12px;font-weight:600;color:#116B36;background:#E8F5EC;padding:3px 9px;border-radius:999px;flex-shrink:0;">Detected</span>' : ''}
+      </div>`).join('')}
+    </div>
+    <div style="display:flex;align-items:center;justify-content:space-between;">
+      <span style="font-size:13px;color:#8A897F;">Only program names and versions are read — no file contents.</span>
+      <button class="btnP" style="padding:11px 22px;font-size:14.5px;" onclick="scanNext()" ${state.scanDone ? '' : 'disabled'}>Continue</button>
+    </div>
+  </div>`;
+}
+
+function Sector() {
+  const cur = SECTORS.find(s => s.id === state.sector) || SECTORS[0];
+  return `<div class="card fadeUp" style="width:640px;max-width:100%;padding:40px 44px;border-radius:12px;">
+    <h1 style="margin:0 0 8px;font-size:24px;font-weight:700;letter-spacing:-0.015em;">This looks like an HVAC business</h1>
+    <p style="margin:0 0 20px;font-size:14.5px;line-height:1.55;color:#5F5E58;">Based on the software we found, ${CO} looks like an <strong>HVAC &amp; mechanical services</strong> company. Here's the evidence — please confirm we've read it right.</p>
+    <div style="display:flex;flex-direction:column;gap:10px;padding:18px 20px;background:#FAFAF7;border:1px solid #ECEBE5;border-radius:8px;margin-bottom:20px;">
+      <div style="font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#8A897F;">Why we think so</div>
+      ${EVIDENCE.map(ev => `<div style="display:flex;gap:10px;font-size:14px;line-height:1.5;">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" style="flex-shrink:0;margin-top:3px;" aria-hidden="true"><circle cx="11" cy="11" r="6.5" stroke="var(--accent)" stroke-width="1.8"/><path d="M16 16 L20.5 20.5" stroke="var(--accent)" stroke-width="1.8" stroke-linecap="round"/></svg>
+        <span style="color:#33322C;"><strong>${ev.t}</strong> — ${ev.d}</span>
+      </div>`).join('')}
+    </div>
+    ${!state.showAlt ? `<div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;">
+      <button class="btnP" style="padding:11px 22px;font-size:14.5px;" onclick="sectorYes()">Yes, that's right</button>
+      <button class="btnG" style="padding:11px 18px;font-size:14px;" onclick="showAlt()">It's something else</button>
+    </div>` : `<div style="display:flex;flex-direction:column;gap:8px;margin-bottom:20px;">
+      ${SECTORS.map(s => {
+        const on = s.id === state.sector;
+        return `<button class="sectorcard" style="display:flex;align-items:flex-start;gap:12px;padding:14px 16px;border-radius:8px;text-align:left;background:${on ? 'color-mix(in srgb, var(--accent) 5%, white)' : '#FFF'};border:1.5px solid ${on ? 'var(--accent)' : '#E7E6E0'};" onclick="pickSector('${s.id}')">
+          <div style="width:18px;height:18px;border-radius:999px;border:1.5px solid ${on ? 'var(--accent)' : '#C9C8C0'};background:#FFF;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;">${on ? '<div style="width:9px;height:9px;border-radius:999px;background:var(--accent);"></div>' : ''}</div>
+          <div style="flex-grow:1;">
+            <div style="display:flex;align-items:center;gap:8px;">
+              <span style="font-size:14.5px;font-weight:600;color:#1F1E1B;">${s.name}</span>
+              ${s.tag ? '<span style="font-size:11px;font-weight:600;color:var(--accent);background:color-mix(in srgb, var(--accent) 9%, white);padding:2px 8px;border-radius:999px;">Suggested from your software</span>' : ''}
+            </div>
+            <div style="font-size:13px;color:#8A897F;margin-top:2px;">${s.desc}</div>
+          </div>
+        </button>`;
+      }).join('')}
+      <button class="btnP" style="padding:11px 22px;font-size:14.5px;align-self:flex-start;margin-top:8px;" onclick="sectorYes()">Confirm ${cur.short}</button>
+    </div>`}
+    <div style="display:flex;gap:10px;padding:14px 16px;background:color-mix(in srgb, var(--accent) 6%, white);border:1px solid color-mix(in srgb, var(--accent) 18%, white);border-radius:8px;font-size:13.5px;line-height:1.5;color:#33322C;">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" style="flex-shrink:0;margin-top:2px;" aria-hidden="true"><circle cx="12" cy="12" r="9" stroke="var(--accent)" stroke-width="1.8"/><path d="M12 11 V16.5" stroke="var(--accent)" stroke-width="1.8" stroke-linecap="round"/><circle cx="12" cy="7.8" r="1.1" fill="var(--accent)"/></svg>
+      <span>This choice sets which workflows the analysis looks for — invoicing, dispatch, purchasing, job costing. Crestline's team double-checks it before anything is finalized.</span>
+    </div>
+  </div>`;
+}
+
+function watchGroup(icon, title, desc) {
+  return `<div style="display:flex;gap:14px;padding:16px 18px;border:1px solid #ECEBE5;border-radius:8px;background:#FDFDFB;">
+    <div style="width:36px;height:36px;border-radius:8px;background:color-mix(in srgb, var(--accent) 9%, white);display:flex;align-items:center;justify-content:center;flex-shrink:0;">${icon}</div>
+    <div>
+      <div style="font-size:14.5px;font-weight:600;margin-bottom:3px;">${title}</div>
+      <div style="font-size:13.5px;line-height:1.55;color:#5F5E58;">${desc}</div>
+    </div>
+  </div>`;
+}
+
+function Confirm() {
+  const cur = SECTORS.find(s => s.id === state.sector) || SECTORS[0];
+  const icoLedger = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="4" y="3.5" width="16" height="17" rx="2" stroke="var(--accent)" stroke-width="1.8"/><path d="M8 8.5 H16 M8 12 H16 M8 15.5 H12.5" stroke="var(--accent)" stroke-width="1.8" stroke-linecap="round"/></svg>';
+  const icoBox = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 8 L12 4 L20 8 V16 L12 20 L4 16 Z" stroke="var(--accent)" stroke-width="1.8" stroke-linejoin="round"/><path d="M4 8 L12 12 L20 8 M12 12 V20" stroke="var(--accent)" stroke-width="1.8" stroke-linejoin="round"/></svg>';
+  const icoDoc = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M6 3.5 H14.5 L19 8 V20.5 H6 Z" stroke="var(--accent)" stroke-width="1.8" stroke-linejoin="round"/><path d="M14.5 3.5 V8 H19" stroke="var(--accent)" stroke-width="1.8" stroke-linejoin="round"/><path d="M9.5 13 H15.5 M9.5 16.5 H13" stroke="var(--accent)" stroke-width="1.8" stroke-linecap="round"/></svg>';
+  return `<div class="card fadeUp" style="width:680px;max-width:100%;padding:40px 44px;border-radius:12px;">
+    <h1 style="margin:0 0 8px;font-size:24px;font-weight:700;letter-spacing:-0.015em;">Here's what we'll pay attention to</h1>
+    <p style="margin:0 0 24px;font-size:14.5px;line-height:1.55;color:#5F5E58;">Over the next seven days, based on your <strong>${cur.name}</strong> profile and the software on this computer:</p>
+    <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:20px;">
+      ${watchGroup(icoLedger, 'Accounting', 'QuickBooks Desktop activity, invoice and bill files, vendor exports, and how payments move through your week.')}
+      ${watchGroup(icoBox, 'Supply chain', 'Purchase orders in ServiceTitan, vendor pricing spreadsheets, inventory files, and who you buy from and how often.')}
+      ${watchGroup(icoDoc, 'Tax', 'Expense categories, depreciation schedules, and entity paperwork — anything that makes tax season shorter.')}
+    </div>
+    <div style="padding:16px 18px;background:#FAFAF7;border:1px solid #ECEBE5;border-radius:8px;margin-bottom:26px;">
+      <div style="font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#8A897F;margin-bottom:10px;">How it captures, in plain English</div>
+      <div style="display:flex;flex-direction:column;gap:8px;font-size:13.5px;line-height:1.5;color:#4B4A44;">
+        <span>· A snapshot of the active window every 30–60 seconds, password fields blacked out</span>
+        <span>· Which application is in front, and when you switch</span>
+        <span>· Click and keystroke <em>counts</em> — never the content of what you type</span>
+        <span>· File events: created, opened, saved — names and folders only</span>
+      </div>
+    </div>
+    <div style="display:flex;align-items:center;justify-content:space-between;">
+      <button class="btnG" style="padding:11px 18px;font-size:14px;" onclick="backToSector()">Back</button>
+      <div style="display:flex;align-items:center;gap:14px;">
+        <span style="font-size:13px;color:#8A897F;">You can pause any time from the dashboard.</span>
+        <button class="btnP" style="padding:11px 22px;font-size:14.5px;" onclick="begin()">Start the 7-day observation</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+function Wizard() {
+  const bodies = { welcome: Welcome, scan: Scan, sector: Sector, confirm: Confirm };
+  return `<div style="min-height:100vh;display:flex;flex-direction:column;background:#F4F4F1;">
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:18px 32px;border-bottom:1px solid #E7E6E0;background:#FFF;">
+      <div style="display:flex;align-items:center;gap:10px;">${svgLogo}<span style="font-size:15.5px;font-weight:700;letter-spacing:-0.01em;">Groundwork</span></div>
+      <div style="display:flex;align-items:center;gap:14px;">
+        <span style="font-size:13.5px;color:#5F5E58;">${CO} · Setup</span>
+        <span style="display:inline-flex;align-items:center;gap:6px;font-size:12.5px;font-weight:600;color:#116B36;background:#E8F5EC;padding:4px 10px;border-radius:999px;">${svgShield('#116B36', 12, false)} Nothing is being recorded yet</span>
+      </div>
+    </div>
+    <div style="flex-grow:1;display:flex;flex-direction:column;align-items:center;padding:48px 32px 64px;">
+      ${WizardSteps()}
+      ${bodies[state.screen]()}
+      <div style="margin-top:28px;font-size:13px;color:#8A897F;">Questions? Your Crestline transition manager is Maya Rennick · (612) 555-0148</div>
+    </div>
+  </div>`;
+}
+
+/* -------------------- app shell (phases 2 & 3) -------------------- */
+
+function stepDot(kind, n) {
+  if (kind === 'done') return `<div style="width:20px;height:20px;border-radius:999px;background:#178A50;display:flex;align-items:center;justify-content:center;">${svgCheck('#FFF', 11)}</div>`;
+  if (kind === 'active') return `<div style="width:20px;height:20px;border-radius:999px;background:var(--accent);display:flex;align-items:center;justify-content:center;font-size:10.5px;font-weight:700;color:#FFF;">${n}</div>`;
+  return `<div style="width:20px;height:20px;border-radius:999px;border:1.5px solid #DCDBD4;background:#FFF;display:flex;align-items:center;justify-content:center;font-size:10.5px;font-weight:700;color:#8A897F;">${n}</div>`;
+}
+
+function Sidebar() {
+  const isDash = state.screen === 'dash';
+  const isDone = state.screen === 'submit' && state.sub === 'done';
+  const ph2 = isDash ? 'active' : 'done';
+  const ph3 = isDash ? 'pending' : (isDone ? 'done' : 'active');
+  const navIcons = {
+    overview: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="3.5" y="3.5" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="1.8"/><rect x="13.5" y="3.5" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="1.8"/><rect x="3.5" y="13.5" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="1.8"/><rect x="13.5" y="13.5" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="1.8"/></svg>',
+    activity: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M3.5 12 H8 L10.5 6 L13.5 18 L16 12 H20.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+    privacy: svgShield('currentColor', 16, false),
+    help: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="8.5" stroke="currentColor" stroke-width="1.8"/><path d="M9.6 9.3 C9.6 8 10.6 7 12 7 C13.4 7 14.4 8 14.4 9.2 C14.4 10.9 12 11 12 12.8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><circle cx="12" cy="16.2" r="1" fill="currentColor"/></svg>'
+  };
+  return `<aside class="sidebar" style="background:#FBFBF9;border-right:1px solid #E7E6E0;display:flex;flex-direction:column;padding:20px 14px;">
+    <div style="display:flex;align-items:center;gap:10px;padding:4px 10px 18px;">${svgLogo}<span style="font-size:15.5px;font-weight:700;letter-spacing:-0.01em;">Groundwork</span></div>
+    <div style="padding:12px 10px;border:1px solid #ECEBE5;border-radius:8px;background:#FFF;margin-bottom:18px;">
+      <div style="font-size:13.5px;font-weight:600;">${CO}</div>
+      <div style="font-size:12px;color:#8A897F;margin-top:2px;">Crestline portfolio · Minneapolis, MN</div>
+    </div>
+    <div style="padding:4px 10px 16px;">
+      <div style="font-size:11px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:#8A897F;margin-bottom:10px;">Your week</div>
+      <div style="display:flex;flex-direction:column;">
+        <div style="display:flex;gap:10px;align-items:flex-start;">
+          <div style="display:flex;flex-direction:column;align-items:center;">${stepDot('done', 1)}<div style="width:1.5px;height:18px;background:#DCDBD4;"></div></div>
+          <div style="font-size:13px;font-weight:600;color:#5F5E58;padding-top:1px;">Setup</div>
+        </div>
+        <div style="display:flex;gap:10px;align-items:flex-start;">
+          <div style="display:flex;flex-direction:column;align-items:center;">${stepDot(ph2, 2)}<div style="width:1.5px;height:18px;background:#DCDBD4;"></div></div>
+          <div style="font-size:13px;font-weight:600;color:${isDash ? '#1F1E1B' : '#5F5E58'};padding-top:1px;">Recording</div>
+        </div>
+        <div style="display:flex;gap:10px;align-items:flex-start;">
+          ${stepDot(ph3, 3)}
+          <div style="font-size:13px;font-weight:600;color:${state.screen === 'submit' ? '#1F1E1B' : '#8A897F'};padding-top:1px;">Handoff</div>
+        </div>
+      </div>
+    </div>
+    <nav style="display:flex;flex-direction:column;gap:2px;border-top:1px solid #ECEBE5;padding-top:14px;">
+      <a class="navlink on" href="#overview">${navIcons.overview} Overview</a>
+      <a class="navlink" href="#activity">${navIcons.activity} Activity</a>
+      <a class="navlink" href="#privacy">${navIcons.privacy} What's captured</a>
+      <a class="navlink" href="#help">${navIcons.help} Help</a>
+    </nav>
+    <div style="margin-top:auto;display:flex;align-items:center;gap:10px;padding:10px;border-top:1px solid #ECEBE5;">
+      <div style="width:32px;height:32px;border-radius:999px;background:#E4E7F0;color:#44506B;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0;">DW</div>
+      <div style="min-width:0;">
+        <div style="font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">Dana Whitfield</div>
+        <div style="font-size:11.5px;color:#8A897F;">Office manager</div>
+      </div>
+    </div>
+  </aside>`;
+}
+
+function StatusPill() {
+  if (state.screen === 'submit') {
+    const label = state.sub === 'done' ? 'Recording ended' : 'Recording ended · analyzing';
+    return `<span style="display:inline-flex;align-items:center;gap:7px;font-size:13px;font-weight:600;color:#5F5E58;background:#EEEEE9;padding:5px 12px;border-radius:999px;"><span style="width:7px;height:7px;border-radius:999px;background:#5F5E58;display:inline-block;"></span>${label}</span>`;
+  }
+  if (state.paused) {
+    return `<span style="display:inline-flex;align-items:center;gap:7px;font-size:13px;font-weight:600;color:#9A5B00;background:#FBF1DF;padding:5px 12px;border-radius:999px;"><span style="width:7px;height:7px;border-radius:999px;background:#9A5B00;display:inline-block;"></span>Paused</span>`;
+  }
+  return `<span style="display:inline-flex;align-items:center;gap:7px;font-size:13px;font-weight:600;color:#116B36;background:#E8F5EC;padding:5px 12px;border-radius:999px;"><span class="pulse" style="width:7px;height:7px;border-radius:999px;background:#116B36;display:inline-block;"></span>Recording · day ${state.day} of 7</span>`;
+}
+
+function Dash() {
+  const D = DAYS[state.day] || DAYS[4];
+  const canSubmit = state.day >= 3;
+  const heroSub = state.paused
+    ? 'Paused — the timeline resumes when you do.'
+    : state.day >= 7
+      ? 'Final day. You can submit whenever you’re ready.'
+      : `${7 - state.day} days remaining · recording runs 7 AM – 7 PM, then sleeps.`;
+  const stats = [
+    ['Hours observed', D.hours, 'Mon–Sat, 7 AM – 7 PM only'],
+    ['Screenshots taken', D.shots, 'password fields masked'],
+    ['Est. data volume', D.data, 'stays on this PC until you submit'],
+    ['Applications seen', '6', D.appSub]
+  ];
+  const segs = Array.from({ length: 7 }, (_, i) => {
+    const w = i + 1;
+    const bg = w < state.day ? 'var(--accent)' : w === state.day ? 'color-mix(in srgb, var(--accent) 55%, white)' : '#E7E6E0';
+    return `<div style="flex-grow:1;height:10px;border-radius:999px;background:${bg};"></div>`;
+  }).join('');
+
+  return `<div style="display:flex;flex-direction:column;gap:20px;">
+    ${state.paused ? `<div style="display:flex;align-items:center;gap:10px;padding:12px 16px;background:#FBF1DF;border:1px solid #F0DCB6;border-radius:8px;font-size:13.5px;color:#7A4A06;">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" style="flex-shrink:0;" aria-hidden="true"><rect x="7" y="5" width="3.4" height="14" rx="1.2" fill="#9A5B00"/><rect x="13.6" y="5" width="3.4" height="14" rx="1.2" fill="#9A5B00"/></svg>
+      <span><strong>Recording is paused.</strong> Nothing is being captured. Resume whenever you're ready — the week's deadline doesn't move.</span>
+    </div>` : ''}
+
+    <div class="card" style="border-radius:12px;padding:26px 28px;">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:24px;margin-bottom:20px;">
+        <div>
+          <div style="font-size:13px;font-weight:600;color:#8A897F;margin-bottom:4px;">Observation week</div>
+          <div style="font-size:34px;font-weight:700;letter-spacing:-0.02em;line-height:1.1;">Day ${state.day} of 7</div>
+          <div style="font-size:14px;color:#5F5E58;margin-top:6px;">${heroSub}</div>
+        </div>
+        <button class="btnG" style="display:inline-flex;align-items:center;gap:8px;padding:11px 18px;font-size:14px;flex-shrink:0;" onclick="pauseToggle()">
+          ${state.paused
+            ? '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M8 5.5 L18 12 L8 18.5 Z" fill="#1F1E1B"/></svg> Resume recording'
+            : '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="7" y="5" width="3.4" height="14" rx="1.2" fill="#1F1E1B"/><rect x="13.6" y="5" width="3.4" height="14" rx="1.2" fill="#1F1E1B"/></svg> Pause recording'}
+        </button>
+      </div>
+      <div style="display:flex;gap:6px;">${segs}</div>
+      <div style="display:flex;justify-content:space-between;font-size:12px;color:#8A897F;margin-top:8px;">
+        <span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span><span>Sun</span>
+      </div>
+    </div>
+
+    <div class="statgrid">
+      ${stats.map(s => `<div class="card" style="padding:18px 20px;">
+        <div style="font-size:12.5px;font-weight:600;color:#8A897F;margin-bottom:6px;">${s[0]}</div>
+        <div style="font-size:26px;font-weight:700;letter-spacing:-0.015em;">${s[1]}</div>
+        <div style="font-size:12.5px;color:#8A897F;margin-top:4px;">${s[2]}</div>
+      </div>`).join('')}
+    </div>
+
+    <div class="dashcols">
+      <div style="display:flex;flex-direction:column;gap:20px;min-width:0;">
+        <div class="card" style="padding:22px 24px;">
+          <div style="font-size:15px;font-weight:700;margin-bottom:4px;">Where the time goes</div>
+          <div style="font-size:13px;color:#8A897F;margin-bottom:18px;">Application focus so far this week</div>
+          <div style="display:flex;flex-direction:column;gap:13px;">
+            ${D.dist.map(r => `<div style="display:flex;align-items:center;gap:12px;">
+              <div style="width:168px;font-size:13.5px;font-weight:600;flex-shrink:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${r[0]}</div>
+              <div style="flex-grow:1;height:8px;border-radius:999px;background:#EFEEE9;overflow:hidden;"><div style="height:100%;border-radius:999px;background:var(--accent);width:${r[2]}%;"></div></div>
+              <div style="width:60px;font-size:12.5px;color:#5F5E58;text-align:right;flex-shrink:0;">${r[1]}</div>
+            </div>`).join('')}
+          </div>
+        </div>
+
+        <div class="card" style="padding:22px 24px;" id="activity">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
+            <div style="font-size:15px;font-weight:700;">Recently captured</div>
+            <span style="font-size:12px;color:#8A897F;">most recent first</span>
+          </div>
+          <div style="font-size:13px;color:#8A897F;margin-bottom:14px;">Described in plain terms — this is the level of detail the analysis sees.</div>
+          <div style="display:flex;flex-direction:column;">
+            ${D.feed.map(f => `<div style="display:flex;align-items:center;gap:12px;padding:10px 2px;border-bottom:1px solid #F1F0EB;">
+              <div style="width:8px;height:8px;border-radius:999px;background:color-mix(in srgb, var(--accent) 45%, white);flex-shrink:0;"></div>
+              <div style="flex-grow:1;font-size:13.5px;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${f[0]}</div>
+              <div style="font-size:12px;color:#A6A59B;flex-shrink:0;">${f[1]}</div>
+              <div style="font-size:12px;color:#8A897F;width:60px;text-align:right;flex-shrink:0;">${f[2]}</div>
+            </div>`).join('')}
+          </div>
+        </div>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:20px;min-width:0;">
+        <div class="card" style="padding:22px 24px;">
+          <div style="font-size:15px;font-weight:700;margin-bottom:12px;">Finish the week</div>
+          <p style="margin:0 0 16px;font-size:13.5px;line-height:1.55;color:#5F5E58;">When you submit, this week's capture is encrypted and sent to Crestline for analysis. Until then, <strong>everything stays on this computer</strong>.</p>
+          <div class="tip">
+            <button class="btnP" style="width:100%;padding:12px 0;font-size:14.5px;" onclick="submitWeek()" ${canSubmit ? '' : 'disabled'}>${canSubmit ? 'Submit week for analysis' : 'Submit (unlocks day 3)'}</button>
+            ${canSubmit ? '' : `<span class="tipbox" role="tooltip">At least 3 days of activity are needed for a reliable analysis. Submitting unlocks on day 3 — ${state.day === 1 ? 'two more days to go.' : 'one more day to go.'}</span>`}
+          </div>
+          <div style="font-size:12.5px;color:#8A897F;margin-top:10px;text-align:center;">${canSubmit ? 'Takes about 2 minutes. You can keep working.' : 'The agent keeps observing until then.'}</div>
+        </div>
+
+        <div class="card" style="padding:22px 24px;" id="privacy">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">${svgShield('#178A50', 16, true)}<div style="font-size:15px;font-weight:700;">What we're capturing</div></div>
+          <div style="display:flex;flex-direction:column;gap:14px;">
+            <div><div style="font-size:13.5px;font-weight:600;">Periodic screenshots</div><div style="font-size:13px;line-height:1.5;color:#5F5E58;">A snapshot of the active window every 30–60 seconds. Password fields are always blacked out.</div></div>
+            <div><div style="font-size:13.5px;font-weight:600;">Application focus</div><div style="font-size:13px;line-height:1.5;color:#5F5E58;">Which program is in front, and when you switch between them.</div></div>
+            <div><div style="font-size:13.5px;font-weight:600;">Click &amp; keystroke counts</div><div style="font-size:13px;line-height:1.5;color:#5F5E58;">How much you click and type — never what you type.</div></div>
+            <div><div style="font-size:13.5px;font-weight:600;">File events</div><div style="font-size:13px;line-height:1.5;color:#5F5E58;">When files are created, opened, or saved — names and folders only, not contents.</div></div>
+          </div>
+        </div>
+
+        <div class="card" style="padding:18px 20px;" id="help">
+          <div style="font-size:13.5px;font-weight:600;margin-bottom:4px;">Talk to a person</div>
+          <div style="font-size:13px;line-height:1.55;color:#5F5E58;">Maya Rennick, your Crestline transition manager, is one call away: <strong>(612) 555-0148</strong> or <a href="mailto:maya.rennick@crestlineequity.com">maya.rennick@crestlineequity.com</a></div>
+        </div>
+      </div>
+    </div>
+  </div>`;
+}
+
+function Upload() {
+  const D = DAYS[state.day] || DAYS[4];
+  const pct = Math.round(state.uploadPct);
+  const gb = (2.4 * state.uploadPct / 100).toFixed(1);
+  return `<div style="display:flex;justify-content:center;padding-top:60px;">
+    <div class="card fadeUp" style="width:560px;max-width:100%;padding:40px 44px;border-radius:12px;text-align:center;">
+      <div style="width:52px;height:52px;border-radius:999px;background:color-mix(in srgb, var(--accent) 9%, white);display:flex;align-items:center;justify-content:center;margin:0 auto 18px;color:var(--accent);">${svgSpin(24)}</div>
+      <h2 style="margin:0 0 6px;font-size:22px;font-weight:700;letter-spacing:-0.015em;">Uploading your week</h2>
+      <p style="margin:0 0 24px;font-size:14px;line-height:1.55;color:#5F5E58;">${D.shots} screenshots, 96 file events, and the app-usage timeline — encrypted in transit. This is the first time any of it leaves this computer.</p>
+      <div style="height:8px;border-radius:999px;background:#ECEBE5;overflow:hidden;margin-bottom:8px;"><div style="height:100%;border-radius:999px;background:var(--accent);width:${pct}%;transition:width .1s linear;"></div></div>
+      <div style="font-size:12.5px;color:#8A897F;">${gb} GB of 2.4 GB · ${pct}%</div>
+    </div>
+  </div>`;
+}
+
+function moduleCard(title, pct, steps, doneSummary, donePill, extra) {
+  const done = pct >= 100;
+  const idx = Math.min(3, Math.floor(pct / 25));
+  const rows = steps.map((label, i) => {
+    const sDone = done || i < idx;
+    const active = !sDone && i === idx;
+    const icon = sDone ? svgCheck('#178A50', 14)
+      : active ? `<span style="color:#1F1E1B;display:inline-flex;">${svgSpin(14)}</span>`
+      : '<div style="width:14px;height:14px;border-radius:999px;border:1.5px solid #DCDBD4;flex-shrink:0;"></div>';
+    return `<div style="display:flex;align-items:center;gap:9px;font-size:13px;color:${sDone || active ? '#1F1E1B' : '#A6A59B'};"><span style="flex-shrink:0;display:inline-flex;">${icon}</span><span>${label}</span></div>`;
+  }).join('');
+  return `<div class="card" style="padding:22px 24px;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+      <div style="font-size:14.5px;font-weight:700;">${title}</div>
+      ${done ? donePill : `<span style="font-size:12px;font-weight:600;color:var(--accent);background:color-mix(in srgb, var(--accent) 9%, white);padding:3px 9px;border-radius:999px;">${Math.round(pct)}%</span>`}
+    </div>
+    <div style="height:6px;border-radius:999px;background:#EFEEE9;overflow:hidden;margin-bottom:16px;"><div style="height:100%;border-radius:999px;background:${done ? '#178A50' : 'var(--accent)'};width:${Math.round(pct)}%;transition:width .1s linear;"></div></div>
+    <div style="display:flex;flex-direction:column;gap:9px;">${rows}</div>
+    ${done ? `<div style="margin-top:14px;font-size:12.5px;color:#5F5E58;border-top:1px solid #F1F0EB;padding-top:12px;">${doneSummary}</div>` : ''}
+    ${extra || ''}
+  </div>`;
+}
+
+function Process() {
+  const cur = SECTORS.find(s => s.id === state.sector) || SECTORS[0];
+  const greenPill = '<span style="font-size:12px;font-weight:600;color:#116B36;background:#E8F5EC;padding:3px 9px;border-radius:999px;">Complete</span>';
+  const amberPill = '<span style="font-size:12px;font-weight:600;color:#7A4A06;background:#FBF1DF;padding:3px 9px;border-radius:999px;">2 items to review</span>';
+
+  let qbBlock = '';
+  if (state.qbPrompt && state.qb === 'missing') {
+    qbBlock = `<div class="fadeUp" style="margin-top:16px;padding:14px 16px;background:color-mix(in srgb, var(--accent) 6%, white);border:1px solid color-mix(in srgb, var(--accent) 20%, white);border-radius:8px;">
+      <div style="font-size:13.5px;font-weight:700;margin-bottom:5px;">One thing would make this better</div>
+      <p style="margin:0 0 12px;font-size:13px;line-height:1.55;color:#4B4A44;">We saw QuickBooks in daily use, but the week didn't include a company-file export. A direct export gives the analysis <strong>exact balances</strong> instead of reconstructing them from screenshots — a materially better result.</p>
+      <div style="display:flex;flex-direction:column;gap:8px;">
+        <button class="btnP" style="padding:9px 14px;font-size:13px;" onclick="qbUpload()">Attach a QuickBooks backup (.qbb)</button>
+        <button class="btnG" style="padding:8px 14px;font-size:13px;" onclick="qbSkip()">Continue without it</button>
+      </div>
+    </div>`;
+  } else if (state.qb === 'uploaded') {
+    qbBlock = `<div class="fadeUp" style="margin-top:16px;display:flex;gap:9px;padding:12px 14px;background:#E8F5EC;border:1px solid #CBE7D3;border-radius:8px;font-size:12.5px;line-height:1.5;color:#17512E;">
+      <span style="flex-shrink:0;margin-top:2px;">${svgCheck('#178A50', 14)}</span>
+      <span><strong>summit_air_2026.qbb attached.</strong> The accounting module will re-run against exact balances.</span>
+    </div>`;
+  } else if (state.qb === 'skipped') {
+    qbBlock = `<div style="margin-top:16px;font-size:12.5px;color:#8A897F;">Continuing without an export — you can still send one to Maya later.</div>`;
+  }
+
+  return `<div style="display:flex;flex-direction:column;gap:20px;">
+    <div>
+      <h2 style="margin:0 0 6px;font-size:22px;font-weight:700;letter-spacing:-0.015em;">Analyzing your week</h2>
+      <p style="margin:0;font-size:14px;line-height:1.55;color:#5F5E58;">Three specialists are working in parallel on the <strong>${cur.name}</strong> profile you confirmed. This usually takes a few minutes — feel free to close this window; nothing more is needed from you right now.</p>
+    </div>
+    <div class="modgrid">
+      ${moduleCard('Accounting', state.aPct, A_STEPS, '214 accounts · 41 recurring vendors · 14 months of AP/AR', greenPill, qbBlock)}
+      ${moduleCard('Supply chain', state.sPct, S_STEPS, '28 suppliers · 342 purchase orders · reorder patterns for 60+ items', greenPill, '')}
+      ${moduleCard('Tax', state.tPct, T_STEPS, 'S-corp confirmed · 18 expense categories mapped · 2 items flagged', amberPill, '')}
+    </div>
+    ${state.procDone ? `<div class="fadeUp" style="display:flex;justify-content:center;padding-top:8px;">
+      <button class="btnP" style="padding:12px 26px;font-size:15px;" onclick="viewResults()">View extraction summary</button>
+    </div>` : ''}
+  </div>`;
+}
+
+function Done() {
+  const nextSteps = [
+    ['Crestline’s operations team reviews the extraction', 'Over the next 2–3 business days. Nothing is finalized without a human looking at it.'],
+    ['You get a short confirmation checklist', 'Mostly the flagged items above — about 15 minutes, scheduled with Maya at a time that suits you.'],
+    ['The agent removes itself', 'Recording has already stopped. The software uninstalls automatically within 24 hours — nothing for you to clean up.']
+  ];
+  return `<div style="display:flex;flex-direction:column;gap:20px;">
+    <div class="card fadeUp" style="border-radius:12px;padding:26px 28px;display:flex;align-items:center;gap:18px;">
+      <div style="width:48px;height:48px;border-radius:999px;background:#E8F5EC;display:flex;align-items:center;justify-content:center;flex-shrink:0;">${svgCheck('#178A50', 24)}</div>
+      <div style="flex-grow:1;">
+        <h2 style="margin:0 0 4px;font-size:22px;font-weight:700;letter-spacing:-0.015em;">You're done — thank you</h2>
+        <p style="margin:0;font-size:14px;line-height:1.5;color:#5F5E58;">The week has been analyzed and handed to Crestline. Recording has stopped for good, and the agent will remove itself from this computer within 24 hours.</p>
+      </div>
+    </div>
+
+    <div>
+      <div style="font-size:15px;font-weight:700;margin-bottom:12px;">What was extracted</div>
+      <div class="xtrgrid">
+        <div class="card" style="padding:20px 22px;">
+          <div style="font-size:14px;font-weight:700;margin-bottom:12px;">Accounting</div>
+          <div style="display:flex;flex-direction:column;gap:8px;font-size:13.5px;line-height:1.5;color:#4B4A44;">
+            <span>· Chart of accounts — 214 accounts mapped</span>
+            <span>· 14 months of AP / AR history</span>
+            <span>· 41 recurring vendors identified</span>
+            <span>· 3 bank &amp; credit accounts located</span>
+          </div>
+        </div>
+        <div class="card" style="padding:20px 22px;">
+          <div style="font-size:14px;font-weight:700;margin-bottom:12px;">Supply chain</div>
+          <div style="display:flex;flex-direction:column;gap:8px;font-size:13.5px;line-height:1.5;color:#4B4A44;">
+            <span>· 28 active suppliers, ranked by spend</span>
+            <span>· 342 purchase orders parsed</span>
+            <span>· Reorder patterns for 60+ stock items</span>
+            <span>· Top supplier: Johnstone Supply (31% of spend)</span>
+          </div>
+        </div>
+        <div class="card" style="padding:20px 22px;">
+          <div style="font-size:14px;font-weight:700;margin-bottom:12px;">Tax</div>
+          <div style="display:flex;flex-direction:column;gap:8px;font-size:13.5px;line-height:1.5;color:#4B4A44;">
+            <span>· Entity type: S corporation, confirmed</span>
+            <span>· 18 expense categories mapped to tax lines</span>
+            <span>· Depreciation schedule located (2019–2025)</span>
+            <span>· 2 items flagged for review, below</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <div style="font-size:15px;font-weight:700;margin-bottom:12px;">Needs your attention</div>
+      <div style="display:flex;flex-direction:column;gap:10px;">
+        ${ATTENTION.map(at => `<div class="card" style="padding:16px 20px;display:flex;align-items:center;gap:14px;">
+          <div style="width:32px;height:32px;border-radius:8px;background:#FBF1DF;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 4 L21 19 H3 Z" stroke="#9A5B00" stroke-width="1.8" stroke-linejoin="round"/><path d="M12 10 V14" stroke="#9A5B00" stroke-width="1.8" stroke-linecap="round"/><circle cx="12" cy="16.6" r="0.9" fill="#9A5B00"/></svg>
+          </div>
+          <div style="flex-grow:1;min-width:0;">
+            <div style="font-size:14px;font-weight:600;">${at.t}</div>
+            <div style="font-size:13px;color:#5F5E58;margin-top:1px;">${at.d}</div>
+          </div>
+          <button class="btnG" style="padding:8px 16px;font-size:13px;flex-shrink:0;" onclick="noop()">Review</button>
+        </div>`).join('')}
+      </div>
+    </div>
+
+    <div class="card" style="padding:22px 24px;">
+      <div style="font-size:15px;font-weight:700;margin-bottom:14px;">What happens next</div>
+      <div style="display:flex;flex-direction:column;">
+        ${nextSteps.map((s, i) => `<div style="display:flex;gap:12px;">
+          ${i < 2
+            ? `<div style="display:flex;flex-direction:column;align-items:center;"><div style="width:22px;height:22px;border-radius:999px;background:color-mix(in srgb, var(--accent) 9%, white);color:var(--accent);display:flex;align-items:center;justify-content:center;font-size:11.5px;font-weight:700;flex-shrink:0;">${i + 1}</div><div style="width:1.5px;flex-grow:1;background:#ECEBE5;margin:4px 0;"></div></div>`
+            : `<div style="width:22px;height:22px;border-radius:999px;background:color-mix(in srgb, var(--accent) 9%, white);color:var(--accent);display:flex;align-items:center;justify-content:center;font-size:11.5px;font-weight:700;flex-shrink:0;">${i + 1}</div>`}
+          <div style="${i < 2 ? 'padding-bottom:18px;' : ''}">
+            <div style="font-size:14px;font-weight:600;">${s[0]}</div>
+            <div style="font-size:13px;color:#5F5E58;margin-top:2px;">${s[1]}</div>
+          </div>
+        </div>`).join('')}
+      </div>
+    </div>
+  </div>`;
+}
+
+function Shell() {
+  const isDash = state.screen === 'dash';
+  let body;
+  if (isDash) body = Dash();
+  else if (state.sub === 'upload') body = Upload();
+  else if (state.sub === 'process') body = Process();
+  else body = Done();
+  return `<div style="display:flex;min-height:100vh;align-items:stretch;background:#F4F4F1;">
+    ${Sidebar()}
+    <main style="flex-grow:1;min-width:0;padding:26px 32px 120px;" id="overview">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:22px;">
+        <h1 style="margin:0;font-size:21px;font-weight:700;letter-spacing:-0.01em;">${isDash ? 'Overview' : 'Handoff'}</h1>
+        ${StatusPill()}
+      </div>
+      ${body}
+    </main>
+  </div>`;
+}
+
+/* -------------------- dev / demo controls -------------------- */
+
+function DevPanel() {
+  const s = state;
+  const isDash = s.screen === 'dash';
+  const isProcess = s.screen === 'submit' && s.sub === 'process';
+  const isDone = s.screen === 'submit' && s.sub === 'done';
+  const groups = [
+    ['Phase 1 · Setup', [
+      ['Welcome', 'welcome', s.screen === 'welcome'],
+      ['Scan done', 'scan', s.screen === 'scan'],
+      ['Sector', 'sector', s.screen === 'sector'],
+      ['Review', 'confirm', s.screen === 'confirm']
+    ]],
+    ['Phase 2 · Recording', [
+      ['Day 1', 'day1', isDash && s.day === 1],
+      ['Day 4', 'day4', isDash && s.day === 4],
+      ['Day 7', 'day7', isDash && s.day === 7],
+      [s.paused ? 'Paused: on' : 'Paused: off', 'pause', s.paused]
+    ]],
+    ['Phase 3 · Handoff', [
+      ['Uploading', 'upload', s.screen === 'submit' && s.sub === 'upload'],
+      ['Processing', 'process', isProcess && !s.procDone],
+      ['Proc. done', 'procdone', isProcess && s.procDone],
+      ['Results', 'results', isDone]
+    ]]
+  ];
+  const panel = !s.devOpen ? '' : `<div class="fadeUp" style="width:250px;background:#1F1E1B;border-radius:10px;padding:14px 14px 12px;box-shadow:0 12px 32px rgba(20,20,15,.35);">
+    <div style="font-size:10.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#8A897F;margin-bottom:10px;">Demo controls · not part of the product</div>
+    ${groups.map(g => `<div style="font-size:11px;font-weight:600;color:#A6A59B;margin:8px 0 5px;">${g[0]}</div>
+      <div style="display:grid;grid-template-columns:repeat(2, minmax(0,1fr));gap:5px;">
+        ${g[1].map(b => `<button class="devbtn${b[2] ? ' on' : ''}" onclick="devGo('${b[1]}')">${b[0]}</button>`).join('')}
+      </div>`).join('')}
+  </div>`;
+  return `<div style="position:fixed;right:20px;bottom:20px;z-index:40;display:flex;flex-direction:column;align-items:flex-end;gap:10px;">
+    ${panel}
+    <button style="display:inline-flex;align-items:center;gap:7px;background:#1F1E1B;color:#F2F1EA;border:none;border-radius:999px;padding:9px 15px;font-size:12.5px;font-weight:600;cursor:pointer;box-shadow:0 6px 18px rgba(20,20,15,.3);" onclick="devToggle()" aria-label="Toggle demo controls">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="3" stroke="#F2F1EA" stroke-width="1.8"/><path d="M12 3.5 V6 M12 18 V20.5 M3.5 12 H6 M18 12 H20.5 M6 6 L7.8 7.8 M16.2 16.2 L18 18 M18 6 L16.2 7.8 M7.8 16.2 L6 18" stroke="#F2F1EA" stroke-width="1.8" stroke-linecap="round"/></svg>
+      Demo
+    </button>
+  </div>`;
+}
+
+/* ============================== render ============================== */
+
+const isSetupScreen = () => ['welcome', 'scan', 'sector', 'confirm'].includes(state.screen);
+
+function render() {
+  document.getElementById('app').innerHTML = (isSetupScreen() ? Wizard() : Shell()) + DevPanel();
+}
+
+render();
+</script>
+</body>
+</html>
