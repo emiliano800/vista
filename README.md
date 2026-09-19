@@ -125,7 +125,29 @@ shortcut combos); private apps/title keywords mute capture entirely.
 
 ```bash
 cd recorder && npm install
-npm start                # real hooks; needs accessibility/screen-recording permission on macOS
+npm start                # real hooks
 npm run start:demo       # simulated Outlook/Acrobat/QuickBooks/Excel activity, no hooks
 VISTA_PYTHON=/path/to/python npm start   # interpreter that has taskmining installed
 ```
+
+### macOS
+
+```bash
+brew install node            # Node 20+
+python3 -m venv .venv && .venv/bin/pip install -e .   # taskmining for post-processing
+cd recorder && npm install && VISTA_PYTHON=$PWD/../.venv/bin/python npm start
+```
+
+macOS asks for three permissions the first time (System Settings → Privacy &
+Security); the dashboard shows which are missing and opens the right pane:
+
+| Permission | Why | Without it |
+|---|---|---|
+| Accessibility | `uiohook-napi` global hooks, foreground window | no clicks/keys, Start is blocked |
+| Input Monitoring | keyboard events | key counts and shortcuts stay at 0 |
+| Screen Recording | window titles (`get-windows`), screenshots, `screen.webm` | titles empty, no shots |
+
+The app appears in the permission lists only after it has tried once, so press
+Start, grant, then press Start again. In development the entry is "Electron";
+a signed `.app` build (`electron-builder`) shows as "Vista". While recording
+the Dock icon hides so only the overlay is visible; it returns on Stop.

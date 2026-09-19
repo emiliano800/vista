@@ -6,7 +6,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { BrowserWindow, Menu, Tray, app, clipboard, desktopCapturer, ipcMain, nativeImage, screen, session, shell } from 'electron';
+import { BrowserWindow, Menu, Tray, app, clipboard, desktopCapturer, ipcMain, nativeImage, screen, session, shell, systemPreferences } from 'electron';
 
 import { DEMO_KEYS, DemoHook, demoActiveWindow } from './demo.js';
 import { DEFAULT_SETTINGS, Recorder, keyNamesFrom, loadSettings } from './recorder.js';
@@ -16,6 +16,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const UI = path.join(__dirname, '..', 'ui');
 const PRELOAD = path.join(__dirname, 'preload.cjs');
 const DEMO = process.argv.includes('--demo');
+const MAC = process.platform === 'darwin';
 const HOME = process.env.VISTA_HOME ?? path.join(os.homedir(), 'Vista');
 const RECORDINGS = path.join(HOME, 'recordings');
 const SETTINGS_FILE = path.join(HOME, 'settings.json');
@@ -138,6 +139,36 @@ function findRepoRoot() {
     d = path.dirname(d);
   }
   return null;
+}
+
+// ---- macOS permissions --------------------------------------------------------
+// uiohook needs Accessibility + Input Monitoring, get-windows/desktopCapturer need
+// Screen Recording. Input Monitoring has no query API, so it is reported as
+// `unknown` and the hook's silence is the only signal.
+const MAC_PANES = {
+  accessibility: 'Privacy_Accessibility',
+  inputMonitoring: 'Privacy_ListenEvent',
+  screen: 'Privacy_ScreenCapture',
+};
+
+function permissions(prompt = false) {
+  if (!MAC || DEMO) return { needed: false, ok: true, accessibility: 'granted', inputMonitoring: 'granted', screen: 'granted' };
+  const accessibility = systemPreferences.isTrustedAccessibilityClient(prompt) ? 'granted' : 'denied';
+  const screenAccess = systemPreferences.getMediaAccessStatus('screen');
+  return {
+    needed: true,
+    accessibility,
+    inputMonitoring: 'unknown',
+    screen: screenAccess,
+    ok: accessibility === 'granted' && screenAccess === 'granted',
+  };
+}
+
+function openPermissionPane(kind) {
+  const pane = MAC_PANES[kind];
+  if (!pane) return;
+  if (kind === 'screen') grabFrame().catch(() => {}); // registers the app in the Screen Recording list
+  return shell.openExternal(`x-apple.systempreferences:com.apple.preference.security?${pane}`);
 }
 
 // ---- recordings store -------------------------------------------------------
@@ -283,20 +314,24 @@ function updateTray(status) {
 }
 
 function trayIcon() {
-  // 16x16 accent dot, drawn in code so no asset pipeline is needed
+  // 16x16 dot, drawn in code so no asset pipeline is needed. On macOS it is a
+  // template image (black + alpha) so the menu bar tints it for light/dark mode.
   const size = 16;
   const png = Buffer.alloc(size * size * 4);
+  const [r, g, b] = MAC ? [0, 0, 0] : [0x3d, 0x63, 0xdd];
   for (let y = 0; y < size; y++)
     for (let x = 0; x < size; x++) {
       const d = Math.hypot(x - 7.5, y - 7.5);
       const i = (y * size + x) * 4;
       const a = d < 6 ? 255 : d < 7 ? Math.round((7 - d) * 255) : 0;
-      png[i] = 0x3d;
-      png[i + 1] = 0x63;
-      png[i + 2] = 0xdd;
+      png[i] = r;
+      png[i + 1] = g;
+      png[i + 2] = b;
       png[i + 3] = a;
     }
-  return nativeImage.createFromBitmap(png, { width: size, height: size });
+  const img = nativeImage.createFromBitmap(png, { width: size, height: size });
+  if (MAC) img.setTemplateImage(true);
+  return img;
 }
 
 // ---- actions ----------------------------------------------------------------
@@ -309,8 +344,14 @@ function toggle() {
 }
 
 function startRecording() {
+  const perms = permissions(true);
+  if (perms.needed && !perms.ok) {
+    if (!createDashboard()) dashboard.webContents.send('permissions:changed', perms);
+    return recorder.status();
+  }
   const status = recorder.start();
   if (dashboard && !dashboard.isDestroyed()) dashboard.hide();
+  if (MAC) app.dock.hide();
   setOverlayMode('pill');
   if (recorder.settings.video && captureWin) {
     fs.writeFileSync(path.join(recorder.dir, 'screen.webm'), '');
@@ -329,6 +370,7 @@ async function stopRecording() {
   const status = await recorder.stop();
   broadcastRecordings();
   setOverlayMode('orb');
+  if (MAC) app.dock.show();
   openReview(status.recordingId);
   return status;
 }
@@ -355,6 +397,8 @@ ipcMain.handle('settings:set', (_e, patch) => {
 });
 ipcMain.handle('settings:defaults', () => DEFAULT_SETTINGS);
 ipcMain.handle('app:info', () => ({ demo: DEMO, home: HOME, platform: process.platform, user: os.userInfo().username }));
+ipcMain.handle('permissions:get', () => permissions(false));
+ipcMain.handle('permissions:open', (_e, kind) => openPermissionPane(kind));
 ipcMain.on('video:chunk', (_e, dir, buf) => {
   try {
     fs.appendFileSync(path.join(dir, 'screen.webm'), Buffer.from(buf));

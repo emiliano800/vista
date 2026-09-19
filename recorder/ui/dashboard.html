@@ -128,6 +128,12 @@
       .banner { display: flex; align-items: center; gap: 14px; padding: 14px 18px; border-radius: 12px; background: var(--accent-soft); color: #22397f; margin-bottom: 16px; }
       .banner b { font-size: 15px; }
       .banner .sp { flex: 1; }
+      .banner.warn { background: #fff4e0; color: #6b4300; }
+      .perms { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; }
+      .perm { display: flex; align-items: center; gap: 10px; font-size: 13px; }
+      .perm i { width: 8px; height: 8px; border-radius: 50%; background: #d18f00; flex: none; }
+      .perm.ok i { background: #1f9d55; }
+      .perm .sp { flex: 1; }
     </style>
   </head>
   <body>
@@ -148,6 +154,15 @@
         <div id="view-today">
           <h1>Good day.</h1>
           <p class="lede">One button. Press it when you start working, stop it when you leave. Everything else is automatic.</p>
+
+          <div class="banner warn hidden" id="perm-banner">
+            <div style="flex:1">
+              <b>macOS needs your OK before Vista can record</b>
+              <div>Grant each one in System Settings, then come back. Vista only records while you press Start.</div>
+              <div class="perms" id="perm-list"></div>
+            </div>
+            <button class="btn sm" id="perm-recheck">Check again</button>
+          </div>
 
           <div id="hero" class="card hero idle">
             <div class="dot"></div>
@@ -565,6 +580,27 @@
         setTimeout(() => ($('saved-msg').textContent = ''), 1500);
       };
 
+      // ---- macOS permissions ----
+      const PERMS = [
+        ['accessibility', 'Accessibility', 'lets Vista see which window is in front'],
+        ['inputMonitoring', 'Input Monitoring', 'lets Vista count clicks, keys and shortcuts'],
+        ['screen', 'Screen Recording', 'lets Vista take screenshots and read window titles'],
+      ];
+      function renderPermissions(p) {
+        $('perm-banner').classList.toggle('hidden', !p.needed || p.ok);
+        if (!p.needed) return;
+        $('perm-list').innerHTML = PERMS.map(([k, name, why]) => {
+          const st = p[k];
+          const label = st === 'granted' ? 'granted' : st === 'unknown' ? 'grant if clicks are not counted' : 'not granted';
+          return `<div class="perm ${st === 'granted' ? 'ok' : ''}"><i></i><b>${name}</b><span>${why}</span><span class="sp"></span><span>${label}</span><button class="btn sm" data-perm="${k}">Open settings</button></div>`;
+        }).join('');
+        for (const b of $('perm-list').querySelectorAll('[data-perm]')) b.onclick = () => window.vista.openPermission(b.dataset.perm);
+      }
+      async function checkPermissions() { renderPermissions(await window.vista.permissions()); }
+      $('perm-recheck').onclick = checkPermissions;
+      window.vista.onPermissions(renderPermissions);
+      document.addEventListener('visibilitychange', () => { if (!document.hidden) checkPermissions(); });
+
       // ---- wiring ----
       $('h-start').onclick = () => window.vista.start();
       $('h-pause').onclick = () => window.vista.pause();
@@ -581,7 +617,7 @@
         $('who-name').textContent = info.user;
         $('who-sub').textContent = info.demo ? 'demo mode · simulated apps' : `${info.platform} · this computer`;
         $('home-path').textContent = info.home + '/recordings';
-        renderHero(status); renderRecordings(); renderToday(); renderSettings();
+        renderHero(status); renderRecordings(); renderToday(); renderSettings(); checkPermissions();
         setInterval(async () => { if (status && status.state !== 'idle') { status = await window.vista.status(); renderHero(status); renderToday(); } }, 1000);
       })();
     </script>
