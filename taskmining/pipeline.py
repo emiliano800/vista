@@ -20,6 +20,7 @@ class PipelineResult:
     automation: list[analytics.AutomationScore]
     annotations: list[Annotation] = field(default_factory=list)
     questions: list[annotations.Question] = field(default_factory=list)
+    data_flows: list[analytics.DataFlow] = field(default_factory=list)
 
     def write(self, out: Path) -> None:
         out.mkdir(parents=True, exist_ok=True)
@@ -64,6 +65,7 @@ class PipelineResult:
                 for a in self.discovery.activities
             ],
             "rework": dict(self.discovery.rework),
+            "data_flows": [f.to_dict() for f in self.data_flows],
             "automation_potential": [
                 {"activity": a.activity, "score": round(a.score, 3), "hours_total": round(a.hours_total, 3)} for a in self.automation
             ],
@@ -102,4 +104,5 @@ class Pipeline:
         disc = discovery.discover(steps)
         auto = analytics.score_automation(steps)
         questions = annotations.open_questions(steps)
-        return PipelineResult(raw, clean, steps, disc, auto, human, questions)
+        flows = analytics.data_flows(clean)
+        return PipelineResult(raw, clean, steps, disc, auto, human, questions, flows)

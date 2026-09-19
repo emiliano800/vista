@@ -53,6 +53,7 @@ def _scale(step: Step, start: datetime, end: datetime) -> Step:
         n_keys=round(step.n_keys * frac),
         n_copies=round(step.n_copies * frac),
         n_pastes=round(step.n_pastes * frac),
+        n_transfers=round(step.n_transfers * frac),
     )
 
 

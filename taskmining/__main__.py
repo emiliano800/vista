@@ -33,6 +33,10 @@ def _print_report(res) -> None:
         print("\nRework (repeated activities within a case):")
         for act, n in d.rework.most_common():
             print(f"  {n:3d}  {act}")
+    if res.data_flows:
+        print("\nData flows (copied in one app, pasted in another):")
+        for f in res.data_flows[:8]:
+            print(f"  {f.count:3d}x  {f.source_app} -> {f.target_app}  (~{f.mean_transfer_s:.1f}s per transfer)")
     print("\nAutomation potential:")
     print("  score  freq  regul  xfer   switch hours  activity")
     for a in res.automation:

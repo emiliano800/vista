@@ -234,6 +234,10 @@
                 <div class="path" id="rv-path"><span class="muted">—</span></div>
               </div>
               <div class="card">
+                <h2>Re-keyed between apps</h2>
+                <div class="rank" id="rv-flows"><div class="empty">—</div></div>
+              </div>
+              <div class="card">
                 <h2>Automation candidates</h2>
                 <div class="rank" id="rv-auto"><div class="empty">—</div></div>
               </div>
@@ -266,8 +270,8 @@
                 <li>Which application and window is in front (e.g. <em>Excel — AP tracker.xlsx</em>)</li>
                 <li>Clicks, scrolls and <b>counts</b> of keystrokes</li>
                 <li>Shortcut combinations (Ctrl+C, Ctrl+S, Alt+Tab)</li>
-                <li>A low-resolution screenshot when you switch windows, and every 15 s</li>
-                <li>Copied text after redaction, so re-keying between systems is visible</li>
+                <li>A low-resolution screenshot when you switch windows, when the screen changes, and every 15 s</li>
+                <li>Copied text after redaction, and which app a paste came from, so re-keying between systems is visible</li>
               </ul>
             </div>
             <div class="card no">
@@ -403,6 +407,7 @@
           $('rv-acts').innerHTML = `<div class="empty">${finished && p !== 'done' ? 'No analysis available' : 'Waiting for the agent…'}</div>`;
           $('rv-path').innerHTML = '<span class="muted">—</span>';
           $('rv-auto').innerHTML = '<div class="empty">—</div>';
+          $('rv-flows').innerHTML = '<div class="empty">—</div>';
           return;
         }
         $('rv-steps').textContent = s.steps;
@@ -423,6 +428,11 @@
         $('rv-auto').innerHTML = au.length
           ? au.map((a, i) => `<div class="row"><span class="n">${i + 1}</span><span>${esc(a.activity)}</span><span class="muted">${Math.round(a.score * 100)} / 100</span><div class="bar"><i style="width:${a.score * 100}%"></i></div></div>`).join('')
           : '<div class="empty">Nothing repetitive enough yet</div>';
+        const fl = s.data_flows ?? [];
+        const flMax = fl[0]?.count || 1;
+        $('rv-flows').innerHTML = fl.length
+          ? fl.map((f) => `<div class="row"><span class="n">${f.count}×</span><span>${esc(short(f.from))} → ${esc(short(f.to))}</span><span class="muted">~${hm(f.mean_transfer_s)} each</span><div class="bar"><i style="width:${(f.count / flMax) * 100}%"></i></div></div>`).join('')
+          : '<div class="empty">No copy → paste between apps seen</div>';
       }
       $('rv-done').onclick = () => show('today');
       $('rv-note').onclick = () => openAnnotate(reviewing);
@@ -561,7 +571,8 @@
 
       // ---- settings ----
       const SETTINGS_UI = [
-        ['screenshots', 'Screenshots on window switch', 'Low-resolution frame each time you change window and every 15 seconds.'],
+        ['screenshots', 'Screenshots', 'Low-resolution frame when you change window, when the screen changes, and every 15 seconds.'],
+        ['changeDetect', 'Screenshot when the screen changes', 'Compares a tiny thumbnail twice a second; shoots when at least 4% of it moves (a new email, sheet or dialog).'],
         ['video', 'Screen video', 'Low frame-rate recording of the screen, saved next to the events.'],
         ['clipboard', 'Copied text (redacted)', 'Shows where information is re-typed between systems.'],
         ['keyContent', 'Typed characters', 'Off: only the number of keys is stored. Usually left off.'],

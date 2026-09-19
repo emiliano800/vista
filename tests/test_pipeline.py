@@ -1,7 +1,7 @@
 import io
 from datetime import datetime, timedelta
 
-from taskmining import abstraction, correlation, discovery, eventlog, preprocess
+from taskmining import abstraction, analytics, correlation, discovery, eventlog, preprocess
 from taskmining.capture import JsonlSource, SyntheticSource
 from taskmining.models import EventType, RawEvent, write_jsonl
 from taskmining.pipeline import Pipeline
@@ -254,6 +254,41 @@ def test_eventlog_exports_provenance_and_note():
     assert '<string key="vista:activity_source" value="human"/>' in xes
     assert '<string key="vista:case_source" value="human"/>' in xes
     assert '<string key="vista:note" value=\'say "hi"\'/>' in xes
+
+
+def test_linked_pastes_become_transfers_and_data_flows(tmp_path):
+    # shape written by recorder/: a paste whose clipboard hash matched an earlier copy
+    # carries the source app; only cross-app links count as transfers
+    linked = {"clip_hash": "ab12", "source_app": "Acrobat", "source_title": "INV-1.pdf", "transfer_ms": 4200, "chars": 9}
+    events = [
+        ev(0, EventType.FOCUS, app="Acrobat", title="INV-1.pdf"),
+        ev(1, EventType.COPY, app="Acrobat", title="INV-1.pdf", text="INV-1", payload={"clip_hash": "ab12", "chars": 9}),
+        ev(5, EventType.FOCUS, app="QuickBooks", title="Enter Bills"),
+        ev(6, EventType.PASTE, app="QuickBooks", title="Enter Bills", text="INV-1", payload=linked),
+        ev(7, EventType.PASTE, app="QuickBooks", title="Enter Bills", text="INV-1", payload={**linked, "transfer_ms": 5800}),
+        ev(8, EventType.PASTE, app="QuickBooks", title="Enter Bills", text="x", payload={"clip_hash": "zz", "chars": 1}),
+        ev(9, EventType.PASTE, app="QuickBooks", title="Enter Bills", text="y", payload={"clip_hash": "q", "source_app": "QuickBooks"}),
+    ]
+    steps = abstraction.abstract(preprocess.sessionize(events))
+    qb = [s for s in steps if s.app == "QuickBooks"][0]
+    assert (qb.n_pastes, qb.n_transfers) == (4, 2)
+    assert [s.n_transfers for s in steps if s.app == "Acrobat"] == [0]
+
+    flows = analytics.data_flows(events)
+    assert len(flows) == 1
+    assert (flows[0].source_app, flows[0].target_app, flows[0].count, flows[0].chars) == ("Acrobat", "QuickBooks", 2, 18)
+    assert flows[0].mean_transfer_s == 5.0
+
+    buf = io.StringIO()
+    write_jsonl(events, buf)
+    buf.seek(0)
+    res = Pipeline(pseudonymize=False).run(JsonlSource(buf))
+    assert [f.to_dict()["from"] for f in res.data_flows] == ["Acrobat"]
+    res.write(tmp_path / "out")
+    csv_text = (tmp_path / "out" / "event_log.csv").read_text()
+    assert "n_transfers" in csv_text.splitlines()[0]
+    assert '"data_flows"' in (tmp_path / "out" / "summary.json").read_text()
+    assert 'key="vista:n_transfers" value="2"' in (tmp_path / "out" / "event_log.xes").read_text()
 
 
 def test_pipeline_with_annotations_pseudonymises_users_and_writes_artifacts(tmp_path):

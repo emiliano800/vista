@@ -2,10 +2,17 @@
 //
 //   uiohook-napi   -> mouse clicks / wheel / keys / shortcut combos (global, cross-platform)
 //   get-windows    -> foreground app + window title (+ URL on macOS) polled every 500 ms
-//   capture window -> screen frames + webm video, requested via `frameProvider`
+//   capture window -> screen frames + webm video, requested via `frameProvider`;
+//                     a tiny grayscale thumbnail (`thumbProvider`) is polled so a
+//                     screenshot is taken when the screen actually changes
+//
+// Copy and paste are linked: the clipboard text is hashed (salted per recording)
+// on copy; a later paste with the same hash carries the source app/window, so
+// "re-keyed from Outlook into QuickBooks" is a fact in the log, not a guess.
 //
 // Every event is redacted before it touches disk and stamped with the current
 // foreground app/window so the pipeline can abstract it into a business step.
+import { createHash } from 'node:crypto';
 import { EventEmitter } from 'node:events';
 import fs from 'node:fs';
 import os from 'node:os';
@@ -24,9 +31,13 @@ const IS_MAC = process.platform === 'darwin';
 export const DEFAULT_SETTINGS = {
   keyContent: false,          // record typed characters (false = counts + named keys only)
   clipboard: true,            // record redacted clipboard text on copy/paste
-  screenshots: true,          // JPEG frame on every focus change + every `frameEverySec`
+  screenshots: true,          // JPEG frame on every focus change, on screen change + every `frameEverySec`
   video: true,                // low-fps webm of the screen alongside events
   frameEverySec: 15,
+  changeDetect: true,         // compare a small thumbnail every `changePollMs`, shoot when it differs
+  changePollMs: 750,
+  changeThreshold: 0.04,      // fraction of thumbnail pixels that must change
+  changeMinGapMs: 1500,       // never more than one change-shot per this window
   privateApps: ['1Password', 'Bitwarden', 'KeePass', 'LastPass', 'Keychain Access', 'Signal', 'WhatsApp'],
   privateTitles: ['password', 'bank', 'banking', 'incognito', 'private browsing'],
 };
@@ -47,6 +58,7 @@ export class Recorder extends EventEmitter {
    * @param {object|null} opts.hook  uIOhook instance (null in demo mode)
    * @param {Function|null} opts.activeWindow  get-windows activeWindow (null in demo mode)
    * @param {Function|null} opts.frameProvider  async () => Buffer (JPEG) | null
+   * @param {Function|null} opts.thumbProvider  async () => { width, height, gray: Uint8Array } | null
    * @param {Function|null} opts.readClipboard  () => string
    */
   constructor(opts) {
@@ -56,6 +68,7 @@ export class Recorder extends EventEmitter {
     this.hook = opts.hook;
     this.activeWindow = opts.activeWindow;
     this.frameProvider = opts.frameProvider ?? null;
+    this.thumbProvider = opts.thumbProvider ?? null;
     this.readClipboard = opts.readClipboard ?? (() => '');
     this.keyNames = opts.keyNames ?? new Map(); // uiohook keycode -> UiohookKey name
     this.user = opts.user ?? os.userInfo().username;
@@ -76,10 +89,13 @@ export class Recorder extends EventEmitter {
     this._timers = [];
     this._lastScroll = 0;
     this._log = [];
+    this._thumb = null;
+    this._thumbBusy = false;
+    this._lastClip = null;
   }
 
   _zeroCounts() {
-    return { click: 0, key: 0, focus: 0, copy: 0, paste: 0, scroll: 0, shortcut: 0, screen: 0, redactions: 0, total: 0 };
+    return { click: 0, key: 0, focus: 0, copy: 0, paste: 0, transfer: 0, scroll: 0, shortcut: 0, screen: 0, redactions: 0, total: 0 };
   }
 
   // ---- lifecycle -----------------------------------------------------------
@@ -98,11 +114,14 @@ export class Recorder extends EventEmitter {
     this.appSeconds = {};
     this.frameNo = 0;
     this._log = [];
+    this._thumb = null;
+    this._lastClip = null;
     this.state = 'recording';
     this._writeManifest();
     this._attachHooks();
     this._timers.push(setInterval(() => this._pollWindow(), 500));
     this._timers.push(setInterval(() => this._periodicFrame(), 1000));
+    if (this.settings.changeDetect && this.thumbProvider) this._timers.push(setInterval(() => this._changeTick(), this.settings.changePollMs));
     this._pollWindow(true);
     this._emitStatus();
     return this.status();
@@ -235,19 +254,32 @@ export class Recorder extends EventEmitter {
   }
 
   _clip(type, combo, extra = {}) {
-    let text = '';
-    if (this.settings.clipboard) {
-      setTimeout(() => {
-        try {
-          text = redactText(this.readClipboard()).slice(0, 200);
-        } catch {
-          text = '';
-        }
-        this._write(type, { text, payload: { combo, ...extra } });
-      }, 60);
-      return;
-    }
-    this._write(type, { text, payload: { combo, ...extra } });
+    // the OS updates the clipboard slightly after the key event; read it a beat later
+    setTimeout(() => {
+      let raw = '';
+      try {
+        raw = this.readClipboard() ?? '';
+      } catch {
+        raw = '';
+      }
+      const text = this.settings.clipboard ? redactText(raw).slice(0, 200) : '';
+      const hash = raw ? clipHash(raw, this.recordingId) : '';
+      const payload = { combo, ...extra, clip_hash: hash, chars: raw.length };
+      let crossApp = false;
+      if (type === 'copy') {
+        this._lastClip = hash ? { hash, app: this.current.app, title: this.current.title, at: Date.now() } : null;
+      } else if (type === 'paste' && hash && this._lastClip?.hash === hash) {
+        const src = this._lastClip;
+        crossApp = src.app !== this.current.app;
+        Object.assign(payload, {
+          source_app: src.app,
+          source_title: src.title,
+          transfer_ms: Date.now() - src.at,
+          cross_app: crossApp,
+        });
+      }
+      if (this._write(type, { text, payload }) && crossApp) this.counts.transfer += 1;
+    }, 60);
   }
 
   // ---- foreground window ---------------------------------------------------
@@ -301,7 +333,27 @@ export class Recorder extends EventEmitter {
     if (Date.now() - this._lastFrameAt >= this.settings.frameEverySec * 1000) this._requestFrame('interval');
   }
 
-  async _requestFrame(reason) {
+  async _changeTick() {
+    if (this._thumbBusy || this.state !== 'recording' || this.current.private || !this.settings.screenshots) return;
+    this._thumbBusy = true;
+    try {
+      const thumb = await this.thumbProvider();
+      if (!thumb) return;
+      const prev = this._thumb;
+      this._thumb = thumb;
+      if (!prev) return;
+      const diff = frameDiff(prev, thumb);
+      if (diff >= this.settings.changeThreshold && Date.now() - this._lastFrameAt >= this.settings.changeMinGapMs) {
+        await this._requestFrame('change', { diff: Math.round(diff * 1000) / 1000 });
+      }
+    } catch (err) {
+      this._note(`change detection failed: ${err.message}`);
+    } finally {
+      this._thumbBusy = false;
+    }
+  }
+
+  async _requestFrame(reason, extra = {}) {
     if (!this.settings.screenshots || !this.frameProvider || this.state !== 'recording' || this.current.private) return;
     this._lastFrameAt = Date.now();
     let buf = null;
@@ -314,14 +366,14 @@ export class Recorder extends EventEmitter {
     if (!buf || !this.dir) return;
     const name = `shots/${String(++this.frameNo).padStart(6, '0')}.jpg`;
     fs.writeFile(path.join(this.dir, name), buf, () => {});
-    this._write('screen', { payload: { image: name, reason } });
+    this._write('screen', { payload: { image: name, reason, ...extra } });
   }
 
   // ---- output --------------------------------------------------------------
 
   _write(type, { text = '', payload = {}, element = '' } = {}) {
-    if (this.state !== 'recording' || !this.stream) return;
-    if (this.current.private && type !== 'focus') return; // nothing leaves a private app
+    if (this.state !== 'recording' || !this.stream) return false;
+    if (this.current.private && type !== 'focus') return false; // nothing leaves a private app
     const raw = {
       timestamp: new Date().toISOString(),
       user: this.user,
@@ -340,10 +392,14 @@ export class Recorder extends EventEmitter {
     this.counts.total += 1;
     if (type !== 'key' && type !== 'scroll') this.emit('event', ev);
     if (type === 'focus' || type === 'copy' || type === 'paste' || type === 'shortcut') this._pushLog(ev);
+    return true;
   }
 
   _pushLog(ev) {
-    const label = ev.event_type === 'focus' ? `${ev.app} — ${ev.window_title}` : `${ev.event_type} ${ev.text}`.trim();
+    let label;
+    if (ev.event_type === 'focus') label = `${ev.app} — ${ev.window_title}`;
+    else if (ev.event_type === 'paste' && ev.payload.source_app) label = `paste ← ${ev.payload.source_app} ${ev.text}`.trim();
+    else label = `${ev.event_type} ${ev.text}`.trim();
     this._log.push({ t: ev.timestamp, type: ev.event_type, label: label.slice(0, 80) });
     if (this._log.length > 50) this._log.shift();
   }
@@ -374,6 +430,21 @@ export class Recorder extends EventEmitter {
   _emitStatus() {
     this.emit('status', this.status());
   }
+}
+
+// ---- clipboard / frame helpers ----------------------------------------------
+
+export function clipHash(text, salt = '') {
+  return createHash('sha256').update(`${salt}:${text}`).digest('hex').slice(0, 12);
+}
+
+/** Fraction of pixels whose gray level moved by more than 24/255 between two same-size thumbnails. */
+export function frameDiff(a, b) {
+  if (!a || !b || a.width !== b.width || a.height !== b.height) return 1;
+  const n = a.gray.length;
+  let changed = 0;
+  for (let i = 0; i < n; i++) if (Math.abs(a.gray[i] - b.gray[i]) > 24) changed++;
+  return n ? changed / n : 0;
 }
 
 // ---- key helpers -----------------------------------------------------------

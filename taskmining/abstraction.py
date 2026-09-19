@@ -58,6 +58,12 @@ def classify(e: RawEvent, rules: list[ActivityRule]) -> tuple[str, Source]:
     return f"Other ({e.app})", Source.FALLBACK
 
 
+def is_transfer(e: RawEvent) -> bool:
+    """A paste whose clipboard content the recorder saw copied in another app."""
+    src = e.payload.get("source_app")
+    return e.event_type == EventType.PASTE and bool(src) and src != e.app
+
+
 def _bump(step: Step, e: RawEvent) -> None:
     step.end = max(step.end, e.timestamp)
     step.n_events += 1
@@ -65,6 +71,8 @@ def _bump(step: Step, e: RawEvent) -> None:
         step.n_copies += 1
     elif e.event_type == EventType.PASTE:
         step.n_pastes += 1
+        if is_transfer(e):
+            step.n_transfers += 1
     elif e.event_type == EventType.KEY:
         step.n_keys += int(e.payload.get("n_keys", 1))
 

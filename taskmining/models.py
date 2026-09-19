@@ -117,6 +117,7 @@ class Step:
     n_events: int = 1
     n_copies: int = 0
     n_pastes: int = 0
+    n_transfers: int = 0  # pastes whose clipboard content was copied in a different app
     n_keys: int = 0
     case_id: str = ""
     activity_source: Source = Source.RULE

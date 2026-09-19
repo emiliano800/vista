@@ -7,7 +7,8 @@
   "main": "src/main.js",
   "scripts": {
     "start": "electron .",
-    "start:demo": "electron . --demo"
+    "start:demo": "electron . --demo",
+    "test": "node --test test/*.test.js"
   },
   "dependencies": {
     "get-windows": "^9.3.0",

@@ -27,7 +27,7 @@ module here:
 | 4. Case correlation | "Case ID mapping" / business-object linking | `taskmining.correlation` | Extracts business identifiers (`INV-…`, `TICKET-…`, `PO…`) from titles/URLs and forward/backward-fills them within a session so screens that don't show the ID still land in the right case. Human-supplied case IDs are never overwritten; steps that still have no ID fall back to time-boxed **task episodes** (`EP-<user>-<n>`) so ID-less Excel/Outlook shops still get cases. |
 | 5. Event log | Data model / Data Pool tables | `taskmining.eventlog` | Exports `case_id, activity, start, end, user, …` plus `activity_source`, `case_source` and `note` as CSV and IEEE XES so any process mining tool (Celonis, PM4Py, ProM, Disco) can load it. |
 | 6. Discovery | Process Explorer, Variant Explorer | `taskmining.discovery` | Directly-follows graph with frequency and mean wait per edge, variants with throughput time, per-activity duration stats, rework detection. DOT and Mermaid renderers. |
-| 7. Analytics | Automation opportunity / Task Mining dashboards | `taskmining.analytics` | Scores each activity on frequency, regularity (low duration CV), data transfer (copy/paste/typing volume) and app switching to rank automation candidates. |
+| 7. Analytics | Automation opportunity / Task Mining dashboards | `taskmining.analytics` | Scores each activity on frequency, regularity (low duration CV), data transfer (copy/paste/typing volume, linked cross-app pastes count double) and app switching to rank automation candidates; `data_flows` lists the app-to-app re-keying edges. |
 
 `taskmining.pipeline.Pipeline` wires the stages together; `PipelineResult.write()`
 produces `raw_events.jsonl`, `clean_events.jsonl`, `event_log.csv`,
@@ -105,8 +105,22 @@ The employee-facing recorder: one Start button, an always-on-top overlay pill
 that stays visible over Excel/Outlook/anything, and a small dashboard (today,
 my recordings, what is recorded, settings). Electron shell, `uiohook-napi` for
 global mouse/keyboard/shortcut hooks, `get-windows` for the foreground app and
-window title, `desktopCapturer` for screenshots on window switch and a
-low-frame-rate `screen.webm`.
+window title, `desktopCapturer` for screenshots and a low-frame-rate
+`screen.webm`.
+
+Screenshots are taken on window switch, every 15 s, and **when the screen
+actually changes**: a 64x36 grayscale thumbnail is polled every 750 ms and a
+full frame is shot when >= 4 % of its pixels move (min 1.5 s apart), so a new
+email, a new Excel sheet or a dialog inside the same window is captured. The
+`screen` event carries `payload.reason` (`focus` / `interval` / `change`) and
+the normalised `diff`.
+
+Copy and paste are **linked**: on Cmd/Ctrl+C the recorder remembers a salted
+hash of the clipboard plus the source app/window; a later Cmd/Ctrl+V with the
+same clipboard gets `payload.source_app`, `source_title`, `transfer_ms` and
+`cross_app`. The engine counts cross-app pastes as `n_transfers` per step
+(weighted in the automation score) and aggregates them into `data_flows`
+("Acrobat -> QuickBooks, 42x") in `summary.json` - the swivel-chair map.
 
 Everything is written locally to `~/Vista/recordings/<id>/`:
 

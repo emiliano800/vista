@@ -8,7 +8,7 @@ import { fileURLToPath } from 'node:url';
 
 import { BrowserWindow, Menu, Tray, app, clipboard, desktopCapturer, ipcMain, nativeImage, screen, session, shell, systemPreferences } from 'electron';
 
-import { DEMO_KEYS, DemoHook, demoActiveWindow } from './demo.js';
+import { DEMO_KEYS, DemoHook, demoActiveWindow, demoClipboard } from './demo.js';
 import { DEFAULT_SETTINGS, Recorder, keyNamesFrom, loadSettings } from './recorder.js';
 import { redactText } from './redact.js';
 
@@ -58,8 +58,9 @@ async function buildRecorder() {
     hook,
     activeWindow,
     keyNames,
-    readClipboard: () => clipboard.readText(),
+    readClipboard: DEMO ? demoClipboard : () => clipboard.readText(),
     frameProvider: grabFrame,
+    thumbProvider: grabThumb,
   });
   rec.on('status', broadcastStatus);
   rec.on('finished', postProcess);
@@ -75,6 +76,18 @@ async function grabFrame() {
   });
   const img = sources[0]?.thumbnail;
   return img && !img.isEmpty() ? img.toJPEG(70) : null;
+}
+
+// 64x36 grayscale fingerprint of the screen for change detection (~1 ms to compare)
+async function grabThumb() {
+  const sources = await desktopCapturer.getSources({ types: ['screen'], thumbnailSize: { width: 64, height: 36 } });
+  const img = sources[0]?.thumbnail;
+  if (!img || img.isEmpty()) return null;
+  const { width, height } = img.getSize();
+  const bgra = img.toBitmap();
+  const gray = new Uint8Array(width * height);
+  for (let i = 0, p = 0; i < gray.length; i++, p += 4) gray[i] = (bgra[p] * 29 + bgra[p + 1] * 150 + bgra[p + 2] * 77) >> 8;
+  return { width, height, gray };
 }
 
 function broadcastStatus(status) {
@@ -124,6 +137,7 @@ function pickSummary(s) {
     top_activities: (s.activities ?? []).slice(0, 6),
     automation: (s.automation_potential ?? []).slice(0, 3),
     top_variant: s.variants?.[0] ?? null,
+    data_flows: (s.data_flows ?? []).slice(0, 5),
     rework: Object.entries(s.rework ?? {})
       .sort((a, b) => b[1] - a[1])
       .slice(0, 3)
