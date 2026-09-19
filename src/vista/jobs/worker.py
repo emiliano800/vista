@@ -37,7 +37,7 @@ def process_one() -> bool:
             mark_succeeded(session, job)
         else:
             mark_failed(session, job, error)
-            if job.kind == "agent_run":
+            if job.kind in HANDLERS:
                 mark_run_failed(job, schema, error, permanent=job.status == "failed")
         session.commit()
     return True

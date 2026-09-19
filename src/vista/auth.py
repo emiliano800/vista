@@ -41,3 +41,9 @@ def current_principal(
         email=user.email,
         role=user.role,
     )
+
+
+def admin_principal(principal: Principal = Depends(current_principal)) -> Principal:
+    if principal.role != "admin":
+        raise HTTPException(status_code=403, detail="admin role required")
+    return principal

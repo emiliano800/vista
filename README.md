@@ -57,6 +57,11 @@ idempotency + cost tracking (`test_jobs.py`).
 | `POST /runs` | Enqueue a durable `agent_run` job (supports `idempotency_key`) |
 | `GET /runs/{id}` | Run status + append-only event log |
 | `GET /usage` | Tenant-wide token/cost totals |
+| `POST /employees`, `GET /employees` | Employee registry (admin creates, members view) |
+| `POST /agents`, `GET /agents`, `PATCH /agents/{id}` | One agent per employee: scopes, schedule (hourly/daily/weekly), pause/resume |
+| `POST /agents/{id}/runs` | Trigger an on-demand discovery run (also scheduled via `python -m vista.jobs.scheduler`) |
+| `GET /findings`, `PATCH /findings/{id}` | Evidence-labeled findings (`observed_fact`/`inefficiency`/`proposed_automation`); triage open→reviewed/dismissed/actioned |
+| `POST /summaries`, `GET /summaries`, `GET /summaries/latest` | Company summary runs aggregating all open findings |
 
 ## Agent vision: autonomous per-employee agents
 
@@ -81,7 +86,7 @@ permissions grow):
 
 | Phase | Employee agent's access | Purpose |
 | --- | --- | --- |
-| 1. Records agent (current) | Documents, imported files | Extract facts, flag inconsistencies |
+| 1. Records agent (current — registry, findings, and summaries are built) | Documents, imported files; role-based hypotheses | Extract facts, flag inconsistencies |
 | 2. Connector agent (next) | Read-only email, accounting (QuickBooks/Xero), files, calendar | Reconstruct real workflows from digital exhaust; find repetition and double-entry |
 | 3. Shadow agent | + guided interviews, observing approved apps | Validate process maps with the employee |
 | 4. Autonomous agent | Scoped computer-use sessions; executes fixes | Do the work; route exceptions to a human |
