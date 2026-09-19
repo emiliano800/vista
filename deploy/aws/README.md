@@ -56,12 +56,15 @@ Then:
 ```sh
 aws ecs wait services-stable --cluster vista --services vista-api
 curl -s https://<ApiEndpoint>/api/health           # {"status":"ok"}
-deploy/aws/manage.sh create-workspace --firm "Your firm" --company "Your company" --email you@example.com
+deploy/aws/manage.sh --output-file "$HOME/vista-workspace.json" create-workspace --firm "Your firm" --company "Your company" --email you@example.com
 ```
 
-`create-workspace` prints the personal access key once. Store it in a password manager; it
-is also in the worker log group, so tighten CloudWatch access or delete that log stream when
-done.
+`--output-file` saves the result and personal access key to a new file readable only by
+your user, then removes that command's CloudWatch log stream after successful retrieval.
+It refuses to overwrite an existing file. Move the key into a password manager and remove
+the local file afterward. Without `--output-file`, the command prints the key and leaves
+its CloudWatch copy in place. If output retrieval fails, inspect the task before retrying:
+the workspace may already have been created.
 
 ### Connect Cloudflare
 
