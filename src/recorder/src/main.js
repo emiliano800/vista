@@ -403,7 +403,7 @@ function addAnnotation(recordingId, { label, note = '', start, end, case_id = ''
 // ---- windows -----------------------------------------------------------------
 
 // Overlay sizes: `orb` is the idle blue circle, `pill` the recording bar, `panel` the expanded details.
-const SIZES = { orb: { w: 64, h: 64 }, pill: { w: 380, h: 64 }, panel: { w: 380, h: 332 } };
+const SIZES = { orb: { w: 72, h: 72 }, pill: { w: 380, h: 64 }, panel: { w: 380, h: 332 } };
 let overlayMode = 'orb';
 
 function setOverlayMode(mode) {
