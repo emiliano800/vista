@@ -1,0 +1,33 @@
+Customer Id,Customer Name,Segment,Naics Prefix,Bill To Street,Bill To City,Bill To State,Bill To Zip,Payment Terms,Credit Limit,Credit Hold,Tax Exempt,Resale Cert On File,Sales Rep Id,Price Level,Customer Since,Preferred Carrier,Status
+KBD-CUST0001,Appalachian Conveyor LP,Conveyor / Material Handling OEM ,333,7007 Harbor Dr,Toledo,OH,43614,Net 30,250000,N,Y,Y,E018,D,2024-06-18,Customer Pickup,Active
+KBD-CUST0002,Riverbend Foods LLC,Food & Beverage Processing,311,4978 River Rd,Scranton,PA,18517,COD,150000,N,N,N,E014,B,1996-07-20 ,Customer Pickup,Inactive
+KBD-CUST0003,Tri-County Conveyor Inc.,Conveyor / Material Handling OEM,333,1500 Mill St,Allentown,PA,18170,Net 30,100000,N,Y,Y,E021,A,2011-04-13,FedEx Ground,Active
+KBD-CUST0004,"Cardinal Foods Group - Plant 12 - Hazleton, PA",Food & Beverage Processing,311,6768 Union St,Allentown,PA,18178,Net 60,250000,N,Y,Y,E016,D,2012-04-08,Customer Pickup,Active
+KBD-CUST0005,Cardinal Foods Corp.,Food & Beverage Processing,311,1907 Enterprise Ct,Toledo,OH,43636,Net 30,50000,N,Y,N,E022,C,2016-11-23,UPS Ground,Active
+KBD-CUST0006,Prairie Foods Co.,Food & Beverage Processing,311,5045 Main St,Scranton,PA,18526,Net 60,150000,N,N,Y,E023,B,2017-03-28,FedEx Ground ,Active
+KBD-CUST0007,Cardinal Poultry Co.,Poultry Processing,311,3920 Industrial Pkwy,Albany,NY,12270,Net 30 ,75000,N,Y,N,E019,B,2018-05-18,Company Truck,Active
+KBD-CUST0008,Piedmont Ag Equipment LLC,Agricultural Equipment,333,5287 Park Pl,Albany,NY,12264,Net 60,50000,N,Y,N,E014,A,2000-08-15 ,LTL - Estes,Active 
+KBD-CUST0009,Keystone Chemical LP,Chemical Blending,325,9354 Oak Ave,Dayton,OH,45451,COD,250000,N,N,N,E014,D,1999-07-27,LTL - Estes,Inactive
+KBD-CUST0010,Allegheny Paper Inc.,Pulp & Paper,322,2282 Technology Way,Allentown,PA,18146,Net 30,250000,N,N,Y,E018,A,2008-10-09,LTL - Estes,Active
+KBD-CUST0011,Hickory Water Authority Inc.,Water / Wastewater Utility,221,3308 Commerce Blvd,Scranton,PA,18563,Net 30,25000,N ,N,Y,E014,D,2022-11-09,Company Truck,Active
+KBD-CUST0012,Riverbend Packaging Systems Inc. ,Packaging Machinery OEM,333,5694 Technology Way,Allentown,PA,18132,Net 60,150000,N,Y,Y,E019,C,2022-06-07,FedEx Ground,Active
+KBD-CUST0013,Riverbend Plastics Inc.,Plastics Extrusion,326,4032 Elm St,Toledo,OH,43679,Net 30,150000,N,Y,Y,E019,C,2006-02-11,Customer Pickup,Active
+KBD-CUST0014,Fox River Paper Co.,Pulp & Paper,322,5182 Washington St,Harrisburg,PA,17163,2% 10 Net 30,100000,N,Y,N,E014,D,2003-05-15,UPS Ground,Active
+KBD-CUST0015,Hickory Lumber LLC,Lumber / Wood Products ,321,3299 Enterprise Ct,Dayton,OH,45415,Net 30,100000,N,Y,Y,E020,B,2025-02-28,Customer Pickup,Active
+KBD-CUST0016,Lehigh Valley Ag Equipment LP,Agricultural Equipment,333,6505 Technology Way,Albany,NY,12226,Net 30,75000,N,Y,N,E016,C,2004-11-26,FedEx Ground,Active
+KBD-CUST0017 ,Hickory Steel Co.,Steel Processing,331,2317 Maple Dr,Toledo,OH,43696,Net 45,25000,N,Y,N,E017,A,2014-08-27,FedEx Ground,Active
+KBD-CUST0018,Cardinal Plastics Corp. ,Plastics Extrusion,326,7634 Main St,Scranton,PA,18522,Net 45,25000,N,Y,Y,E014,D,2014-11-20,FedEx Ground,Active
+KBD-CUST0019,Tri-County Materials LLC,Aggregates / Cement,327,2665 Industrial Pkwy,Scranton,PA,18586,Net 45,250000,N,N,Y,E017 ,A,2020-10-28,LTL - XPO,Active
+KBD-CUST0020,Northstar Plastics LP,Plastics Extrusion,326,3095 Commerce Blvd,Harrisburg,PA,17136,Net 45,50000,N,Y,Y,E019,B,2001-07-30,Company Truck,Active
+KBD-CUST0021,Tennessee Valley Lumber LLC,Lumber / Wood Products,321,8294 Union St ,Allentown,PA,18171,2% 10 Net 30,150000,N,N,Y,E016,B,2003-12-27,LTL - Estes,Active
+KBD-CUST0022,Keystone Steel LP,Steel Processing,331,6439 River Rd,Toledo,OH,43625,Net 60,75000,N,Y,N,E018,B,2008-11-12,UPS Ground,Active
+KBD-CUST0023,Keystone Plastics Inc.,Plastics Extrusion,326,2601 Front St,Dayton,OH,45457,Net 60,50000,N,Y ,Y,E015,B,2002-02-07,UPS Ground,Active
+KBD-CUST0024,Tennessee Valley Plastics Inc.,Plastics Extrusion,326,3782 Lincoln Ave,Dayton,OH,45412,Net 45,75000,N,N,N,E022,A,2010-05-31,Company Truck,Active
+KBD-CUST0025,Great Lakes Climate Inc.,HVAC Equipment OEM,333,3956 Maple Dr,Scranton,PA,18556,Net 45,50000,N,N,N,E021,C,2023-11-29,Customer Pickup,Active
+KBD-CUST0026,Pioneer Plastics LLC,Plastics Extrusion,326,398 Market St,Allentown,PA,18119,COD,100000,N,Y,Y,E019,C,2005-03-01,Company Truck,Active
+KBD-CUST0027,Appalachian Packaging Systems Co.,Packaging Machinery OEM,333,7392 Commerce Blvd,Allentown,PA,18188,Net 30,50000,N,Y,Y,E022,B,2021-12-02,FedEx Ground,Active
+KBD-CUST0028,Piedmont Poultry Inc.,Poultry Processing,311,5997 Main St,Albany,NY,12234,Net 45,25000,N,Y,Y,E021,C,2021-04-18,UPS Ground,Active
+KBD-CUST0029,Iron City Plastics Corp.,Plastics Extrusion,326,5879 River Rd,Albany,NY,12275,Net 30,100000,N,Y,Y,E013,C,2022-09-20,FedEx Ground,Active
+KBD-CUST0030,Fox River Climate Inc.,HVAC Equipment OEM,333,6597 Union St,Albany,NY,12241,Net 30,150000,N,Y,Y,E023,B,2017-09-03,Customer Pickup,Active
+KBD-CUST0031,Iron City Materials Co.,Aggregates / Cement,327,562 Commerce Blvd,Allentown,PA,18125,Net 45,250000,N,N,Y,E019,C,1998-01-22,LTL - XPO,Active
+KBD-CUST0032,Susquehanna Packaging Systems Co.,Packaging Machinery OEM,333,9884 Front St,Dayton,OH,45497,Net 30,50000,N,Y,Y,E020,B,2000-02-08,UPS Ground,Active

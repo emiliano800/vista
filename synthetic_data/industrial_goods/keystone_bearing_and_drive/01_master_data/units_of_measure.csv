@@ -1,0 +1,10 @@
+Uom,Description,Base,Factor
+EA,Each,EA,1
+BX,Box,EA,varies by item (see item pack_qty)
+BD,Bundle,EA,varies by item
+RL,Roll,RL,1
+GA,Gallon,GA,1
+LB,Pound,LB,1
+FT,Foot,FT,1
+C,Hundred,EA,100
+M,Thousand,EA,1000

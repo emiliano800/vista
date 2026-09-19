@@ -1,0 +1,161 @@
+Ap Invoice Id,Vendor Id,Vendor Name,Invoice Number,Invoice Date,Due Date,Amount,Gl Account,Approved By,Status,Paid Date,Payment Method,Category
+AP00001,V001,IRON MOUNTAIN INFO MGMT,408068,2025-04-08,2025-05-08,275,6700,Nancy Scott,Paid,2025-05-11,Check,Records Storage / Shredding
+AP00002,V002,Staples Advantage,921808,2025-04-12,2025-05-12,248,6700,Ashley Wilson,Paid,2025-05-14,Corporate Card,Office Supplies
+AP00003,V004,Grainger Consulting Group,796532,2025-04-07,2025-05-07,2415,6700,Susan Rodriguez,Paid,06-May-2025,Check,HR Consulting
+AP00004,V005,Landlord - Constitution Plaza Assoc.,917958,2025-04-30,2025-05-30,13000,6300,Priya Garcia,Paid,24-May-2025,Check,Rent
+AP00005,V006,TECO Energy,964631,2025-04-08,2025-05-08,613,6700,Susan Fitzgerald,Paid,2025-05-20,Corporate Card,Utilities
+AP00006,V007,Comcast Business,255544,2025-04-17,2025-05-17,1368,6700,Ashley Wilson,Paid,2025-05-23,Corporate Card,Telecom / Internet
+AP00007,V009,Big I FL,952385,2025-04-12,2025-05-12,1291,6500,Sarah King,Paid,2025-05-22,Corporate Card,Association Dues
+AP00008,V010,Westport Insurance Corp (Swiss Re),178503,2025-04-09,2025-05-09,3500.0,6650,Priya Garcia,Paid,2025-05-24,ACH,E&O Insurance
+AP00009,V011,Shred-it,32730,2025-04-11 ,2025-05-11,133,6700,Ashley Fitzgerald,Paid,2025-05-04,ACH,Shredding
+AP00010,V012,Aramark Refreshments,226604,2025-04-05,05-May-2025,211,6700,Matthew Jones,Paid,"May 19, 2025",ACH,Office
+AP00011,V001,IRON MOUNTAIN INFO MGMT,200711,2025-05-16,2025-06-15,530,6700,Priya Wilson,Paid,2025-06-24,ACH,Records Storage / Shredding
+AP00012,V002,Staples Advantage,803927,"May 24, 2025",2025-06-23,214,6700,Jessica Schneider,Paid,2025-07-03,ACH,Office Supplies
+AP00013,V005,Landlord - Constitution Plaza Assoc.,228041,2025-05-22,2025-06-21,11000,6300,William Allen,Paid,2025-06-12,ACH,Rent
+AP00014,V006,TECO Energy,928414,2025-05-22,2025-06-21,1567,6700,Robert Johnson,Paid,2025-06-30,Corporate Card,Utilities
+AP00015,V007,Comcast Business,37481,2025-05-22,2025-06-21,1352,6700 ,Jessica Schneider,Paid,2025-06-12,Check,Telecom / Internet
+AP00016,V008,Kaplan & Sons CPA,569689,2025-05-14,2025-06-13,2362,6500,Priya Martinez ,Paid,2025-06-11,ACH,Professional Fees
+AP00017,V011,Shred-it,661861,2025-05-15,2025-06-14,126,6700,Ashley Fitzgerald,Paid,2025-06-24,Corporate Card,Shredding
+AP00018,V012,Aramark Refreshments,400431,2025-05-06,2025-06-05,193,6700,Priya Garcia,Paid,2025-06-19,ACH,Office
+AP00019,V013,Local Print Shop,252465,2025-05-28,2025-06-27,1067,6700,Susan Fitzgerald,Paid,2025-06-25,Check,Marketing
+AP00020 ,V001,IRON MOUNTAIN INFO MGMT,101713,2025-06-06,07/06/25,400,6700,Matthew Choi,Paid,2025-07-03,Check,Records Storage / Shredding
+AP00021,V002,Staples Advantage,804809,2025-06-21,2025-07-21,261,6700,Sandra White,Paid,2025-07-24,Check,Office Supplies
+AP00022,V003,Waste Management Inc of Florida,944236,2025-06-04,2025-07-04,569,6700,Jessica Schneider,Paid,2025-06-29,Check,Waste / Recycling
+AP00023,V005,Landlord - Constitution Plaza Assoc.,716836,2025-06-15,2025-07-15,17000,6300,Sandra White,Paid,2025-07-14,Check,Rent
+AP00024,V006,TECO Energy,998744,2025-06-26,2025-07-26,1846,6700 ,Jessica Schneider,Paid,2025-08-06,Corporate Card,Utilities
+AP00025,V007,Comcast Business,363730,06/10/2025,2025-07-10,804,6700,Ashley Fitzgerald,Paid,2025-07-19,ACH,Telecom / Internet
+AP00026,V011,Shred-it,144852,2025-06-16,2025-07-16,104,6700,Luis Jones,Paid,2025-07-10,Corporate Card,Shredding
+AP00027,V012,Aramark Refreshments,550869,2025-06-17,2025-07-17,315,6700,Ashley Wilson,Paid,2025-07-15,Corporate Card,Office
+AP00028,V001,IRON MOUNTAIN INFO MGMT,340780,2025-07-10,2025-08-09,275,6700,Sarah King,Paid,2025-08-11,Corporate Card,Records Storage / Shredding
+AP00029,V002,Staples Advantage,537114 ,07/21/2025,2025-08-20,610,6700,Elena Jackson,Paid,2025-09-03,Corporate Card,Office Supplies
+AP00030,V005,Landlord - Constitution Plaza Assoc.,293983,07/07/2025,2025-08-06,7000,6300,Patricia Thomas,Paid,2025-08-19,Check,Rent
+AP00031,V006,TECO Energy,377626,2025-07-04,2025-08-03,1798,6700,Carlos Harris,Paid,2025-08-11,Corporate Card,Utilities
+AP00032,V007,Comcast Business,229171,2025-07-09,2025-08-08,1616,6700,Priya Garcia,Paid,2025-08-21,ACH,Telecom / Internet
+AP00033,V011,Shred-it,224044,2025-07-10,2025-08-09,99,6700,Elena Jackson,Paid,2025-08-03,Check,Shredding
+AP00034,V012,Aramark Refreshments,346906,2025-07-13,08/12/2025,98,6700,Nancy Scott,Paid,2025-08-13,Check,Office
+AP00035,V001,IRON MOUNTAIN INFO MGMT,276496,2025-08-12,2025-09-11,516,6700,Luis Jones,Paid,2025-09-07,Corporate Card,Records Storage / Shredding
+AP00036,V002,Staples Advantage,125858,2025-08-16,2025-09-15,767,6700,Patricia Thomas,Paid,2025-09-10,Check,Office Supplies
+AP00037,V005,Landlord - Constitution Plaza Assoc.,895788,2025-08-18,2025-09-17,19000,6300,Priya Garcia,Paid,2025-09-19,Corporate Card,Rent
+AP00038,V006,TECO Energy,966091,2025-08-22,2025-09-21,870,6700,Susan Fitzgerald,Paid,2025-10-03,ACH,Utilities
+AP00039,V007,Comcast Business,873790,2025-08-13,2025-09-12,695,6700,Robert Johnson,Paid,09/10/25,Corporate Card,Telecom / Internet
+AP00040,V008,Kaplan & Sons CPA,319249,2025-08-14,2025-09-13,1849,6500,Ashley Wilson,Paid,09/04/25,Check,Professional Fees
+AP00041,V010,Westport Insurance Corp (Swiss Re),420506,2025-08-18,2025-09-17,3500.0,6650,Ashley Wilson,Paid,2025-09-10,Check,E&O Insurance
+AP00042,V011,Shred-it,778363,2025-08-22,2025-09-21,65,6700,Ashley Wilson,Paid,2025-09-19,Check,Shredding
+AP00043,V012,Aramark Refreshments,142234,2025-08-14,2025-09-13,261,6700,Carlos Harris,Paid,2025-09-24,Check,Office
+AP00044,V001,IRON MOUNTAIN INFO MGMT,643780,"Sep 19, 2025",2025-10-19,286,6700,Nancy Scott,Paid,2025-10-19,Check,Records Storage / Shredding
+AP00045,V002,Staples Advantage,899805,2025-09-25,2025-10-25,573,6700,Betty Rodriguez,Paid,"Nov 01, 2025",Check,Office Supplies
+AP00046,V004,Grainger Consulting Group,389069,2025-09-26,2025-10-26,3124,6700,Priya Wilson,Paid,2025-10-30,Corporate Card,HR Consulting
+AP00047,V005,Landlord - Constitution Plaza Assoc.,929866,2025-09-04,2025-10-04,18000,6300,Jessica Schneider,Paid,2025-10-07,ACH,Rent
+AP00048,V006,TECO Energy,816401,2025-09-09,10/09/25,1889,6700,Jessica Schneider,Paid,2025-10-04,Corporate Card,Utilities
+AP00049,V007,Comcast Business,598582,2025-09-07,2025-10-07,853,6700,Matthew Jones,Paid,2025-10-18,Corporate Card,Telecom / Internet
+AP00050,V008,Kaplan & Sons CPA,393330,2025-09-05,2025-10-05,7024,6500,Sandra White,Paid,03-Oct-2025,ACH,Professional Fees
+AP00051,V009,Big I FL,813154,2025-09-10,2025-10-10,1970,6500,Ashley Wilson,Paid,2025-10-13,Corporate Card,Association Dues
+AP00052,V011,Shred-it,591847,2025-09-14,2025-10-14,125,6700,Priya Garcia,Paid,2025-10-06,ACH,Shredding
+AP00053,V012,Aramark Refreshments,442975,2025-09-25,2025-10-25,86,6700,Priya Martinez,Paid,2025-10-22,ACH,Office
+AP00054,V001,IRON MOUNTAIN INFO MGMT,288849,2025-10-08,2025-11-07,213,6700,Elena Jackson,Paid ,2025-11-21,ACH,Records Storage / Shredding
+AP00055,V002,Staples Advantage,211489,2025-10-29,2025-11-28,326,6700,Betty Rodriguez,Paid,2025-11-26,ACH,Office Supplies
+AP00056,V005,Landlord - Constitution Plaza Assoc.,120551,2025-10-14,2025-11-13,9000,6300,Sarah King,Paid,2025-11-15,Corporate Card,Rent
+AP00057,V006,TECO Energy,283905,2025-10-30,2025-11-29,2057,6700,Nancy Scott,Paid,2025-12-09,Corporate Card,Utilities
+AP00058,V007,Comcast Business,275541,2025-10-22,2025-11-21,465,6700,Nancy Scott ,Paid,2025-11-28,Check,Telecom / Internet
+AP00059,V011,Shred-it,356922,2025-10-05,2025-11-04,95,6700,Ashley Wilson,Paid ,2025-11-06,Corporate Card,Shredding
+AP00060,V012,Aramark Refreshments,771612,2025-10-16,2025-11-15,107,6700,Nancy Scott,Paid,11/19/2025,Check,Office
+AP00061,V013,Local Print Shop,312005,2025-10-19,2025-11-18,2275,6700,William Allen,Paid,2025-11-24,Check,Marketing
+AP00062,V001,IRON MOUNTAIN INFO MGMT,716341,11/23/2025,2025-12-23,237,6700,Sarah King,Paid,"Dec 16, 2025",Corporate Card,Records Storage / Shredding
+AP00063,V002,Staples Advantage,96711,2025-11-25,2025-12-25,297,6700,Elena Jackson,Paid,2025-12-22,Check,Office Supplies
+AP00064,V004,Grainger Consulting Group,901748,2025-11-11,2025-12-11,4022,6700,Nancy Scott,Paid,2025-12-11,ACH,HR Consulting
+AP00065,V005,Landlord - Constitution Plaza Assoc.,284883,11/04/25,"Dec 04, 2025",7000,6300,Sarah King,Paid,2025-12-13,ACH,Rent
+AP00066,V006,TECO Energy,490844,"Nov 13, 2025",2025-12-13,1972,6700,William Allen,Paid,2025-12-12,Corporate Card,Utilities
+AP00067,V007,Comcast Business,138680,2025-11-04,2025-12-04,838,6700,Nancy Fitzgerald,Paid,2025-12-15,Check,Telecom / Internet
+AP00068,V008,Kaplan & Sons CPA,772345,2025-11-28,12/28/2025,8770,6500,Betty Rodriguez,Paid,2026-01-11,Check,Professional Fees
+AP00069,V011,Shred-it,309089,2025-11-28,2025-12-28,87,6700,Nancy Fitzgerald,Paid,2026-01-01,ACH,Shredding
+AP00070 ,V012,Aramark Refreshments,984408,22-Nov-2025,2025-12-22,312,6700,Susan Rodriguez,Paid,2026-01-01,Check,Office
+AP00071,V001,IRON MOUNTAIN INFO MGMT,199500,2025-12-18,2026-01-17,544,6700,Robert Johnson,Paid,2026-01-12,Check,Records Storage / Shredding
+AP00072,V002,Staples Advantage,992609,2025-12-05,2026-01-04,726,6700,Betty Rodriguez,Paid,01/14/26,ACH,Office Supplies 
+AP00073,V004,Grainger Consulting Group,397860,2025-12-14,2026-01-13,5106,6700,Susan Rodriguez,Paid,2026-01-22,Corporate Card,HR Consulting
+AP00074,V005,Landlord - Constitution Plaza Assoc.,237570,2025-12-08,2026-01-07,12000,6300,Priya Martinez,Paid,2026-01-18,ACH,Rent
+AP00075,V006,TECO Energy,233304,2025-12-11,2026-01-10,711,6700,Priya Garcia,Paid,2026-01-19,Check,Utilities
+AP00076,V007,Comcast Business,243792,2025-12-28,2026-01-27,979,6700,Jessica Schneider,Paid,2026-01-28,ACH,Telecom / Internet
+AP00077,V008,Kaplan & Sons CPA,862258,2025-12-25,2026-01-24,5530,6500 ,Elena Jackson,Paid,2026-01-20,ACH,Professional Fees
+AP00078,V010,Westport Insurance Corp (Swiss Re),507557,2025-12-21,2026-01-20,3500.0,6650,Nancy Fitzgerald,Paid,2026-01-20,Corporate Card,E&O Insurance
+AP00079,V011 ,Shred-it,397100,2025-12-17,2026-01-16,109,6700,Elena Jackson,Paid,2026-01-28,Check,Shredding
+AP00080,V012,Aramark Refreshments,370137,2025-12-11,2026-01-10,292,6700,Priya Garcia,Paid,2026-01-18,Corporate Card,Office
+AP00081,V013,Local Print Shop,903889,2025-12-25,2026-01-24,1016,6700,Priya Martinez,Paid,2026-02-04,ACH,Marketing
+AP00082,V001,IRON MOUNTAIN INFO MGMT,508160,2026-01-15,2026-02-14,469,6700,Priya Martinez,Paid,2026-02-08,Corporate Card,Records Storage / Shredding
+AP00083,V002,Staples Advantage,145935,2026-01-24,2026-02-23,390,6700,Nancy Fitzgerald,Paid,2026-02-21,Corporate Card,Office Supplies
+AP00084,V005 ,Landlord - Constitution Plaza Assoc.,517773,2026-01-16,2026-02-15,17000,6300,Jessica Schneider,Paid,2026-02-15,Check,Rent
+AP00085,V006,TECO Energy,271899,2026-01-21,2026-02-20,757,6700,Robert Johnson,Paid,2026-02-19,Check,Utilities
+AP00086,V007,Comcast Business,373365,2026-01-07,2026-02-06,887,6700,Susan Fitzgerald,Paid,2026-01-30,Check,Telecom / Internet
+AP00087,V009 ,Big I FL,674219,2026-01-12,"Feb 11, 2026",2013,6500,Betty Rodriguez,Paid,2026-02-25,ACH,Association Dues
+AP00088,V010,Westport Insurance Corp (Swiss Re),135327,01/15/26,02/14/26,3500.0,6650,Priya Martinez,Paid,2026-02-18,ACH,E&O Insurance
+AP00089,V011,Shred-it,902656,2026-01-13,2026-02-12,115,6700,Susan Fitzgerald,Paid,2026-02-02,Check,Shredding
+AP00090,V012,Aramark Refreshments,643306,2026-01-20,"Feb 19, 2026",280,6700,Jessica Schneider,Paid,2026-02-22,Check,Office
+AP00091,V001,IRON MOUNTAIN INFO MGMT,644946,2026-02-03,03/05/26,623,6700,Robert Johnson,Paid,2026-03-20,Corporate Card,Records Storage / Shredding
+AP00092,V002,Staples Advantage ,297739,2026-02-12,2026-03-14,481,6700,Sandra White ,Paid,2026-03-08,Check,Office Supplies
+AP00093,V005,Landlord - Constitution Plaza Assoc.,584415,2026-02-21,2026-03-23,22000,6300,Nancy Fitzgerald ,Paid,2026-03-31,Check,Rent
+AP00094,V006,TECO Energy,82547,2026-02-19,2026-03-21,689,6700,Carlos Harris,Paid,2026-03-31,Corporate Card,Utilities
+AP00095,V007,Comcast Business,568385,2026-02-09,2026-03-11,1624,6700,William Allen,Paid,2026-03-22,Check,Telecom / Internet
+AP00096,V011,Shred-it,31091,2026-02-14,2026-03-16,96,6700,Priya Martinez,Paid,2026-03-11,Check,Shredding
+AP00097,V012,Aramark Refreshments,846767,2026-02-03,2026-03-05,249,6700 ,Betty Rodriguez,Paid,2026-02-27,ACH,Office
+AP00098,V001,IRON MOUNTAIN INFO MGMT,103649,2026-03-14,2026-04-13,270,6700,Robert Johnson,Approved - scheduled,,ACH,Records Storage / Shredding
+AP00099,V002,Staples Advantage,151130,2026-03-18,2026-04-17,462,6700 ,Nancy Fitzgerald,Approved - scheduled,,Check,Office Supplies
+AP00100,V005,Landlord - Constitution Plaza Assoc.,914788,2026-03-10,2026-04-09,17000,6300,Elena Jackson,Approved - scheduled,,ACH,Rent
+AP00101,V006,TECO Energy,685477,2026-03-22,2026-04-21,2360,6700,Luis Jones,Pending approval,,Check,Utilities
+AP00102,V007,Comcast Business,536740,2026-03-15,2026-04-14,1018,6700,Ashley Fitzgerald,Pending approval,,Check,Telecom / Internet
+AP00103,V011 ,Shred-it,584204,2026-03-07,2026-04-06,116,6700,Sandra White,Pending approval,,Check,Shredding
+AP00104,V012,Aramark Refreshments,997991,28-Mar-2026,2026-04-27,129,6700,Ashley Fitzgerald,Approved - scheduled,,Corporate Card,Office
+AP00105,,Vertafore,INV-2245943,"Nov 28, 2025",2025-12-28,52983.0,6400,Carlos Harris,Paid,2025-12-24,Corporate Card,Software Subscriptions
+AP00106,,IVANS (Applied),INV-8140524,2026-03-29,2026-04-28,159.0,6400,Betty Rodriguez,Paid,2026-04-13,Corporate Card,Software Subscriptions
+AP00107,,IVANS (Applied),INV-4826356,2025-09-28,2025-10-28,159.0,6400,Betty Rodriguez,Paid,2025-10-20,Corporate Card,Software Subscriptions
+AP00108,,IVANS (Applied),INV-1696905 ,01/24/26,2026-02-23,159.0,6400,Betty Rodriguez,Paid,02/13/26,Corporate Card,Software Subscriptions
+AP00109,,IVANS (Applied),INV-5416201,2025-05-20,2025-06-19,159.0,6400,Betty Rodriguez,Paid,22-May-2025,Corporate Card,Software Subscriptions
+AP00110,,IVANS (Applied),INV-6614420,2025-06-08,2025-07-08,159.0,6400,Betty Rodriguez,Paid,2025-06-27,Corporate Card ,Software Subscriptions
+AP00111,,IVANS (Applied),INV-5465313,2026-03-27,2026-04-26,159.0,6400,Betty Rodriguez,Paid,2026-04-20,Corporate Card,Software Subscriptions
+AP00112,,IVANS (Applied),INV-9532933,03/14/2026,2026-04-13,159.0,6400,Betty Rodriguez,Paid,2026-03-22,Corporate Card,Software Subscriptions
+AP00113,,IVANS (Applied),INV-5276442,2025-10-20,2025-11-19,159.0,6400,Betty Rodriguez,Paid,2025-11-17,Corporate Card,Software Subscriptions 
+AP00114,,IVANS (Applied),INV-4610897,2025-12-11,2026-01-10,159.0,6400,Betty Rodriguez,Paid,2025-12-31,Corporate Card,Software Subscriptions
+AP00115,,IVANS (Applied),INV-1017620,2025-11-27,2025-12-27,159.0,6400,Betty Rodriguez,Paid,"Dec 23, 2025",Corporate Card,Software Subscriptions
+AP00116,,IVANS (Applied),INV-6957752,2025-07-16,2025-08-15,159.0,6400,Betty Rodriguez,Paid,2025-08-02,Corporate Card,Software Subscriptions
+AP00117,,IVANS (Applied),INV-3547909,2025-08-20,09/19/25,159.0,6400,Betty Rodriguez,Paid,2025-09-08,Corporate Card,Software Subscriptions
+AP00118,,Zywave,INV-7952485,2025-06-29,2025-07-29,6825.0,6400,Matthew Jones,Paid,2025-07-10,Corporate Card,Software Subscriptions
+AP00119,,Adobe,INV-9016210,2025-12-05,2026-01-04,315.0,6400,Priya Garcia ,Paid,12/22/2025,Corporate Card,Software Subscriptions
+AP00120,,Adobe,INV-8252516,24-Nov-2025,2025-12-24,315.0,6400,Priya Garcia,Paid,2025-12-22,Corporate Card,Software Subscriptions
+AP00121,,Adobe,INV-6236506,2025-04-14,2025-05-14,315.0,6400,Priya Garcia,Paid,2025-04-17,Corporate Card,Software Subscriptions
+AP00122,,Adobe,INV-2690988,2025-12-31,2026-01-30,315.0,6400,Priya Garcia ,Paid,2026-01-21,Corporate Card,Software Subscriptions
+AP00123,,Adobe,INV-9789322,2025-07-22,2025-08-21,315.0,6400,Priya Garcia,Paid,2025-07-27,Corporate Card,Software Subscriptions
+AP00124,,Adobe,INV-6930284,2025-11-17,2025-12-17,315.0,6400,Priya Garcia,Paid,2025-12-08,Corporate Card,Software Subscriptions
+AP00125,,Adobe,INV-3859832,2025-11-01,2025-12-01,315.0,6400,Priya Garcia,Paid,2025-11-19,Corporate Card,Software Subscriptions
+AP00126,,Adobe,INV-8245789,"Apr 19, 2025",2025-05-19,315.0,6400,Priya Garcia,Paid,2025-04-21,Corporate Card,Software Subscriptions
+AP00127,,Adobe,INV-8521324,04/14/25,2025-05-14,315.0,6400,Priya Garcia,Paid,2025-04-27,Corporate Card,Software Subscriptions
+AP00128,,Adobe,INV-4609772,2025-12-08,2026-01-07,315.0,6400,Priya Garcia,Paid,2026-01-07,Corporate Card,Software Subscriptions
+AP00129,,Adobe,INV-120904,2025-06-22,2025-07-22,315.0,6400,Priya Garcia,Paid,05-Jul-2025,Corporate Card ,Software Subscriptions
+AP00130,,Adobe,INV-4886458,2025-05-13,2025-06-12,315.0,6400,Priya Garcia,Paid,2025-06-04,Corporate Card,Software Subscriptions
+AP00131,,Microsoft,INV-1603736,2026-03-21,2026-04-20,4785.0,6400,Nancy Scott,Paid,16-Apr-2026,Corporate Card,Software Subscriptions
+AP00132,,HubSpot,INV-9930799,2026-02-11,2026-03-13,8013.6,6400,Matthew Choi,Paid,2026-03-06,Corporate Card,Software Subscriptions
+AP00133,,Zoom,INV-8085271,26-Aug-2025,2025-09-25,1830.6,6400,Susan Rodriguez,Paid,2025-09-25,Corporate Card,Software Subscriptions
+AP00134,,8x8,INV-5917461,2025-10-05,2025-11-04,9061.92,6400,Ashley Wilson,Paid,2025-10-29,Corporate Card,Software Subscriptions
+AP00135,,Intuit ,INV-7312304,07/15/25,2025-08-14,2136.0,6400,Patricia Thomas,Paid,2025-08-11,Corporate Card,Software Subscriptions
+AP00136,,Paychex,INV-989332,2025-04-02,2025-05-02,1566.0,6400,Nancy Fitzgerald,Paid,2025-04-17,Corporate Card,Software Subscriptions
+AP00137 ,,Paychex,INV-7885449,2025-09-25,2025-10-25,1566.0,6400,Nancy Fitzgerald,Paid,2025-10-14,Corporate Card,Software Subscriptions
+AP00138,,Paychex,INV-1386050,2025-06-11,2025-07-11,1566.0,6400,Nancy Fitzgerald,Paid,2025-06-15,Corporate Card,Software Subscriptions
+AP00139,,Paychex,INV-4577351,12/17/2025,2026-01-16,1566.0,6400,Nancy Fitzgerald,Paid,2026-01-16,Corporate Card,Software Subscriptions
+AP00140,,Paychex,INV-9058661,12/21/2025 ,2026-01-20,1566.0,6400,Nancy Fitzgerald,Paid,2026-01-07,Corporate Card,Software Subscriptions
+AP00141,,Paychex,INV-4544133,2025-12-19,2026-01-18,1566.0,6400,Nancy Fitzgerald,Paid,2026-01-02,Corporate Card,Software Subscriptions
+AP00142,,Paychex,INV-3815410,2025-10-17,2025-11-16,1566.0,6400,Nancy Fitzgerald ,Paid,23-Oct-2025,Corporate Card,Software Subscriptions
+AP00143,,Paychex,INV-9714574,2025-06-28,2025-07-28,1566.0,6400,Nancy Fitzgerald,Paid,2025-07-14,Corporate Card,Software Subscriptions
+AP00144,,Paychex,INV-1605976,01-Jul-2025,2025-07-31,1566.0,6400,Nancy Fitzgerald,Paid,2025-07-23,Corporate Card,Software Subscriptions
+AP00145,,Paychex,INV-2127296,2025-04-15,2025-05-15,1566.0,6400,Nancy Fitzgerald,Paid,2025-05-09,Corporate Card,Software Subscriptions 
+AP00146,,Paychex,INV-6507306,2025-07-31,2025-08-30,1566.0,6400,Nancy Fitzgerald,Paid,2025-08-12,Corporate Card,Software Subscriptions
+AP00147,,Paychex,INV-8253002,2025-11-27,12/27/2025,1566.0,6400,Nancy Fitzgerald,Paid,09-Dec-2025,Corporate Card,Software Subscriptions
+AP00148,,Dropbox,INV-171673,2025-06-10,2025-07-10,585.8,6400,Betty Rodriguez,Paid,2025-06-14,Corporate Card,Software Subscriptions
+AP00149,,Dropbox,INV-4856652,2025-12-22,2026-01-21,585.8,6400,Betty Rodriguez,Paid,2026-01-01,Corporate Card,Software Subscriptions 
+AP00150,,Dropbox,INV-2305229,2025-11-26,2025-12-26,585.8,6400,Betty Rodriguez,Paid,2025-11-30,Corporate Card,Software Subscriptions
+AP00151,,Dropbox,INV-6489693,2026-02-12,2026-03-14,585.8,6400,Betty Rodriguez,Paid,2026-02-15,Corporate Card,Software Subscriptions
+AP00152,,Dropbox,INV-4755251,2026-02-24,2026-03-26,585.8,6400,Betty Rodriguez,Paid,2026-03-16,Corporate Card,Software Subscriptions
+AP00153,,Dropbox,INV-2242270,"Sep 23, 2025",10/23/2025,585.8,6400,Betty Rodriguez,Paid,2025-10-03,Corporate Card,Software Subscriptions
+AP00154,,Dropbox,INV-1018848 ,2026-01-22,2026-02-21,585.8,6400,Betty Rodriguez,Paid,2026-02-01,Corporate Card,Software Subscriptions
+AP00155,,Dropbox,INV-533903,2025-05-04,2025-06-03,585.8,6400,Betty Rodriguez,Paid,2025-05-10,Corporate Card,Software Subscriptions
+AP00156,,Dropbox,INV-7158237,2025-12-30,2026-01-29,585.8,6400,Betty Rodriguez,Paid,2026-01-09,Corporate Card,Software Subscriptions
+AP00157,,Dropbox,INV-1398222,2026-03-09,2026-04-08,585.8,6400,Betty Rodriguez,Paid,2026-03-26,Corporate Card,Software Subscriptions
+AP00158,,Dropbox,INV-786036,2025-09-22,10/22/25,585.8,6400,Betty Rodriguez,Paid,2025-10-07,Corporate Card,Software Subscriptions
+AP00159,,Dropbox,INV-9797840,2025-05-27,2025-06-26,585.8,6400,Betty Rodriguez,Paid ,29-May-2025,Corporate Card,Software Subscriptions
+AP00160,,KnowBe4,INV-9777266,06/02/25,2025-07-02,809.1,6400,Nancy Scott,Paid,2025-06-27,Corporate Card,Software Subscriptions

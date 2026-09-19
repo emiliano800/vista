@@ -1,0 +1,5 @@
+customer_id,hold_date,reason,placed_by,released_date,status
+NIC-CUST0001,2025-12-18,Over credit limit,E002,,Released
+NIC-CUST0004,2026-01-18,Over credit limit,E002,2026-01-23,Active
+NIC-CUST0016,2026-01-16,Over credit limit,E002,,Active
+NIC-CUST0024,2025-10-13,Over credit limit,E002,2026-02-26,Active

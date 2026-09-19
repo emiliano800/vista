@@ -1,0 +1,50 @@
+[
+  {
+    "Document Type": "Customer Purchase Order",
+    "Source": "Email attachment (PDF, OCR)",
+    "Customer Po Number": "P821082",
+    "Po Date": "2025-08-16",
+    "Buyer": "Pioneer Plastics LLC",
+    "Ship To": "Pioneer Plastics LLC - Plant 4",
+    "Payment Terms": "COD",
+    "Lines": [
+      {
+        "line": 1,
+        "customer_part_number": "CP-27956",
+        "our_item_id": "SHEA-1035",
+        "description": "Sheave / Pulley 1.000",
+        "qty": 3,
+        "unit_price": 187.14,
+        "requested_date": "2025-09-09"
+      },
+      {
+        "line": 2,
+        "customer_part_number": "CP-97976",
+        "our_item_id": "BRI-HHCS-0500-13-200-G8",
+        "description": "Hex head cap screw 1/2-13 x 2 Gr 8 yellow zinc, 50/bx",
+        "qty": 6,
+        "unit_price": 56.79,
+        "requested_date": "2025-09-12"
+      },
+      {
+        "line": 3,
+        "customer_part_number": "CP-72174",
+        "our_item_id": "",
+        "description": "Mounted Ball Bearing Unit M8",
+        "qty": 2,
+        "unit_price": 173.84,
+        "requested_date": "2025-09-04"
+      },
+      {
+        "line": 4,
+        "customer_part_number": "CP-49969",
+        "our_item_id": "",
+        "description": "Roller Chain ANSI #80",
+        "qty": 4,
+        "unit_price": 122.44,
+        "requested_date": "2025-09-02"
+      }
+    ],
+    "Notes": "Please reference our PO number on all packages and invoices."
+  }
+]

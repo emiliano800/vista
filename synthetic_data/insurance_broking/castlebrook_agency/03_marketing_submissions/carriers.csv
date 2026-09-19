@@ -1,0 +1,9 @@
+CARRIER_CODE,CARRIER_NAME,AM_BEST_RATING,LINES_APPOINTED,COMMISSION_PCT,SURPLUS_LINES,APPOINTMENT_DATE,DOWNLOAD_ENABLED,AGENCY_CODE,PAYMENT_TERMS
+TRV,Travelers Indemnity Company,A++,"GL,PROP,AUTO,WC,UMB",12.0,N,"Nov 12, 1995",N,325618,Net 45
+HIG,The Hartford Fire Insurance Company,A+,"GL,PROP,WC,BOP",12.5,N,2015-01-05,Y ,784976,Net 45
+LIB,Liberty Mutual Insurance,A,"GL,AUTO,WC,UMB,PROP",$10.00,N,07/23/12,Y,126913,Net 45
+NAT,Nationwide Mutual Insurance,A+,"GL,PROP,AUTO,BOP,WC",$12.00,N ,2011-06-12,N,393500,Monthly account current
+PRG,Progressive Commercial ,A+,AUTO,10.0,N,2010-01-02,N,611391,Net 45
+ERI,Erie Insurance Exchange,A+,"GL,PROP,AUTO,BOP,WC",$13.00,N,2021-04-24,Y,258932,Net 30 from statement
+AMT,AmTrust Financial,A-,"WC,BOP",9.0,N,"Jun 12, 2019",N,209866,Monthly account current
+GRD,Guard Insurance (Berkshire Hathaway GUARD),A+,"WC,BOP",$11.00,N,1995-04-11,N,583075,Monthly account current

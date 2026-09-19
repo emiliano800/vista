@@ -1,0 +1,12 @@
+entry_number,entry_date,broker,supplier_id,po_number,country_of_origin,entered_value,duty_paid,mpf_hmf,brokerage_fee,isf_filed,documents
+356-5456131-3,2025-09-05,Expeditors,NIC-V005,PO-31230,TW,46411.59,370.61,544.06,125.0,Y,commercial_invoice.pdf;packing_list.pdf;7501.pdf
+965-2301912-6,2025-07-31,Livingston,NIC-V016,PO-31177,IT,50272.61,280.71,179.6,125.0,Y,commercial_invoice.pdf;packing_list.pdf;7501.pdf
+146-5258259-7,2025-04-19,C.H. Robinson,NIC-V003,PO-31124,CN,7640.42,2376.13,110.89,125.0,Y,commercial_invoice.pdf;packing_list.pdf;7501.pdf
+729-6806153-2,2025-07-05,C.H. Robinson,NIC-V015,PO-31214,TW,42411.27,997.91,436.96,125.0,Y,commercial_invoice.pdf;packing_list.pdf;7501.pdf
+786-2084471-2,2025-08-24,Livingston,NIC-V004,PO-31259,IT,12690.41,984.29,548.51,125.0,Y,commercial_invoice.pdf;packing_list.pdf;7501.pdf
+875-6744190-8,2026-02-09,C.H. Robinson,NIC-V011,PO-31218,DE,7677.52,4659.57,577.29,125.0,Y,commercial_invoice.pdf;packing_list.pdf;7501.pdf
+651-1236553-4,2025-05-13,C.H. Robinson,NIC-V013,PO-31216,CN,6232.19,2054.74,444.0,125.0,Y,commercial_invoice.pdf;packing_list.pdf;7501.pdf
+141-4740811-6,2025-04-13,Livingston,NIC-V004,PO-31157,IN,55259.01,3647.07,142.17,125.0,Y,commercial_invoice.pdf;packing_list.pdf;7501.pdf
+296-2915917-8,2025-05-25,C.H. Robinson,NIC-V002,PO-31238,IN,12528.88,403.17,535.9,125.0,Y,commercial_invoice.pdf;packing_list.pdf;7501.pdf
+265-2708273-0,2025-10-15,C.H. Robinson,NIC-V010,PO-31038,DE,43534.4,2597.38,65.3,125.0,Y,commercial_invoice.pdf;packing_list.pdf;7501.pdf
+956-8929078-4,2025-11-21,Livingston,NIC-V004,PO-31181,IN,20890.26,214.31,446.83,125.0,Y,commercial_invoice.pdf;packing_list.pdf;7501.pdf

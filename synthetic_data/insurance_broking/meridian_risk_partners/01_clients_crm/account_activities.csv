@@ -1,0 +1,221 @@
+activity_id,client_id,activity_date,activity_type,logged_by,minutes_spent,follow_up_due,closed
+ACT00001,MER-C0014,2025-10-02,Note - client added location,E007,60,,Y
+ACT00002,MER-C0035,2025-12-23,Email - auto ID card request,E020,20,2025-12-27,Y
+ACT00003,MER-C0011,2026-01-22,Phone call - coverage question,E009,5,2026-01-24,Y
+ACT00004,MER-C0038,2025-10-24,Email - auto ID card request,E016,60,,Y
+ACT00005,MER-C0011,2026-03-29,Phone call - coverage question,E005,15,,N
+ACT00006,MER-C0029,2026-02-25,Task - follow up on unpaid invoice,E031,10,2026-03-10,Y
+ACT00007,MER-C0024,2026-01-07,Task - follow up on unpaid invoice,E009,15,,Y
+ACT00008,MER-C0015,2025-10-26,Task - follow up on unpaid invoice,E023,60,,Y
+ACT00009,MER-C0038,2026-01-23,Phone call - claim reported,E012,5,,Y
+ACT00010,MER-C0005,2026-02-12,Note - client added location,E005,30,,Y
+ACT00011,MER-C0019,2026-01-03,Task - follow up on unpaid invoice,E024,45,,Y
+ACT00012,MER-C0017,2025-12-22,Task - follow up on unpaid invoice,E017,10,,Y
+ACT00013,MER-C0037,2026-03-23,Email - loss run request to carrier,E010,15,,Y
+ACT00014,MER-C0003,2026-03-02,Phone call - claim reported,E015,15,,Y
+ACT00015,MER-C0003,2026-02-18,Email - policy copy request,E001,15,,Y
+ACT00016,MER-C0025,2026-02-14,Phone call - coverage question,E014,30,2026-02-26,Y
+ACT00017,MER-C0033,2026-01-29,Email - certificate request,E009,30,2026-02-08,Y
+ACT00018,MER-C0014,2026-03-08,Email - policy copy request,E009,45,,Y
+ACT00019,MER-C0007,2026-03-27,Phone call - claim reported,E004,15,,N
+ACT00020,MER-C0034,2026-01-08,Task - follow up on unpaid invoice,E009,5,2026-01-12,Y
+ACT00021,MER-C0014,2026-03-20,Email - billing inquiry,E020,15,2026-03-25,Y
+ACT00022,MER-C0032,2026-01-08,Email - certificate request,E019,30,2026-01-14,Y
+ACT00023,MER-C0010,2026-03-23,Email - auto ID card request,E022,15,,Y
+ACT00024,MER-C0022,2026-01-23,Email - loss run request to carrier,E012,30,,Y
+ACT00025,MER-C0029,2026-02-10,Note - client added location,E020,5,2026-02-24,Y
+ACT00026,MER-C0012,2026-02-26,Meeting - renewal review,E030,20,,Y
+ACT00027,MER-C0008,2026-01-13,Email - policy copy request,E014,20,,Y
+ACT00028,MER-C0006,2026-02-17,Email - loss run request to carrier,E003,15,,Y
+ACT00029,MER-C0005,2026-02-21,Meeting - renewal review,E008,5,,Y
+ACT00030,MER-C0024,2025-12-07,Email - loss run request to carrier,E018,10,2025-12-16,Y
+ACT00031,MER-C0021,2026-03-09,Phone call - claim reported,E025,10,,Y
+ACT00032,MER-C0028,2026-01-28,Email - auto ID card request,E015,20,,Y
+ACT00033,MER-C0018,2025-12-23,Email - loss run request to carrier,E029,20,2026-01-04,Y
+ACT00034,MER-C0035,2025-12-07,Phone call - coverage question,E012,10,,Y
+ACT00035,MER-C0010,2026-02-07,Task - follow up on unpaid invoice,E005,15,,Y
+ACT00036,MER-C0004,2026-01-27,Meeting - renewal review,E018,20,,Y
+ACT00037,MER-C0023,2025-12-25,Email - auto ID card request,E002,60,,Y
+ACT00038,MER-C0019,2026-03-16,Email - billing inquiry,E009,5,,Y
+ACT00039,MER-C0014,2026-01-09,Email - loss run request to carrier,E006,15,,Y
+ACT00040,MER-C0036,2026-03-30,Email - billing inquiry,E017,60,,N
+ACT00041,MER-C0002,2025-11-21,Note - client added location,E009,45,,Y
+ACT00042,MER-C0008,2026-03-27,Email - billing inquiry,E016,60,,N
+ACT00043,MER-C0027,2025-11-26,Email - policy copy request,E002,45,2025-12-07,Y
+ACT00044,MER-C0011,2026-03-01,Email - auto ID card request,E018,5,2026-03-11,Y
+ACT00045,MER-C0020,2026-03-14,Email - policy copy request,E020,20,2026-03-16,Y
+ACT00046,MER-C0033,2026-02-27,Meeting - renewal review,E027,10,,Y
+ACT00047,MER-C0028,2025-10-27,Meeting - renewal review,E011,10,,Y
+ACT00048,MER-C0015,2026-01-19,Phone call - claim reported,E028,20,2026-01-27,Y
+ACT00049,MER-C0010,2025-11-09,Meeting - renewal review,E018,5,,Y
+ACT00050,MER-C0024,2025-12-05,Email - billing inquiry,E010,5,,Y
+ACT00051,MER-C0019,2026-02-05,Email - billing inquiry,E018,45,,Y
+ACT00052,MER-C0014,2025-12-22,Email - policy copy request,E031,60,,Y
+ACT00053,MER-C0024,2025-12-24,Note - client added location,E003,60,,Y
+ACT00054,MER-C0016,2025-11-16,Email - auto ID card request,E032,20,,Y
+ACT00055,MER-C0033,2025-11-23,Email - loss run request to carrier,E009,10,2025-12-07,Y
+ACT00056,MER-C0012,2026-03-03,Phone call - claim reported,E029,15,,Y
+ACT00057,MER-C0004,2025-11-03,Phone call - coverage question,E018,30,,Y
+ACT00058,MER-C0026,2025-10-29,Phone call - claim reported,E018,5,,Y
+ACT00059,MER-C0010,2026-01-02,Email - policy copy request,E026,30,,Y
+ACT00060,MER-C0034,2025-10-27,Email - policy copy request,E013,20,,Y
+ACT00061,MER-C0020,2026-03-14,Email - policy copy request,E013,45,,Y
+ACT00062,MER-C0011,2026-02-13,Meeting - renewal review,E020,15,,Y
+ACT00063,MER-C0037,2026-02-16,Phone call - coverage question,E013,5,,Y
+ACT00064,MER-C0029,2025-11-07,Note - client added location,E031,20,2025-11-19,Y
+ACT00065,MER-C0021,2025-12-27,Note - client added location,E002,15,,Y
+ACT00066,MER-C0035,2025-12-22,Email - auto ID card request,E006,30,,Y
+ACT00067,MER-C0011,2025-12-11,Phone call - coverage question,E003,60,2025-12-19,Y
+ACT00068,MER-C0019,2025-12-05,Email - billing inquiry,E005,60,,Y
+ACT00069,MER-C0004,2026-03-23,Task - follow up on unpaid invoice,E022,60,,Y
+ACT00070,MER-C0028,2025-12-27,Email - auto ID card request,E024,15,,Y
+ACT00071,MER-C0016,2026-03-17,Email - policy copy request,E008,20,2026-03-26,Y
+ACT00072,MER-C0023,2025-12-07,Phone call - coverage question,E009,15,2025-12-12,Y
+ACT00073,MER-C0019,2025-11-07,Email - billing inquiry,E017,45,2025-11-11,Y
+ACT00074,MER-C0015,2025-11-12,Email - loss run request to carrier,E023,30,2025-11-20,Y
+ACT00075,MER-C0034,2025-11-12,Email - billing inquiry,E019,60,2025-11-13,Y
+ACT00076,MER-C0022,2025-12-17,Phone call - coverage question,E026,30,,Y
+ACT00077,MER-C0021,2025-11-23,Email - policy copy request,E024,5,,Y
+ACT00078,MER-C0037,2026-01-25,Task - follow up on unpaid invoice,E023,15,,Y
+ACT00079,MER-C0016,2026-03-15,Email - certificate request,E020,10,,Y
+ACT00080,MER-C0008,2026-03-30,Note - client added location,E021,15,,Y
+ACT00081,MER-C0007,2026-03-02,Email - policy copy request,E013,20,2026-03-09,Y
+ACT00082,MER-C0011,2025-12-31,Email - loss run request to carrier,E022,10,2026-01-01,Y
+ACT00083,MER-C0018,2025-10-03,Meeting - renewal review,E018,20,2025-10-14,Y
+ACT00084,MER-C0002,2025-10-16,Note - client added location,E001,15,2025-10-28,Y
+ACT00085,MER-C0027,2025-12-21,Email - policy copy request,E011,60,,Y
+ACT00086,MER-C0031,2026-01-05,Email - auto ID card request,E022,20,,Y
+ACT00087,MER-C0007,2026-01-30,Email - auto ID card request,E025,60,,Y
+ACT00088,MER-C0038,2025-10-09,Task - follow up on unpaid invoice,E028,10,,Y
+ACT00089,MER-C0022,2025-12-15,Email - certificate request,E018,30,,Y
+ACT00090,MER-C0038,2025-10-15,Note - client added location,E015,60,2025-10-17,Y
+ACT00091,MER-C0038,2026-03-31,Phone call - coverage question,E024,15,2026-04-14,N
+ACT00092,MER-C0031,2026-02-15,Email - billing inquiry,E008,45,,Y
+ACT00093,MER-C0036,2025-11-13,Note - client added location,E021,45,2025-11-24,Y
+ACT00094,MER-C0003,2026-03-11,Email - policy copy request,E002,15,2026-03-25,Y
+ACT00095,MER-C0021,2026-03-07,Email - certificate request,E007,20,,Y
+ACT00096,MER-C0007,2025-11-13,Task - follow up on unpaid invoice,E015,20,2025-11-25,Y
+ACT00097,MER-C0028,2026-03-25,Meeting - renewal review,E032,30,,Y
+ACT00098,MER-C0003,2026-03-19,Email - auto ID card request,E006,20,,Y
+ACT00099,MER-C0032,2025-12-07,Task - follow up on unpaid invoice,E015,45,,Y
+ACT00100,MER-C0006,2025-10-10,Note - client added location,E018,45,,Y
+ACT00101,MER-C0037,2026-02-08,Task - follow up on unpaid invoice,E021,20,2026-02-09,Y
+ACT00102,MER-C0022,2026-01-31,Email - certificate request,E022,10,2026-02-11,Y
+ACT00103,MER-C0008,2025-12-23,Meeting - renewal review,E009,60,,Y
+ACT00104,MER-C0017,2025-12-05,Task - follow up on unpaid invoice,E018,60,2025-12-19,Y
+ACT00105,MER-C0016,2026-03-11,Task - follow up on unpaid invoice,E007,30,,Y
+ACT00106,MER-C0010,2026-03-02,Email - loss run request to carrier,E002,30,,Y
+ACT00107,MER-C0014,2025-11-03,Email - loss run request to carrier,E010,60,,Y
+ACT00108,MER-C0027,2026-01-03,Email - auto ID card request,E020,10,,Y
+ACT00109,MER-C0032,2025-12-18,Phone call - coverage question,E021,15,,Y
+ACT00110,MER-C0024,2026-03-27,Note - client added location,E006,20,,Y
+ACT00111,MER-C0004,2026-02-20,Phone call - coverage question,E011,30,2026-02-21,Y
+ACT00112,MER-C0013,2026-03-20,Note - client added location,E031,60,2026-04-03,Y
+ACT00113,MER-C0004,2025-10-30,Phone call - coverage question,E003,60,,Y
+ACT00114,MER-C0008,2026-02-24,Email - policy copy request,E016,20,,Y
+ACT00115,MER-C0019,2026-01-03,Email - policy copy request,E018,60,,Y
+ACT00116,MER-C0035,2025-10-09,Email - certificate request,E021,5,,Y
+ACT00117,MER-C0009,2026-03-07,Email - certificate request,E013,45,,Y
+ACT00118,MER-C0027,2025-11-18,Phone call - coverage question,E009,10,,Y
+ACT00119,MER-C0018,2025-10-02,Phone call - claim reported,E008,45,2025-10-07,Y
+ACT00120,MER-C0036,2025-11-28,Phone call - coverage question,E005,5,,Y
+ACT00121,MER-C0037,2025-12-01,Email - certificate request,E029,60,2025-12-13,Y
+ACT00122,MER-C0018,2025-11-22,Email - billing inquiry,E029,45,2025-12-04,Y
+ACT00123,MER-C0021,2026-02-17,Note - client added location,E028,20,,Y
+ACT00124,MER-C0011,2026-02-14,Meeting - renewal review,E013,5,,Y
+ACT00125,MER-C0006,2026-01-06,Phone call - coverage question,E005,10,2026-01-07,Y
+ACT00126,MER-C0014,2025-10-04,Email - loss run request to carrier,E005,20,2025-10-07,Y
+ACT00127,MER-C0006,2025-12-16,Email - certificate request,E016,45,,Y
+ACT00128,MER-C0012,2026-03-30,Phone call - claim reported,E018,60,2026-04-09,N
+ACT00129,MER-C0025,2025-11-29,Email - certificate request,E010,5,,Y
+ACT00130,MER-C0007,2025-12-08,Email - policy copy request,E022,10,,Y
+ACT00131,MER-C0035,2025-10-04,Email - certificate request,E002,20,2025-10-13,Y
+ACT00132,MER-C0007,2026-01-11,Email - certificate request,E032,60,,Y
+ACT00133,MER-C0020,2025-11-26,Phone call - claim reported,E003,10,,Y
+ACT00134,MER-C0024,2026-02-16,Meeting - renewal review,E024,20,,Y
+ACT00135,MER-C0002,2025-12-24,Email - billing inquiry,E024,5,,Y
+ACT00136,MER-C0018,2026-03-09,Email - policy copy request,E005,30,,Y
+ACT00137,MER-C0002,2025-12-27,Email - policy copy request,E012,60,2026-01-09,Y
+ACT00138,MER-C0028,2026-02-07,Email - certificate request,E029,10,2026-02-13,Y
+ACT00139,MER-C0027,2026-01-06,Meeting - renewal review,E027,15,,Y
+ACT00140,MER-C0020,2025-11-24,Email - auto ID card request,E005,60,,Y
+ACT00141,MER-C0021,2026-03-08,Email - certificate request,E028,10,2026-03-12,Y
+ACT00142,MER-C0027,2026-03-05,Email - certificate request,E001,20,,Y
+ACT00143,MER-C0005,2026-03-14,Meeting - renewal review,E031,5,2026-03-19,Y
+ACT00144,MER-C0017,2025-12-28,Email - certificate request,E019,15,2026-01-03,Y
+ACT00145,MER-C0005,2026-01-23,Meeting - renewal review,E004,5,,Y
+ACT00146,MER-C0031,2026-03-27,Email - loss run request to carrier,E013,60,,Y
+ACT00147,MER-C0030,2026-03-20,Email - billing inquiry,E028,60,2026-04-02,Y
+ACT00148,MER-C0033,2025-10-30,Email - auto ID card request,E007,10,,Y
+ACT00149,MER-C0010,2026-02-26,Task - follow up on unpaid invoice,E020,60,2026-03-03,Y
+ACT00150,MER-C0028,2026-01-01,Phone call - claim reported,E031,60,2026-01-06,Y
+ACT00151,MER-C0024,2025-11-27,Note - client added location,E009,30,,Y
+ACT00152,MER-C0012,2025-12-12,Task - follow up on unpaid invoice,E008,20,,Y
+ACT00153,MER-C0006,2026-01-27,Email - auto ID card request,E024,5,,Y
+ACT00154,MER-C0024,2026-01-19,Note - client added location,E021,5,2026-01-31,Y
+ACT00155,MER-C0029,2025-10-21,Email - certificate request,E009,30,2025-10-22,Y
+ACT00156,MER-C0028,2025-12-07,Phone call - coverage question,E007,20,,Y
+ACT00157,MER-C0003,2026-02-20,Email - loss run request to carrier,E023,15,2026-03-05,Y
+ACT00158,MER-C0020,2025-10-24,Email - billing inquiry,E006,5,,Y
+ACT00159,MER-C0032,2026-01-03,Email - policy copy request,E032,45,,Y
+ACT00160,MER-C0008,2026-01-02,Email - policy copy request,E028,60,2026-01-13,Y
+ACT00161,MER-C0017,2026-01-04,Email - policy copy request,E009,30,,Y
+ACT00162,MER-C0018,2025-12-26,Email - policy copy request,E028,15,,Y
+ACT00163,MER-C0036,2025-12-21,Phone call - claim reported,E019,30,,Y
+ACT00164,MER-C0003,2025-11-25,Email - policy copy request,E014,10,2025-12-08,Y
+ACT00165,MER-C0004,2025-10-23,Phone call - claim reported,E009,60,2025-10-28,Y
+ACT00166,MER-C0020,2026-01-26,Email - certificate request,E012,30,,Y
+ACT00167,MER-C0021,2025-10-28,Meeting - renewal review,E029,15,,Y
+ACT00168,MER-C0030,2025-12-08,Task - follow up on unpaid invoice,E031,15,,Y
+ACT00169,MER-C0007,2025-11-17,Email - certificate request,E028,20,2025-11-25,Y
+ACT00170,MER-C0015,2026-02-01,Meeting - renewal review,E014,30,2026-02-13,Y
+ACT00171,MER-C0010,2026-01-26,Phone call - coverage question,E024,60,2026-02-03,Y
+ACT00172,MER-C0002,2026-03-04,Email - auto ID card request,E024,5,,Y
+ACT00173,MER-C0027,2025-11-02,Email - billing inquiry,E005,5,2025-11-07,Y
+ACT00174,MER-C0002,2026-02-10,Meeting - renewal review,E011,45,2026-02-20,Y
+ACT00175,MER-C0038,2026-03-23,Email - auto ID card request,E024,15,,Y
+ACT00176,MER-C0025,2025-10-06,Note - client added location,E002,60,2025-10-17,Y
+ACT00177,MER-C0020,2026-02-25,Phone call - coverage question,E024,15,,Y
+ACT00178,MER-C0019,2025-10-24,Phone call - coverage question,E029,45,2025-11-01,Y
+ACT00179,MER-C0008,2026-01-30,Email - auto ID card request,E032,10,2026-02-11,Y
+ACT00180,MER-C0004,2026-01-06,Email - loss run request to carrier,E030,10,,Y
+ACT00181,MER-C0034,2026-03-15,Meeting - renewal review,E013,30,2026-03-23,Y
+ACT00182,MER-C0011,2025-11-19,Phone call - claim reported,E017,15,,Y
+ACT00183,MER-C0031,2025-10-15,Task - follow up on unpaid invoice,E029,30,,Y
+ACT00184,MER-C0019,2025-10-14,Meeting - renewal review,E019,30,2025-10-24,Y
+ACT00185,MER-C0029,2025-12-14,Meeting - renewal review,E032,45,,Y
+ACT00186,MER-C0005,2025-12-30,Phone call - claim reported,E016,45,,Y
+ACT00187,MER-C0035,2025-10-29,Email - auto ID card request,E003,45,,Y
+ACT00188,MER-C0024,2026-01-10,Meeting - renewal review,E004,5,,Y
+ACT00189,MER-C0025,2026-03-11,Email - loss run request to carrier,E009,60,,Y
+ACT00190,MER-C0017,2025-11-09,Email - loss run request to carrier,E025,10,2025-11-12,Y
+ACT00191,MER-C0038,2025-10-28,Meeting - renewal review,E027,20,2025-11-07,Y
+ACT00192,MER-C0005,2026-01-30,Email - certificate request,E013,15,2026-02-01,Y
+ACT00193,MER-C0004,2025-11-04,Note - client added location,E027,20,2025-11-12,Y
+ACT00194,MER-C0026,2026-02-08,Meeting - renewal review,E012,20,,Y
+ACT00195,MER-C0016,2026-01-31,Email - loss run request to carrier,E009,20,,Y
+ACT00196,MER-C0037,2026-03-11,Email - certificate request,E007,10,,Y
+ACT00197,MER-C0001,2025-11-06,Email - auto ID card request,E005,45,,Y
+ACT00198,MER-C0024,2026-01-01,Email - certificate request,E012,5,2026-01-12,Y
+ACT00199,MER-C0010,2026-03-12,Phone call - coverage question,E024,60,2026-03-22,Y
+ACT00200,MER-C0026,2025-10-15,Task - follow up on unpaid invoice,E001,60,,Y
+ACT00201,MER-C0004,2025-11-07,Email - certificate request,E028,5,,Y
+ACT00202,MER-C0019,2026-02-11,Email - billing inquiry,E020,60,,Y
+ACT00203,MER-C0035,2026-03-27,Email - policy copy request,E008,5,2026-04-01,Y
+ACT00204,MER-C0024,2026-03-11,Phone call - claim reported,E009,5,2026-03-24,Y
+ACT00205,MER-C0012,2026-02-10,Email - billing inquiry,E014,20,,Y
+ACT00206,MER-C0013,2025-12-30,Task - follow up on unpaid invoice,E004,5,2026-01-13,Y
+ACT00207,MER-C0008,2026-01-26,Email - loss run request to carrier,E025,30,2026-02-07,Y
+ACT00208,MER-C0036,2025-10-24,Phone call - claim reported,E026,30,,Y
+ACT00209,MER-C0035,2025-10-14,Task - follow up on unpaid invoice,E013,20,,Y
+ACT00210,MER-C0035,2025-11-27,Email - loss run request to carrier,E005,5,,Y
+ACT00211,MER-C0015,2026-03-29,Note - client added location,E018,10,,Y
+ACT00212,MER-C0026,2025-12-30,Email - loss run request to carrier,E028,30,2026-01-10,Y
+ACT00213,MER-C0019,2026-01-17,Note - client added location,E015,5,2026-01-27,Y
+ACT00214,MER-C0021,2026-03-04,Email - certificate request,E012,15,,Y
+ACT00215,MER-C0014,2026-03-14,Email - certificate request,E032,60,2026-03-27,Y
+ACT00216,MER-C0012,2025-12-04,Email - loss run request to carrier,E021,15,,Y
+ACT00217,MER-C0012,2026-03-30,Email - billing inquiry,E032,60,2026-04-02,Y
+ACT00218,MER-C0007,2025-11-11,Email - certificate request,E020,15,,Y
+ACT00219,MER-C0030,2026-01-17,Note - client added location,E009,5,,Y
+ACT00220,MER-C0006,2026-03-20,Email - auto ID card request,E024,20,2026-04-02,Y

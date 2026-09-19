@@ -1,0 +1,9 @@
+PRODUCT,VENDOR,FUNCTION,SEATS,ANNUAL_COST,RENEWAL_DATE,OWNER_ID,CONTRACT_TERM,AUTO_RENEW,PAYMENT_METHOD,GL_ACCOUNT
+QuickBooks Desktop Enterprise,Intuit,Accounting / GL,11,20900,"Jan 22, 2027",E020,3-year,Y,Invoice,6400
+Fishbowl Inventory,Fishbowl,Inventory Management,9,13500,2026-11-28,E014,Annual,N,ACH,6400
+Google Workspace Business,Google ,Productivity Suite / Email,,3888,2027-01-27,E017,Annual,Y,ACH,6400
+Gusto,Gusto,Payroll / HRIS,18,"$8,640.00",2026-11-06,E017,Annual,Y,Corporate card,6400
+UPS WorldShip,UPS,Shipping / Parcel,17,0,"Nov 08, 2026",E023,Annual,,Corporate card,6400
+FedEx Ship Manager,FedEx,Shipping / Parcel,6,0,09/19/2026,E008,Annual,N,Corporate card,6400
+Dropbox Business,Dropbox,File Storage,14,"$3,360.00",2026-09-26,E019,Monthly,Y,ACH,6400
+Zoom Workplace,Zoom,Video Conferencing,21,"$3,780.00",18-Jul-2026,E004,Annual,Y,ACH,6400

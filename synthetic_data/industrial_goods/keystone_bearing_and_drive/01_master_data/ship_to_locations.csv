@@ -1,0 +1,43 @@
+Ship To Id,Customer Id,Name,Street,City,State,Zip,Dock Hours,Appointment Required
+KBD-CUST0001-S1,KBD-CUST0001,Appalachian Conveyor LP - Plant 4,7007 Harbor Dr,Toledo,OH,43614,07:00-15:30,N
+KBD-CUST0002-S1,KBD-CUST0002,Riverbend Foods LLC - Plant 11,4978 River Rd,Scranton,PA,18517,07:00-15:30,N
+KBD-CUST0003-S1,KBD-CUST0003,Tri-County Conveyor Inc. - Plant 7,1500 Mill St,Allentown,PA,18170,07:00-15:30,N
+KBD-CUST0005-S1,KBD-CUST0005,Cardinal Foods Corp. - Plant 4,1907 Enterprise Ct,Toledo,OH,43636,07:00-15:30,Y
+KBD-CUST0005-S2,KBD-CUST0005,Cardinal Foods Corp. - Warehouse 1,9321 Maple Dr,Allentown,PA,18128,07:00-15:30,N
+KBD-CUST0006-S1,KBD-CUST0006,Prairie Foods Co. - Plant 8,5045 Main St,Scranton,PA,18526,07:00-15:30,Y
+KBD-CUST0006-S2,KBD-CUST0006,Prairie Foods Co. - Warehouse 7,5340 Commerce Blvd,Allentown,PA,18118,07:00-15:30,N
+KBD-CUST0007-S1,KBD-CUST0007,Cardinal Poultry Co. - Plant 2,3920 Industrial Pkwy,Albany,NY,12270,07:00-15:30,N
+KBD-CUST0007-S2,KBD-CUST0007,Cardinal Poultry Co. - Warehouse 2,2744 Oak Ave,Toledo,OH,43636,07:00-15:30,N
+KBD-CUST0008-S1,KBD-CUST0008,Piedmont Ag Equipment LLC - Plant 2,5287 Park Pl,Albany,NY,12264,07:00-15:30 ,N
+KBD-CUST0009-S1,KBD-CUST0009,Keystone Chemical LP - Plant 5,9354 Oak Ave,Dayton,OH,45451,07:00-15:30,N
+KBD-CUST0009-S2,KBD-CUST0009,Keystone Chemical LP - Warehouse 4,5646 Front St,Harrisburg,PA,17114,07:00-15:30,Y
+KBD-CUST0010-S1,KBD-CUST0010,Allegheny Paper Inc. - Plant 2,2282 Technology Way,Allentown,PA,18146,07:00-15:30,N
+KBD-CUST0010-S2,KBD-CUST0010,Allegheny Paper Inc. - Warehouse 3,2971 Main St,Toledo,OH,43696,07:00-15:30,N
+KBD-CUST0011-S1,KBD-CUST0011,Hickory Water Authority Inc. - Plant 5,3308 Commerce Blvd,Scranton,PA,18563,07:00-15:30,N
+KBD-CUST0012-S1,KBD-CUST0012,Riverbend Packaging Systems Inc. - Plant 12,5694 Technology Way,Allentown,PA,18132,07:00-15:30,Y
+KBD-CUST0013-S1,KBD-CUST0013,Riverbend Plastics Inc. - Plant 4,4032 Elm St,Toledo,OH,43679,07:00-15:30,N
+KBD-CUST0013-S2,KBD-CUST0013,Riverbend Plastics Inc. - Warehouse 9,1700 Maple Dr,Dayton,OH,45429,07:00-15:30,N
+KBD-CUST0014-S1,KBD-CUST0014,Fox River Paper Co. - Plant 11,5182 Washington St,Harrisburg,PA,17163,07:00-15:30,N
+KBD-CUST0015-S1,KBD-CUST0015,Hickory Lumber LLC - Plant 4,3299 Enterprise Ct,Dayton,OH,45415,07:00-15:30,Y
+KBD-CUST0015-S2,KBD-CUST0015,Hickory Lumber LLC - Warehouse 8,905 River Rd,Toledo,OH,43674,07:00-15:30,Y
+KBD-CUST0016-S1,KBD-CUST0016,Lehigh Valley Ag Equipment LP - Plant 4 ,6505 Technology Way,Albany,NY,12226,07:00-15:30,Y
+KBD-CUST0017-S1,KBD-CUST0017,Hickory Steel Co. - Plant 4,2317 Maple Dr,Toledo,OH,43696,07:00-15:30,N
+KBD-CUST0018-S1,KBD-CUST0018,Cardinal Plastics Corp. - Plant 3,7634 Main St,Scranton,PA ,18522,07:00-15:30,N
+KBD-CUST0019-S1,KBD-CUST0019,Tri-County Materials LLC - Plant 12,2665 Industrial Pkwy,Scranton,PA,18586,07:00-15:30,Y
+KBD-CUST0020-S1,KBD-CUST0020,Northstar Plastics LP - Plant 1,3095 Commerce Blvd,Harrisburg,PA,17136,07:00-15:30,N
+KBD-CUST0021-S1,KBD-CUST0021,Tennessee Valley Lumber LLC - Plant 1,8294 Union St,Allentown,PA,18171,07:00-15:30,Y
+KBD-CUST0022-S1,KBD-CUST0022,Keystone Steel LP - Plant 8,6439 River Rd,Toledo,OH,43625,07:00-15:30,N
+KBD-CUST0023-S1,KBD-CUST0023,Keystone Plastics Inc. - Plant 4,2601 Front St,Dayton,OH,45457,07:00-15:30,N
+KBD-CUST0023-S2,KBD-CUST0023,Keystone Plastics Inc. - Warehouse 11,8822 Oak Ave,Dayton,OH,45450,07:00-15:30,Y
+KBD-CUST0024-S1,KBD-CUST0024,Tennessee Valley Plastics Inc. - Plant 5,3782 Lincoln Ave,Dayton,OH,45412,07:00-15:30,N
+KBD-CUST0025-S1,KBD-CUST0025,Great Lakes Climate Inc. - Plant 6,3956 Maple Dr,Scranton,PA,18556,07:00-15:30,N
+KBD-CUST0026-S1,KBD-CUST0026 ,Pioneer Plastics LLC - Plant 4,398 Market St,Allentown,PA,18119,07:00-15:30,N
+KBD-CUST0026-S2,KBD-CUST0026,Pioneer Plastics LLC - Warehouse 6,3899 Market St ,Allentown,PA,18182,07:00-15:30,N
+KBD-CUST0027-S1,KBD-CUST0027,Appalachian Packaging Systems Co. - Plant 8,7392 Commerce Blvd,Allentown,PA,18188,07:00-15:30,N
+KBD-CUST0028-S1,KBD-CUST0028,Piedmont Poultry Inc. - Plant 9,5997 Main St,Albany,NY,12234,07:00-15:30,N
+KBD-CUST0028-S2,KBD-CUST0028,Piedmont Poultry Inc. - Warehouse 8,176 Main St,Harrisburg,PA,17153,07:00-15:30,N
+KBD-CUST0029-S1,KBD-CUST0029,Iron City Plastics Corp. - Plant 4,5879 River Rd,Albany,NY,12275,07:00-15:30,Y
+KBD-CUST0030-S1,KBD-CUST0030,Fox River Climate Inc. - Plant 6,6597 Union St,Albany,NY,12241,07:00-15:30,N
+KBD-CUST0031-S1,KBD-CUST0031,Iron City Materials Co. - Plant 11,562 Commerce Blvd,Allentown,PA,18125,07:00-15:30,N
+KBD-CUST0032-S1,KBD-CUST0032,Susquehanna Packaging Systems Co. - Plant 10,9884 Front St,Dayton,OH,45497,07:00-15:30,N
+KBD-CUST0004-S1,KBD-CUST0004,"Cardinal Foods Group - Plant 12 - Hazleton, PA",6768 Union St,Allentown,PA,18178,06:00-14:00,Y

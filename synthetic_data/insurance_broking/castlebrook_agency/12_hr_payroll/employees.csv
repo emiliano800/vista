@@ -1,0 +1,15 @@
+EMPLOYEE_ID,FULL_NAME,ROLE,DEPARTMENT,EMAIL,HIRE_DATE,EMPLOYMENT_TYPE,ANNUAL_SALARY,STATE,STATUS,TERMINATION_DATE
+E001,Sandra Wright,Producer,Sales,swright@castlebrookagency.com,2017-10-12,Full-Time,83000,PA,Active,
+E002,Aisha Davis,Producer,Sales,adavis@castlebrookagency.com,2017-05-27,Full-Time,121000,PA,Active,
+E003,Patricia O'Brien,Producer,Sales,pobrien@castlebrookagency.com,09-May-2008,Part-Time,89000,PA,Active,
+E004,David Walker,Account Manager,Service,dwalker@castlebrookagency.com,2000-04-23,Full-Time,59000,PA,Active,
+E005,Daniel Martin,Account Manager,Service,dmartin@castlebrookagency.com,2008-10-09,Full-Time,75000,PA,Active,
+E006,Michael Wright,Account Manager,SERVICE,mwright@castlebrookagency.com,05/30/07,Full-Time,55000,PA,Active,
+E007,Richard Wilson,Account Executive,Service,rwilson@castlebrookagency.com,2020-02-07,Full-Time,110000,PA,Active,
+E008,Emily Thompson,Accounting Specialist,Accounting,ethompson@castlebrookagency.com,2014-12-03 ,Full-Time,54000,PA,Active,
+E009,David Fitzgerald,Office Manager,Admin,dfitzgerald@castlebrookagency.com,09/07/04,Full-Time,70000,PA,Active,
+,Matthew Hernandez,Receptionist,Admin,mhernandez@castlebrookagency.com,2011-03-29,Full-Time,45000,PA,Active,
+E010,Carlos Jackson,President,,cjackson@castlebrookagency.com,2012-02-12,Full-Time,186000,PA,Active,
+E011,Joseph White,Bookkeeper,Accounting ,jwhite@castlebrookagency.com,01/09/1994,FULL-TIME,54000,PA,Active,
+,Matthew Hernandez,Receptionist,Admin,mhernandez@castlebrookagency.com,2011-03-29,Full-Time,45000,PA,Active,
+E013,Andrew Lee,Account Manager,Admin,alee@castlebrookagency.com ,29-Mar-2011,Full-Time,45000,PA,Terminated,2025-11-14

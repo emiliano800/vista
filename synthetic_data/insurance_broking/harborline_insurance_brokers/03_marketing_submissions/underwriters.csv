@@ -1,0 +1,19 @@
+Underwriter Id,Carrier Code,Underwriter Name,Email,Phone,Lines,Territory,Appetite Notes
+UW-TRV-626,TRV,Fatima White,fwhite@travelers.com,(434) 989-9636,PROP,FL,Cyber: requires MFA + EDR
+UW-HIG-727,HIG,Mark Allen,mallen@the.com,(473) 551-9926,BOP,FL,Strong on real estate; avoids habitational frame
+UW-HIG-279,HIG,Wei Jackson,wjackson@the.com,(364) 531-2236 ,PROP,FL,"Contractors ok, no residential GC"
+UW-LIB-278,LIB,Thomas Allen,tallen@liberty.com,(720) 931-9930,AUTO,FL,Prefers <$5M revenue; no roofing
+UW-LIB-799,LIB,Kevin Lee,klee@liberty.com,(581) 745-1096,UMB,FL,"Contractors ok, no residential GC"
+UW-LIB-908,LIB,Elena Allen,eallen@liberty.com,(328) 793-5090,UMB,FL,Aggressive on trucking fleets 10-50 units
+UW-CNA-713,CNA ,Donna Nguyen,dnguyen@cna.com,(894) 918-5519,PL,FL,"Contractors ok, no residential GC"
+UW-CNA-583,CNA,Susan Williams,swilliams@cna.com,(718) 647-5841,GL,FL,Cyber: requires MFA + EDR
+UW-NAT-951,NAT ,Linda Allen,lallen@nationwide.com,(775) 288-2852,GL,FL,Prefers <$5M revenue; no roofing
+UW-PRG-800,PRG,Emily Jones,ejones@progressive.com,(976) 908-6929,AUTO,FL,Strong on real estate; avoids habitational frame
+UW-PRG-671,PRG,Fatima Williams,fwilliams@progressive.com,(207) 816-4865,AUTO,FL,Aggressive on trucking fleets 10-50 units
+UW-PRG-748,PRG,Robert Allen,rallen@progressive.com,(558) 258-5928,AUTO,FL,Prefers <$5M revenue; no roofing
+UW-AMT-232,AMT,Anthony Martinez,amartinez@amtrust.com,(829) 396-4633,WC,FL,"Contractors ok, no residential GC"
+UW-AMT-341,AMT,Patricia Nakamura,pnakamura@amtrust.com,(597) 989-1788,WC,FL,Cyber: requires MFA + EDR
+UW-MKL-819,MKL,Steven King,sking@markel.com,(824) 954-7886,UMB,FL,Prefers <$5M revenue; no roofing
+UW-MKL-110,MKL,Linda Moore,lmoore@markel.com,(911) 729-7542,UMB,FL,Cyber: requires MFA + EDR
+UW-MKL-892,MKL,Thomas Martin,tmartin@markel.com,(887) 388-8534,UMB,FL,Aggressive on trucking fleets 10-50 units
+UW-GRD-211,GRD,Steven Martinez,smartinez@guard.com,(771) 627-5024,BOP,FL,"Contractors ok, no residential GC"

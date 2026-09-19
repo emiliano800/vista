@@ -1,0 +1,46 @@
+endorsement_request_id,policy_id,client_id,request_type,requested_value,effective_date,requested_by,carrier_code,submitted_to_carrier_date,status,carrier_endorsement_number,premium_change,received_date,checked_against_request,handled_by
+MER-END0001,MER-P00099,MER-C0031,Change Mailing Address,2024 Ford Transit 250 VIN 1FTBR1C8XRKA55210,2026-02-24,Client,BEZ,2026-02-18,Issued - Discrepancy,END-886882,0,2026-03-15,N - carrier issued wrong VIN,E013
+MER-END0002,MER-P00119,MER-C0037,Delete Vehicle,New hire: see attached MVR,2025-08-02,Client,LIB,2025-07-25,Requested,,-3753,,,E010
+MER-END0003,MER-P00018,MER-C0006,Change Mailing Address,Add subsidiary: XYZ Holdings LLC,2025-09-08,Lender,MKL,2025-09-02,Issued,END-198176,0,2025-10-05,Y,E014
+MER-END0004,MER-P00080,MER-C0024,Payroll Audit Adjustment,PO Box 4410,2025-11-04,Certificate holder,TRV,2025-11-01,Issued,END-683581,9871,2025-11-10,Y,E016
+MER-END0005,MER-P00078,MER-C0024,Add Mortgagee,"$5,000,000",2026-04-05,Client,CNA,2026-03-30,Issued,END-393168,0,2026-04-27,Y,E016
+MER-END0006,MER-P00095,MER-C0029,Add Driver,Loc 3: 1800 Enterprise Ct,2026-01-28,Lender,TRV,2026-01-25,Issued,END-395316,0,2026-03-05,Y,E020
+MER-END0007,MER-P00119,MER-C0037,Add Vehicle,2024 Ford Transit 250 VIN 1FTBR1C8XRKA55210,2025-12-11,Carrier audit,LIB,2025-12-10,Issued,END-352606,3701,2025-12-20,Y,E010
+MER-END0008,MER-P00048,MER-C0014,Add Location,New hire: see attached MVR,2025-09-19,Carrier audit,CNA,2025-09-13,Issued,END-685849,5446,2025-10-12,Y,E009
+MER-END0009,MER-P00035,MER-C0010,Change Named Insured,Add subsidiary: XYZ Holdings LLC,2025-12-05,Client,LIB,2025-12-05,Issued - Discrepancy,END-859625,0,2026-01-09,N - carrier issued wrong VIN,E018
+MER-END0010,MER-P00034,MER-C0010,Change Named Insured,First National Bank ISAOA,2026-03-24,Carrier audit,LIB,2026-03-22,Issued,END-707773,0,2026-04-26,Y,E018
+MER-END0011,MER-P00032,MER-C0010,Add Waiver of Subrogation,New hire: see attached MVR,2025-10-22,Lender,TRV,2025-10-25,Pending Carrier,,250,,,E018
+MER-END0012,MER-P00003,MER-C0001,Delete Vehicle,"Audited payroll +$412,000 class 5190",2025-12-11,Certificate holder,LIB,2025-12-09,Issued,END-688236,-2954,2025-12-26,Y,E011
+MER-END0013,MER-P00064,MER-C0019,Add Additional Insured,Add subsidiary: XYZ Holdings LLC,2026-01-30,Carrier audit,LIB,2026-01-20,Issued,END-235760,250,2026-02-25,Y,E011
+MER-END0014,MER-P00094,MER-C0029,Change Named Insured,2024 Ford Transit 250 VIN 1FTBR1C8XRKA55210,2025-12-08,Certificate holder,HIG,2025-11-30,Issued,END-846186,0,2026-01-05,Y,E020
+MER-END0015,MER-P00006,MER-C0002,Add Vehicle,New hire: see attached MVR,2025-11-26,Certificate holder,TRV,2025-11-26,Issued - Discrepancy,END-389408,4623,2025-12-14,N - carrier issued wrong VIN,E021
+MER-END0016,MER-P00004,MER-C0001,Increase Limits,"$5,000,000",2026-01-08,Client,LIB,2026-01-04,Pending Carrier,,7757,,,E011
+MER-END0017,MER-P00089,MER-C0028,Add Additional Insured,Loc 3: 1800 Enterprise Ct,2025-09-21,Carrier audit,CNA,2025-09-16,Pending Carrier,,250,,,E021
+MER-END0018,MER-P00013,MER-C0004,Add Location,2024 Ford Transit 250 VIN 1FTBR1C8XRKA55210,2025-10-30,Client,HIG,2025-10-31,Issued,END-350334,11699,2025-11-27,Y,E021
+MER-END0019,MER-P00082,MER-C0025,Increase Limits,New hire: see attached MVR,2026-02-17,Client,LIB,2026-02-14,Issued,END-823499,6183,2026-02-27,Y,E019
+MER-END0020,MER-P00067,MER-C0020,Add Location,Add subsidiary: XYZ Holdings LLC,2026-03-25,Client,TRV,2026-03-15,Issued - Discrepancy,END-302734,6360,2026-03-24,N - carrier issued wrong VIN,E018
+MER-END0021,MER-P00050,MER-C0014,Add Vehicle,2024 Ford Transit 250 VIN 1FTBR1C8XRKA55210,2025-12-27,Client,TRV,2025-12-20,Issued,END-278542,3829,2026-01-22,Y,E009
+MER-END0022,MER-P00078,MER-C0024,Add Location,First National Bank ISAOA,2026-03-07,Certificate holder,CNA,2026-03-06,Issued,END-946583,11682,2026-03-24,Y,E016
+MER-END0023,MER-P00055,MER-C0015,Increase Limits,2024 Ford Transit 250 VIN 1FTBR1C8XRKA55210,2025-08-20,Client,MKL,2025-08-19,Issued - Discrepancy,END-443517,2761,2025-08-24,N - carrier issued wrong VIN,E019
+MER-END0024,MER-P00041,MER-C0012,Add Location,Unit 14 - sold,2025-11-07,Client,HIG,2025-11-09,Issued,END-617057,2401,2025-11-26,Y,E015
+MER-END0025,MER-P00062,MER-C0018,Increase Limits,New hire: see attached MVR,2026-03-04,Carrier audit,MKL,2026-03-03,Requested,,1892,,,E013
+MER-END0026,MER-P00049,MER-C0014,Change Mailing Address,Turner Construction Company - CG 20 10,2025-09-22,Certificate holder,MKL,2025-09-18,Requested,,0,,,E009
+MER-END0027,MER-P00030,MER-C0009,Add Driver,"Audited payroll +$412,000 class 5190",2025-10-18,Certificate holder,LIB,2025-10-18,Issued,END-678259,0,2025-11-13,Y,E020
+MER-END0028,MER-P00047,MER-C0013,Payroll Audit Adjustment,2024 Ford Transit 250 VIN 1FTBR1C8XRKA55210,2025-09-27,Lender,AMT,2025-09-29,Pending Carrier,,-4128,,,E014
+MER-END0029,MER-P00034,MER-C0010,Delete Vehicle,Blanket WOS CG 24 04,2025-09-16,Carrier audit,LIB,2025-09-12,Requested,,-3700,,,E018
+MER-END0030,MER-P00086,MER-C0027,Add Mortgagee,"$5,000,000",2025-07-13,Client,HIG,2025-07-05,Issued - Discrepancy,END-648707,0,2025-07-15,N - carrier issued wrong VIN,E011
+MER-END0031,MER-P00072,MER-C0022,Add Location,Loc 3: 1800 Enterprise Ct,2026-02-05,Certificate holder,HIG,2026-01-30,Issued - Discrepancy,END-780786,9793,2026-02-26,N - carrier issued wrong VIN,E021
+MER-END0032,MER-P00034,MER-C0010,Add Vehicle,Turner Construction Company - CG 20 10,2025-11-14,Lender,LIB,2025-11-14,Issued - Discrepancy,END-666005,5430,2025-12-06,N - carrier issued wrong VIN,E018
+MER-END0033,MER-P00016,MER-C0005,Change Named Insured,New hire: see attached MVR,2025-07-22,Carrier audit,TRV,2025-07-14,Issued,END-483371,0,2025-08-13,Y,E013
+MER-END0034,MER-P00007,MER-C0002,Increase Limits,Unit 14 - sold,2026-01-20,Client,MKL,2026-01-10,Pending Carrier,,4541,,,E021
+MER-END0035,MER-P00095,MER-C0029,Add Driver,"$5,000,000",2025-08-19,Certificate holder,TRV,2025-08-18,Pending Carrier,,0,,,E020
+MER-END0036,MER-P00003,MER-C0001,Add Driver,First National Bank ISAOA,2026-01-27,Lender,LIB,2026-01-28,Requested,,0,,,E011
+MER-END0037,MER-P00115,MER-C0036,Add Additional Insured,Turner Construction Company - CG 20 10,2025-12-19,Carrier audit,HIG,2025-12-17,Issued,END-768308,250,2026-01-20,Y,E012
+MER-END0038,MER-P00038,MER-C0011,Add Additional Insured,PO Box 4410,2025-11-25,Lender,CHB,2025-11-20,Requested,,0,,,E014
+MER-END0039,MER-P00013,MER-C0004,Add Mortgagee,Loc 3: 1800 Enterprise Ct,2026-02-12,Carrier audit,HIG,2026-02-04,Requested,,0,,,E021
+MER-END0040,MER-P00050,MER-C0014,Delete Vehicle,"$5,000,000",2026-01-31,Carrier audit,TRV,2026-01-29,Requested,,-2263,,,E009
+MER-END0041,MER-P00048,MER-C0014,Add Mortgagee,Add subsidiary: XYZ Holdings LLC,2026-03-25,Carrier audit,CNA,2026-03-19,Pending Carrier,,0,,,E009
+MER-END0042,MER-P00054,MER-C0015,Delete Vehicle,"Audited payroll +$412,000 class 5190",2025-09-18,Lender,LIB,2025-09-13,Issued,END-165949,-953,2025-10-13,Y,E019
+MER-END0043,MER-P00012,MER-C0004,Add Waiver of Subrogation,PO Box 4410,2025-12-23,Client,CNA,2025-12-18,Requested,,150,,,E021
+MER-END0044,MER-P00028,MER-C0009,Add Mortgagee,First National Bank ISAOA,2025-09-04,Client,CNA,2025-08-30,Pending Carrier,,0,,,E020
+MER-END0045,MER-P00034,MER-C0010,Add Vehicle,"$5,000,000",2025-09-05,Carrier audit,LIB,2025-08-28,Issued,END-899409,1866,2025-09-16,Y,E018

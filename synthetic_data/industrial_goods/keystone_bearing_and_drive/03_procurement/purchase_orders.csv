@@ -1,0 +1,301 @@
+Po Number,Supplier Id,Supplier Name,Po Date,Buyer Id,Payment Terms,Ship Via,Freight Terms,Po Total,Po Status,Approved By,Sent Method
+PO-31001,KBD-V013,Motion Industries,2026-02-05,E012,Net 30,LTL - Estes,FOB Destination,9351.72,Closed,E012,Email PDF
+PO-31002,KBD-V013,Motion Industries,2025-10-17,E011,Net 30,LTL - Estes,Prepaid & Add,9351.72,Closed ,E011,EDI 850
+PO-31003,KBD-V009,Haas Automation,2025-11-24,E012,Net 30,FedEx Ground,FOB Origin,264433.87,Closed,E001,Supplier Portal
+PO-31004,KBD-V017,Sandvik Coromant,2025-08-18,E012,Net 30,FedEx Ground,FOB Destination,161033.14,Open,E001,Phone
+PO-31005,KBD-V007,GRAINGER,2025-11-12,E011,Net 30,Will Call,Prepaid & Add,13895.2,Open,E001,Phone
+PO-31006,KBD-V017,Sandvik Coromant,2025-05-03,E011,Net 30,FedEx Ground,Prepaid & Add,43943.0,Closed,E001,Email PDF
+PO-31007,KBD-V018,Uline,2026-02-21,E012,Net 30,Supplier Truck,FOB Origin,8805.0,Closed,E012,Supplier Portal
+PO-31008,KBD-V010,Kaman Industrial Technologies,2025-12-17,E012,Net 30,Supplier Truck,FOB Destination,11931.49,Closed,E001,Email PDF
+PO-31009,KBD-V007,GRAINGER,"Oct 15, 2025",E012,Net 30,Supplier Truck,Collect,9204.6,Closed,E012,Phone
+PO-31010,KBD-V010,Kaman Industrial Technologies,2025-08-08,E012,Net 30,UPS Ground,Prepaid & Add,292285.32,Open,E001,EDI 850
+PO-31011,KBD-V012,McMaster-Carr,2025-04-02,E012,Net 30,FedEx Ground,Prepaid & Add,15236.0,Closed,E001,Phone
+PO-31012,KBD-V014,Parker Hannifin,03/09/2026,E011,Net 45,UPS Ground,Prepaid & Add,1052390.07,Open,E001,Supplier Portal
+PO-31013,KBD-V004,Baldor-Reliance (ABB),2025-04-08,E012,Net 45,UPS Ground,FOB Destination,316913.68,Open,E001,Email PDF
+PO-31014,KBD-V004,Baldor-Reliance (ABB),2026-02-10,E011,Net 45,LTL - Estes,FOB Destination,338501.48,Closed,E001,EDI 850
+PO-31015,KBD-V015,Regal Rexnord,2025-10-21,E012,Net 45,FedEx Ground,FOB Origin,20734.7,Closed,E001,Phone
+PO-31016,KBD-V002,Apex Fastener Corp,2025-09-12,E012,Net 30,FedEx Ground,FOB Destination,26483.41,Closed,E001,Phone
+PO-31017,KBD-V006,Fastenal,2025-04-17,E012,Net 30,UPS Ground,Prepaid & Add,37280.06,Open,E001,Phone
+PO-31018,KBD-V017,Sandvik Coromant,2025-04-11,E012,Net 30,UPS Ground,Prepaid & Add,12877.8,Closed,E001,EDI 850
+PO-31019,KBD-V010,Kaman Industrial Technologies,2025-12-16,E011,Net 30,FedEx Ground,FOB Destination,8890.74,Closed,E011,Supplier Portal 
+PO-31020,KBD-V005,Brighton-Best International,2025-12-01,E011,Net 30,Supplier Truck,FOB Destination,52306.4,Closed ,E001,Phone
+PO-31021,KBD-V005,Brighton-Best International,2025-06-01,E011,Net 30,LTL - Estes,Prepaid & Add,1217885.8,Closed,E001,Phone
+PO-31022,KBD-V004,Baldor-Reliance (ABB),2025-10-11,E011,Net 45,FedEx Ground,Collect,584487.23,Open,E001,Phone
+PO-31023,KBD-V009,Haas Automation,2026-01-21,E011,Net 30,FedEx Ground,FOB Destination,28019.32,Closed,E001,Email PDF
+PO-31024,KBD-V011,MSC Industrial Supply,2025-09-21,E012,Net 30,FedEx Ground,Prepaid & Add,6918.12,Closed,E012,Email PDF
+PO-31025,KBD-V008,Garlock Sealing Technologies,2025-07-05,E011,Net 30,LTL - Estes,FOB Destination,94241.3,Closed,E001,EDI 850
+PO-31026,KBD-V003,Applied Industrial Technologies,2025-10-04,E011,Net 30 ,UPS Ground,FOB Destination,11932.8,Closed,E001,Phone 
+PO-31027,KBD-V008,Garlock Sealing Technologies,2025-12-17,E011,Net 30,Supplier Truck,FOB Origin,133645.7,Open,E001,Phone
+PO-31028,KBD-V018,Uline,2026-03-01,E011,Net 30,UPS Ground,FOB Destination,48268.7,Open,E001,Supplier Portal
+PO-31029,KBD-V010,Kaman Industrial Technologies,2026-01-31,E012,Net 30,UPS Ground,FOB Origin,8255.74,Closed,E012,Supplier Portal
+PO-31030,KBD-V017,Sandvik Coromant,"Apr 11, 2025",E012,Net 30,Supplier Truck,Prepaid & Add,61318.78,Open,E001,Supplier Portal
+PO-31031 ,KBD-V002,Apex Fastener Corp,2026-02-23,E011,Net 30,Supplier Truck,FOB Destination,81363.5,Closed,E001,Email PDF
+PO-31032,KBD-V005,Brighton-Best International,2025-06-08,E012,Net 30,Will Call,Prepaid & Add,355222.78,Open,E001,Email PDF
+PO-31033,KBD-V017,Sandvik Coromant,2026-01-15,E012,Net 30,Supplier Truck,FOB Origin,32101.14,Open,E001,EDI 850
+PO-31034,KBD-V005,Brighton-Best International,2026-01-04,E011,Net 30,UPS Ground,Prepaid & Add ,42801.28,Closed,E001,Supplier Portal
+PO-31035,KBD-V013,Motion Industries,2026-03-01,E012,Net 30,Will Call,Collect,18563.74,Open,E001,Supplier Portal
+PO-31036,KBD-V016,Ryerson,21-Mar-2026,E012,Net 45,Will Call,Collect,8796.18,Open,E012,Supplier Portal
+PO-31037,KBD-V008,Garlock Sealing Technologies,10-Jun-2025,E011,Net 30,Supplier Truck,FOB Destination,7582.68,Closed,E011,Email PDF
+PO-31038,KBD-V012,McMaster-Carr,2026-02-20,E011,Net 30,UPS Ground,FOB Origin ,175062.0,Open,E001,Email PDF
+PO-31039,KBD-V019,W W Grainger Inc,2026-02-17,E012,Net 30,LTL - Estes,Prepaid & Add,5409.6,Open,E012,Email PDF
+PO-31040,KBD-V011,MSC Industrial Supply,2025-07-07,E012,Net 30 ,FedEx Ground,Prepaid & Add,74214.4,Closed ,E001,Phone
+PO-31041,KBD-V003,Applied Industrial Technologies,2025-05-13,E012,Net 30,Supplier Truck,FOB Destination,4147.24,Closed,E012,Email PDF
+PO-31042,KBD-V004,Baldor-Reliance (ABB),2025-12-01,E011,Net 45,FedEx Ground,FOB Destination,4884.33,Closed,E011,Email PDF
+PO-31043,KBD-V018,Uline,2025-11-22,E011,Net 30,UPS Ground,FOB Destination,33941.9,Closed,E001,EDI 850
+PO-31044,KBD-V009,Haas Automation,2025-11-14,E012,Net 30,UPS Ground,FOB Destination,278415.0,Closed,E001,EDI 850
+PO-31045,KBD-V011,MSC Industrial Supply,2025-08-04,E012,Net 30,LTL - Estes,Collect,30344.64,Closed,E001,Email PDF
+PO-31046,KBD-V010,Kaman Industrial Technologies,2026-02-03,E011,Net 30,FedEx Ground,FOB Destination,12080.24,Closed,E001,Email PDF
+PO-31047,KBD-V003,Applied Industrial Technologies,2026-01-03,E012,Net 30,Will Call,FOB Origin,843788.75,Closed,E001,Phone
+PO-31048,KBD-V011,MSC Industrial Supply,2025-10-25,E011,Net 30,LTL - Estes,FOB Destination,33564.22,Closed,E001,EDI 850
+PO-31049,KBD-V012,McMaster-Carr,12/20/25,E011,Net 30,Supplier Truck,FOB Origin,32881.6,Open,E001,Phone
+PO-31050,KBD-V017,Sandvik Coromant,2025-10-31,E012,Net 30,LTL - Estes,FOB Destination,129436.78,Closed,E001,Phone
+PO-31051,KBD-V009,Haas Automation,2025-08-31,E011,Net 30 ,FedEx Ground,FOB Destination,25345.0,Closed,E001,Email PDF
+PO-31052,KBD-V007,GRAINGER,06/06/25,E012,Net 30,UPS Ground,Collect,3203.4,Closed,E012,Email PDF
+PO-31053,KBD-V013,Motion Industries,2025-10-07,E012,Net 30,Will Call,Prepaid & Add,66656.66,Closed,E001,Phone
+PO-31054,KBD-V006,Fastenal,2025-07-26,E012,Net 30,UPS Ground,FOB Origin,307201.44,Closed,E001,Email PDF
+PO-31055,KBD-V007,GRAINGER,2025-08-14,E011,Net 30 ,LTL - Estes,FOB Destination,441.45,Closed,E011,EDI 850
+PO-31056,KBD-V017,Sandvik Coromant,2025-08-15,E012,Net 30,Will Call,Prepaid & Add,69083.56,Closed,E001,Email PDF
+PO-31057,KBD-V005,Brighton-Best International,2025-12-04,E011,Net 30,LTL - Estes,FOB Destination,384447.97,Closed,E001,Email PDF
+PO-31058,KBD-V018,Uline,2026-03-05,E011,Net 30,UPS Ground,Collect,900.25,Open,E011,Phone
+PO-31059,KBD-V018,Uline,2025-05-08,E011,Net 30,LTL - Estes,FOB Origin,5672.5,Closed,E011,Supplier Portal
+PO-31060,KBD-V014,Parker Hannifin,2025-05-22,E011,Net 45,Will Call,Collect,664393.75,Closed ,E001 ,EDI 850 
+PO-31061,KBD-V015,Regal Rexnord,2025-12-21,E012,Net 45,FedEx Ground,FOB Origin,57345.73,Open,E001,Phone
+PO-31062,KBD-V018,Uline,2026-02-24,E011,Net 30,Will Call,FOB Origin,14253.5,Open,E001,Email PDF
+PO-31063,KBD-V011,MSC Industrial Supply,2026-03-21,E011,Net 30,FedEx Ground,Prepaid & Add,3217.24,Closed,E011,Email PDF
+PO-31064,KBD-V018,Uline,2026-01-05,E012,Net 30,LTL - Estes,Prepaid & Add,15550.15,Closed,E001,EDI 850
+PO-31065,KBD-V004,Baldor-Reliance (ABB),"Apr 30, 2025",E011,Net 45,FedEx Ground,FOB Destination,315827.33,Closed,E001,Supplier Portal
+PO-31066,KBD-V007,GRAINGER,2025-09-22,E011,Net 30 ,Will Call,FOB Origin,5984.4,Closed,E011,Supplier Portal
+PO-31067,KBD-V015,Regal Rexnord,2025-05-29,E012,Net 45,UPS Ground,FOB Origin,20501.8,Closed,E001,Phone
+PO-31068,KBD-V005,Brighton-Best International,2025-08-29,E011,Net 30,LTL - Estes,FOB Origin,185117.78,Closed,E001,Phone
+PO-31069,KBD-V018,Uline,2025-09-10,E011,Net 30,Supplier Truck,Collect,9384.9,Closed,E011,Phone
+PO-31070,KBD-V018,Uline,2025-05-19,E011,Net 30,FedEx Ground,FOB Destination,44198.06,Closed,E001,Supplier Portal 
+PO-31071,KBD-V015,Regal Rexnord,2025-10-25,E012,Net 45,UPS Ground,FOB Origin,59057.64,Closed,E001,Email PDF
+PO-31072,KBD-V009,Haas Automation,2026-02-12,E012,Net 30,UPS Ground,FOB Destination,245539.59,Open,E001,Supplier Portal
+PO-31073,KBD-V011,MSC Industrial Supply,2025-09-18,E012,Net 30,UPS Ground,FOB Destination,4888.3,Closed,E012,EDI 850
+PO-31074,KBD-V018,Uline,2025-08-18,E011,Net 30,UPS Ground,Collect,36022.73,Closed ,E001,Email PDF
+PO-31075,KBD-V012,McMaster-Carr,14-Feb-2026,E012,Net 30,FedEx Ground,Prepaid & Add,71898.5,Closed,E001,EDI 850
+PO-31076,KBD-V006,Fastenal,2025-07-11,E011,Net 30,LTL - Estes,Prepaid & Add,314271.94,Closed,E001,Supplier Portal
+PO-31077,KBD-V014,Parker Hannifin,2025-07-05,E012,Net 45,Will Call,FOB Origin,550056.39,Closed,E001,Email PDF
+PO-31078,KBD-V014,Parker Hannifin,2025-06-17,E012,Net 45,UPS Ground,FOB Origin,339911.57,Open,E001,Phone
+PO-31079,KBD-V010,Kaman Industrial Technologies,2026-01-13,E011,Net 30,Supplier Truck,Prepaid & Add,315301.38,Closed,E001,Email PDF
+PO-31080,KBD-V004,Baldor-Reliance (ABB),2025-06-01,E011,Net 45,UPS Ground,FOB Origin,681.05,Closed,E011,Email PDF
+PO-31081,KBD-V015,Regal Rexnord,2025-07-25,E011,Net 45,UPS Ground ,FOB Origin ,25478.74,Open,E001,EDI 850
+PO-31082,KBD-V013,Motion Industries,2026-01-11,E011,Net 30,LTL - Estes,Prepaid & Add,2474.0,Closed,E011,Phone
+PO-31083,KBD-V018,Uline,2025-08-01,E012,Net 30,UPS Ground,FOB Origin,414182.42,Closed,E001,Email PDF
+PO-31084,KBD-V014,Parker Hannifin,2025-07-24,E012,Net 45,UPS Ground,Collect,531390.14,Open,E001,EDI 850
+PO-31085,KBD-V009,Haas Automation,2025-10-22,E011,Net 30,UPS Ground,FOB Origin,480415.15,Closed,E001,Email PDF
+PO-31086,KBD-V003,Applied Industrial Technologies,2026-03-13,E011,Net 30,LTL - Estes,FOB Origin,257433.68,Open,E001,Email PDF
+PO-31087,KBD-V011,MSC Industrial Supply,2025-06-30,E011,Net 30,LTL - Estes,FOB Destination,10604.0,Closed,E001,Phone
+PO-31088,KBD-V017,Sandvik Coromant ,29-Mar-2026,E012,Net 30,Will Call,FOB Destination,46368.53,Open,E001,EDI 850
+PO-31089,KBD-V002,Apex Fastener Corp,2025-08-12,E012,Net 30,UPS Ground,Collect,21942.5,Closed,E001,Email PDF
+PO-31090,KBD-V013,Motion Industries,2025-06-03,E012,Net 30,Will Call,FOB Origin,14018.7,Closed,E001,Email PDF
+PO-31091,KBD-V004,Baldor-Reliance (ABB),2025-08-13,E012,Net 45,FedEx Ground,FOB Origin,367467.18,Closed,E001,Email PDF
+PO-31092,KBD-V007,GRAINGER,2025-07-28,E011,Net 30,FedEx Ground,Prepaid & Add,1227.75,Closed,E011,Email PDF
+PO-31093,KBD-V013,Motion Industries,04-Apr-2025,E011,Net 30,Supplier Truck,Collect,40284.9,Closed,E001,Email PDF
+PO-31094,KBD-V007,GRAINGER,2025-06-03,E011,Net 30,Will Call,FOB Destination,2879.2,Closed,E011,Supplier Portal
+PO-31095,KBD-V016,Ryerson,2026-01-04,E011,Net 45,Supplier Truck,Collect ,5326.74,Closed,E011,Phone
+PO-31096,KBD-V003,Applied Industrial Technologies,2025-09-19 ,E012,Net 30,Will Call,FOB Destination,249504.3,Closed,E001,Phone
+PO-31097,KBD-V013,Motion Industries,2026-03-02,E011,Net 30,FedEx Ground,Prepaid & Add,9846.52,Open,E011,Email PDF
+PO-31098,KBD-V006,Fastenal,2025-07-19,E012,Net 30,LTL - Estes,Prepaid & Add,633866.76,Closed,E001,Email PDF
+PO-31099,KBD-V008,Garlock Sealing Technologies,2025-04-22,E011,Net 30,FedEx Ground,Prepaid & Add,29299.4,Closed,E001,Supplier Portal
+PO-31100,KBD-V011,MSC Industrial Supply,2026-02-28,E011,Net 30,LTL - Estes,FOB Origin,51593.5,Open,E001,Email PDF
+PO-31101,KBD-V002,Apex Fastener Corp,07/09/2025,E012 ,Net 30,Will Call,Collect,22413.36,Open,E001,Supplier Portal
+PO-31102,KBD-V017,Sandvik Coromant,2025-05-02,E012,Net 30,UPS Ground,Prepaid & Add,31856.8,Closed,E001,Email PDF
+PO-31103,KBD-V008,Garlock Sealing Technologies,2025-08-07,E011,Net 30,Will Call,Prepaid & Add,55951.3,Closed,E001,Email PDF
+PO-31104,KBD-V010,Kaman Industrial Technologies,2025-06-28,E012,Net 30,LTL - Estes,Collect,282892.92,Closed,E001,Email PDF
+PO-31105,KBD-V017,Sandvik Coromant,2025-11-20,E012,Net 30,Will Call,Collect,50863.33,Closed ,E001,Supplier Portal
+PO-31106,KBD-V013,Motion Industries,2025-07-05,E011,Net 30,UPS Ground,Prepaid & Add,32441.6,Closed,E001,Supplier Portal
+PO-31107,KBD-V017,Sandvik Coromant,2025-04-04,E011,Net 30,FedEx Ground,FOB Origin,12877.8,Closed,E001,Supplier Portal
+PO-31108,KBD-V005,Brighton-Best International,2026-01-17,E012,Net 30,UPS Ground,FOB Origin,1040794.28,Closed,E001,Supplier Portal
+PO-31109,KBD-V013,Motion Industries,2025-07-16,E012,Net 30,Supplier Truck,Prepaid & Add,27508.42,Open,E001,Email PDF
+PO-31110,KBD-V014,Parker Hannifin,02/25/26,E011,Net 45,FedEx Ground,Prepaid & Add,8880.34,Closed,E011,Supplier Portal 
+PO-31111,KBD-V001,Alro Steel,2026-01-15,E012,Net 30,FedEx Ground,FOB Destination,1649579.19,Closed,E001,Email PDF
+PO-31112,KBD-V014,Parker Hannifin,2025-12-23,E012,Net 45,UPS Ground,FOB Destination,1016921.25,Closed,E001,Email PDF
+PO-31113,KBD-V016,Ryerson,2025-12-31,E011,Net 45,Supplier Truck,FOB Origin,4559.56,Closed,E011,Supplier Portal
+PO-31114,KBD-V004,Baldor-Reliance (ABB),2026-03-07,E011,Net 45,FedEx Ground,Collect,3861.05,Closed,E011,Email PDF
+PO-31115,KBD-V001,Alro Steel,2025-11-14,E012,Net 30,FedEx Ground,FOB Origin,83296.9,Closed,E001,Supplier Portal
+PO-31116 ,KBD-V015,Regal Rexnord ,2025-12-26,E011,Net 45,LTL - Estes,FOB Destination,258.15,Closed,E011,Email PDF
+PO-31117,KBD-V013,Motion Industries,2026-01-22,E012,Net 30,Will Call,Prepaid & Add,26686.2,Closed,E001,Email PDF
+PO-31118,KBD-V003,Applied Industrial Technologies,2026-01-25,E011,Net 30,LTL - Estes,Collect,257683.0,Open,E001,Phone
+PO-31119,KBD-V012,McMaster-Carr,2026-01-09,E011,Net 30,Will Call,FOB Origin,145196.64,Closed,E001 ,Email PDF
+PO-31120,KBD-V003,Applied Industrial Technologies,2025-09-04,E011,Net 30,LTL - Estes,FOB Origin,17778.8,Closed,E001,EDI 850
+PO-31121,KBD-V018,Uline,2025-08-01,E011,Net 30,LTL - Estes,FOB Origin,12994.0,Closed,E001,Phone
+PO-31122,KBD-V005,Brighton-Best International,2025-10-13,E011,Net 30,Supplier Truck,Collect,363594.04,Closed,E001,EDI 850
+PO-31123,KBD-V012,McMaster-Carr,2025-10-24,E012 ,Net 30,LTL - Estes,FOB Origin,17294.6,Closed,E001,EDI 850
+PO-31124,KBD-V002,Apex Fastener Corp ,2025-06-23 ,E012,Net 30,Will Call,FOB Origin,12112.26,Closed,E001,Supplier Portal
+PO-31125,KBD-V018,Uline,2025-12-04,E011,Net 30,LTL - Estes,Collect,5657.6,Closed,E011,Phone
+PO-31126,KBD-V004,Baldor-Reliance (ABB),2025-07-06,E012,Net 45,Will Call,Prepaid & Add,110008.05,Closed,E001,Phone
+PO-31127,KBD-V014,Parker Hannifin,2025-05-13,E012,Net 45,Supplier Truck,Collect,274756.25,Closed,E001,Email PDF
+PO-31128,KBD-V017,Sandvik Coromant,2025-11-24,E011,Net 30,LTL - Estes,Collect,19495.0,Closed,E001,EDI 850
+PO-31129,KBD-V006,Fastenal ,2025-09-01,E012,Net 30,Supplier Truck,FOB Origin,307201.44,Closed,E001,EDI 850
+PO-31130,KBD-V011,MSC Industrial Supply,2025-05-19,E012,Net 30,FedEx Ground,Prepaid & Add,14088.96,Open,E001,Email PDF
+PO-31131,KBD-V001,Alro Steel,2025-09-18,E012,Net 30 ,LTL - Estes,Prepaid & Add,356456.49,Closed,E001,Email PDF
+PO-31132,KBD-V004,Baldor-Reliance (ABB),2025-07-28,E012,Net 45,Will Call,Prepaid & Add,159072.89,Closed,E001,Email PDF
+PO-31133,KBD-V006,Fastenal,05/17/2025,E011,Net 30,FedEx Ground,FOB Origin,91429.0,Closed,E001,Email PDF
+PO-31134,KBD-V002,Apex Fastener Corp,2025-07-31,E011,Net 30,UPS Ground,FOB Origin,30075.29,Closed,E001,Supplier Portal
+PO-31135,KBD-V005,Brighton-Best International,2025-08-06,E012,Net 30,Supplier Truck,FOB Origin,49949.2,Closed,E001,EDI 850
+PO-31136,KBD-V005,Brighton-Best International,2025-08-21,E011,Net 30 ,Will Call,Prepaid & Add,436367.5,Closed,E001,Email PDF
+PO-31137,KBD-V002,Apex Fastener Corp,2025-09-02,E011,Net 30,Supplier Truck,Prepaid & Add,7875.15,Closed,E011,Supplier Portal
+PO-31138,KBD-V010,Kaman Industrial Technologies,2025-06-04,E012,Net 30,Will Call,FOB Origin,993452.84,Closed,E001,Supplier Portal
+PO-31139,KBD-V009,Haas Automation,"Dec 31, 2025",E012,Net 30,Will Call,FOB Origin,36372.28,Closed,E001,Supplier Portal
+PO-31140,KBD-V008,Garlock Sealing Technologies,2025-11-04,E011,Net 30,Will Call,Prepaid & Add,41904.58,Open,E001,EDI 850
+PO-31141,KBD-V017,Sandvik Coromant,2025-12-12,E012,Net 30,Supplier Truck,Collect,17526.64,Open,E001 ,EDI 850
+PO-31142,KBD-V002,Apex Fastener Corp,2025-10-13,E011,Net 30,Will Call,Prepaid & Add,60925.92,Closed,E001,Email PDF
+PO-31143,KBD-V006,Fastenal,2025-04-20,E012,Net 30,UPS Ground,Collect,208291.2,Closed,E001,EDI 850
+PO-31144,KBD-V017,Sandvik Coromant,2025-05-31,E012,Net 30,Supplier Truck,Prepaid & Add,38633.4,Open,E001,Phone
+PO-31145,KBD-V018,Uline,2026-03-19,E011,Net 30,FedEx Ground,FOB Destination,4772.25,Open,E011,EDI 850
+PO-31146,KBD-V006,Fastenal,2025-04-29,E011,Net 30,Will Call,FOB Origin,23403.76,Open,E001,EDI 850
+PO-31147,KBD-V009,Haas Automation,2025-09-15,E011,Net 30 ,Supplier Truck,Prepaid & Add,3399.0,Closed,E011 ,Phone
+PO-31148,KBD-V003,Applied Industrial Technologies,2025-05-24,E012,Net 30,LTL - Estes,FOB Origin,216208.2,Closed,E001,Email PDF
+PO-31149,KBD-V018,Uline,21-Feb-2026,E012,Net 30,UPS Ground,Collect,406224.05,Open,E001,Supplier Portal
+PO-31150,KBD-V014,Parker Hannifin,2025-09-28,E011,Net 45,FedEx Ground,FOB Origin,274756.25,Closed,E001,EDI 850
+PO-31151 ,KBD-V002,Apex Fastener Corp,07-Oct-2025,E012,Net 30,FedEx Ground,Prepaid & Add,76821.51,Open,E001,Email PDF
+PO-31152,KBD-V001,Alro Steel,2025-10-31,E012,Net 30,LTL - Estes,FOB Destination,550941.68,Closed,E001,EDI 850
+PO-31153,KBD-V010,Kaman Industrial Technologies,2025-04-15,E012,Net 30,LTL - Estes,Collect,564236.44,Closed,E001,EDI 850
+PO-31154,KBD-V008,Garlock Sealing Technologies,2026-01-01,E012,Net 30,Supplier Truck,Collect,1071.0,Open,E012,Email PDF
+PO-31155,KBD-V007,GRAINGER,2025-06-14,E011,Net 30,UPS Ground,FOB Destination,3543.6,Closed,E011,Email PDF
+PO-31156,KBD-V004,Baldor-Reliance (ABB),2025-08-07,E011,Net 45,LTL - Estes,Collect,274987.07,Closed,E001,Email PDF
+PO-31157,KBD-V002,Apex Fastener Corp,2026-02-22,E012,Net 30,LTL - Estes,FOB Destination,1755.4,Open,E012,Email PDF
+PO-31158,KBD-V009,Haas Automation,2026-03-18,E012,Net 30,Supplier Truck,Collect,236652.75,Open,E001,Supplier Portal
+PO-31159,KBD-V009,Haas Automation,2025-05-03,E011,Net 30,LTL - Estes,Prepaid & Add,10691.85,Open,E001,Supplier Portal
+PO-31160,KBD-V004,Baldor-Reliance (ABB),2025-11-30,E011,Net 45,Will Call,Collect,82676.3,Closed,E001,Email PDF
+PO-31161,KBD-V003,Applied Industrial Technologies,2025-05-26,E011,Net 30,UPS Ground ,Prepaid & Add,1968.0,Closed,E011,Email PDF
+PO-31162,KBD-V004,Baldor-Reliance (ABB),2025-12-27,E011,Net 45,FedEx Ground,FOB Origin,319612.5,Open,E001,EDI 850 
+PO-31163,KBD-V005,Brighton-Best International,2025-06-08,E012,Net 30,LTL - Estes,Collect,73242.04,Closed,E001,Supplier Portal
+PO-31164,KBD-V004,Baldor-Reliance (ABB),2025-12-04,E012,Net 45,Supplier Truck,Collect,311773.68,Closed,E001 ,Email PDF
+PO-31165,KBD-V005,Brighton-Best International,2026-01-16,E012,Net 30,Supplier Truck,FOB Destination,29823.28,Closed,E001,Supplier Portal 
+PO-31166,KBD-V018,Uline,2026-02-25,E011,Net 30,UPS Ground,FOB Destination,39639.34,Open,E001,EDI 850
+PO-31167,KBD-V011,MSC Industrial Supply,"Oct 09, 2025",E012,Net 30,Supplier Truck,FOB Destination,6133.55,Closed,E012,Phone
+PO-31168,KBD-V006,Fastenal,"Jun 08, 2025",E012,Net 30,LTL - Estes,Prepaid & Add ,17535.04,Closed,E001,Supplier Portal
+PO-31169,KBD-V007,GRAINGER,2026-01-05,E012,Net 30,LTL - Estes,FOB Origin,1445.2,Closed,E012,Supplier Portal
+PO-31170,KBD-V013,Motion Industries,2025-06-05,E011,Net 30,LTL - Estes,Collect,41611.62,Open,E001,Supplier Portal
+PO-31171,KBD-V016,Ryerson,2025-09-30,E011,Net 45,LTL - Estes,FOB Origin,1148.0,Closed,E011,Phone
+PO-31172,KBD-V015,Regal Rexnord,2025-08-29,E012,Net 45,Will Call,FOB Origin,74536.98,Closed,E001,Supplier Portal
+PO-31173,KBD-V009,Haas Automation,10/18/2025,E012,Net 30,FedEx Ground,Prepaid & Add,2379.3,Open,E012,EDI 850
+PO-31174,KBD-V015,Regal Rexnord,2025-11-13,E011,Net 45,FedEx Ground,FOB Destination,79333.5,Closed,E001,EDI 850
+PO-31175,KBD-V003,Applied Industrial Technologies,2025-11-30,E011,Net 30,FedEx Ground,Prepaid & Add,689650.98,Closed,E001,Email PDF
+PO-31176,KBD-V010,Kaman Industrial Technologies,2025-10-02,E012,Net 30,FedEx Ground,FOB Origin,393612.52,Closed,E001,Phone
+PO-31177,KBD-V012,McMaster-Carr,2026-03-05,E012,Net 30,Supplier Truck,FOB Origin,141781.44,Open,E001,Email PDF
+PO-31178,KBD-V015,Regal Rexnord,01/24/26,E012,Net 45,Supplier Truck,FOB Destination,15586.99,Closed,E001,Email PDF
+PO-31179,KBD-V013,Motion Industries,2025-12-30,E012,Net 30,FedEx Ground,FOB Origin,85801.2,Closed,E001,Supplier Portal
+PO-31180,KBD-V004,Baldor-Reliance (ABB),2025-05-09,E011,Net 45,Will Call,Collect,155559.09,Closed,E001,EDI 850
+PO-31181,KBD-V006,Fastenal,2025-05-27,E011,Net 30,LTL - Estes,Prepaid & Add,206364.1,Closed,E001,Phone
+PO-31182,KBD-V007,GRAINGER,2025-12-21,E012,Net 30,LTL - Estes,FOB Destination,7331.2,Closed,E012,Phone
+PO-31183,KBD-V008,Garlock Sealing Technologies,2025-11-12,E012,Net 30,LTL - Estes,Collect,90390.0,Closed,E001,Phone
+PO-31184,KBD-V014,Parker Hannifin,2025-09-16,E011,Net 45,LTL - Estes,Collect,266356.47,Closed,E001,Email PDF
+PO-31185,KBD-V009,Haas Automation,2026-02-11 ,E011,Net 30,Supplier Truck,Collect,22939.36,Open,E001,Supplier Portal
+PO-31186,KBD-V015,Regal Rexnord,2025-06-17,E012,Net 45,FedEx Ground,Prepaid & Add,6870.8,Closed,E012,Email PDF
+PO-31187,KBD-V002,Apex Fastener Corp,2025-11-27,E011,Net 30,Supplier Truck,FOB Destination,5512.38,Open,E011,Email PDF
+PO-31188,KBD-V009,Haas Automation,2026-02-22,E012,Net 30,UPS Ground,FOB Destination,19812.28,Open,E001,EDI 850
+PO-31189,KBD-V010,Kaman Industrial Technologies,2025-08-20,E011,Net 30,FedEx Ground,FOB Destination,14852.0,Closed,E001,Email PDF
+PO-31190,KBD-V008,Garlock Sealing Technologies,"Dec 29, 2025",E011,Net 30,UPS Ground,Prepaid & Add ,8195.08,Closed,E011,Supplier Portal
+PO-31191,KBD-V010,Kaman Industrial Technologies,2025-09-03,E012,Net 30,Will Call,FOB Origin,659300.35,Open,E001,EDI 850
+PO-31192,KBD-V018,Uline,2026-02-10,E012,Net 30,UPS Ground,Prepaid & Add,35842.03,Open,E001,Email PDF
+PO-31193,KBD-V006,Fastenal,2025-11-01,E011,Net 30,UPS Ground,Prepaid & Add,328926.69,Closed,E001,EDI 850
+PO-31194 ,KBD-V015,Regal Rexnord,2025-08-23,E012,Net 45,Will Call,FOB Destination,360753.85,Open,E001,Email PDF
+PO-31195,KBD-V006,Fastenal,2025-10-17,E011,Net 30,UPS Ground,Collect,61059.0,Closed,E001,Email PDF
+PO-31196,KBD-V013,Motion Industries,2025-09-24,E012,Net 30,FedEx Ground,FOB Origin,9351.72,Closed,E012,EDI 850
+PO-31197,KBD-V002,Apex Fastener Corp,2025-09-02,E011,Net 30,LTL - Estes,Collect,83988.6,Closed,E001,Phone
+PO-31198,KBD-V013,Motion Industries,2025-05-19,E011,Net 30,Supplier Truck,FOB Destination,60853.45,Closed,E001,Email PDF
+PO-31199,KBD-V006,Fastenal,2025-06-27,E011,Net 30,Will Call,FOB Destination,22268.55,Closed,E001,Phone
+PO-31200,KBD-V004,Baldor-Reliance (ABB),2025-05-04,E012,Net 45,Will Call,FOB Origin,155925.39,Open,E001,Phone
+PO-31201,KBD-V015,Regal Rexnord,2025-10-11,E011,Net 45,Supplier Truck,Prepaid & Add,55653.48,Closed,E001,Supplier Portal
+PO-31202,KBD-V001,Alro Steel,2025-07-18,E012,Net 30,LTL - Estes,FOB Destination,15631.35,Closed,E001,Phone
+PO-31203,KBD-V015,Regal Rexnord,2025-10-29,E012,Net 45,Supplier Truck,FOB Origin,1667.4,Closed,E012,Phone
+PO-31204,KBD-V003,Applied Industrial Technologies,2025-10-18,E011,Net 30,FedEx Ground ,FOB Destination,216563.2,Closed,E001,Email PDF
+PO-31205,KBD-V007,GRAINGER,2026-01-24,E012,Net 30,Supplier Truck,FOB Destination,9952.6,Open ,E012,Supplier Portal
+PO-31206,KBD-V013,Motion Industries,2025-10-09,E011,Net 30,LTL - Estes,FOB Destination,26388.7,Closed,E001,Phone
+PO-31207,KBD-V008,Garlock Sealing Technologies,2026-01-30,E011,Net 30,FedEx Ground,Collect,37982.36,Open,E001,Supplier Portal
+PO-31208,KBD-V010,Kaman Industrial Technologies,2026-01-26,E011,Net 30,Will Call,Collect,1152811.78,Closed,E001,Supplier Portal
+PO-31209,KBD-V005,Brighton-Best International,2026-03-12,E011,Net 30,Supplier Truck,Prepaid & Add,107137.16,Open,E001,Phone
+PO-31210,KBD-V011,MSC Industrial Supply,2026-03-29,E011,Net 30,UPS Ground,FOB Origin,6542.54,Open,E011,Phone
+PO-31211,KBD-V014,Parker Hannifin,2025-04-16,E012,Net 45,Supplier Truck,Prepaid & Add,1314045.14,Closed,E001,Email PDF
+PO-31212,KBD-V004,Baldor-Reliance (ABB),2026-02-05,E012,Net 45,FedEx Ground,FOB Origin,702881.64,Open,E001,Supplier Portal
+PO-31213,KBD-V004,Baldor-Reliance (ABB),2025-06-03,E011,Net 45,Supplier Truck,Collect,151543.99,Open,E001,EDI 850
+PO-31214,KBD-V005,Brighton-Best International,2025-05-30,E011,Net 30,LTL - Estes,FOB Destination,977730.42,Open,E001,Phone
+PO-31215,KBD-V013,Motion Industries,2025-08-01,E012,Net 30,FedEx Ground,FOB Destination,11505.22,Closed,E001,Phone
+PO-31216,KBD-V009,Haas Automation,2026-02-22,E011,Net 30,LTL - Estes,FOB Origin,303277.66,Open,E001,EDI 850
+PO-31217,KBD-V006,Fastenal,2025-06-06,E012,Net 30,Will Call,FOB Origin,510129.83,Open,E001,EDI 850
+PO-31218,KBD-V011,MSC Industrial Supply,2025-09-19,E012,Net 30,UPS Ground,Prepaid & Add,10196.0,Closed,E001,Email PDF
+PO-31219,KBD-V005,Brighton-Best International,2025-11-10,E012,Net 30,LTL - Estes,FOB Destination,7382.0,Open,E012,Email PDF
+PO-31220,KBD-V014,Parker Hannifin,2025-12-29,E012,Net 45,LTL - Estes,FOB Origin,9061.18,Open,E012,EDI 850
+PO-31221,KBD-V015,Regal Rexnord,2025-12-08,E011,Net 45,FedEx Ground,Prepaid & Add,8066.05,Closed,E011,EDI 850
+PO-31222,KBD-V018,Uline,2025-12-30,E011,Net 30,Supplier Truck,FOB Destination,246.0,Closed,E011,Supplier Portal
+PO-31223,KBD-V001,Alro Steel,2026-01-13,E012 ,Net 30,Supplier Truck,Collect,551590.99,Closed,E001,Email PDF
+PO-31224,KBD-V011,MSC Industrial Supply,2025-12-02,E011,Net 30,Will Call,Collect,10586.8,Closed ,E001,EDI 850
+PO-31225,KBD-V019,W W Grainger Inc,03/08/26,E011,Net 30,Will Call,Prepaid & Add,898.7,Open,E011,Email PDF
+PO-31226,KBD-V006,Fastenal,2025-11-22,E011,Net 30,FedEx Ground,Collect,17535.04,Closed,E001,Phone
+PO-31227,KBD-V004,Baldor-Reliance (ABB),2025-11-25,E011,Net 45,FedEx Ground,FOB Destination,155939.17,Closed,E001,Phone
+PO-31228,KBD-V005,Brighton-Best International,2026-01-03,E011,Net 30 ,Will Call,FOB Origin,428671.78,Closed,E001,Email PDF
+PO-31229 ,KBD-V017,Sandvik Coromant,2025-07-20,E012,Net 30,Will Call,Collect,126436.23,Open,E001,EDI 850
+PO-31230,KBD-V011,MSC Industrial Supply,2025-06-12,E012,Net 30,Will Call,FOB Destination,9075.52,Closed,E012,Supplier Portal
+PO-31231,KBD-V005,Brighton-Best International,2026-01-17,E011,Net 30,UPS Ground,Collect,366546.84,Open,E001,Email PDF
+PO-31232,KBD-V002,Apex Fastener Corp,2025-07-12,E012,Net 30,Will Call,FOB Origin,85827.54,Closed,E001,Email PDF
+PO-31233,KBD-V010,Kaman Industrial Technologies,2025-08-06,E011,Net 30,LTL - Estes,FOB Destination,289772.96,Closed,E001,Supplier Portal
+PO-31234,KBD-V009,Haas Automation,2025-04-01,E012,Net 30,Will Call,FOB Origin,263195.8,Open,E001,EDI 850
+PO-31235,KBD-V012,McMaster-Carr,25-May-2025,E012,Net 30,UPS Ground,Prepaid & Add,306521.64,Open,E001,Email PDF
+PO-31236,KBD-V001,Alro Steel,2025-07-27,E011,Net 30,UPS Ground,FOB Origin,5184.0,Closed,E011,Supplier Portal
+PO-31237,KBD-V017,Sandvik Coromant,2026-01-10,E012,Net 30,UPS Ground,Prepaid & Add,40252.69,Closed,E001,Supplier Portal
+PO-31238,KBD-V013,Motion Industries,2026-03-19,E012,Net 30,Supplier Truck,FOB Origin,9351.72,Open,E012,Email PDF
+PO-31239,KBD-V003,Applied Industrial Technologies,2025-08-01,E012,Net 30,UPS Ground,FOB Origin,16850.0,Closed,E001,Phone
+PO-31240,KBD-V001,Alro Steel,2026-02-17,E011 ,Net 30,Will Call,Collect,249990.0,Closed,E001,Email PDF
+PO-31241,KBD-V017,Sandvik Coromant,02/13/2026,E011,Net 30,Will Call,Prepaid & Add,31541.23,Closed,E001,Phone
+PO-31242,KBD-V003,Applied Industrial Technologies,2025-12-31,E012,Net 30,Supplier Truck,FOB Destination,1585697.12,Open,E001,Email PDF
+PO-31243,KBD-V019,W W Grainger Inc,2026-01-02,E011,Net 30,Will Call,FOB Origin,665.7,Closed,E011,Email PDF
+PO-31244,KBD-V008,Garlock Sealing Technologies,2025-08-12,E011,Net 30,UPS Ground,FOB Origin,34147.26,Closed,E001,Supplier Portal
+PO-31245,KBD-V011,MSC Industrial Supply,2025-05-13,E011,Net 30,FedEx Ground,FOB Destination,4220.88,Closed,E011,Supplier Portal
+PO-31246,KBD-V015,Regal Rexnord,2025-09-29,E012,Net 45,UPS Ground,Prepaid & Add,8728.0,Closed,E012,Phone
+PO-31247,KBD-V016,Ryerson,09/18/25,E011,Net 45,Supplier Truck,Collect,2230.74,Closed,E011,Email PDF
+PO-31248,KBD-V018,Uline,2026-01-01,E011,Net 30,FedEx Ground,FOB Destination,21298.38,Closed,E001,Phone
+PO-31249,KBD-V008,Garlock Sealing Technologies,2025-07-18,E012,Net 30,FedEx Ground,FOB Destination,51259.1,Closed,E001,Supplier Portal
+PO-31250,KBD-V011,MSC Industrial Supply,2025-12-24,E011,Net 30,Will Call,FOB Destination,4854.64,Closed,E011,Phone
+PO-31251,KBD-V004,Baldor-Reliance (ABB),2025-08-09,E012,Net 45,UPS Ground,FOB Destination,156606.44,Open,E001,Email PDF
+PO-31252,KBD-V002,Apex Fastener Corp,28-Sep-2025,E011,Net 30,Supplier Truck,Prepaid & Add,61114.7,Closed,E001,Email PDF
+PO-31253 ,KBD-V006,Fastenal,2025-07-14,E012,Net 30,UPS Ground,Prepaid & Add,28282.2,Open,E001,Email PDF
+PO-31254,KBD-V002,Apex Fastener Corp,2025-05-28,E011,Net 30,LTL - Estes,Prepaid & Add,14879.7,Closed,E001,Supplier Portal
+PO-31255,KBD-V001,Alro Steel,2025-09-13,E012,Net 30,UPS Ground,Collect,51859.0,Closed,E001,Email PDF
+PO-31256,KBD-V012,McMaster-Carr,2025-11-23,E012,Net 30,FedEx Ground,Prepaid & Add,408934.24,Closed,E001,Email PDF
+PO-31257,KBD-V003,Applied Industrial Technologies,08/19/2025,E011,Net 30,LTL - Estes,Prepaid & Add,397459.64,Closed,E001,EDI 850
+PO-31258,KBD-V010,Kaman Industrial Technologies,2025-11-11,E012,Net 30,Supplier Truck,FOB Destination,280141.84,Closed,E001,Phone
+PO-31259,KBD-V009,Haas Automation,2025-12-27,E012,Net 30,LTL - Estes,Collect ,276449.39,Open,E001,Phone
+PO-31260,KBD-V013,Motion Industries,2025-09-27,E012,Net 30,FedEx Ground,Collect,37883.92,Closed,E001,Phone
+PO-31261,KBD-V010,Kaman Industrial Technologies,01/25/2026,E011,Net 30,Will Call,Collect,1270.0,Closed,E011,Supplier Portal
+PO-31262,KBD-V003,Applied Industrial Technologies ,2025-09-02,E012,Net 30,Supplier Truck,Prepaid & Add,11932.8,Closed,E001,Email PDF
+PO-31263,KBD-V014,Parker Hannifin,2026-03-21,E012,Net 45,FedEx Ground,FOB Origin,15585.5,Open,E001,EDI 850
+PO-31264,KBD-V009,Haas Automation,2025-09-16,E011,Net 30,LTL - Estes,FOB Origin,418237.5,Open,E001,Email PDF
+PO-31265,KBD-V004,Baldor-Reliance (ABB),2025-07-05,E011,Net 45,FedEx Ground,FOB Destination,168094.34,Closed,E001 ,Phone
+PO-31266,KBD-V007,GRAINGER,2025-06-26,E011,Net 30,LTL - Estes,Prepaid & Add,3203.4,Closed,E011,Supplier Portal
+PO-31267,KBD-V011,MSC Industrial Supply,2025-04-03,E012,Net 30,FedEx Ground,Prepaid & Add,4854.64,Closed,E012,Supplier Portal
+PO-31268,KBD-V001,Alro Steel,2025-07-26,E012,Net 30,LTL - Estes,Collect,2463.6,Closed,E012,Supplier Portal
+PO-31269,KBD-V009,Haas Automation,2025-08-06,E012,Net 30,Will Call,Collect,23679.32,Closed,E001,Email PDF
+PO-31270,KBD-V009,Haas Automation,2026-01-16 ,E012,Net 30,FedEx Ground,FOB Origin,46237.9,Open,E001,Supplier Portal
+PO-31271,KBD-V016,Ryerson,2025-09-03,E012,Net 45,Supplier Truck,FOB Destination,13470.0,Closed,E001,Email PDF
+PO-31272,KBD-V017,Sandvik Coromant,2025-11-03,E012,Net 30,LTL - Estes,Prepaid & Add,12877.8,Closed,E001,Email PDF
+PO-31273,KBD-V011,MSC Industrial Supply,2026-02-07,E011,Net 30,LTL - Estes,FOB Origin,3733.08,Open,E011,Email PDF
+PO-31274,KBD-V007,GRAINGER,2025-04-03,E011,Net 30,Will Call,Prepaid & Add,6444.0,Closed,E011,Supplier Portal
+PO-31275,KBD-V014,Parker Hannifin,2025-05-23,E012,Net 45,Supplier Truck,FOB Destination,348972.75,Closed,E001,Phone
+PO-31276,KBD-V002,Apex Fastener Corp ,2026-02-18,E012,Net 30,FedEx Ground,FOB Destination,11096.37,Closed,E001,Phone
+PO-31277,KBD-V018,Uline,2025-07-11,E012,Net 30,LTL - Estes,FOB Destination,28484.6,Closed,E001,EDI 850
+PO-31278,KBD-V004,Baldor-Reliance (ABB),2025-08-08,E012,Net 45,UPS Ground,Collect,429242.89,Closed,E001,Email PDF
+PO-31279,KBD-V004,Baldor-Reliance (ABB),2025-12-13,E012,Net 45,Will Call,Prepaid & Add,703241.44,Closed,E001,Email PDF
+PO-31280,KBD-V010,Kaman Industrial Technologies,2026-01-08 ,E012,Net 30,Will Call,FOB Destination,94396.5,Open,E001,Phone
+PO-31281,KBD-V006,Fastenal,2025-10-19,E012,Net 30,UPS Ground,Collect,279703.43,Closed,E001,Phone
+PO-31282,KBD-V015,Regal Rexnord,2025-09-08,E011,Net 45,FedEx Ground,Prepaid & Add,130835.78,Closed,E001,Email PDF
+PO-31283,KBD-V007,GRAINGER,2026-03-29,E011,Net 30,Supplier Truck,FOB Destination,3752.1,Open,E011,Email PDF
+PO-31284,KBD-V012,McMaster-Carr,2025-08-13,E012,Net 30,FedEx Ground,Prepaid & Add,104214.24,Closed,E001,Email PDF
+PO-31285,KBD-V014,Parker Hannifin,2025-11-14,E012,Net 45,Supplier Truck,Prepaid & Add,283817.43,Closed,E001,Email PDF
+PO-31286,KBD-V004,Baldor-Reliance (ABB),2025-08-01,E011,Net 45,FedEx Ground,Prepaid & Add,34437.8,Closed,E001,Supplier Portal
+PO-31287,KBD-V016,Ryerson,2025-12-12,E011,Net 45,Supplier Truck,Prepaid & Add,1023.72,Open,E011,Email PDF
+PO-31288,KBD-V013,Motion Industries,2026-01-12,E012,Net 30,FedEx Ground,FOB Destination,28055.16,Closed,E001,Email PDF
+PO-31289,KBD-V004,Baldor-Reliance (ABB),05/12/25,E011,Net 45,UPS Ground,FOB Destination,365473.43,Closed ,E001,EDI 850
+PO-31290,KBD-V018,Uline,2025-11-17,E011,Net 30,LTL - Estes,Prepaid & Add,32485.0,Closed,E001,EDI 850
+PO-31291,KBD-V015,Regal Rexnord,06/30/2025,E012,Net 45,Supplier Truck,Collect,69880.12,Closed,E001,EDI 850
+PO-31292,KBD-V019,W W Grainger Inc,2025-08-17,E011,Net 30,Supplier Truck,FOB Origin,5506.5,Closed,E011,EDI 850
+PO-31293,KBD-V010,Kaman Industrial Technologies,2025-07-16,E012,Net 30,Supplier Truck,FOB Destination,7487.99,Closed,E012,EDI 850
+PO-31294,KBD-V010,Kaman Industrial Technologies,2025-07-15,E012,Net 30,FedEx Ground,FOB Origin,285182.41,Open,E001,Supplier Portal
+PO-31295,KBD-V017,Sandvik Coromant,"Sep 23, 2025",E012,Net 30,UPS Ground,Collect,53710.57,Closed,E001,Email PDF
+PO-31296,KBD-V002,Apex Fastener Corp,2025-10-13,E012,Net 30,FedEx Ground,FOB Origin,21923.91,Closed,E001,Email PDF
+PO-31297,KBD-V014,Parker Hannifin,2025-06-17,E012,Net 45,Will Call,Prepaid & Add,799741.57,Closed,E001,Email PDF 
+PO-31298,KBD-V009,Haas Automation,2025-09-19,E011 ,Net 30,LTL - Estes,FOB Origin,8886.84,Closed,E011,Phone
+PO-31299,KBD-V011,MSC Industrial Supply,2025-07-15,E011,Net 30,FedEx Ground,Prepaid & Add,6097.55,Closed,E011,EDI 850
+PO-31300,KBD-V012,McMaster-Carr,2026-01-10,E011,Net 30,Supplier Truck,FOB Destination,12522.4,Closed,E001,Supplier Portal

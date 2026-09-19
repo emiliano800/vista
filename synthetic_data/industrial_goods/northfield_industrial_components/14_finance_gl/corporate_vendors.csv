@@ -1,0 +1,9 @@
+vendor_id,vendor_name,category,gl_account,payment_terms,tax_id,w9_on_file,shared_key
+NIC-CV001,Iron Mountain Inc.,Records Storage / Shredding,6700,Net 30,98-2972982,Y,iron_mountain
+NIC-CV002,"W.W. Grainger, Inc.",MRO Supplies,6700,Net 30,94-3989549,Y,grainger
+NIC-CV003,Cintas Corporation,Uniforms / Facility Services,6700,Net 30,12-1758054,Y,cintas
+NIC-CV004,Waste Management of Illinois,Waste / Recycling,6300,Net 30,88-9126739,Y,waste_mgmt
+NIC-CV005,UPS,Parcel Freight,5300,Net 30,37-5395537,Y,ups
+NIC-CV006,FedEx,Parcel Freight,5300,Net 30,15-6956486,Y,fedex
+NIC-CV007,Sunbelt Rentals,Equipment Rental,6700,Net 30,71-5139996,Y,sunbelt
+NIC-CV008,Rockford Industrial Park LLC,Rent,6300,Due on 1st,35-8995263,Y,

@@ -1,0 +1,8 @@
+work_center_id,name,hourly_rate,capacity_hours_per_day
+WC-SAW,Bar Saw,48.0,16
+WC-CNC1,CNC Lathe Cell 1,95.0,20
+WC-CNC2,CNC Mill Cell 2,105.0,20
+WC-DEBUR,Deburr / Finish,42.0,16
+WC-ASSY,Assembly,55.0,16
+WC-INSP,Final Inspection,60.0,8
+WC-PACK,Packaging,38.0,16

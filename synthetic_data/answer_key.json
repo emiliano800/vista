@@ -1,0 +1,1202 @@
+[
+  {
+    "id": "INS-CERT-01",
+    "kind": "certificate",
+    "companies": [
+      "Meridian"
+    ],
+    "title": "Certificate request exceeds in-force umbrella limit",
+    "description": "Turner Construction requires a $5M umbrella for Liberty Electric Inc.; policy LIB-UMB-2133128 carries $3M. Certificate must not be issued as requested.",
+    "evidence": [
+      "05_certificates/certificate_requests.csv",
+      "02_policies_exposures/coverages.csv"
+    ],
+    "expected_action": "Flag to account manager; quote excess layer increase or obtain holder waiver. Do not fabricate a certificate.",
+    "is_false_positive_trap": false
+  },
+  {
+    "id": "INS-AR-01-MER",
+    "kind": "receivables",
+    "companies": [
+      "Meridian"
+    ],
+    "title": "Agency-bill invoice >90 days past due with pending cancellation",
+    "description": "Invoice MER-INV00001 (MER-C0001) balance 21020.0 is more than 90 days past due; carrier notice of cancellation is pending.",
+    "evidence": [
+      "08_billing_ar/invoices.csv",
+      "08_billing_ar/payments.csv"
+    ],
+    "expected_action": "Escalate to producer; contact client; consider premium finance or return of policy.",
+    "is_false_positive_trap": false
+  },
+  {
+    "id": "INS-COMM-01",
+    "kind": "commission",
+    "companies": [
+      "Meridian"
+    ],
+    "title": "Carrier paid commission at 10% instead of contracted 12%",
+    "description": "Policy LIB-AUTO-3288560 premium 79224: expected 9506.88 at 12.0%, statement LIB-COMM-202602 paid 7922.4 at 10%. Variance -1584.48.",
+    "evidence": [
+      "09_carrier_payables_commissions/commission_statements.csv",
+      "02_policies_exposures/policies.csv",
+      "03_marketing_submissions/carriers.csv"
+    ],
+    "expected_action": "Create carrier inquiry task; request corrected statement.",
+    "is_false_positive_trap": false
+  },
+  {
+    "id": "INS-DQ-03",
+    "kind": "data_quality",
+    "companies": [
+      "Harborline"
+    ],
+    "title": "Renewal tracker expiration date disagrees with policy record",
+    "description": "Renewal REN-HAR-P00012 shows expiration 2026-08-27 while policies.csv shows 2026-07-27 for HAR-P00012.",
+    "evidence": [
+      "04_renewals/renewals.csv",
+      "02_policies_exposures/policies.csv"
+    ],
+    "expected_action": "Treat the policy record (carrier download) as source of truth; correct tracker; recompute 120/90/60/30 milestones.",
+    "is_false_positive_trap": false
+  },
+  {
+    "id": "INS-CERT-02",
+    "kind": "certificate",
+    "companies": [
+      "Harborline"
+    ],
+    "title": "Certificate requires waiver of subrogation not on policy",
+    "description": "Port Tampa Bay requires waiver of subrogation for Blue Ridge Electric LP; GL policy TRV-GL-5190492 has no CG 24 04 endorsement.",
+    "evidence": [
+      "05_certificates/certificate_requests.csv",
+      "06_endorsements/endorsement_requests.csv"
+    ],
+    "expected_action": "Create endorsement request to carrier; hold certificate until endorsement is bound.",
+    "is_false_positive_trap": false
+  },
+  {
+    "id": "INS-AR-01-HAR",
+    "kind": "receivables",
+    "companies": [
+      "Harborline"
+    ],
+    "title": "Agency-bill invoice >90 days past due with pending cancellation",
+    "description": "Invoice HAR-INV00014 (HAR-C0012) balance 11976.1 is more than 90 days past due; carrier notice of cancellation is pending.",
+    "evidence": [
+      "08_billing_ar/invoices.csv",
+      "08_billing_ar/payments.csv"
+    ],
+    "expected_action": "Escalate to producer; contact client; consider premium finance or return of policy.",
+    "is_false_positive_trap": false
+  },
+  {
+    "id": "INS-COMM-02",
+    "kind": "commission",
+    "companies": [
+      "Harborline"
+    ],
+    "title": "Commission statement line does not match any policy in the book",
+    "description": "Carrier statement includes 'Suncoast Dental Partners PA' which is not a client; likely a BOR to another agency or a carrier mis-post.",
+    "evidence": [
+      "09_carrier_payables_commissions/commission_statements.csv",
+      "02_policies_exposures/policies.csv"
+    ],
+    "expected_action": "Investigate with carrier before recognizing revenue; possible BOR letter or mis-posted agency code.",
+    "is_false_positive_trap": false
+  },
+  {
+    "id": "INS-DQ-01",
+    "kind": "data_quality",
+    "companies": [
+      "Castlebrook"
+    ],
+    "title": "Same insured entered twice (legal name vs DBA)",
+    "description": "'Lackawanna Hauling LLC' (CAS-C0004) and 'LH Express' (CAS-C0023) share the same address and producer; LH Express is the DBA and has no FEIN. Policies are split across both records.",
+    "evidence": [
+      "00_legacy_exports/MASTER_WORKBOOK_v7_FINAL (2).xlsx#clients",
+      "00_legacy_exports/MASTER_WORKBOOK_v7_FINAL (2).xlsx#policies"
+    ],
+    "expected_action": "Propose merge; keep legal name as primary, DBA in dba_name field; require human confirmation.",
+    "is_false_positive_trap": false
+  },
+  {
+    "id": "INS-DQ-04",
+    "kind": "data_quality",
+    "companies": [
+      "Castlebrook"
+    ],
+    "title": "Missing FEINs on multiple client records",
+    "description": "Several clients have blank FEIN; FEIN is required on ACORD 125 and for carrier submissions.",
+    "evidence": [
+      "00_legacy_exports/MASTER_WORKBOOK_v7_FINAL (2).xlsx#clients"
+    ],
+    "expected_action": "Create data-collection tasks for account managers; do not fabricate values.",
+    "is_false_positive_trap": false
+  },
+  {
+    "id": "INS-DQ-05",
+    "kind": "data_quality",
+    "companies": [
+      "Castlebrook"
+    ],
+    "title": "Duplicate contact records",
+    "description": "Contact Sandra Fitzgerald appears twice with different casing.",
+    "evidence": [
+      "00_legacy_exports/MASTER_WORKBOOK_v7_FINAL (2).xlsx#contacts"
+    ],
+    "expected_action": "Deduplicate case-insensitively; keep the record with the most recent activity.",
+    "is_false_positive_trap": false
+  },
+  {
+    "id": "INS-DQ-02",
+    "kind": "data_quality",
+    "companies": [
+      "Castlebrook"
+    ],
+    "title": "Vehicle schedule disagrees with ACORD application",
+    "description": "Vehicle schedule for TRV-AUTO-7698813 lists 45 units; the ACORD 127 application (see 13_documents_emails) and policies sheet say 47.",
+    "evidence": [
+      "00_legacy_exports/MASTER_WORKBOOK_v7_FINAL (2).xlsx#vehicles",
+      "00_legacy_exports/MASTER_WORKBOOK_v7_FINAL (2).xlsx#policies",
+      "13_documents_emails/acord_127_vehicle_schedule.json"
+    ],
+    "expected_action": "Flag exposure discrepancy; request updated schedule from client before renewal marketing.",
+    "is_false_positive_trap": false
+  },
+  {
+    "id": "INS-AR-01-CAS",
+    "kind": "receivables",
+    "companies": [
+      "Castlebrook"
+    ],
+    "title": "Agency-bill invoice >90 days past due with pending cancellation",
+    "description": "Invoice CAS-INV00010 (CAS-C0010) balance 27288.75 is more than 90 days past due; carrier notice of cancellation is pending.",
+    "evidence": [
+      "08_billing_ar/invoices.csv",
+      "08_billing_ar/payments.csv"
+    ],
+    "expected_action": "Escalate to producer; contact client; consider premium finance or return of policy.",
+    "is_false_positive_trap": false
+  },
+  {
+    "id": "INS-COMP-01",
+    "kind": "compliance",
+    "companies": [
+      "Castlebrook"
+    ],
+    "title": "Producer writing business on an expired license",
+    "description": "Aisha Davis (PA) license expired 2026-02-18 but has policies effective after that date.",
+    "evidence": [
+      "00_legacy_exports/MASTER_WORKBOOK_v7_FINAL (2).xlsx#licenses",
+      "00_legacy_exports/MASTER_WORKBOOK_v7_FINAL (2).xlsx#policies"
+    ],
+    "expected_action": "Immediate escalation to compliance; stop new binds; file renewal.",
+    "is_false_positive_trap": false
+  },
+  {
+    "id": "INS-DQ-06",
+    "kind": "data_quality",
+    "companies": [
+      "Castlebrook"
+    ],
+    "title": "Swapped column headers in legacy policy export",
+    "description": "In the MASTER_WORKBOOK 'policies' sheet the EXP_DATE column actually holds effective dates and EFF_DATE holds expirations (all EXP_DATE < EFF_DATE). Similarly in claims.csv 'RESERVE' holds paid-to-date and 'PAID' holds outstanding reserve; in vendors.csv the vendor name column is labelled CUSTOMER.",
+    "evidence": [
+      "00_legacy_exports/MASTER_WORKBOOK_v7_FINAL (2).xlsx",
+      "07_claims/claims.csv",
+      "11_finance_gl/vendors.csv"
+    ],
+    "expected_action": "Infer semantics from values (date ordering, closed claims having reserve = 0); propose column mapping and require human confirmation.",
+    "is_false_positive_trap": false
+  },
+  {
+    "id": "INS-DQ-07",
+    "kind": "data_quality",
+    "companies": [
+      "Castlebrook"
+    ],
+    "title": "Datasets missing entirely",
+    "description": "Castlebrook has no workflow event log, no commission statements, no producer commission records, no GL detail, no renewal task tracker and no issued-certificate register. Commission income can only be inferred from bank deposits and the carriers table.",
+    "evidence": [
+      "00_company/company_profile.json"
+    ],
+    "expected_action": "Report gaps explicitly; recommend enabling carrier downloads and a commission reconciliation process; do not fabricate missing history.",
+    "is_false_positive_trap": false
+  },
+  {
+    "id": "IND-P2P-01",
+    "kind": "three_way_match",
+    "companies": [
+      "Northfield"
+    ],
+    "title": "Supplier invoice priced 6% above PO unit cost",
+    "description": "Invoice INV3862958 bills P-20049 at 6.38 vs PO PO-31031 line 3 at 6.0200000000000005; outside 2% tolerance, unresolved.",
+    "evidence": [
+      "04_receiving_ap/supplier_invoices.csv",
+      "04_receiving_ap/three_way_match.csv",
+      "03_procurement/purchase_order_lines.csv"
+    ],
+    "expected_action": "Short-pay or request credit memo; record PPV.",
+    "is_false_positive_trap": false
+  },
+  {
+    "id": "IND-INV-02",
+    "kind": "inventory_integrity",
+    "companies": [
+      "Northfield"
+    ],
+    "title": "Large unposted cycle-count shrink",
+    "description": "Count CC-0030 for A-20036 found 34 fewer than system ($100,152.10); variance not posted for 30+ days.",
+    "evidence": [
+      "05_inventory/cycle_counts.csv",
+      "05_inventory/inventory_balances.csv"
+    ],
+    "expected_action": "Investigate and post adjustment; inventory valuation is overstated.",
+    "is_false_positive_trap": false
+  },
+  {
+    "id": "IND-QA-01",
+    "kind": "quality",
+    "companies": [
+      "Northfield"
+    ],
+    "title": "NCR open 45+ days with CAPA required but no CAPA record",
+    "description": "NCR-0007 opened 2025-12-29 (DAMAGE) is still open and flagged capa_required=Y; no matching row in corrective_actions.",
+    "evidence": [
+      "09_quality/nonconformance_reports.csv",
+      "09_quality/corrective_actions.csv"
+    ],
+    "expected_action": "Open CAPA; escalate to supplier if receiving-related.",
+    "is_false_positive_trap": false
+  },
+  {
+    "id": "IND-ENG-01",
+    "kind": "engineering_change",
+    "companies": [
+      "Northfield"
+    ],
+    "title": "Released ECO not reflected in BOM (BOM still calls obsolete component revision)",
+    "description": "ECO-2599 released 2026-01-15 moves A-20002 to rev C and replaces component P-20079 rev A; bills_of_material still lists rev A and work orders since then issued the old rev.",
+    "evidence": [
+      "13_engineering_compliance/engineering_change_orders.csv",
+      "01_master_data/bills_of_material.csv",
+      "08_manufacturing/work_orders.csv"
+    ],
+    "expected_action": "Update BOM; check WIP/FG built since 2026-01-15 for containment.",
+    "is_false_positive_trap": false
+  },
+  {
+    "id": "IND-EHS-01",
+    "kind": "compliance",
+    "companies": [
+      "Northfield"
+    ],
+    "title": "Employees operating forklifts with expired certification",
+    "description": "3 employees have expired Forklift Certification but appear as putaway/shipping users in receipt_lines / pick_lists after expiry (e.g. E050, expired 2026-03-12).",
+    "evidence": [
+      "15_hr_ehs/training_certifications.csv",
+      "04_receiving_ap/receipt_lines.csv",
+      "06_warehouse_fulfillment/pick_lists.csv"
+    ],
+    "expected_action": "Schedule recertification; OSHA 1910.178 exposure.",
+    "is_false_positive_trap": false
+  },
+  {
+    "id": "IND-UOM-01",
+    "kind": "data_quality",
+    "companies": [
+      "Keystone"
+    ],
+    "title": "Unit-of-measure mismatch: box price stored against EA stock UoM",
+    "description": "Item KIM-G10 (nitrile gloves, 100/bx) has stock_uom EA but unit_cost 11.40 is the per-box price; on-hand quantities in inventory_balances are in boxes while sales order lines sell EA.",
+    "evidence": [
+      "01_master_data/items.csv",
+      "05_inventory/inventory_balances.xlsx",
+      "02_sales_quote_to_order/sales_order_lines.csv"
+    ],
+    "expected_action": "Correct stock_uom to BX (pack 100) or restate cost per EA before margin analysis.",
+    "is_false_positive_trap": false
+  },
+  {
+    "id": "IND-VEND-01",
+    "kind": "data_quality",
+    "companies": [
+      "Keystone"
+    ],
+    "title": "Duplicate supplier master records for Grainger",
+    "description": "KBD-V007 'GRAINGER' and KBD-V019 'W W Grainger Inc' are the same vendor with different terms; POs and AP invoices are split between them.",
+    "evidence": [
+      "03_procurement/suppliers.csv",
+      "03_procurement/purchase_orders.csv",
+      "04_receiving_ap/supplier_invoices.csv"
+    ],
+    "expected_action": "Merge vendor records; consolidate spend for negotiation.",
+    "is_false_positive_trap": false
+  },
+  {
+    "id": "IND-P2P-02",
+    "kind": "three_way_match",
+    "companies": [
+      "Keystone"
+    ],
+    "title": "Supplier invoiced more units than received",
+    "description": "Invoice 99200340 bills 98 of SKF-6205-2RS1 against PO PO-31041; receipt shows 88. Invoice is on hold.",
+    "evidence": [
+      "04_receiving_ap/supplier_invoices.csv",
+      "04_receiving_ap/receipt_lines.csv",
+      "04_receiving_ap/three_way_match.csv"
+    ],
+    "expected_action": "Dispute 10 units with supplier; do not pay full amount.",
+    "is_false_positive_trap": false
+  },
+  {
+    "id": "IND-INV-01",
+    "kind": "inventory_integrity",
+    "companies": [
+      "Keystone"
+    ],
+    "title": "Negative on-hand quantity",
+    "description": "Item TIMI-1000 shows on_hand -6 in MAIN; shipments were confirmed before receipts were posted.",
+    "evidence": [
+      "05_inventory/inventory_balances.xlsx",
+      "05_inventory/inventory_transactions.csv"
+    ],
+    "expected_action": "Post the missing receipt / investigate backflush timing.",
+    "is_false_positive_trap": false
+  },
+  {
+    "id": "IND-O2C-01",
+    "kind": "revenue_leakage",
+    "companies": [
+      "Keystone"
+    ],
+    "title": "Order shipped and delivered but never invoiced",
+    "description": "Shipment SH-50001 for SO-26001 ($6,847.56) shipped 2025-07-03 with POD on file; no customer invoice exists.",
+    "evidence": [
+      "06_warehouse_fulfillment/shipments.csv",
+      "06_warehouse_fulfillment/proof_of_delivery.csv",
+      "11_billing_ar/customer_invoices.csv"
+    ],
+    "expected_action": "Invoice immediately; add ship-not-invoiced control.",
+    "is_false_positive_trap": false
+  },
+  {
+    "id": "IND-SW-01",
+    "kind": "software_overlap",
+    "companies": [
+      "Keystone"
+    ],
+    "title": "Two separate Zoom subscriptions (one expensed to T&E)",
+    "description": "Keystone pays for Zoom Workplace twice: an IT-owned subscription on GL 6400 and a sales-team one on GL 6800 (corporate card).",
+    "evidence": [
+      "14_finance_gl/software_subscriptions.csv",
+      "14_finance_gl/general_ledger.csv"
+    ],
+    "expected_action": "Consolidate to one account.",
+    "is_false_positive_trap": false
+  },
+  {
+    "id": "IND-O2C-02",
+    "kind": "order_entry",
+    "companies": [
+      "Keystone"
+    ],
+    "title": "Customer PO quantity does not match entered sales order",
+    "description": "Customer PO P821082 line 1 shows qty 3; sales order SO-26006 line 1 was entered as 1.",
+    "evidence": [
+      "16_documents_emails/customer_po_P821082.json",
+      "02_sales_quote_to_order/sales_order_lines.csv"
+    ],
+    "expected_action": "Confirm with customer; correct SO before shipment.",
+    "is_false_positive_trap": false
+  },
+  {
+    "id": "IND-CRM-01",
+    "kind": "data_quality",
+    "companies": [
+      "Ridgeway"
+    ],
+    "title": "Duplicate customer record (same company, different casing/suffix, different terms)",
+    "description": "RFS-CUST0008 and RFS-CUST0025 are the same customer; open AR is split across both and terms disagree (Net 30 vs COD).",
+    "evidence": [
+      "00_legacy_exports/RIDGEWAY MASTER (Fishbowl sync) v7 FINAL (2).xlsx#customers",
+      "11_billing_ar/customer_invoices.csv"
+    ],
+    "expected_action": "Merge records, pick surviving terms, consolidate AR aging.",
+    "is_false_positive_trap": false
+  },
+  {
+    "id": "IND-PRICE-TRAP-01",
+    "kind": "purchasing_price_gap",
+    "companies": [
+      "Ridgeway",
+      "Northfield",
+      "Keystone"
+    ],
+    "title": "Generic import 6205 bearing is NOT the same item as SKF 6205-2RS1",
+    "description": "Ridgeway's BRG-6205-IMP ($1.85, unbranded CN import) looks like the SKF 6205-2RS1 the others buy. A naive 'same size bearing' match would report a huge price gap; manufacturer and part number differ, so it is not a like-for-like comparison.",
+    "evidence": [
+      "00_legacy_exports/RIDGEWAY MASTER (Fishbowl sync) v7 FINAL (2).xlsx#items"
+    ],
+    "expected_action": "Do not include in price-gap findings; at most flag as a possible spec substitution question.",
+    "is_false_positive_trap": true
+  },
+  {
+    "id": "IND-VEND-TRAP-01",
+    "kind": "vendor_consolidation",
+    "companies": [
+      "Ridgeway",
+      "Northfield"
+    ],
+    "title": "Apex Fastening Systems LLC is not Apex Fastener Corp",
+    "description": "Ridgeway buys from 'Apex Fastening Systems LLC' (Chattanooga distributor); Northfield buys from 'Apex Fastener Corp' (Elgin IL manufacturer). Similar names, different companies.",
+    "evidence": [
+      "00_legacy_exports/RIDGEWAY MASTER (Fishbowl sync) v7 FINAL (2).xlsx#suppliers"
+    ],
+    "expected_action": "Do not merge; do not report as shared vendor.",
+    "is_false_positive_trap": true
+  },
+  {
+    "id": "IND-AP-01",
+    "kind": "overpayment",
+    "companies": [
+      "Ridgeway"
+    ],
+    "title": "Sales tax paid on resale inventory despite resale certificate",
+    "description": "27 supplier invoices include TN sales tax (9.25%) on items purchased for resale, totalling $26,768.24.",
+    "evidence": [
+      "04_receiving_ap/supplier_invoices.csv"
+    ],
+    "expected_action": "File for refund / provide resale certificate to suppliers.",
+    "is_false_positive_trap": false
+  },
+  {
+    "id": "IND-O2C-03",
+    "kind": "order_entry",
+    "companies": [
+      "Ridgeway"
+    ],
+    "title": "Customer PO quantity does not match entered sales order",
+    "description": "Customer PO PO180950 line 1 shows qty 27; sales order 15761 line 1 was entered as 25.",
+    "evidence": [
+      "16_documents_emails/customer_po_PO180950.json",
+      "00_legacy_exports/RIDGEWAY MASTER (Fishbowl sync) v7 FINAL (2).xlsx#sales_order_lines"
+    ],
+    "expected_action": "Confirm with customer; correct SO before shipment.",
+    "is_false_positive_trap": false
+  },
+  {
+    "id": "IND-DQ-02",
+    "kind": "data_quality",
+    "companies": [
+      "Ridgeway"
+    ],
+    "title": "Mislabeled 'Max' column actually holds reorder quantity",
+    "description": "In the QuickBooks item list export the 'Max' column is the reorder quantity (order-up-to is not tracked), and 'Reorder Pt (Min)' is the reorder point. Stock UoM mixes EA / BX / C (hundreds) without a consistent pack factor.",
+    "evidence": [
+      "01_master_data/QuickBooks_Item_List_export.csv",
+      "00_legacy_exports/RIDGEWAY MASTER (Fishbowl sync) v7 FINAL (2).xlsx#items"
+    ],
+    "expected_action": "Map Max->reorder_qty; normalize UoM before comparing prices per each.",
+    "is_false_positive_trap": false
+  },
+  {
+    "id": "IND-DQ-01",
+    "kind": "data_quality",
+    "companies": [
+      "Ridgeway"
+    ],
+    "title": "Sales order export has SO and customer-PO columns swapped (and 7% of rows entered swapped in the source)",
+    "description": "In the legacy workbook 'sales_orders' sheet the column labelled PO_NUM holds Ridgeway's own SO/invoice number and SO_NUM holds the customer PO. Independently, ~7% of rows were keyed with the two values reversed at data entry, so the label swap does not fix every row.",
+    "evidence": [
+      "00_legacy_exports/RIDGEWAY MASTER (Fishbowl sync) v7 FINAL (2).xlsx#sales_orders",
+      "11_billing_ar/customer_invoices.csv"
+    ],
+    "expected_action": "Infer semantics from value patterns (5-digit numeric = SO; PO/P/4500/PUR- prefixes = customer PO); flag rows that do not fit either pattern.",
+    "is_false_positive_trap": false
+  },
+  {
+    "id": "PORT-VEND-IRON_MOUNTAIN",
+    "kind": "vendor_consolidation",
+    "companies": [
+      "Meridian",
+      "Harborline",
+      "Castlebrook",
+      "Northfield",
+      "Keystone"
+    ],
+    "title": "Iron Mountain Inc. used by 5 portfolio companies under 4 different names",
+    "description": "Variants: Meridian: 'Iron Mountain Inc.'; Harborline: 'IRON MOUNTAIN INFO MGMT'; Castlebrook: 'Iron Mtn'; Northfield: 'Iron Mountain Inc.'; Keystone: 'Iron Mountain Information Management, LLC'. Category: Records Storage / Shredding.",
+    "evidence": [
+      "*/11_finance_gl/vendors.csv",
+      "*/11_finance_gl/ap_vendor_invoices.csv",
+      "*/14_finance_gl/corporate_vendors.csv",
+      "*/14_finance_gl/ap_vendor_invoices_indirect.csv"
+    ],
+    "expected_action": "Entity-resolve to one vendor; aggregate 12-month spend; negotiate portfolio rate.",
+    "is_false_positive_trap": false
+  },
+  {
+    "id": "PORT-VEND-GRAINGER",
+    "kind": "vendor_consolidation",
+    "companies": [
+      "Northfield",
+      "Keystone",
+      "Ridgeway",
+      "Meridian"
+    ],
+    "title": "W.W. Grainger, Inc. used by 4 portfolio companies under 4 different names",
+    "description": "Variants: Northfield: 'W.W. Grainger, Inc.'; Keystone: 'GRAINGER'; Ridgeway: 'Grainger Industrial Supply'; Meridian: 'Grainger'. Category: MRO Supplies.",
+    "evidence": [
+      "*/11_finance_gl/vendors.csv",
+      "*/11_finance_gl/ap_vendor_invoices.csv",
+      "*/14_finance_gl/corporate_vendors.csv",
+      "*/14_finance_gl/ap_vendor_invoices_indirect.csv"
+    ],
+    "expected_action": "Entity-resolve to one vendor; aggregate 12-month spend; negotiate portfolio rate.",
+    "is_false_positive_trap": false
+  },
+  {
+    "id": "PORT-VEND-CINTAS",
+    "kind": "vendor_consolidation",
+    "companies": [
+      "Northfield",
+      "Keystone",
+      "Ridgeway"
+    ],
+    "title": "Cintas Corporation used by 3 portfolio companies under 3 different names",
+    "description": "Variants: Northfield: 'Cintas Corporation'; Keystone: 'Cintas Corp #472'; Ridgeway: 'CINTAS'. Category: Uniforms / Facility Services.",
+    "evidence": [
+      "*/11_finance_gl/vendors.csv",
+      "*/11_finance_gl/ap_vendor_invoices.csv",
+      "*/14_finance_gl/corporate_vendors.csv",
+      "*/14_finance_gl/ap_vendor_invoices_indirect.csv"
+    ],
+    "expected_action": "Entity-resolve to one vendor; aggregate 12-month spend; negotiate portfolio rate.",
+    "is_false_positive_trap": false
+  },
+  {
+    "id": "PORT-VEND-STAPLES",
+    "kind": "vendor_consolidation",
+    "companies": [
+      "Meridian",
+      "Harborline",
+      "Castlebrook",
+      "Keystone",
+      "Ridgeway"
+    ],
+    "title": "Staples Business Advantage used by 5 portfolio companies under 4 different names",
+    "description": "Variants: Meridian: 'Staples Business Advantage'; Harborline: 'Staples Advantage'; Castlebrook: 'Staples'; Keystone: 'STAPLES BUS ADV'; Ridgeway: 'Staples'. Category: Office Supplies.",
+    "evidence": [
+      "*/11_finance_gl/vendors.csv",
+      "*/11_finance_gl/ap_vendor_invoices.csv",
+      "*/14_finance_gl/corporate_vendors.csv",
+      "*/14_finance_gl/ap_vendor_invoices_indirect.csv"
+    ],
+    "expected_action": "Entity-resolve to one vendor; aggregate 12-month spend; negotiate portfolio rate.",
+    "is_false_positive_trap": false
+  },
+  {
+    "id": "PORT-VEND-WASTE_MGMT",
+    "kind": "vendor_consolidation",
+    "companies": [
+      "Northfield",
+      "Ridgeway",
+      "Harborline"
+    ],
+    "title": "Waste Management, Inc. used by 3 portfolio companies under 3 different names",
+    "description": "Variants: Northfield: 'Waste Management of Illinois'; Ridgeway: 'WM - Waste Management'; Harborline: 'Waste Management Inc of Florida'. Category: Waste / Recycling.",
+    "evidence": [
+      "*/11_finance_gl/vendors.csv",
+      "*/11_finance_gl/ap_vendor_invoices.csv",
+      "*/14_finance_gl/corporate_vendors.csv",
+      "*/14_finance_gl/ap_vendor_invoices_indirect.csv"
+    ],
+    "expected_action": "Entity-resolve to one vendor; aggregate 12-month spend; negotiate portfolio rate.",
+    "is_false_positive_trap": false
+  },
+  {
+    "id": "PORT-VEND-UPS",
+    "kind": "vendor_consolidation",
+    "companies": [
+      "Northfield",
+      "Keystone",
+      "Ridgeway"
+    ],
+    "title": "United Parcel Service used by 3 portfolio companies under 3 different names",
+    "description": "Variants: Northfield: 'UPS'; Keystone: 'United Parcel Service'; Ridgeway: 'UPS Freight / UPS'. Category: Parcel Freight.",
+    "evidence": [
+      "*/11_finance_gl/vendors.csv",
+      "*/11_finance_gl/ap_vendor_invoices.csv",
+      "*/14_finance_gl/corporate_vendors.csv",
+      "*/14_finance_gl/ap_vendor_invoices_indirect.csv"
+    ],
+    "expected_action": "Entity-resolve to one vendor; aggregate 12-month spend; negotiate portfolio rate.",
+    "is_false_positive_trap": false
+  },
+  {
+    "id": "PORT-VEND-FEDEX",
+    "kind": "vendor_consolidation",
+    "companies": [
+      "Northfield",
+      "Keystone",
+      "Ridgeway"
+    ],
+    "title": "FedEx Corporation used by 3 portfolio companies under 3 different names",
+    "description": "Variants: Northfield: 'FedEx'; Keystone: 'FEDEX'; Ridgeway: 'Federal Express'. Category: Parcel Freight.",
+    "evidence": [
+      "*/11_finance_gl/vendors.csv",
+      "*/11_finance_gl/ap_vendor_invoices.csv",
+      "*/14_finance_gl/corporate_vendors.csv",
+      "*/14_finance_gl/ap_vendor_invoices_indirect.csv"
+    ],
+    "expected_action": "Entity-resolve to one vendor; aggregate 12-month spend; negotiate portfolio rate.",
+    "is_false_positive_trap": false
+  },
+  {
+    "id": "PORT-VEND-SUNBELT",
+    "kind": "vendor_consolidation",
+    "companies": [
+      "Northfield",
+      "Ridgeway"
+    ],
+    "title": "Sunbelt Rentals used by 2 portfolio companies under 2 different names",
+    "description": "Variants: Northfield: 'Sunbelt Rentals'; Ridgeway: 'SUNBELT RENTALS INC'. Category: Equipment Rental.",
+    "evidence": [
+      "*/11_finance_gl/vendors.csv",
+      "*/11_finance_gl/ap_vendor_invoices.csv",
+      "*/14_finance_gl/corporate_vendors.csv",
+      "*/14_finance_gl/ap_vendor_invoices_indirect.csv"
+    ],
+    "expected_action": "Entity-resolve to one vendor; aggregate 12-month spend; negotiate portfolio rate.",
+    "is_false_positive_trap": false
+  },
+  {
+    "id": "PORT-SW-AGENCY",
+    "kind": "software_overlap",
+    "companies": [
+      "Meridian",
+      "Harborline",
+      "Castlebrook"
+    ],
+    "title": "Multiple products serving the same function: Agency Management System",
+    "description": "Meridian: Applied Epic; Harborline: Vertafore AMS360; Castlebrook: HawkSoft CMS Same-function tools at different vendors; consolidation or a portfolio agreement is the play.",
+    "evidence": [
+      "*/11_finance_gl/software_subscriptions.csv",
+      "*/14_finance_gl/software_subscriptions.csv"
+    ],
+    "expected_action": "Quantify seats x price per company; propose a single vendor per function (or a portfolio-level contract with the incumbent used by the largest company). Do not propose migrating a core system (AMS/ERP) inside a 12-month window without flagging switching cost.",
+    "is_false_positive_trap": false
+  },
+  {
+    "id": "PORT-SW-ERP",
+    "kind": "software_overlap",
+    "companies": [
+      "Northfield",
+      "Keystone",
+      "Ridgeway"
+    ],
+    "title": "Multiple products serving the same function: ERP",
+    "description": "Northfield: Epicor Kinetic; Keystone: NetSuite; Ridgeway: QuickBooks Desktop + Fishbowl Same-function tools at different vendors; consolidation or a portfolio agreement is the play.",
+    "evidence": [
+      "*/11_finance_gl/software_subscriptions.csv",
+      "*/14_finance_gl/software_subscriptions.csv"
+    ],
+    "expected_action": "Quantify seats x price per company; propose a single vendor per function (or a portfolio-level contract with the incumbent used by the largest company). Do not propose migrating a core system (AMS/ERP) inside a 12-month window without flagging switching cost.",
+    "is_false_positive_trap": false
+  },
+  {
+    "id": "PORT-SW-QUALITY",
+    "kind": "software_overlap",
+    "companies": [
+      "Northfield",
+      "Keystone"
+    ],
+    "title": "Multiple products serving the same function: Quality Management System",
+    "description": "Northfield: MasterControl ($12k flat); Keystone: uniPoint ($4.8k flat) Same-function tools at different vendors; consolidation or a portfolio agreement is the play.",
+    "evidence": [
+      "*/11_finance_gl/software_subscriptions.csv",
+      "*/14_finance_gl/software_subscriptions.csv"
+    ],
+    "expected_action": "Quantify seats x price per company; propose a single vendor per function (or a portfolio-level contract with the incumbent used by the largest company). Do not propose migrating a core system (AMS/ERP) inside a 12-month window without flagging switching cost.",
+    "is_false_positive_trap": false
+  },
+  {
+    "id": "PORT-SW-CAD",
+    "kind": "software_overlap",
+    "companies": [
+      "Northfield",
+      "Keystone"
+    ],
+    "title": "Multiple products serving the same function: CAD",
+    "description": "Northfield: SolidWorks; Keystone: Autodesk Inventor Same-function tools at different vendors; consolidation or a portfolio agreement is the play.",
+    "evidence": [
+      "*/11_finance_gl/software_subscriptions.csv",
+      "*/14_finance_gl/software_subscriptions.csv"
+    ],
+    "expected_action": "Quantify seats x price per company; propose a single vendor per function (or a portfolio-level contract with the incumbent used by the largest company). Do not propose migrating a core system (AMS/ERP) inside a 12-month window without flagging switching cost.",
+    "is_false_positive_trap": false
+  },
+  {
+    "id": "PORT-SW-E-SIGNATURE",
+    "kind": "software_overlap",
+    "companies": [
+      "Meridian",
+      "Harborline"
+    ],
+    "title": "Multiple products serving the same function: e-Signature",
+    "description": "Meridian: DocuSign; Harborline: Adobe Acrobat Sign Same-function tools at different vendors; consolidation or a portfolio agreement is the play.",
+    "evidence": [
+      "*/11_finance_gl/software_subscriptions.csv",
+      "*/14_finance_gl/software_subscriptions.csv"
+    ],
+    "expected_action": "Quantify seats x price per company; propose a single vendor per function (or a portfolio-level contract with the incumbent used by the largest company). Do not propose migrating a core system (AMS/ERP) inside a 12-month window without flagging switching cost.",
+    "is_false_positive_trap": false
+  },
+  {
+    "id": "PORT-SW-CRM",
+    "kind": "software_overlap",
+    "companies": [
+      "Meridian",
+      "Northfield",
+      "Keystone"
+    ],
+    "title": "Multiple products serving the same function: CRM",
+    "description": "Meridian: Salesforce; Northfield: Salesforce; Keystone: HubSpot Same-function tools at different vendors; consolidation or a portfolio agreement is the play.",
+    "evidence": [
+      "*/11_finance_gl/software_subscriptions.csv",
+      "*/14_finance_gl/software_subscriptions.csv"
+    ],
+    "expected_action": "Quantify seats x price per company; propose a single vendor per function (or a portfolio-level contract with the incumbent used by the largest company). Do not propose migrating a core system (AMS/ERP) inside a 12-month window without flagging switching cost.",
+    "is_false_positive_trap": false
+  },
+  {
+    "id": "PORT-SW-VOIP",
+    "kind": "software_overlap",
+    "companies": [
+      "Meridian",
+      "Northfield",
+      "Keystone",
+      "Harborline"
+    ],
+    "title": "Multiple products serving the same function: VoIP Phone System",
+    "description": "Meridian: RingCentral; Northfield: RingCentral; Keystone: 8x8; Harborline: 8x8 Same-function tools at different vendors; consolidation or a portfolio agreement is the play.",
+    "evidence": [
+      "*/11_finance_gl/software_subscriptions.csv",
+      "*/14_finance_gl/software_subscriptions.csv"
+    ],
+    "expected_action": "Quantify seats x price per company; propose a single vendor per function (or a portfolio-level contract with the incumbent used by the largest company). Do not propose migrating a core system (AMS/ERP) inside a 12-month window without flagging switching cost.",
+    "is_false_positive_trap": false
+  },
+  {
+    "id": "PORT-SW-PAYROLL",
+    "kind": "software_overlap",
+    "companies": [
+      "Meridian",
+      "Northfield",
+      "Harborline",
+      "Castlebrook",
+      "Ridgeway",
+      "Keystone"
+    ],
+    "title": "Multiple products serving the same function: Payroll / HRIS",
+    "description": "ADP (Meridian, Northfield), Paychex (Harborline), Gusto (Castlebrook, Ridgeway), Paycom (Keystone) Same-function tools at different vendors; consolidation or a portfolio agreement is the play.",
+    "evidence": [
+      "*/11_finance_gl/software_subscriptions.csv",
+      "*/14_finance_gl/software_subscriptions.csv"
+    ],
+    "expected_action": "Quantify seats x price per company; propose a single vendor per function (or a portfolio-level contract with the incumbent used by the largest company). Do not propose migrating a core system (AMS/ERP) inside a 12-month window without flagging switching cost.",
+    "is_false_positive_trap": false
+  },
+  {
+    "id": "PORT-SW-PRODUCTIVITY",
+    "kind": "software_overlap",
+    "companies": [
+      "Meridian",
+      "Harborline",
+      "Northfield",
+      "Keystone",
+      "Castlebrook",
+      "Ridgeway"
+    ],
+    "title": "Multiple products serving the same function: Productivity Suite / Email",
+    "description": "Microsoft 365 at 4 companies, Google Workspace at Castlebrook and Ridgeway Same-function tools at different vendors; consolidation or a portfolio agreement is the play.",
+    "evidence": [
+      "*/11_finance_gl/software_subscriptions.csv",
+      "*/14_finance_gl/software_subscriptions.csv"
+    ],
+    "expected_action": "Quantify seats x price per company; propose a single vendor per function (or a portfolio-level contract with the incumbent used by the largest company). Do not propose migrating a core system (AMS/ERP) inside a 12-month window without flagging switching cost.",
+    "is_false_positive_trap": false
+  },
+  {
+    "id": "PORT-SW-FILE",
+    "kind": "software_overlap",
+    "companies": [
+      "Meridian",
+      "Northfield",
+      "Harborline",
+      "Keystone",
+      "Ridgeway"
+    ],
+    "title": "Multiple products serving the same function: File Storage",
+    "description": "Box (Meridian, Northfield), Dropbox (Harborline, Keystone, Ridgeway) Same-function tools at different vendors; consolidation or a portfolio agreement is the play.",
+    "evidence": [
+      "*/11_finance_gl/software_subscriptions.csv",
+      "*/14_finance_gl/software_subscriptions.csv"
+    ],
+    "expected_action": "Quantify seats x price per company; propose a single vendor per function (or a portfolio-level contract with the incumbent used by the largest company). Do not propose migrating a core system (AMS/ERP) inside a 12-month window without flagging switching cost.",
+    "is_false_positive_trap": false
+  },
+  {
+    "id": "PORT-SW-TRAP-01",
+    "kind": "software_overlap",
+    "companies": [
+      "Northfield",
+      "Keystone"
+    ],
+    "title": "Salesforce Sales Cloud vs Slack Business+ are both billed by Salesforce but are NOT overlapping tools",
+    "description": "A vendor-name match would group CRM and team messaging together; functions differ.",
+    "evidence": [
+      "*/11_finance_gl/software_subscriptions.csv",
+      "*/14_finance_gl/software_subscriptions.csv"
+    ],
+    "expected_action": "Group by function, not vendor.",
+    "is_false_positive_trap": true
+  },
+  {
+    "id": "PORT-PRICE-6205-2RS1",
+    "kind": "purchasing_price_gap",
+    "companies": [
+      "Northfield",
+      "Keystone",
+      "Ridgeway"
+    ],
+    "title": "SKF 6205-2RS1: Ridgeway pays 46% more than Keystone",
+    "description": "Deep groove ball bearing 25x52x15, sealed (EA, pack 1). Northfield: 4.10 via Motion Industries (SKU P-10000, ~0 EA/yr on PO lines); Keystone: 3.55 via Applied Industrial Technologies (SKU SKF-6205-2RS1, ~313 EA/yr on PO lines); Ridgeway: 5.20 via Fastenal (SKU BRG-6205, ~315 EA/yr on PO lines). Moving everyone to Keystone's price saves ~$520/yr on PO-line volume.",
+    "evidence": [
+      "*/01_master_data/items.csv",
+      "*/03_procurement/purchase_order_lines.csv",
+      "*/03_procurement/supplier_quotes.csv"
+    ],
+    "expected_action": "Match on manufacturer + manufacturer_part_number (NOT internal item_id); normalize UoM/pack; propose consolidated buy at best price; cite PO lines as evidence.",
+    "is_false_positive_trap": false
+  },
+  {
+    "id": "PORT-PRICE-6308-2Z",
+    "kind": "purchasing_price_gap",
+    "companies": [
+      "Northfield",
+      "Keystone",
+      "Ridgeway"
+    ],
+    "title": "SKF 6308-2Z: Ridgeway pays 45% more than Keystone",
+    "description": "Deep groove ball bearing 40x90x23, shielded (EA, pack 1). Northfield: 11.80 via Motion Industries (SKU P-10007, ~666 EA/yr on PO lines); Keystone: 10.25 via Applied Industrial Technologies (SKU SKF-6308-2Z, ~1152 EA/yr on PO lines); Ridgeway: 14.90 via Fastenal (SKU 6308-882, ~402 EA/yr on PO lines). Moving everyone to Keystone's price saves ~$2,902/yr on PO-line volume.",
+    "evidence": [
+      "*/01_master_data/items.csv",
+      "*/03_procurement/purchase_order_lines.csv",
+      "*/03_procurement/supplier_quotes.csv"
+    ],
+    "expected_action": "Match on manufacturer + manufacturer_part_number (NOT internal item_id); normalize UoM/pack; propose consolidated buy at best price; cite PO lines as evidence.",
+    "is_false_positive_trap": false
+  },
+  {
+    "id": "PORT-PRICE-LM11949-LM11910",
+    "kind": "purchasing_price_gap",
+    "companies": [
+      "Northfield",
+      "Keystone"
+    ],
+    "title": "Timken LM11949/LM11910: Northfield pays 18% more than Keystone",
+    "description": "Tapered roller bearing set (EA, pack 1). Northfield: 8.95 via Motion Industries (SKU P-10014, ~648 EA/yr on PO lines); Keystone: 7.60 via Applied Industrial Technologies (SKU TIM-LM11949-LM11910, ~686 EA/yr on PO lines). Moving everyone to Keystone's price saves ~$875/yr on PO-line volume.",
+    "evidence": [
+      "*/01_master_data/items.csv",
+      "*/03_procurement/purchase_order_lines.csv",
+      "*/03_procurement/supplier_quotes.csv"
+    ],
+    "expected_action": "Match on manufacturer + manufacturer_part_number (NOT internal item_id); normalize UoM/pack; propose consolidated buy at best price; cite PO lines as evidence.",
+    "is_false_positive_trap": false
+  },
+  {
+    "id": "PORT-PRICE-B62",
+    "kind": "purchasing_price_gap",
+    "companies": [
+      "Northfield",
+      "Keystone",
+      "Ridgeway"
+    ],
+    "title": "Gates B62: Ridgeway pays 41% more than Keystone",
+    "description": "Hi-Power II V-belt B62 (EA, pack 1). Northfield: 14.20 via Motion Industries (SKU P-10021, ~250 EA/yr on PO lines); Keystone: 12.70 via Kaman Industrial Technologies (SKU GAT-B62, ~3929 EA/yr on PO lines); Ridgeway: 17.85 via Grainger Industrial Supply (SKU B62-454, ~2535 EA/yr on PO lines). Moving everyone to Keystone's price saves ~$13,430/yr on PO-line volume.",
+    "evidence": [
+      "*/01_master_data/items.csv",
+      "*/03_procurement/purchase_order_lines.csv",
+      "*/03_procurement/supplier_quotes.csv"
+    ],
+    "expected_action": "Match on manufacturer + manufacturer_part_number (NOT internal item_id); normalize UoM/pack; propose consolidated buy at best price; cite PO lines as evidence.",
+    "is_false_positive_trap": false
+  },
+  {
+    "id": "PORT-PRICE-TXT315",
+    "kind": "purchasing_price_gap",
+    "companies": [
+      "Keystone",
+      "Northfield"
+    ],
+    "title": "Dodge TXT315: Northfield pays 7% more than Keystone",
+    "description": "Torque-Arm II shaft-mount reducer 15:1 (EA, pack 1). Keystone: 1180.00 via Applied Industrial Technologies (SKU DOD-TXT315, ~1145 EA/yr on PO lines); Northfield: 1265.00 via Motion Industries (SKU P-10028, ~1156 EA/yr on PO lines). Moving everyone to Keystone's price saves ~$98,260/yr on PO-line volume.",
+    "evidence": [
+      "*/01_master_data/items.csv",
+      "*/03_procurement/purchase_order_lines.csv",
+      "*/03_procurement/supplier_quotes.csv"
+    ],
+    "expected_action": "Match on manufacturer + manufacturer_part_number (NOT internal item_id); normalize UoM/pack; propose consolidated buy at best price; cite PO lines as evidence.",
+    "is_false_positive_trap": false
+  },
+  {
+    "id": "PORT-PRICE-243",
+    "kind": "purchasing_price_gap",
+    "companies": [
+      "Northfield",
+      "Keystone",
+      "Ridgeway"
+    ],
+    "title": "Henkel Loctite 243: Ridgeway pays 17% more than Northfield",
+    "description": "Threadlocker 243 medium strength blue, 50 mL (EA, pack 1). Northfield: 21.40 via W.W. Grainger, Inc. (SKU P-10035, ~5252 EA/yr on PO lines); Keystone: 22.10 via GRAINGER (SKU HEN-243, ~2480 EA/yr on PO lines); Ridgeway: 24.95 via Fastenal (SKU 243-180, ~424 EA/yr on PO lines). Moving everyone to Northfield's price saves ~$3,241/yr on PO-line volume.",
+    "evidence": [
+      "*/01_master_data/items.csv",
+      "*/03_procurement/purchase_order_lines.csv",
+      "*/03_procurement/supplier_quotes.csv"
+    ],
+    "expected_action": "Match on manufacturer + manufacturer_part_number (NOT internal item_id); normalize UoM/pack; propose consolidated buy at best price; cite PO lines as evidence.",
+    "is_false_positive_trap": false
+  },
+  {
+    "id": "PORT-PRICE-7447",
+    "kind": "purchasing_price_gap",
+    "companies": [
+      "Northfield",
+      "Ridgeway"
+    ],
+    "title": "3M 7447: Ridgeway pays 16% more than Northfield",
+    "description": "Scotch-Brite hand pad 6x9 maroon, 20/bx (BX, pack 20). Northfield: 28.50 via MSC Industrial Supply (SKU P-10042, ~570 BX/yr on PO lines); Ridgeway: 33.20 via Grainger Industrial Supply (SKU 7447-552, ~2384 BX/yr on PO lines). Moving everyone to Northfield's price saves ~$11,205/yr on PO-line volume.",
+    "evidence": [
+      "*/01_master_data/items.csv",
+      "*/03_procurement/purchase_order_lines.csv",
+      "*/03_procurement/supplier_quotes.csv"
+    ],
+    "expected_action": "Match on manufacturer + manufacturer_part_number (NOT internal item_id); normalize UoM/pack; propose consolidated buy at best price; cite PO lines as evidence.",
+    "is_false_positive_trap": false
+  },
+  {
+    "id": "PORT-PRICE-G10",
+    "kind": "purchasing_price_gap",
+    "companies": [
+      "Northfield",
+      "Keystone",
+      "Ridgeway"
+    ],
+    "title": "Kimberly-Clark G10: Ridgeway pays 31% more than Northfield",
+    "description": "KleenGuard G10 nitrile gloves, large, 100/bx (BX, pack 100). Northfield: 9.85 via Cintas Corporation (SKU P-10049, ~4382 BX/yr on PO lines); Keystone: 11.40 via GRAINGER (SKU KIM-G10, ~2046 BX/yr on PO lines); Ridgeway: 12.95 via Grainger Industrial Supply (SKU G10-708, ~1730 BX/yr on PO lines). Moving everyone to Northfield's price saves ~$8,534/yr on PO-line volume.",
+    "evidence": [
+      "*/01_master_data/items.csv",
+      "*/03_procurement/purchase_order_lines.csv",
+      "*/03_procurement/supplier_quotes.csv"
+    ],
+    "expected_action": "Match on manufacturer + manufacturer_part_number (NOT internal item_id); normalize UoM/pack; propose consolidated buy at best price; cite PO lines as evidence.",
+    "is_false_positive_trap": false
+  },
+  {
+    "id": "PORT-PRICE-SF18-80",
+    "kind": "purchasing_price_gap",
+    "companies": [
+      "Northfield",
+      "Keystone",
+      "Ridgeway"
+    ],
+    "title": "Sigma Stretch Film SF18-80: Ridgeway pays 10% more than Northfield",
+    "description": "Machine stretch wrap 18in x 1500ft 80ga (RL, pack 1). Northfield: 24.60 via Uline (SKU P-10056, ~999 RL/yr on PO lines); Keystone: 24.60 via Uline (SKU SIG-SF18-80, ~896 RL/yr on PO lines); Ridgeway: 27.10 via Uline (SKU SF18-434, ~1118 RL/yr on PO lines). Moving everyone to Northfield's price saves ~$2,795/yr on PO-line volume.",
+    "evidence": [
+      "*/01_master_data/items.csv",
+      "*/03_procurement/purchase_order_lines.csv",
+      "*/03_procurement/supplier_quotes.csv"
+    ],
+    "expected_action": "Match on manufacturer + manufacturer_part_number (NOT internal item_id); normalize UoM/pack; propose consolidated buy at best price; cite PO lines as evidence.",
+    "is_false_positive_trap": false
+  },
+  {
+    "id": "PORT-PRICE-S-4123",
+    "kind": "purchasing_price_gap",
+    "companies": [
+      "Northfield",
+      "Keystone",
+      "Ridgeway"
+    ],
+    "title": "Uline S-4123: same price at every company (no gap)",
+    "description": "Corrugated box 12x12x12, 25/bd: all companies pay 31.0 from Uline. Correctly report as 'no opportunity'.",
+    "evidence": [
+      "*/01_master_data/items.csv",
+      "*/03_procurement/purchase_order_lines.csv"
+    ],
+    "expected_action": "No action.",
+    "is_false_positive_trap": true
+  },
+  {
+    "id": "PORT-PRICE-SF401AF",
+    "kind": "purchasing_price_gap",
+    "companies": [
+      "Northfield",
+      "Keystone",
+      "Ridgeway"
+    ],
+    "title": "3M SF401AF: Ridgeway pays 46% more than Northfield",
+    "description": "SecureFit 400 safety glasses clear anti-fog (EA, pack 1). Northfield: 3.15 via Cintas Corporation (SKU P-10070, ~2045 EA/yr on PO lines); Keystone: 4.05 via GRAINGER (SKU 3M-SF401AF, ~1686 EA/yr on PO lines); Ridgeway: 4.60 via Fastenal (SKU SF401AF-239, ~676 EA/yr on PO lines). Moving everyone to Northfield's price saves ~$2,498/yr on PO-line volume.",
+    "evidence": [
+      "*/01_master_data/items.csv",
+      "*/03_procurement/purchase_order_lines.csv",
+      "*/03_procurement/supplier_quotes.csv"
+    ],
+    "expected_action": "Match on manufacturer + manufacturer_part_number (NOT internal item_id); normalize UoM/pack; propose consolidated buy at best price; cite PO lines as evidence.",
+    "is_false_positive_trap": false
+  },
+  {
+    "id": "PORT-PRICE-49012",
+    "kind": "purchasing_price_gap",
+    "companies": [
+      "Northfield",
+      "Ridgeway"
+    ],
+    "title": "WD-40 Company 49012: Ridgeway pays 8% more than Northfield",
+    "description": "WD-40 Multi-Use 1 gal (GA, pack 1). Northfield: 27.80 via W.W. Grainger, Inc. (SKU P-10077, ~3922 GA/yr on PO lines); Ridgeway: 29.95 via Grainger Industrial Supply (SKU 49012-174, ~2028 GA/yr on PO lines). Moving everyone to Northfield's price saves ~$4,360/yr on PO-line volume.",
+    "evidence": [
+      "*/01_master_data/items.csv",
+      "*/03_procurement/purchase_order_lines.csv",
+      "*/03_procurement/supplier_quotes.csv"
+    ],
+    "expected_action": "Match on manufacturer + manufacturer_part_number (NOT internal item_id); normalize UoM/pack; propose consolidated buy at best price; cite PO lines as evidence.",
+    "is_false_positive_trap": false
+  },
+  {
+    "id": "PORT-PRICE-HHCS-0500-13-200-G8",
+    "kind": "purchasing_price_gap",
+    "companies": [
+      "Northfield",
+      "Ridgeway",
+      "Keystone"
+    ],
+    "title": "Brighton-Best HHCS-0500-13-200-G8: Keystone pays 54% more than Ridgeway",
+    "description": "Hex head cap screw 1/2-13 x 2 Gr 8 yellow zinc, 50/bx (BX, pack 50). Northfield: 38.40 via Apex Fastener Corp (SKU P-10084, ~535 BX/yr on PO lines); Ridgeway: 29.10 via Brighton-Best International (SKU HHCS-254, ~258 BX/yr on PO lines); Keystone: 44.75 via Fastenal (SKU BRI-HHCS-0500-13-200-G8, ~1037 BX/yr on PO lines). Moving everyone to Ridgeway's price saves ~$21,205/yr on PO-line volume.",
+    "evidence": [
+      "*/01_master_data/items.csv",
+      "*/03_procurement/purchase_order_lines.csv",
+      "*/03_procurement/supplier_quotes.csv"
+    ],
+    "expected_action": "Match on manufacturer + manufacturer_part_number (NOT internal item_id); normalize UoM/pack; propose consolidated buy at best price; cite PO lines as evidence.",
+    "is_false_positive_trap": false
+  },
+  {
+    "id": "PORT-PRICE-HN-0500-13-G8",
+    "kind": "purchasing_price_gap",
+    "companies": [
+      "Northfield",
+      "Ridgeway"
+    ],
+    "title": "Brighton-Best HN-0500-13-G8: Northfield pays 32% more than Ridgeway",
+    "description": "Hex nut 1/2-13 Gr 8 yellow zinc, 100/bx (BX, pack 100). Northfield: 19.20 via Apex Fastener Corp (SKU P-10091, ~578 BX/yr on PO lines); Ridgeway: 14.60 via Brighton-Best International (SKU HN-789, ~350 BX/yr on PO lines). Moving everyone to Ridgeway's price saves ~$2,659/yr on PO-line volume.",
+    "evidence": [
+      "*/01_master_data/items.csv",
+      "*/03_procurement/purchase_order_lines.csv",
+      "*/03_procurement/supplier_quotes.csv"
+    ],
+    "expected_action": "Match on manufacturer + manufacturer_part_number (NOT internal item_id); normalize UoM/pack; propose consolidated buy at best price; cite PO lines as evidence.",
+    "is_false_positive_trap": false
+  },
+  {
+    "id": "PORT-FREIGHT-01",
+    "kind": "freight_rate_gap",
+    "companies": [
+      "Northfield",
+      "Keystone",
+      "Ridgeway"
+    ],
+    "title": "Parcel freight cost per lb varies ~30% across industrial companies",
+    "description": "Effective parcel cost/lb from shipments.csv: Northfield: $0.595, Keystone: $0.657, Ridgeway: $0.848. Northfield has a negotiated UPS agreement; Ridgeway pays near list via WorldShip/FedEx Ship Manager.",
+    "evidence": [
+      "*/06_warehouse_fulfillment/shipments.csv",
+      "*/14_finance_gl/ap_vendor_invoices_indirect.csv"
+    ],
+    "expected_action": "Extend Northfield's carrier agreement to the other two; audit accessorials in freight_invoices.",
+    "is_false_positive_trap": false
+  },
+  {
+    "id": "PORT-XSELL-01",
+    "kind": "cross_sell",
+    "companies": [
+      "Keystone",
+      "Ridgeway",
+      "Northfield"
+    ],
+    "title": "Cardinal Foods Group buys from three portfolio companies as three unrelated plants",
+    "description": "Northfield sells to 'Cardinal Foods Group - Plant 07 - Rochelle, IL', Keystone to 'Cardinal Foods Group - Plant 12 - Hazleton, PA', Ridgeway to 'Cardinal Foods Plant 21'. Ridgeway's email notes the TN plant buys bearings from 'someone in PA' (Keystone) and wants to consolidate MRO suppliers; corporate is in Chicago.",
+    "evidence": [
+      "*/01_master_data/customers.csv",
+      "ridgeway_fasteners_and_supply/16_documents_emails/counter_sale_pricing_question.eml",
+      "*/02_sales_quote_to_order/sales_order_lines.csv"
+    ],
+    "expected_action": "Treat as one national account; propose a corporate agreement covering fasteners (Ridgeway), bearings/drives (Keystone) and machined components (Northfield).",
+    "is_false_positive_trap": false
+  },
+  {
+    "id": "PORT-XSELL-TRAP-01",
+    "kind": "cross_sell",
+    "companies": [
+      "Keystone",
+      "Ridgeway",
+      "Northfield"
+    ],
+    "title": "Customers named 'Keystone ...' at Ridgeway/Northfield are not Keystone Bearing & Drive",
+    "description": "Customer-name word 'Keystone' (a common Pennsylvania brand word) appears in customer names at other companies; not an intercompany relationship.",
+    "evidence": [
+      "*/01_master_data/customers.csv"
+    ],
+    "expected_action": "Do not flag as intercompany sale.",
+    "is_false_positive_trap": true
+  },
+  {
+    "id": "PORT-INS-01",
+    "kind": "carrier_consolidation",
+    "companies": [
+      "Meridian",
+      "Harborline",
+      "Castlebrook"
+    ],
+    "title": "Same carriers appointed at all three agencies at different commission rates",
+    "description": "Travelers, Hartford, Liberty Mutual and CNA appear in carriers.csv for Meridian Risk Partners, LLC, Harborline Insurance Brokers, Inc., Castlebrook Agency; contracted commission_pct differs by agency for the same line (see carriers.csv commission column). Combined premium volume could support a single higher-tier agreement / contingent bonus.",
+    "evidence": [
+      "*/03_marketing_submissions/carriers.csv",
+      "*/02_policies_exposures/policies.csv",
+      "*/10_compliance_licensing/carrier_appointments.csv"
+    ],
+    "expected_action": "Aggregate written premium by carrier across agencies; compare commission schedules; identify carriers where volume tiers would be reached combined.",
+    "is_false_positive_trap": false
+  },
+  {
+    "id": "PORT-INS-02",
+    "kind": "cross_sell",
+    "companies": [
+      "Meridian",
+      "Harborline",
+      "Castlebrook",
+      "Northfield",
+      "Keystone",
+      "Ridgeway"
+    ],
+    "title": "Industrial portfolio companies are prospects for the insurance agencies",
+    "description": "Northfield, Keystone and Ridgeway each carry WC/GL/property/auto (see 12_hr_ehs incidents, fleets in shipments 'Company Truck'); none of the three agencies write them today.",
+    "evidence": [
+      "industrial_goods/*/00_company/company_profile.json",
+      "insurance_broking/*/01_clients_crm/clients.csv"
+    ],
+    "expected_action": "Intercompany placement is a real but sensitive opportunity; surface as a suggestion requiring human review (related-party).",
+    "is_false_positive_trap": false
+  }
+]

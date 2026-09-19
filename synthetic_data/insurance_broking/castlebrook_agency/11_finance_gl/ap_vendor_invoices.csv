@@ -1,0 +1,142 @@
+AP_INVOICE_ID,VENDOR_ID,VENDOR_NAME,INVOICE_NUMBER,INVOICE_DATE,DUE_DATE,AMOUNT,GL_ACCOUNT,APPROVED_BY,STATUS,PAID_DATE,PAYMENT_METHOD,CATEGORY
+AP00001,V001,Iron Mtn,156286,2025-04-04,05/04/25,301,6700,Michael Wright,Paid,2025-05-18,Check,Records Storage / Shredding
+AP00002,,,547543,27-APR-2025,2025-05-27,$626.00,6700,Joseph White,PAID,"Jun 07, 2025",ACH,Office Supplies
+AP00003,V003,IRON MTN LANDSCAPING LLC,233015,03-Apr-2025,2025-05-03,820,6700,Richard Wilson,Paid,24-Apr-2025,Check,Landscaping
+AP00004,V004,Landlord - Lackawanna Ave Realty,899252,2025-04-07,2025-05-07,17000,6300,,Paid,2025-05-22,ACH,Rent
+AP00005,V005,PPL Electric,871130,04/04/25,05/04/2025,,6700,Matthew Hernandez,Paid,"May 11, 2025",ACH,Utilities 
+AP00006,V006,Frontier,249058,04/06/25,2025-05-06,516,6700,Sandra Wright,Paid,2025-05-14,Corporate Card,Telecom / Internet
+AP00007,V010,Shred-it,,2025-04-27,2025-05-27,91,6700,CARLOS JACKSON,Paid,05/20/2025,Check,Shredding
+AP00008,V011,Aramark Refreshments,896051,2025-04-28,2025-05-28,142,6700,Aisha Davis,Paid,05/25/25,Corporate Card,Office
+AP00009,V001,Iron Mtn,892176,12-May-2025,11-Jun-2025,438,6700,Michael Wright,Paid,2025-06-15,ACH,Records Storage / Shredding
+AP00010,V002,Staples,942935,"May 09, 2025",2025-06-08,$158.00,6700 ,Andrew Lee,Paid,"Jun 15, 2025",ACH ,Office Supplies
+AP00011,V004,Landlord - Lackawanna Ave Realty,641298,,2025-06-20,11000,6300,David Fitzgerald,Paid,,Check,Rent
+AP00012,V005,PPL Electric,372639,2025-05-09,06/08/2025,"$1,006.00",6700,Daniel Martin,,09-Jun-2025,ACH,Utilities
+AP00013,V006,Frontier,783551,23-May-2025,06/22/25,1610,6700,Daniel Martin,Paid,06/18/25,Check,Telecom / Internet
+AP00014,V010,Shred-it,521249,05/17/25,06/16/2025,134,6700,David Walker,Paid,"Jun 25, 2025",Check,Shredding
+AP00015,V011,Aramark Refreshments,992482,2025-05-23,2025-06-22,357,6700,Richard Wilson,Paid,2025-07-01,Corporate Card,Office
+AP00016,V001,Iron Mtn,872832,2025-06-22,2025-07-22,485,6700,Joseph White ,Paid,"Jul 12, 2025",Corporate Card,Records Storage / Shredding
+AP00017,V002,Staples,81714,"Jun 30, 2025",30-Jul-2025,309,6700,David Walker,Paid,30-Jul-2025,ACH,Office Supplies
+AP00018,V004,Landlord - Lackawanna Ave Realty,620532,06/04/2025,2025-07-04,22000,6300,Andrew Lee,Paid,2025-07-16,Check,Rent
+AP00019,V005,PPL ELECTRIC,514451,26-Jun-2025,07/26/2025,1195,6700,Emily Thompson,Paid,2025-07-17,ACH,Utilities
+AP00020,V006,Frontier,964358,06/08/2025,08-Jul-2025,1219,6700,Daniel Martin,Paid,2025-06-29,Corporate Card,Telecom / Internet
+AP00021,V010,Shred-it,819516,"Jun 08, 2025",2025-07-08,93,6700,Joseph White,Paid,01-Jul-2025,Check,Shredding
+AP00022,V011,Aramark Refreshments,873298,24-Jun-2025,2025-07-24,$363.00,6700,Michael Wright,Paid,2025-08-04,Check,Office
+AP00023,V001,Iron Mtn,85162,"Jul 10, 2025","Aug 09, 2025",450,6700 ,Sandra Wright,Paid,2025-08-11,ACH,RECORDS STORAGE / SHREDDING
+AP00024,V002,Staples,144857,07/19/25,08/18/25,$311.00,6700,Joseph White,Paid,12-Aug-2025,Check,Office Supplies
+AP00025,V004,Landlord - Lackawanna Ave Realty,67531,2025-07-14,13-Aug-2025,"$7,000.00",6300,David Fitzgerald,Paid,2025-08-03,Check,Rent
+AP00026,V005,PPL Electric,876023,2025-07-29,2025-08-28 ,987,6700,Sandra Wright,Paid,08/27/25,ACH,Utilities
+AP00027,V006,Frontier,279133,07/14/2025,"Aug 13, 2025",$728.00,6700,David Fitzgerald,Paid,08/03/2025,Corporate Card,Telecom / Internet
+AP00028,,Westport Insurance Corp (Swiss Re),559552,2025-07-30,2025-08-29,2833.33,6650,Michael Wright,PAID,2025-09-01,ACH,E&O Insurance
+AP00029,V010,Shred-it,290008,2025-07-18,17-Aug-2025,,6700,Daniel Martin,Paid,2025-08-07,Check,Shredding
+AP00030,V011,Aramark Refreshments,57249,2025-07-29,2025-08-28,$208.00,6700,Sandra Wright,Paid,2025-08-23,Corporate Card,Office
+AP00031,V001,Iron Mtn,940446,04-Aug-2025,2025-09-03,636,6700,Carlos Jackson,Paid,24-Aug-2025,Check,
+AP00032,V002,Staples,366100,,2025-09-22,$379.00,6700,David Walker,Paid,2025-09-19,ACH,Office Supplies
+AP00033,V003,Iron Mtn Landscaping LLC,96023,09-Aug-2025,2025-09-08 ,480,6700,Aisha Davis,Paid,2025-08-30,ACH,Landscaping
+AP00034 ,V004,Landlord - Lackawanna Ave Realty,296965,10-Aug-2025,09/09/25,"$11,000.00",6300,David Fitzgerald,,2025-09-10,,Rent
+AP00035 ,V005,PPL Electric,893102,2025-08-07,"Sep 06, 2025",$949.00,6700,Patricia O'Brien,Paid,09/02/25,Corporate Card,Utilities
+AP00036,V006,Frontier,358266,2025-08-20,19-Sep-2025,1270,6700,Michael Wright,Paid,09/29/25,CHECK,
+AP00037,V008,IIABPA,164341,2025-08-29,28-Sep-2025,"$1,678.00",6500,Andrew Lee,Paid,10/03/25,Check,Association Dues
+,V010,Shred-it,889237,2025-08-26,2025-09-25,$82.00,6700,Sandra Wright,Paid,2025-09-29 ,Corporate Card,Shredding
+AP00039,V011,Aramark Refreshments,871519,2025-08-23,09/22/25,131,6700,David Fitzgerald,Paid,2025-09-21,ACH,Office
+AP00040,V001,Iron Mtn,189920,09/23/2025,2025-10-23,$385.00,,,Paid,2025-10-24,Corporate Card,Records Storage / Shredding
+AP00041,V002,Staples,741572,09/13/25,2025-10-13,581,6700,Daniel Martin,Paid,04-Oct-2025,ACH,Office Supplies
+AP00042,V003,Iron Mtn Landscaping LLC,527560,2025-09-24,2025-10-24,434,6700,Daniel Martin,Paid,10/15/2025,Check,Landscaping
+AP00043,V004,Landlord - Lackawanna Ave Realty,324824,2025-09-29,2025-10-29,"$13,000.00",6300,Joseph White,Paid,2025-10-23,Corporate Card,Rent
+AP00044,V005,PPL Electric,329156,09/11/2025,2025-10-11,2284,6700,Andrew Lee,PAID,04-Oct-2025,Corporate Card,Utilities
+AP00045,V006,Frontier,156785,2025-09-16,10/16/25,$746.00,6700,David Walker,Paid,2025-10-22,Corporate Card,Telecom / Internet
+AP00046,V010,Shred-it,685371,09/29/25,10/29/25,74,6700,Michael Wright,Paid,2025-10-20,ACH,Shredding
+AP00047,V011,Aramark Refreshments,926111,2025-09-10,2025-10-10,349,6700,Carlos Jackson ,Paid,2025-10-20,,Office
+AP00048,V001,Iron Mtn,155481,10/24/25,"Nov 23, 2025",526,6700,Andrew Lee,Paid,2025-12-01,Check,Records Storage / Shredding
+AP00049 ,V002,Staples,216324,2025-10-06,"Nov 05, 2025",333,6700,Patricia O'Brien,Paid,2025-11-17,Corporate Card,Office Supplies
+AP00050,V004,Landlord - Lackawanna Ave Realty,698779,10/07/2025,2025-11-06,16000,6300,,Paid,11/17/25,Check,Rent
+AP00051,V005,PPL Electric,625237,"Oct 28, 2025",2025-11-27,1708,6700,Carlos Jackson,Paid,27-Nov-2025,ACH,Utilities
+AP00052,V006,Frontier ,697203,10-Oct-2025,11/09/25,,6700,David Fitzgerald,Paid,2025-11-22,ACH,Telecom / Internet
+AP00053,V008,IIABPA,222009,10/21/2025,2025-11-20,"$2,377.00",6500,Daniel Martin,Paid,2025-11-10,Check,Association Dues
+AP00054,V010,Shred-it,189390,10/23/2025,2025-11-22,$107.00,6700,Aisha Davis,Paid,2025-11-27,Corporate Card,Shredding
+AP00055,V011,Aramark Refreshments,686664,2025-10-26,2025-11-25,$241.00,6700,David Walker,PAID,2025-11-22,Corporate Card,Office
+AP00056,V001,Iron Mtn,739803,2025-11-25,"Dec 25, 2025",$319.00,6700,David Fitzgerald,Paid,"Dec 17, 2025",Corporate Card,Records Storage / Shredding
+AP00057,V002,Staples,15507 ,03-Nov-2025,12/03/2025,$635.00,6700,Richard Wilson,Paid,2025-12-15,CORPORATE CARD,Office Supplies
+AP00058,V004,Landlord - Lackawanna Ave Realty,420993,2025-11-23,12/23/2025,"$22,000.00",6300 ,Aisha Davis,Paid,19-Dec-2025,ACH,Rent
+AP00111,,Intuit,INV-6448201,2025-07-29,08/28/25,150.42,6400,Joseph White,Paid,09-Aug-2025,Corporate Card,Software Subscriptions
+AP00059,V005,PPL Electric,616463,2025-11-19,2025-12-19,1856,6700,Michael Wright,Paid,2025-12-28,Corporate Card,Utilities
+AP00060,V006,Frontier,109729,11/08/25,2025-12-08,969,6700,Joseph White,Paid,2025-12-15,ACH,Telecom / Internet
+AP00061,V010,Shred-it,277088,2025-11-15,15-Dec-2025,$89.00,6700,Daniel Martin,Paid,12/05/25,ACH,Shredding
+AP00135,,Zoom,INV-773702,2025-08-30,29-Sep-2025,1960.2,6400,Michael Wright,Paid,09/18/25,Corporate Card,Software Subscriptions
+AP00062,V011,Aramark Refreshments,916045,11/17/25,12/17/2025,234,6700,Daniel Martin,Paid,"Dec 22, 2025",Check,Office
+AP00063,V012,Local Print Shop,646888,11/19/25,2025-12-19,"$1,054.00",,Patricia O'Brien,Paid,2025-12-24,Corporate Card,Marketing
+AP00064,V001,Iron Mtn,24327,"Dec 20, 2025",01/19/2026,647,6700,Carlos Jackson,Paid,01/28/26,Check,Records Storage / Shredding
+AP00065,V002,Staples,382695,2025-12-11,01/10/26,$794.00,6700,Carlos Jackson,Paid,01/08/2026,Corporate Card,Office Supplies
+AP00066,V004,Landlord - Lackawanna Ave Realty,274593 ,2025-12-29,28-Jan-2026,"$13,000.00",6300,Carlos Jackson,Paid ,"Feb 08, 2026 ",Check,Rent
+AP00067,V005,PPL Electric,881384,2025-12-19,"Jan 18, 2026",833,6700,David Fitzgerald,Paid,2026-01-09,Corporate Card,Utilities
+,V006,Frontier ,615578,2025-12-20,2026-01-19,1018,6700,Andrew Lee,Paid,01/12/2026,Corporate Card,Telecom / Internet
+AP00069,V010,Shred-it,518235,2025-12-19,01/18/2026 ,$122.00,6700,Aisha Davis,Paid,2026-01-09,Check,Shredding
+AP00070,V011,Aramark Refreshments,579201,2025-12-20,2026-01-19,$309.00,6700,Carlos Jackson ,Paid,2026-01-29,Check,Office
+AP00071,V001,Iron Mtn,651218,08-Jan-2026,02/07/26,422,6700,Aisha Davis,Paid,02/22/2026,,Records Storage / Shredding
+AP00072,V002,Staples,820120,01/06/26,2026-02-05,251,6700 ,Joseph White,Paid,2026-02-13,Check,Office Supplies
+AP00073,V003,Iron Mtn Landscaping LLC,180683,2026-01-17,"Feb 16, 2026",$507.00,6700,Patricia O'Brien,Paid,2026-02-25,ACH,Landscaping
+AP00074,V004,Landlord - Lackawanna Ave Realty,623465,2026-01-15,2026-02-14,9000,6300,Richard Wilson,Paid,02/09/26,Check,Rent
+AP00075,V005,,592958,2026-01-30,2026-03-01,930,6700,Daniel Martin,Paid,2026-03-11,Corporate Card,Utilities
+AP00076,V006,Frontier,630013,04-Jan-2026,02/03/26,987,6700,Richard Wilson,Paid,2026-02-17,ACH,Telecom / Internet
+AP00077,V007,Local CPA - Steven Smith,823091,2026-01-24,2026-02-23,8942,6500,Joseph White,Paid,2026-03-10,ACH,Professional Fees 
+AP00078,V009,Westport Insurance Corp (Swiss Re),558586,01/06/26,2026-02-05,"$2,833.33",6650,Sandra Wright,Paid,2026-02-07,ACH,E&O Insurance
+AP00079,V010,Shred-it,77706,2026-01-07,02/06/2026,$114.00,6700,Aisha Davis,Paid,"Jan 29, 2026",Corporate Card,Shredding
+AP00080,V011,Aramark Refreshments,205911 ,2026-01-11,02/10/2026,$198.00,6700,David Walker,PAID,2026-02-02,Corporate Card,Office
+AP00081 ,V001,Iron Mtn,457851,2026-02-17,2026-03-19,285,6700,Daniel Martin,Paid,16-Mar-2026,Corporate Card,Records Storage / Shredding
+AP00082,V002,Staples,,2026-02-12,2026-03-14,562,6700,Sandra Wright,Paid,2026-03-19,Check ,Office Supplies
+AP00083,V004,Landlord - Lackawanna Ave Realty,214805,2026-02-06,2026-03-08,9000,,Andrew Lee,Paid,2026-03-14,ACH,Rent
+AP00084,V005,PPL Electric,935928,02/25/26,2026-03-27,1678,6700,David Fitzgerald,Pending approval,,Check,Utilities
+AP00085,V006,Frontier,676034,07-Feb-2026,"Mar 09, 2026",,6700,Patricia O'Brien,Paid,2026-03-04,ACH,Telecom / Internet
+AP00086,V010,Shred-it,334039,2026-02-12,03/14/2026,77,6700,Emily Thompson,Paid,2026-03-14,ACH,Shredding
+AP00087,V011,Aramark Refreshments,363952,2026-02-04,06-Mar-2026,97,,Andrew Lee,Paid,2026-03-21,Corporate Card,Office
+AP00088,V012,Local Print Shop,634300,2026-02-14,03/16/2026,"$2,106.00",6700,Patricia O'Brien,Paid,2026-03-16,Corporate Card,Marketing
+AP00089,V001,Iron Mtn,950165,2026-03-25,2026-04-24,$279.00,6700,Joseph White,Paid,,Corporate Card,Records Storage / Shredding
+AP00090,V002,Staples,438606,07-Mar-2026,2026-04-06,169,6700,Richard Wilson,Paid,,ACH,Office Supplies
+AP00091,V004,Landlord - Lackawanna Ave Realty,345464,2026-03-24,2026-04-23,"$12,000.00",6300,Michael Wright,Pending approval,,ACH,Rent
+AP00092,V005,PPL Electric,515325,2026-03-10,"Apr 09, 2026","$1,662.00",6700,Emily Thompson,Paid,,ACH,Utilities
+AP00093,V006,Frontier,347502,2026-03-04,04/03/26,,,Carlos Jackson,Approved - scheduled,,Corporate Card,Telecom / Internet 
+AP00094,V010,Shred-it,370738,2026-03-04,"Apr 03, 2026",120,6700,David Walker,,,Corporate Card,Shredding
+AP00095,V011,Aramark Refreshments,787704,2026-03-23,22-Apr-2026,94,6700,David Walker,Pending approval,,ACH,Office
+AP00004,V004,Landlord - Lackawanna Ave Realty,899252,2025-04-07,2025-05-07,17000,6300,,Paid,2025-05-22,ACH,Rent
+AP00096,V012,,221663,08-Mar-2026,"Apr 07, 2026","$2,042.00",6700,Joseph White,Pending approval,,Check,Marketing
+AP00097,,HawkSoft,INV-721904,2025-10-04,11/03/2025,"$10,098.00",6400,Andrew Lee,Paid,2025-10-27,Corporate Card,Software Subscriptions
+AP00098,,Microsoft,INV-4975214,2025-12-09,08-Jan-2026,132.0,6400,Andrew Lee,Paid,2025-12-22,Corporate Card,Software Subscriptions
+AP00099,,Microsoft,INV-3181947,"Aug 24, 2025",2025-09-23,132.0,6400,Andrew Lee,Paid,08/29/25,Corporate Card,Software Subscriptions
+AP00100,,Microsoft,INV-2886036 ,2025-06-09,2025-07-09,132.0,6400,Andrew Lee,Paid,21-Jun-2025,Corporate Card,Software Subscriptions
+AP00101,,Microsoft,INV-2567202 ,08-Jan-2026,2026-02-07,132.0,6400,Andrew Lee,Paid,"Jan 30, 2026",CORPORATE CARD,Software Subscriptions
+AP00102,,Microsoft,INV-8838398,02/05/26,2026-03-07,132.0,6400,Andrew Lee,Paid,03/03/26,Corporate Card,Software Subscriptions
+AP00103,,Microsoft,INV-5532406,2025-11-23,2025-12-23,132.0,,Andrew Lee,Paid,2025-12-15,Corporate Card,Software Subscriptions
+AP00104,,Microsoft,INV-8829981,2025-08-01,2025-08-31,$132.00,6400,Andrew Lee,PAID,2025-08-16,Corporate Card,Software Subscriptions
+AP00105,,Microsoft,INV-6940825,2025-04-05,2025-05-05,$132.00,6400,Andrew Lee,Paid,04/13/25,Corporate Card,Software Subscriptions
+AP00106,,Microsoft,INV-5129087,,06/13/2025,$132.00,6400,Andrew Lee,Paid,19-May-2025,Corporate Card,Software Subscriptions 
+AP00107,,Microsoft,INV-1349027 ,04/17/2025 ,"May 17, 2025",$132.00,6400,Andrew Lee,Paid,2025-04-21,Corporate Card,Software Subscriptions
+AP00108,,Microsoft,INV-267065,2025-12-21,2026-01-20,$132.00,6400,,Paid,2026-01-07,Corporate Card,Software Subscriptions
+AP00109,,Microsoft,,08/27/2025,26-Sep-2025 ,132.0,6400,Andrew Lee,Paid,08/29/2025,Corporate Card,Software Subscriptions
+AP00110,,Intuit,INV-3271613,2026-03-11,2026-04-10,$150.42,6400,Joseph White,Paid,03/27/26,Corporate Card,Software Subscriptions
+AP00111,,Intuit,INV-6448201,2025-07-29,08/28/25,150.42,6400,Joseph White,Paid,09-Aug-2025,Corporate Card,Software Subscriptions
+AP00112,,Intuit,INV-4886143,2025-12-06,2026-01-05,150.42,6400,Joseph White,,2025-12-28,Corporate Card,Software Subscriptions
+AP00113,,Intuit,INV-9774742,24-OCT-2025,23-Nov-2025,150.42,6400,Joseph White,PAID,10/31/25,Corporate Card,Software Subscriptions
+AP00114,,Intuit,INV-8728323,02/13/2026,2026-03-15,$150.42,6400,Joseph White,Paid,03/06/2026 ,Corporate Card,Software Subscriptions
+AP00115,,Intuit,INV-7336623,11/02/25,02-Dec-2025,150.42,6400,Joseph White,Paid,"Nov 29, 2025",Corporate Card,Software Subscriptions
+AP00057,V002,Staples,15507 ,03-Nov-2025,12/03/2025,$635.00,6700,Richard Wilson,Paid,2025-12-15,CORPORATE CARD,Office Supplies
+AP00116,,Intuit,INV-9047230,"Apr 07, 2025",2025-05-07,150.42,6400,Joseph White,Paid,2025-04-17,Corporate Card,Software Subscriptions
+AP00117,,Intuit,INV-9545813,11-Aug-2025,"Sep 10, 2025",150.42,6400,Joseph White,Paid,08/14/25,Corporate Card,Software Subscriptions
+AP00118,,Intuit,INV-9139083,01-Sep-2025,2025-10-01,150.42,6400,Joseph White,Paid,2025-09-22,Corporate Card,Software Subscriptions
+AP00119,,Intuit,INV-7166261,2025-09-10,10/10/2025,150.42,6400,Joseph White,Paid,09/22/25,Corporate Card,Software Subscriptions
+AP00120,,Intuit,INV-5021456,2025-09-04,04-Oct-2025,,6400,Joseph White ,PAID,"Oct 03, 2025",Corporate Card,Software Subscriptions
+AP00121,,Intuit,INV-5927894,"Aug 10, 2025",2025-09-09,$150.42,6400,Joseph White,Paid,2025-08-30,Corporate Card,Software Subscriptions
+AP00122,,Gusto,INV-7366200,2025-04-18,2025-05-18,431.2,6400,Joseph White,Paid,2025-04-28,Corporate Card,Software Subscriptions
+AP00123,,Gusto,INV-8085819 ,2025-10-26,25-Nov-2025,431.2,6400,Joseph White,Paid,"Nov 03, 2025",Corporate Card,Software Subscriptions
+AP00124,,Gusto,INV-5180801,17-Mar-2026,2026-04-16,431.2,6400,Joseph White,Paid,2026-03-25,Corporate Card,Software Subscriptions
+AP00125,,Gusto,INV-8030005,2026-01-25,2026-02-24,431.2,6400,Joseph White,Paid,"Feb 06, 2026",Corporate Card,Software Subscriptions
+AP00126,,Gusto,INV-8067333,12/14/2025,13-Jan-2026,431.2,6400,Joseph White,Paid,"Jan 03, 2026",Corporate Card,Software Subscriptions
+AP00127,,Gusto ,INV-6460864,02/13/26,03/15/2026,431.2,6400,Joseph White,Paid,03/15/26,Corporate Card,Software Subscriptions
+AP00019,V005,PPL ELECTRIC,514451,26-Jun-2025,07/26/2025,1195,6700,Emily Thompson,Paid,2025-07-17,ACH,Utilities
+AP00128,,Gusto,INV-1921430,02/22/26,2026-03-24,431.2,6400,Joseph White,Paid,04-Mar-2026,Corporate Card,Software Subscriptions
+AP00129,,Gusto,,2025-07-11,2025-08-10,$431.20,6400,Joseph White,Paid,"Jul 24, 2025",Corporate Card,Software Subscriptions
+AP00130,,Gusto,INV-5957007,2025-07-03,2025-08-02,431.2,6400,Joseph White,Paid ,20-Jul-2025,Corporate Card,Software Subscriptions
+AP00131,,Gusto,INV-3577558,2025-07-05,2025-08-04,431.2,6400,Joseph White,Paid,2025-07-25,Corporate Card,Software Subscriptions
+AP00132,,Gusto,INV-172978,13-Jul-2025,2025-08-12,431.2,6400,Joseph White ,Paid,08/05/25,Corporate Card,Software Subscriptions
+AP00133,,Gusto,INV-7322620,18-Oct-2025,2025-11-17,431.2,6400 ,Joseph White,Paid,2025-11-13,Corporate Card,Software Subscriptions
+AP00134,,Dropbox,INV-1666777,2025-12-17,16-Jan-2026,2692.8,,Joseph White,Paid,2025-12-29,Corporate Card,Software Subscriptions
+AP00135,,Zoom,INV-773702,2025-08-30,29-Sep-2025,1960.2,6400,Michael Wright,Paid,09/18/25,Corporate Card,Software Subscriptions
+AP00136,,DocuSign,INV-831818,01/28/26,2026-02-27,"$5,184.00",6400,Richard Wilson,Paid,2026-01-30,Corporate Card,Software Subscriptions

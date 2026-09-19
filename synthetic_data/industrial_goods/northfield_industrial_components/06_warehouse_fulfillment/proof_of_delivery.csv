@@ -1,0 +1,308 @@
+shipment_id,delivered_date,signed_by,exceptions,source
+SH-50001,2025-09-08,J. Williams,1 carton damaged,Driver app
+SH-50002,2025-07-09,J. Fitzgerald,,Carrier API
+SH-50003,2025-08-24,J. Martin,,Scanned POD
+SH-50004,2025-08-29,H. Wilson,1 carton damaged,Carrier API
+SH-50006,2025-12-27,D. Young,,Driver app
+SH-50007,2025-10-20,W. Wright,,Carrier API
+SH-50008,2025-10-08,W. Allen,,Driver app
+SH-50009,2026-01-03,A. Johnson,Short 1 carton,Scanned POD
+SH-50010,2025-08-11,S. Young,1 carton damaged,Carrier API
+SH-50011,2025-07-29,D. Kowalski,,Driver app
+SH-50012,2025-09-26,J. Garcia,,Driver app
+SH-50013,2025-05-28,D. Martin,Short 1 carton,Scanned POD
+SH-50015,2025-06-30,B. Wright,1 carton damaged,Carrier API
+SH-50016,2026-01-05,P. Davis,,Carrier API
+SH-50017,2025-08-30,L. Thomas,Short 1 carton,Driver app
+SH-50018,2025-07-17,D. Allen,Short 1 carton,Driver app
+SH-50019,2025-08-05,J. Taylor,,Carrier API
+SH-50020,2025-10-21,E. Lopez,Short 1 carton,Scanned POD
+SH-50021,2025-11-26,S. Fitzgerald,,Carrier API
+SH-50022,2025-08-03,L. Thomas,,Carrier API
+SH-50024,2026-02-03,E. Lee,,Carrier API
+SH-50025,2026-02-14,A. Kowalski,Short 1 carton,Scanned POD
+SH-50026,2026-03-30,D. Robinson,1 carton damaged,Carrier API
+SH-50028,2025-12-16,O. Walker,Short 1 carton,Driver app
+SH-50030,2025-09-22,S. Thomas,,Carrier API
+SH-50032,2025-07-05,E. White,,Scanned POD
+SH-50033,2025-05-19,S. Lopez,1 carton damaged,Driver app
+SH-50034,2026-02-07,A. Moore,,Driver app
+SH-50035,2025-09-19,W. Brown,,Scanned POD
+SH-50036,2026-01-03,M. Kowalski,1 carton damaged,Scanned POD
+SH-50038,2026-01-01,L. Nakamura,,Scanned POD
+SH-50039,2026-01-11,A. Nakamura,1 carton damaged,Scanned POD
+SH-50040,2026-03-30,W. Choi,,Carrier API
+SH-50041,2025-11-14,K. Martin,,Driver app
+SH-50043,2025-07-03,L. Martin,Short 1 carton,Driver app
+SH-50044,2025-06-22,S. Jones,,Carrier API
+SH-50045,2025-06-22,K. Martinez,,Scanned POD
+SH-50046,2025-05-30,J. Rodriguez,Short 1 carton,Carrier API
+SH-50047,2025-05-30,D. Kowalski,,Scanned POD
+SH-50048,2025-05-17,J. Wilson,,Scanned POD
+SH-50049,2026-03-09,D. Allen,,Carrier API
+SH-50051,2026-03-19,K. Anderson,Short 1 carton,Driver app
+SH-50052,2025-12-20,M. Lee,,Driver app
+SH-50054,2025-10-01,O. Scott,,Carrier API
+SH-50055,2025-07-28,B. Jackson,1 carton damaged,Driver app
+SH-50056,2025-12-11,P. Kowalski,,Carrier API
+SH-50057,2026-02-16,E. Taylor,1 carton damaged,Carrier API
+SH-50059,2026-03-31,R. Lewis,,Carrier API
+SH-50060,2026-03-23,K. Nguyen,Short 1 carton,Driver app
+SH-50061,2025-08-01,S. Martinez,1 carton damaged,Driver app
+SH-50062,2025-08-03,N. Rodriguez,Short 1 carton,Carrier API
+SH-50063,2025-10-07,R. Nakamura,,Driver app
+SH-50064,2026-02-04,M. Jones,,Driver app
+SH-50067,2025-11-14,M. Lopez,,Carrier API
+SH-50068,2026-01-06,E. Walker,,Carrier API
+SH-50070,2025-05-04,S. Jackson,,Carrier API
+SH-50071,2026-01-11,R. Harris,,Carrier API
+SH-50072,2026-03-28,W. Brown,Short 1 carton,Scanned POD
+SH-50073,2025-05-30,S. Walker,,Scanned POD
+SH-50074,2025-09-24,N. Nguyen,1 carton damaged,Carrier API
+SH-50075,2025-06-23,M. Rodriguez,,Driver app
+SH-50076,2025-12-07,T. Martinez,,Scanned POD
+SH-50077,2025-10-24,S. Schneider,,Carrier API
+SH-50078,2025-08-07,M. King,,Carrier API
+SH-50079,2026-03-15,N. Choi,Short 1 carton,Scanned POD
+SH-50080,2025-05-13,W. Martinez,,Driver app
+SH-50081,2025-06-30,E. Scott,,Carrier API
+SH-50082,2025-09-29,A. O'Brien,,Carrier API
+SH-50083,2025-07-05,J. Jackson,1 carton damaged,Carrier API
+SH-50084,2025-05-21,O. Miller,1 carton damaged,Carrier API
+SH-50085,2026-03-16,J. Rodriguez,,Carrier API
+SH-50087,2025-08-08,L. Garcia,,Scanned POD
+SH-50088,2025-12-27,W. Lee,Short 1 carton,Carrier API
+SH-50089,2025-11-03,J. Rodriguez,,Carrier API
+SH-50091,2025-08-20,L. Jones,,Driver app
+SH-50092,2025-09-01,M. Wright,Short 1 carton,Carrier API
+SH-50093,2025-07-06,E. Lopez,,Carrier API
+SH-50094,2025-05-11,J. Rodriguez,,Scanned POD
+SH-50095,2025-05-11,J. Anderson,,Carrier API
+SH-50096,2025-05-19,S. Taylor,,Carrier API
+SH-50097,2026-02-06,M. Harris,1 carton damaged,Carrier API
+SH-50098,2025-12-18,F. Lewis,,Carrier API
+SH-50099,2025-08-07,S. Lopez,,Driver app
+SH-50100,2025-10-01,S. Okafor,,Carrier API
+SH-50102,2026-02-17,L. Brown,Short 1 carton,Carrier API
+SH-50103,2025-07-17,M. Thompson,Short 1 carton,Scanned POD
+SH-50105,2025-08-08,N. White,,Driver app
+SH-50106,2025-06-21,A. Harris,,Scanned POD
+SH-50107,2025-11-08,F. Walker,,Driver app
+SH-50108,2025-09-20,D. O'Brien,Short 1 carton,Driver app
+SH-50110,2025-09-21,L. Hernandez,,Driver app
+SH-50111,2025-11-26,L. Choi,,Carrier API
+SH-50112,2025-10-09,C. Anderson,,Carrier API
+SH-50113,2025-12-11,R. Davis,1 carton damaged,Scanned POD
+SH-50114,2025-08-08,W. White,,Carrier API
+SH-50115,2026-02-13,W. Schneider,,Scanned POD
+SH-50117,2026-02-14,B. Miller,,Carrier API
+SH-50118,2026-02-01,M. Lopez,,Carrier API
+SH-50119,2025-12-22,M. Harris,,Carrier API
+SH-50120,2025-08-22,J. Young,Short 1 carton,Carrier API
+SH-50121,2025-11-05,S. Brown,Short 1 carton,Carrier API
+SH-50123,2025-08-07,S. Patel,Short 1 carton,Carrier API
+SH-50124,2025-08-04,G. Thomas,,Driver app
+SH-50126,2025-08-07,A. Allen,1 carton damaged,Driver app
+SH-50127,2025-04-28,S. Delgado,Short 1 carton,Carrier API
+SH-50128,2026-01-18,J. Wilson,,Driver app
+SH-50129,2025-10-19,M. Lewis,1 carton damaged,Driver app
+SH-50130,2025-07-04,L. Garcia,,Carrier API
+SH-50131,2025-08-21,E. White,,Carrier API
+SH-50132,2025-06-04,O. King,Short 1 carton,Scanned POD
+SH-50133,2025-08-28,P. Walker,1 carton damaged,Driver app
+SH-50134,2026-01-01,R. Scott,,Carrier API
+SH-50135,2025-10-04,A. Miller,,Driver app
+SH-50136,2025-09-19,S. Thomas,Short 1 carton,Carrier API
+SH-50137,2026-02-03,M. Schneider,,Carrier API
+SH-50138,2025-05-18,J. Lee,Short 1 carton,Scanned POD
+SH-50139,2025-08-09,D. Hernandez,,Carrier API
+SH-50140,2026-03-28,M. Thompson,Short 1 carton,Driver app
+SH-50141,2025-08-20,P. Choi,,Carrier API
+SH-50142,2026-01-01,B. Lee,1 carton damaged,Driver app
+SH-50143,2025-11-01,D. Schneider,,Scanned POD
+SH-50144,2026-03-27,E. Anderson,Short 1 carton,Carrier API
+SH-50145,2025-05-18,B. Clark,,Driver app
+SH-50147,2025-10-24,C. Nakamura,1 carton damaged,Carrier API
+SH-50151,2026-02-05,A. Kowalski,,Carrier API
+SH-50152,2025-08-01,G. Wright,1 carton damaged,Carrier API
+SH-50153,2026-03-29,O. Walker,1 carton damaged,Driver app
+SH-50154,2025-12-29,E. Walker,,Carrier API
+SH-50155,2025-08-03,J. Martin,Short 1 carton,Scanned POD
+SH-50156,2025-07-09,C. Schneider,Short 1 carton,Carrier API
+SH-50160,2025-10-03,N. Davis,,Carrier API
+SH-50161,2025-04-15,A. Smith,,Scanned POD
+SH-50163,2026-03-31,C. Johnson,1 carton damaged,Carrier API
+SH-50164,2025-09-28,E. Clark,,Carrier API
+SH-50165,2026-02-19,P. Lopez,Short 1 carton,Driver app
+SH-50167,2025-08-03,K. Hernandez,,Scanned POD
+SH-50168,2025-10-05,J. Allen,1 carton damaged,Carrier API
+SH-50169,2025-04-29,J. Walker,Short 1 carton,Driver app
+SH-50170,2026-01-25,K. Smith,,Scanned POD
+SH-50172,2025-05-26,J. Delgado,1 carton damaged,Scanned POD
+SH-50173,2025-08-04,G. Kowalski,1 carton damaged,Driver app
+SH-50174,2026-02-16,M. Lopez,,Scanned POD
+SH-50175,2025-12-31,B. Brown,,Driver app
+SH-50177,2025-04-21,L. Schneider,Short 1 carton,Scanned POD
+SH-50178,2025-12-20,L. Taylor,1 carton damaged,Scanned POD
+SH-50179,2026-03-20,R. Davis,,Carrier API
+SH-50180,2025-10-30,E. Jackson,,Carrier API
+SH-50181,2026-01-05,T. Young,1 carton damaged,Carrier API
+SH-50183,2025-12-17,J. Williams,,Driver app
+SH-50184,2025-12-18,S. Fitzgerald,,Carrier API
+SH-50185,2025-07-02,W. Davis,1 carton damaged,Scanned POD
+SH-50186,2025-09-28,R. Taylor,Short 1 carton,Scanned POD
+SH-50187,2025-08-25,M. Anderson,,Driver app
+SH-50188,2025-05-19,E. Nguyen,,Carrier API
+SH-50189,2025-09-02,H. Garcia,,Carrier API
+SH-50191,2025-08-25,E. Robinson,,Carrier API
+SH-50192,2025-12-21,S. Taylor,Short 1 carton,Driver app
+SH-50193,2025-07-19,S. Fitzgerald,,Carrier API
+SH-50194,2025-06-19,B. Garcia,,Carrier API
+SH-50195,2025-08-04,M. Jones,Short 1 carton,Driver app
+SH-50196,2025-11-14,S. Okafor,,Carrier API
+SH-50197,2026-01-28,S. Jones,1 carton damaged,Carrier API
+SH-50198,2026-01-05,R. Miller,1 carton damaged,Carrier API
+SH-50199,2025-06-24,M. Thompson,,Carrier API
+SH-50200,2025-11-22,H. Lee,,Carrier API
+SH-50201,2025-09-17,L. Garcia,1 carton damaged,Driver app
+SH-50203,2025-11-03,H. Harris,,Carrier API
+SH-50204,2026-03-28,R. Jackson,,Scanned POD
+SH-50205,2026-03-18,M. Lee,Short 1 carton,Driver app
+SH-50206,2025-07-25,R. Wright,,Scanned POD
+SH-50207,2026-01-25,R. Schneider,,Carrier API
+SH-50208,2025-12-17,D. Lee,,Carrier API
+SH-50209,2025-06-03,W. Scott,Short 1 carton,Carrier API
+SH-50210,2025-07-10,B. Anderson,,Scanned POD
+SH-50215,2025-11-16,S. Fitzgerald,,Scanned POD
+SH-50217,2026-01-06,N. Nakamura,Short 1 carton,Scanned POD
+SH-50218,2026-01-21,J. Patel,,Carrier API
+SH-50219,2025-07-20,N. Jackson,,Scanned POD
+SH-50221,2025-12-23,F. Delgado,,Scanned POD
+SH-50224,2025-09-16,S. Robinson,,Driver app
+SH-50225,2025-10-27,P. Robinson,,Driver app
+SH-50226,2025-07-06,F. Robinson,Short 1 carton,Scanned POD
+SH-50227,2025-07-14,D. Miller,,Carrier API
+SH-50228,2025-11-30,K. Wilson,Short 1 carton,Scanned POD
+SH-50230,2025-09-08,D. Moore,,Carrier API
+SH-50231,2025-09-19,R. White,,Scanned POD
+SH-50232,2025-06-04,J. Miller,1 carton damaged,Carrier API
+SH-50234,2025-09-23,T. Robinson,Short 1 carton,Driver app
+SH-50235,2025-05-19,L. Patel,,Driver app
+SH-50236,2025-05-26,W. Martinez,,Driver app
+SH-50237,2025-08-30,A. Hernandez,1 carton damaged,Carrier API
+SH-50239,2025-04-29,L. Lewis,,Driver app
+SH-50241,2025-11-28,E. White,,Driver app
+SH-50242,2025-10-21,S. Thomas,,Driver app
+SH-50243,2026-02-26,D. Lopez,1 carton damaged,Driver app
+SH-50244,2025-09-20,R. Allen,1 carton damaged,Driver app
+SH-50245,2025-10-31,R. Fitzgerald,Short 1 carton,Driver app
+SH-50246,2025-05-29,E. Williams,Short 1 carton,Driver app
+SH-50247,2025-12-28,W. King,1 carton damaged,Driver app
+SH-50248,2025-05-30,S. Young,Short 1 carton,Driver app
+SH-50249,2026-01-19,A. Fitzgerald,,Driver app
+SH-50250,2025-11-29,B. Rodriguez,1 carton damaged,Carrier API
+SH-50251,2025-12-23,R. Okafor,,Carrier API
+SH-50253,2025-10-11,M. Rodriguez,,Carrier API
+SH-50254,2025-05-06,M. Johnson,Short 1 carton,Driver app
+SH-50255,2025-12-21,S. Harris,,Carrier API
+SH-50256,2026-01-12,K. Choi,Short 1 carton,Carrier API
+SH-50258,2026-01-28,W. Hernandez,,Driver app
+SH-50259,2025-08-20,S. Delgado,,Carrier API
+SH-50260,2025-06-03,M. Johnson,Short 1 carton,Driver app
+SH-50265,2025-09-11,C. Anderson,,Scanned POD
+SH-50267,2025-11-30,W. Clark,,Scanned POD
+SH-50269,2026-01-30,C. Nguyen,1 carton damaged,Scanned POD
+SH-50270,2025-05-07,E. Garcia,,Carrier API
+SH-50271,2025-10-18,J. Martin,Short 1 carton,Driver app
+SH-50273,2026-03-20,S. Martinez,,Carrier API
+SH-50274,2026-02-05,M. Johnson,,Carrier API
+SH-50276,2025-07-21,E. Lopez,,Carrier API
+SH-50277,2025-08-15,P. Harris,1 carton damaged,Scanned POD
+SH-50278,2026-02-23,D. Wilson,1 carton damaged,Driver app
+SH-50279,2026-03-10,B. Allen,,Scanned POD
+SH-50281,2025-05-26,P. King,,Carrier API
+SH-50283,2025-04-24,D. Harris,1 carton damaged,Scanned POD
+SH-50284,2025-07-14,F. Thomas,,Carrier API
+SH-50285,2026-01-14,K. Martin,,Scanned POD
+SH-50286,2025-06-27,B. Choi,1 carton damaged,Scanned POD
+SH-50287,2025-10-10,P. Allen,,Scanned POD
+SH-50288,2026-02-11,S. Johnson,,Scanned POD
+SH-50289,2026-03-15,M. Harris,,Scanned POD
+SH-50290,2025-11-26,M. Patel,Short 1 carton,Scanned POD
+SH-50291,2025-08-03,J. Clark,,Carrier API
+SH-50292,2025-08-28,O. White,,Driver app
+SH-50293,2025-07-15,O. Allen,,Scanned POD
+SH-50295,2025-09-06,E. Schneider,,Scanned POD
+SH-50296,2025-07-21,M. Williams,,Scanned POD
+SH-50297,2025-12-22,D. Kowalski,Short 1 carton,Scanned POD
+SH-50298,2025-11-04,S. Martin,,Carrier API
+SH-50299,2025-05-07,G. Miller,,Carrier API
+SH-50301,2025-09-12,F. Wilson,,Carrier API
+SH-50302,2026-02-17,D. Okafor,,Scanned POD
+SH-50304,2025-08-10,D. Delgado,,Driver app
+SH-50306,2025-11-01,M. Rodriguez,1 carton damaged,Carrier API
+SH-50307,2025-09-01,G. Thomas,1 carton damaged,Driver app
+SH-50310,2025-10-13,B. Robinson,,Driver app
+SH-50311,2025-05-15,H. Brown,,Carrier API
+SH-50312,2025-06-29,A. Brown,,Scanned POD
+SH-50313,2025-06-22,F. Jackson,,Carrier API
+SH-50314,2026-03-21,J. Taylor,,Carrier API
+SH-50315,2026-02-12,M. Lee,,Scanned POD
+SH-50316,2025-08-31,D. Anderson,,Driver app
+SH-50317,2025-09-13,O. Delgado,Short 1 carton,Carrier API
+SH-50318,2025-06-07,P. Allen,,Scanned POD
+SH-50320,2025-12-06,P. Taylor,1 carton damaged,Carrier API
+SH-50321,2025-12-03,E. Delgado,,Carrier API
+SH-50322,2026-01-13,P. Thompson,,Carrier API
+SH-50323,2026-03-26,M. King,,Scanned POD
+SH-50324,2025-10-22,S. Thomas,,Carrier API
+SH-50325,2026-03-23,J. Martinez,Short 1 carton,Carrier API
+SH-50326,2026-02-22,F. Walker,,Carrier API
+SH-50327,2025-11-10,D. Johnson,Short 1 carton,Driver app
+SH-50330,2025-10-25,E. Wilson,Short 1 carton,Scanned POD
+SH-50331,2025-05-02,H. Miller,,Carrier API
+SH-50332,2025-10-17,A. Nguyen,,Scanned POD
+SH-50333,2026-03-27,D. Davis,,Driver app
+SH-50334,2025-10-16,S. Young,,Carrier API
+SH-50335,2025-04-22,A. Johnson,Short 1 carton,Scanned POD
+SH-50336,2026-03-27,M. Garcia,,Carrier API
+SH-50338,2025-05-11,O. Martin,,Carrier API
+SH-50339,2025-11-03,B. Lewis,,Scanned POD
+SH-50341,2025-10-01,O. Robinson,,Driver app
+SH-50342,2025-05-31,D. Jones,,Driver app
+SH-50343,2026-01-31,E. Delgado,1 carton damaged,Carrier API
+SH-50344,2025-07-10,W. Rodriguez,Short 1 carton,Scanned POD
+SH-50345,2026-01-26,P. Robinson,,Carrier API
+SH-50347,2025-11-07,P. Harris,,Scanned POD
+SH-50348,2026-03-25,R. Lewis,Short 1 carton,Driver app
+SH-50349,2025-06-04,R. Lee,Short 1 carton,Carrier API
+SH-50350,2025-11-23,E. Davis,Short 1 carton,Carrier API
+SH-50352,2025-06-13,L. Lopez,,Scanned POD
+SH-50353,2025-08-07,B. Brown,,Carrier API
+SH-50354,2025-11-04,K. Kowalski,,Driver app
+SH-50355,2026-02-27,A. Choi,Short 1 carton,Driver app
+SH-50357,2026-01-29,F. Jackson,1 carton damaged,Carrier API
+SH-50358,2026-01-21,M. Wilson,,Carrier API
+SH-50359,2026-03-27,A. Lewis,,Carrier API
+SH-50360,2025-04-27,S. Jackson,1 carton damaged,Carrier API
+SH-50361,2025-12-04,A. Taylor,,Scanned POD
+SH-50363,2025-12-03,S. Anderson,,Scanned POD
+SH-50364,2025-12-13,W. Lee,,Carrier API
+SH-50365,2025-08-07,D. Wilson,Short 1 carton,Carrier API
+SH-50367,2025-10-31,P. Harris,1 carton damaged,Scanned POD
+SH-50369,2026-02-25,J. Nakamura,1 carton damaged,Carrier API
+SH-50370,2025-10-01,L. Thomas,1 carton damaged,Carrier API
+SH-50371,2025-07-16,J. Martinez,,Carrier API
+SH-50372,2026-01-27,W. Wilson,Short 1 carton,Carrier API
+SH-50373,2026-02-16,M. Martin,,Scanned POD
+SH-50374,2025-12-02,E. Harris,Short 1 carton,Carrier API
+SH-50377,2025-09-27,A. Brown,,Carrier API
+SH-50379,2026-02-15,D. Anderson,,Driver app
+SH-50380,2025-11-12,J. Fitzgerald,Short 1 carton,Driver app
+SH-50381,2025-05-10,J. Lewis,1 carton damaged,Scanned POD
+SH-50383,2026-02-01,P. Johnson,,Driver app
+SH-50386,2026-03-13,N. Garcia,,Scanned POD
+SH-50387,2026-03-27,J. Williams,1 carton damaged,Carrier API
+SH-50389,2025-06-20,L. Scott,,Driver app
+SH-50390,2025-07-05,M. Martin,Short 1 carton,Driver app
+SH-50391,2025-09-08,F. Anderson,Short 1 carton,Driver app

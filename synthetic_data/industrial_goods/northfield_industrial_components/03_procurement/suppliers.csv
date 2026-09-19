@@ -1,0 +1,19 @@
+supplier_id,supplier_name,category,city,state,payment_terms,tax_id,approved_supplier,w9_on_file,iso_9001_certified,supplier_since,remit_to,ach_enabled,status
+NIC-V001,Alro Steel,Metals Service Center,Jackson,MI,Net 30,91-4535352,Y,Y,Y,2012-02-04,"PO Box 45708, Jackson, MI",Y,Active
+NIC-V002,Apex Fastener Corp,Fastener Manufacturer,Elgin,IL,Net 30,71-8537778,Y,Y,Y,2013-10-07,"PO Box 69630, Elgin, IL",N,Active
+NIC-V003,Applied Industrial Technologies,Bearings & PT Distributor,Cleveland,OH,Net 30,50-6618740,Y,Y,Y,1997-08-17,"PO Box 71530, Cleveland, OH",Y,Active
+NIC-V004,Baldor-Reliance (ABB),Motors,Fort Smith,AR,Net 45,67-5825927,Y,Y,N,1987-02-27,"PO Box 21224, Fort Smith, AR",Y,Active
+NIC-V005,Brighton-Best International,Fastener Master Distributor,Long Beach,CA,Net 30,21-6013453,Y,Y,N,2023-10-02,"PO Box 32491, Long Beach, CA",Y,Active
+NIC-V006,Cintas Corporation,Uniforms / Facility Services / PPE,Cincinnati,OH,Net 30,64-1028602,Y,Y,Y,1985-10-07,"PO Box 88187, Cincinnati, OH",N,Active
+NIC-V007,Fastenal,Fasteners / MRO,Winona,MN,Net 30,53-2548605,Y,Y,Y,2012-09-17,"PO Box 49323, Winona, MN",Y,Active
+NIC-V008,Garlock Sealing Technologies,Seals / Gaskets,Palmyra,NY,Net 30,22-8801511,Y,N,Y,2008-09-10,"PO Box 14153, Palmyra, NY",Y,Active
+NIC-V009,Haas Automation,Machine Tools,Oxnard,CA,Net 30,94-3015840,Y,Y,Y,2015-07-15,"PO Box 43514, Oxnard, CA",Y,Active
+NIC-V010,MSC Industrial Supply,Cutting Tools / MRO,Melville,NY,Net 30,27-3325774,Y,Y,Y,2005-06-21,"PO Box 81936, Melville, NY",N,Active
+NIC-V011,McMaster-Carr,MRO Catalog,Elmhurst,IL,Net 30,43-3757171,Y,Y,N,2010-12-20,"PO Box 52680, Elmhurst, IL",Y,Active
+NIC-V012,Motion Industries,Bearings & PT Distributor,Birmingham,AL,Net 30,73-3842034,Y,Y,Y,2008-10-22,"PO Box 24774, Birmingham, AL",Y,Active
+NIC-V013,Parker Hannifin,Seals / Hydraulics,Cleveland,OH,Net 45,64-9334632,Y,Y,N,1984-07-16,"PO Box 43792, Cleveland, OH",Y,Active
+NIC-V014,Regal Rexnord,Gearing / Couplings,Milwaukee,WI,Net 45,15-4087816,Y,Y,N,1990-12-08,"PO Box 24883, Milwaukee, WI",Y,Active
+NIC-V015,Ryerson,Metals Service Center,Chicago,IL,Net 45,41-6615375,Y,Y,Y,2012-01-02,"PO Box 98571, Chicago, IL",Y,Active
+NIC-V016,Sandvik Coromant,Cutting Tools,Mebane,NC,Net 30,87-6477192,Y,Y,Y,2004-06-30,"PO Box 71993, Mebane, NC",N,Active
+NIC-V017,Uline,Packaging,Pleasant Prairie,WI,Net 30,73-3207430,Y,Y,Y,1987-01-17,"PO Box 31575, Pleasant Prairie, WI",N,Active
+NIC-V018,"W.W. Grainger, Inc.",MRO Supplies,Lake Forest,IL,Net 30,26-9742569,Y,Y,Y,1996-09-06,"PO Box 49648, Lake Forest, IL",N,Active

@@ -1,0 +1,88 @@
+contact_id,customer_id,full_name,title,email,phone,role,primary
+NIC-CT0001,NIC-CUST0001,Grace Robinson,AP Clerk,grobinson@iron-chemical.com,(800) 496-7809,Decision Maker,Y
+NIC-CT0002,NIC-CUST0001,Paul Williams,Buyer,pwilliams@iron-chemical.com,(605) 683-1150,AP,N
+NIC-CT0003,NIC-CUST0001,Lisa Thompson,AP Clerk,lthompson@iron-chemical.com,(589) 514-6145,Technical,N
+NIC-CT0004,NIC-CUST0002,Emily Patel,Plant Engineer,epatel@rock-plastics.com,(819) 296-2484,Decision Maker,Y
+NIC-CT0005,NIC-CUST0002,Michael Moore,AP Clerk,mmoore@rock-plastics.com,(385) 437-5575,Buyer,N
+NIC-CT0006,NIC-CUST0002,Jennifer Wright,Plant Engineer,jwright@rock-plastics.com,(932) 450-6522,Buyer,N
+NIC-CT0007,NIC-CUST0003,Lisa Harris,AP Clerk,lharris@cardinal-conveyor.com,(432) 598-7738,AP,Y
+NIC-CT0008,NIC-CUST0003,William O'Brien,Purchasing Manager,wobrien@cardinal-conveyor.com,(290) 284-5001,Buyer,N
+NIC-CT0009,NIC-CUST0004,David Thompson,Plant Engineer,dthompson@tricounty-chemical.com,(256) 944-4728,AP,Y
+NIC-CT0010,NIC-CUST0005,Lisa King,AP Clerk,lking@rock-waterauthority.com,(629) 931-6295,AP,Y
+NIC-CT0011,NIC-CUST0005,Steven Delgado,AP Clerk,sdelgado@rock-waterauthority.com,(409) 221-6954,Buyer,N
+NIC-CT0012,NIC-CUST0006,Donna Delgado,Buyer,ddelgado@prairie-poultry.com,(265) 583-5838,Buyer,Y
+NIC-CT0013,NIC-CUST0006,Carlos Moore,Purchasing Manager,cmoore@prairie-poultry.com,(434) 904-1450,AP,N
+NIC-CT0014,NIC-CUST0007,Priya Nguyen,Storeroom Lead,pnguyen@allegheny-foods.com,(424) 535-4839,Buyer,Y
+NIC-CT0015,NIC-CUST0007,Thomas Wright,Plant Engineer,twright@allegheny-foods.com,(932) 601-7872,Buyer,N
+NIC-CT0016,NIC-CUST0008,Joseph Miller,Buyer,jmiller@riverbend-conveyor.com,(853) 994-2886,Technical,Y
+NIC-CT0017,NIC-CUST0008,Donna Martin,Storeroom Lead,dmartin@riverbend-conveyor.com,(439) 510-7339,Decision Maker,N
+NIC-CT0018,NIC-CUST0009,Steven Lopez,Reliability Engineer,slopez@great-automotive.com,(382) 822-9253,Decision Maker,Y
+NIC-CT0019,NIC-CUST0010,Andrew King,AP Clerk,aking@pioneer-lumber.com,(443) 805-9126,Buyer,Y
+NIC-CT0020,NIC-CUST0011,Paul Walker,Purchasing Manager,pwalker@cumberland-materials.com,(890) 312-4543,AP,Y
+NIC-CT0021,NIC-CUST0012,Wei Young,Buyer,wyoung@riverbend-poultry.com,(390) 866-9309,Technical,Y
+NIC-CT0022,NIC-CUST0012,Elena Anderson,Plant Engineer,eanderson@riverbend-poultry.com,(682) 699-2617,AP,N
+NIC-CT0023,NIC-CUST0012,Brian Jones,Purchasing Manager,bjones@riverbend-poultry.com,(904) 657-7944,Decision Maker,N
+NIC-CT0024,NIC-CUST0013,Priya Anderson,Reliability Engineer,panderson@fox-lumber.com,(900) 887-6927,AP,Y
+NIC-CT0025,NIC-CUST0013,Joseph Brown,Maintenance Manager,jbrown@fox-lumber.com,(858) 586-8480,Buyer,N
+NIC-CT0026,NIC-CUST0013,Elizabeth Thompson,AP Clerk,ethompson@fox-lumber.com,(322) 992-2477,Buyer,N
+NIC-CT0027,NIC-CUST0014,Priya Nguyen,Storeroom Lead,pnguyen@prairie-climate.com,(571) 436-1365,Decision Maker,Y
+NIC-CT0028,NIC-CUST0015,Brian Wilson,Plant Engineer,bwilson@iron-conveyor.com,(601) 566-9262,Decision Maker,Y
+NIC-CT0029,NIC-CUST0015,Grace Thompson,Maintenance Manager,gthompson@iron-conveyor.com,(384) 234-8174,Buyer,N
+NIC-CT0030,NIC-CUST0016,Kevin Miller,Maintenance Manager,kmiller@tennessee-materials.com,(643) 770-7571,Buyer,Y
+NIC-CT0031,NIC-CUST0016,Michelle Williams,Storeroom Lead,mwilliams@tennessee-materials.com,(654) 789-3824,Technical,N
+NIC-CT0032,NIC-CUST0017,Lisa Rodriguez,Storeroom Lead,lrodriguez@prairie-materials.com,(856) 367-5609,Buyer,Y
+NIC-CT0033,NIC-CUST0017,Jessica Harris,Maintenance Manager,jharris@prairie-materials.com,(962) 311-6076,AP,N
+NIC-CT0034,NIC-CUST0018,Sarah Miller,Storeroom Lead,smiller@summit-foods.com,(470) 308-7977,AP,Y
+NIC-CT0035,NIC-CUST0018,Michelle Robinson,Storeroom Lead,mrobinson@summit-foods.com,(805) 357-9702,AP,N
+NIC-CT0036,NIC-CUST0018,Michael Thomas,Plant Engineer,mthomas@summit-foods.com,(708) 373-9246,Buyer,N
+NIC-CT0037,NIC-CUST0019,Hiro Choi,Buyer,hchoi@susquehanna-waterauthority.com,(315) 202-7340,AP,Y
+NIC-CT0038,NIC-CUST0019,Elizabeth Martin,Maintenance Manager,emartin@susquehanna-waterauthority.com,(508) 622-9269,Buyer,N
+NIC-CT0039,NIC-CUST0019,Betty Moore,Buyer,bmoore@susquehanna-waterauthority.com,(641) 922-8081,Decision Maker,N
+NIC-CT0040,NIC-CUST0020,Thomas Thompson,Buyer,tthompson@blue-poultry.com,(465) 462-3808,Decision Maker,Y
+NIC-CT0041,NIC-CUST0021,Brian Schneider,Plant Engineer,bschneider@pioneer-paper.com,(746) 897-4641,Technical,Y
+NIC-CT0042,NIC-CUST0022,Carlos Davis,Buyer,cdavis@lehigh-paper.com,(951) 848-4333,Technical,Y
+NIC-CT0043,NIC-CUST0022,Michael Taylor,Purchasing Manager,mtaylor@lehigh-paper.com,(723) 695-1844,Technical,N
+NIC-CT0044,NIC-CUST0023,David Thomas,Reliability Engineer,dthomas@blue-lumber.com,(819) 953-2942,Buyer,Y
+NIC-CT0045,NIC-CUST0023,Susan Young,Storeroom Lead,syoung@blue-lumber.com,(327) 740-3641,Decision Maker,N
+NIC-CT0046,NIC-CUST0023,Maria Choi,Storeroom Lead,mchoi@blue-lumber.com,(566) 476-6283,Buyer,N
+NIC-CT0047,NIC-CUST0024,Sandra Rodriguez,Maintenance Manager,srodriguez@tricounty-poultry.com,(479) 249-3363,Buyer,Y
+NIC-CT0048,NIC-CUST0024,Emily Anderson,Reliability Engineer,eanderson@tricounty-poultry.com,(258) 571-7476,Technical,N
+NIC-CT0049,NIC-CUST0024,Thomas Wilson,Maintenance Manager,twilson@tricounty-poultry.com,(327) 623-5360,AP,N
+NIC-CT0050,NIC-CUST0025,Steven Martinez,Plant Engineer,smartinez@rock-plastics.com,(285) 610-4938,Technical,Y
+NIC-CT0051,NIC-CUST0025,Matthew Jackson,Reliability Engineer,mjackson@rock-plastics.com,(268) 698-1784,Technical,N
+NIC-CT0052,NIC-CUST0026,Michael Allen,Buyer,mallen@fox-paper.com,(870) 388-3960,Decision Maker,Y
+NIC-CT0053,NIC-CUST0026,Karen Anderson,Storeroom Lead,kanderson@fox-paper.com,(320) 935-6665,Decision Maker,N
+NIC-CT0054,NIC-CUST0027,Mark Young,Purchasing Manager,myoung@midwest-paper.com,(742) 245-6861,Decision Maker,Y
+NIC-CT0055,NIC-CUST0027,Robert Lopez,Buyer,rlopez@midwest-paper.com,(607) 710-6831,Technical,N
+NIC-CT0056,NIC-CUST0027,Jennifer White,Buyer,jwhite@midwest-paper.com,(859) 949-5832,Decision Maker,N
+NIC-CT0057,NIC-CUST0028,Kevin Allen,Buyer,kallen@keystone-automotive.com,(424) 778-5342,Buyer,Y
+NIC-CT0058,NIC-CUST0028,Andrew Lopez,AP Clerk,alopez@keystone-automotive.com,(488) 420-7365,Buyer,N
+NIC-CT0059,NIC-CUST0028,Paul Scott,Storeroom Lead,pscott@keystone-automotive.com,(616) 518-6033,Buyer,N
+NIC-CT0060,NIC-CUST0029,Fatima Allen,Storeroom Lead,fallen@great-lumber.com,(397) 430-6294,Buyer,Y
+NIC-CT0061,NIC-CUST0030,James White,Maintenance Manager,jwhite@rock-steel.com,(391) 655-4464,AP,Y
+NIC-CT0062,NIC-CUST0030,Maria Harris,AP Clerk,mharris@rock-steel.com,(635) 522-3967,Decision Maker,N
+NIC-CT0063,NIC-CUST0030,Paul Nguyen,Storeroom Lead,pnguyen@rock-steel.com,(629) 536-2465,Buyer,N
+NIC-CT0064,NIC-CUST0031,Joseph White,Purchasing Manager,jwhite@midwest-climate.com,(525) 468-9376,Buyer,Y
+NIC-CT0065,NIC-CUST0031,Steven Kowalski,Purchasing Manager,skowalski@midwest-climate.com,(767) 447-1672,Technical,N
+NIC-CT0066,NIC-CUST0031,Wei Brown,AP Clerk,wbrown@midwest-climate.com,(558) 637-6562,AP,N
+NIC-CT0067,NIC-CUST0032,Kevin Wilson,AP Clerk,kwilson@rock-foods.com,(592) 481-5086,Technical,Y
+NIC-CT0068,NIC-CUST0032,Maria Hernandez,Reliability Engineer,mhernandez@rock-foods.com,(980) 615-2344,Technical,N
+NIC-CT0069,NIC-CUST0032,Brian Fitzgerald,Purchasing Manager,bfitzgerald@rock-foods.com,(765) 872-8642,Buyer,N
+NIC-CT0070,NIC-CUST0033,Sarah Patel,Storeroom Lead,spatel@midwest-agequipment.com,(851) 272-4486,Technical,Y
+NIC-CT0071,NIC-CUST0034,Sandra Miller,Buyer,smiller@cardinal-poultry.com,(656) 242-4973,AP,Y
+NIC-CT0072,NIC-CUST0034,Kevin Lee,Purchasing Manager,klee@cardinal-poultry.com,(356) 362-3754,Buyer,N
+NIC-CT0073,NIC-CUST0034,Linda Smith,Purchasing Manager,lsmith@cardinal-poultry.com,(663) 665-7983,AP,N
+NIC-CT0074,NIC-CUST0035,Ashley Jackson,Buyer,ajackson@keystone-chemical.com,(589) 995-3540,AP,Y
+NIC-CT0075,NIC-CUST0035,Andrew Clark,Reliability Engineer,aclark@keystone-chemical.com,(712) 387-6739,Technical,N
+NIC-CT0076,NIC-CUST0036,Grace Martin,Reliability Engineer,gmartin@cardinal-lumber.com,(326) 262-3304,Buyer,Y
+NIC-CT0077,NIC-CUST0037,David Delgado,Maintenance Manager,ddelgado@allegheny-climate.com,(475) 589-4756,Technical,Y
+NIC-CT0078,NIC-CUST0037,Daniel Okafor,Buyer,dokafor@allegheny-climate.com,(905) 874-9633,Buyer,N
+NIC-CT0079,NIC-CUST0037,Fatima Young,Purchasing Manager,fyoung@allegheny-climate.com,(826) 446-8490,AP,N
+NIC-CT0080,NIC-CUST0038,James Moore,Plant Engineer,jmoore@appalachian-lumber.com,(252) 695-9056,Buyer,Y
+NIC-CT0081,NIC-CUST0038,Sandra Delgado,AP Clerk,sdelgado@appalachian-lumber.com,(966) 257-2735,AP,N
+NIC-CT0082,NIC-CUST0038,Brian Nguyen,Plant Engineer,bnguyen@appalachian-lumber.com,(750) 638-6639,Buyer,N
+NIC-CT0083,NIC-CUST0039,Omar Martinez,Storeroom Lead,omartinez@summit-conveyor.com,(989) 314-2167,Technical,Y
+NIC-CT0084,NIC-CUST0039,Michael Harris,Storeroom Lead,mharris@summit-conveyor.com,(984) 837-4614,Decision Maker,N
+NIC-CT0085,NIC-CUST0039,Elena King,Plant Engineer,eking@summit-conveyor.com,(604) 732-7853,Decision Maker,N
+NIC-CT0086,NIC-CUST0040,Omar Martin,Buyer,omartin@allegheny-paper.com,(359) 812-2719,Decision Maker,Y
+NIC-CT0087,NIC-CUST0040,Luis Patel,Plant Engineer,lpatel@allegheny-paper.com,(617) 453-7660,Buyer,N

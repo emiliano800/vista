@@ -1,0 +1,16 @@
+eco_number,item_id,from_revision,to_revision,reason,description,requested_by,approved_by,effectivity,release_date,bom_updated,status
+ECO-2501,A-20063,-,A,Quality improvement,Update surface finish callout to 63 Ra,E092,E001,Next WO,2026-03-23,Y,Released
+ECO-2502,A-20077,-,A,Cost reduction,Replace set screw with clamp collar,E089,E001,Immediate,2026-02-21,N,Released
+ECO-2503,A-20043,A,C,Quality improvement,Consolidate two housing variants,E090,E001,Next WO,2025-06-02,Y,Released
+ECO-2504,A-20114,A,C,Supplier obsolescence,Consolidate two housing variants,E093,E001,Immediate,2025-02-19,Y,Released
+ECO-2505,A-20078,A,B,Tolerance relief,Change insert material to urethane,E090,E001,Use up stock,2025-03-25,Y,Released
+ECO-2506,A-20065,-,A,Supplier obsolescence,Add 0.5mm chamfer to bore,E092,E001,Use up stock,2025-07-28,Y,Released
+ECO-2507,A-20092,-,A,Supplier obsolescence,Update surface finish callout to 63 Ra,E089,E001,Use up stock,2025-09-15,Y,Released
+ECO-2508,A-20101,-,A,Tolerance relief,Add 0.5mm chamfer to bore,E092,E001,Use up stock,2025-10-08,Y,Released
+ECO-2509,A-20058,A,C,Customer request,Consolidate two housing variants,E092,E001,Immediate,2026-02-04,Y,Released
+ECO-2510,A-20034,A,B,Customer request,Replace set screw with clamp collar,E091,E001,Next WO,2026-03-15,Y,Released
+ECO-2511,A-20036,-,A,Cost reduction,Change insert material to urethane,E092,E001,Use up stock,2025-04-19,N,Released
+ECO-2512,A-20061,A,C,Tolerance relief,Replace set screw with clamp collar,E091,E001,Next WO,2025-12-10,Y,Released
+ECO-2513,A-20025,A,C,Supplier obsolescence,Change insert material to urethane,E088,E001,Immediate,2025-09-24,Y,Released
+ECO-2514,A-20087,-,A,Cost reduction,Consolidate two housing variants,E088,E001,Use up stock,2025-06-27,N,Released
+ECO-2599,A-20002,B,C,Supplier obsolescence,Component P-20079 rev A obsolete; use rev B,E092,E001,Immediate,2026-01-15,N,Released

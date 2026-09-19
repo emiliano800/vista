@@ -1,0 +1,5 @@
+Scrap Id,Work Order Id,Item Id,Date,Qty,Reason Code,Cost,Disposition,Reported By
+SC-0001,WO-70003,CONV-1051,12/24/2025,1,Material defect,4147.58,Rework,E006
+SC-0002,WO-70047,CONV-1042,2025-11-07,1,Setup scrap,5159.58,Use-as-is (MRB),E006
+SC-0003,WO-70048,CONV-1046,04/27/25,1,Setup scrap,7311.89,Rework,E008
+SC-0004,WO-70056,CONV-1023,2025-05-09,1,Setup scrap,3652.15,Scrap,E008

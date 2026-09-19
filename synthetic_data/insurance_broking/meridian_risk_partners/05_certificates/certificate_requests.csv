@@ -1,0 +1,62 @@
+certificate_request_id,client_id,gl_policy_id,certificate_holder,requested_date,requested_by,project_description,required_gl_each_occurrence,required_umbrella_limit,additional_insured_required,waiver_of_subrogation_required,primary_noncontributory_required,status,issued_date,handled_by,turnaround_hours,exception_note
+MER-CERT0001,MER-C0019,MER-P00064,Suffolk Construction,2025-10-27,Client email,Tenant improvement - Suite 200,1000000,0,Y,Y,N,Issued,2025-10-29,E011,69,
+MER-CERT0002,MER-C0035,MER-P00110,"Home Depot U.S.A., Inc.",2026-02-02,Holder direct,Site work - Phase 2,1000000,0,N,Y,Y,Issued,2026-02-02,E020,45,
+MER-CERT0003,MER-C0028,MER-P00089,CBRE Property Management,2026-02-14,Holder direct,Site work - Phase 2,1000000,2000000,Y,N,Y,Issued,2026-02-15,E021,48,
+MER-CERT0004,MER-C0015,MER-P00052,Turner Construction Company,2026-03-18,Client email,Tenant improvement - Suite 200,1000000,2000000,N,N,N,Issued,2026-03-18,E019,44,
+MER-CERT0005,MER-C0031,MER-P00100,Gilbane Building Company,2025-10-27,Client email,Site work - Phase 2,2000000,0,Y,Y,N,Issued,2025-10-27,E013,6,
+MER-CERT0006,MER-C0004,MER-P00012,Kiewit Corporation,2025-12-20,Client portal,Ongoing operations,1000000,5000000,Y,N,Y,Exception - limits not supported,,E021,44,"Holder requires $5,000,000 umbrella; account carries $0."
+MER-CERT0007,MER-C0010,MER-P00032,Turner Construction Company,2026-03-29,Client email,Ongoing operations,2000000,5000000,Y,N,N,Issued,2026-03-31,E018,51,
+MER-CERT0008,MER-C0011,MER-P00038,Kiewit Corporation,2025-12-01,Phone,Bid requirement,1000000,2000000,N,N,N,Exception - limits not supported,,E014,16,"Holder requires $2,000,000 umbrella; account carries $0."
+MER-CERT0009,MER-C0008,MER-P00025,Amazon.com Services LLC,2026-01-11,Client portal,Service contract 2026,1000000,5000000,Y,N,Y,Exception - limits not supported,,E016,45,"Holder requires $5,000,000 umbrella; account carries $0."
+MER-CERT0010,MER-C0014,MER-P00049,Whiting-Turner Contracting,2025-10-27,Client email,Annual vendor compliance,2000000,1000000,Y,N,Y,Exception - limits not supported,,E009,18,"Holder requires $1,000,000 umbrella; account carries $0."
+MER-CERT0011,MER-C0028,MER-P00089,Suffolk Construction,2026-01-16,Holder direct,Site work - Phase 2,1000000,0,Y,N,N,Issued,2026-01-17,E021,7,
+MER-CERT0012,MER-C0007,MER-P00022,Suffolk Construction,2026-02-27,Phone,Annual vendor compliance,1000000,0,N,Y,Y,Issued,2026-02-27,E016,39,
+MER-CERT0013,MER-C0014,MER-P00049,CBRE Property Management,2026-02-02,Phone,Ongoing operations,1000000,0,Y,N,N,Issued,2026-02-03,E009,28,
+MER-CERT0014,MER-C0024,MER-P00079,Turner Construction Company,2025-12-29,Phone,Ongoing operations,1000000,0,Y,Y,N,Issued,2025-12-31,E016,1,
+MER-CERT0015,MER-C0035,MER-P00110,State DOT,2025-10-14,Holder direct,Tenant improvement - Suite 200,1000000,1000000,Y,N,Y,Exception - limits not supported,,E020,45,"Holder requires $1,000,000 umbrella; account carries $0."
+MER-CERT0016,MER-C0014,MER-P00049,"Home Depot U.S.A., Inc.",2025-11-30,Phone,Ongoing operations,1000000,0,Y,Y,N,Issued,2025-12-01,E009,31,
+MER-CERT0017,MER-C0029,MER-P00094,"Prologis, L.P.",2025-12-12,Client portal,Bid requirement,1000000,2000000,Y,N,Y,Exception - limits not supported,,E020,62,"Holder requires $2,000,000 umbrella; account carries $0."
+MER-CERT0018,MER-C0035,MER-P00110,"Prologis, L.P.",2025-10-09,Phone,Tenant improvement - Suite 200,1000000,5000000,Y,Y,Y,Exception - limits not supported,,E020,69,"Holder requires $5,000,000 umbrella; account carries $0."
+MER-CERT0019,MER-C0015,MER-P00052,CBRE Property Management,2026-02-24,Client portal,Service contract 2026,2000000,0,N,Y,N,Issued,2026-02-26,E019,62,
+MER-CERT0020,MER-C0020,MER-P00066,Turner Construction Company,2026-01-23,Phone,Site work - Phase 2,2000000,0,Y,N,Y,Issued,2026-01-25,E018,11,
+MER-CERT0021,MER-C0007,MER-P00022,Turner Construction Company,2026-01-14,Phone,Service contract 2026,2000000,1000000,N,N,N,Exception - limits not supported,,E016,1,"Holder requires $1,000,000 umbrella; account carries $0."
+MER-CERT0022,MER-C0023,MER-P00076,"Home Depot U.S.A., Inc.",2026-01-07,Client portal,Tenant improvement - Suite 200,1000000,0,Y,N,N,Issued,2026-01-08,E021,52,
+MER-CERT0023,MER-C0004,MER-P00012,"Home Depot U.S.A., Inc.",2026-01-21,Holder direct,Tenant improvement - Suite 200,1000000,1000000,Y,Y,Y,Exception - limits not supported,,E021,25,"Holder requires $1,000,000 umbrella; account carries $0."
+MER-CERT0024,MER-C0013,MER-P00044,Whiting-Turner Contracting,2025-12-28,Client email,Tenant improvement - Suite 200,1000000,0,Y,N,N,Issued,2025-12-31,E014,36,
+MER-CERT0025,MER-C0020,MER-P00066,JLL Property Management,2025-12-24,Phone,Tenant improvement - Suite 200,1000000,0,Y,N,Y,Issued,2025-12-27,E018,14,
+MER-CERT0026,MER-C0007,MER-P00022,Whiting-Turner Contracting,2026-01-30,Phone,Tenant improvement - Suite 200,1000000,1000000,N,Y,N,Exception - limits not supported,,E016,61,"Holder requires $1,000,000 umbrella; account carries $0."
+MER-CERT0027,MER-C0018,MER-P00060,Suffolk Construction,2025-12-08,Client portal,Tenant improvement - Suite 200,1000000,1000000,Y,N,N,Issued,2025-12-08,E013,21,
+MER-CERT0028,MER-C0004,MER-P00012,"Home Depot U.S.A., Inc.",2025-10-02,Client portal,Service contract 2026,1000000,1000000,N,N,N,Exception - limits not supported,,E021,37,"Holder requires $1,000,000 umbrella; account carries $0."
+MER-CERT0029,MER-C0011,MER-P00038,"Home Depot U.S.A., Inc.",2025-10-12,Holder direct,Annual vendor compliance,1000000,1000000,N,N,N,Exception - limits not supported,,E014,55,"Holder requires $1,000,000 umbrella; account carries $0."
+MER-CERT0030,MER-C0036,MER-P00115,Brookfield Properties,2026-01-29,Phone,Bid requirement,1000000,0,N,N,N,Issued,2026-01-30,E012,70,
+MER-CERT0031,MER-C0018,MER-P00060,City of Hartford,2025-12-15,Client portal,Annual vendor compliance,2000000,5000000,Y,Y,N,Exception - limits not supported,,E013,51,"Holder requires $5,000,000 umbrella; account carries $2,000,000."
+MER-CERT0032,MER-C0018,MER-P00060,Kiewit Corporation,2025-12-02,Client email,Tenant improvement - Suite 200,2000000,2000000,Y,N,N,Issued,2025-12-05,E013,61,
+MER-CERT0033,MER-C0010,MER-P00032,"Home Depot U.S.A., Inc.",2026-01-01,Client email,Ongoing operations,1000000,1000000,Y,N,N,Issued,2026-01-02,E018,4,
+MER-CERT0034,MER-C0007,MER-P00022,Suffolk Construction,2025-12-14,Holder direct,Site work - Phase 2,2000000,1000000,Y,Y,N,Exception - limits not supported,,E016,23,"Holder requires $1,000,000 umbrella; account carries $0."
+MER-CERT0035,MER-C0024,MER-P00079,Skanska USA Building,2026-01-08,Client email,Service contract 2026,1000000,0,Y,N,Y,Issued,2026-01-09,E016,19,
+MER-CERT0036,MER-C0036,MER-P00115,State DOT,2026-01-20,Client portal,Bid requirement,2000000,2000000,Y,N,Y,Exception - limits not supported,,E012,68,"Holder requires $2,000,000 umbrella; account carries $0."
+MER-CERT0037,MER-C0014,MER-P00049,City of Hartford,2025-12-13,Client portal,Service contract 2026,1000000,1000000,Y,Y,N,Exception - limits not supported,,E009,51,"Holder requires $1,000,000 umbrella; account carries $0."
+MER-CERT0038,MER-C0022,MER-P00073,CBRE Property Management,2026-03-05,Phone,Tenant improvement - Suite 200,2000000,5000000,N,N,N,Exception - limits not supported,,E021,20,"Holder requires $5,000,000 umbrella; account carries $0."
+MER-CERT0039,MER-C0004,MER-P00012,CBRE Property Management,2025-11-10,Holder direct,Ongoing operations,1000000,0,N,Y,N,Issued,2025-11-10,E021,23,
+MER-CERT0040,MER-C0008,MER-P00025,Skanska USA Building,2025-10-06,Phone,Site work - Phase 2,1000000,0,Y,N,N,Issued,2025-10-09,E016,3,
+MER-CERT0041,MER-C0022,MER-P00073,"Home Depot U.S.A., Inc.",2026-03-03,Client portal,Ongoing operations,2000000,0,Y,N,N,Issued,2026-03-04,E021,44,
+MER-CERT0042,MER-C0001,MER-P00001,JLL Property Management,2025-10-08,Phone,Annual vendor compliance,1000000,0,Y,Y,N,Issued,2025-10-11,E011,3,
+MER-CERT0043,MER-C0001,MER-P00001,"Prologis, L.P.",2026-01-10,Client email,Annual vendor compliance,2000000,5000000,Y,Y,Y,Exception - limits not supported,,E011,58,"Holder requires $5,000,000 umbrella; account carries $2,000,000."
+MER-CERT0044,MER-C0007,MER-P00022,"Home Depot U.S.A., Inc.",2026-03-08,Holder direct,Annual vendor compliance,1000000,1000000,Y,N,N,Exception - limits not supported,,E016,5,"Holder requires $1,000,000 umbrella; account carries $0."
+MER-CERT0045,MER-C0009,MER-P00029,City of Hartford,2026-03-15,Phone,Tenant improvement - Suite 200,2000000,2000000,Y,N,Y,Exception - limits not supported,,E020,31,"Holder requires $2,000,000 umbrella; account carries $0."
+MER-CERT0046,MER-C0012,MER-P00040,"Prologis, L.P.",2026-02-12,Client portal,Ongoing operations,2000000,1000000,N,N,N,Exception - limits not supported,,E015,56,"Holder requires $1,000,000 umbrella; account carries $0."
+MER-CERT0047,MER-C0009,MER-P00029,Brookfield Properties,2025-10-07,Holder direct,Ongoing operations,1000000,5000000,Y,N,N,Exception - limits not supported,,E020,2,"Holder requires $5,000,000 umbrella; account carries $0."
+MER-CERT0048,MER-C0014,MER-P00049,"Prologis, L.P.",2026-01-09,Phone,Site work - Phase 2,1000000,1000000,Y,N,Y,Exception - limits not supported,,E009,24,"Holder requires $1,000,000 umbrella; account carries $0."
+MER-CERT0049,MER-C0028,MER-P00089,Suffolk Construction,2025-10-22,Holder direct,Ongoing operations,1000000,1000000,N,Y,Y,Issued,2025-10-25,E021,53,
+MER-CERT0050,MER-C0020,MER-P00066,Walmart Inc.,2025-12-30,Phone,Annual vendor compliance,2000000,0,Y,N,Y,Issued,2025-12-30,E018,14,
+MER-CERT0051,MER-C0022,MER-P00073,State DOT,2025-12-18,Phone,Site work - Phase 2,2000000,5000000,N,N,Y,Exception - limits not supported,,E021,69,"Holder requires $5,000,000 umbrella; account carries $0."
+MER-CERT0052,MER-C0021,MER-P00070,Amazon.com Services LLC,2025-11-03,Phone,Service contract 2026,1000000,2000000,N,Y,N,Exception - limits not supported,,E015,25,"Holder requires $2,000,000 umbrella; account carries $0."
+MER-CERT0053,MER-C0020,MER-P00066,Kiewit Corporation,2025-12-31,Client email,Site work - Phase 2,1000000,0,Y,N,Y,Issued,2025-12-31,E018,11,
+MER-CERT0054,MER-C0013,MER-P00044,Amazon.com Services LLC,2025-10-26,Holder direct,Site work - Phase 2,2000000,5000000,Y,Y,Y,Exception - limits not supported,,E014,47,"Holder requires $5,000,000 umbrella; account carries $0."
+MER-CERT0055,MER-C0001,MER-P00001,JLL Property Management,2026-02-06,Phone,Annual vendor compliance,1000000,5000000,Y,N,Y,Exception - limits not supported,,E011,70,"Holder requires $5,000,000 umbrella; account carries $2,000,000."
+MER-CERT0056,MER-C0011,MER-P00038,Kiewit Corporation,2025-10-29,Holder direct,Tenant improvement - Suite 200,1000000,2000000,Y,Y,Y,Exception - limits not supported,,E014,1,"Holder requires $2,000,000 umbrella; account carries $0."
+MER-CERT0057,MER-C0020,MER-P00066,"Prologis, L.P.",2025-12-14,Client portal,Service contract 2026,1000000,0,Y,Y,N,Issued,2025-12-17,E018,30,
+MER-CERT0058,MER-C0022,MER-P00073,"Home Depot U.S.A., Inc.",2025-12-27,Phone,Bid requirement,1000000,0,N,N,N,Issued,2025-12-28,E021,10,
+MER-CERT0059,MER-C0008,MER-P00025,Amazon.com Services LLC,2026-02-17,Holder direct,Site work - Phase 2,1000000,1000000,Y,N,N,Exception - limits not supported,,E016,67,"Holder requires $1,000,000 umbrella; account carries $0."
+MER-CERT0060,MER-C0022,MER-P00073,City of Hartford,2026-01-08,Holder direct,Site work - Phase 2,2000000,5000000,Y,N,N,Exception - limits not supported,,E021,47,"Holder requires $5,000,000 umbrella; account carries $0."
+MER-CERT0061,MER-C0001,MER-P00001,Turner Construction Company,2026-03-29,Holder direct,Hartford HealthCare Tower - structural steel package,2000000,5000000,Y,Y,Y,Exception - limits not supported,,E011,,"Holder contract requires $5,000,000 umbrella; in-force umbrella is $3,000,000."
