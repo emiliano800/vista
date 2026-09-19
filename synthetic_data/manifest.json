@@ -11,7 +11,7 @@
           {
             "folder": "00_company",
             "file": "company_profile.json",
-            "rows": 0
+            "rows": null
           },
           {
             "folder": "00_company",
@@ -226,7 +226,7 @@
           {
             "folder": "13_documents_emails",
             "file": "acord_125_MER-C0001.json",
-            "rows": 0
+            "rows": null
           },
           {
             "folder": "13_documents_emails",
@@ -266,7 +266,7 @@
           {
             "folder": "00_company",
             "file": "company_profile.json",
-            "rows": 0
+            "rows": null
           },
           {
             "folder": "00_company",
@@ -461,7 +461,7 @@
           {
             "folder": "13_documents_emails",
             "file": "acord_125_HAR-C0001.json",
-            "rows": 0
+            "rows": null
           },
           {
             "folder": "13_documents_emails",
@@ -511,7 +511,7 @@
           {
             "folder": "00_company",
             "file": "company_profile.json",
-            "rows": 0
+            "rows": null
           },
           {
             "folder": "00_company",
@@ -611,12 +611,12 @@
           {
             "folder": "13_documents_emails",
             "file": "acord_125_CAS-C0001.json",
-            "rows": 0
+            "rows": null
           },
           {
             "folder": "13_documents_emails",
             "file": "acord_127_vehicle_schedule.json",
-            "rows": 0
+            "rows": null
           },
           {
             "folder": "13_documents_emails",
@@ -712,7 +712,7 @@
           {
             "folder": "00_company",
             "file": "company_profile.json",
-            "rows": 0
+            "rows": null
           },
           {
             "folder": "00_company",
@@ -1342,7 +1342,7 @@
           {
             "folder": "00_company",
             "file": "company_profile.json",
-            "rows": 0
+            "rows": null
           },
           {
             "folder": "00_company",
@@ -1894,7 +1894,7 @@
           {
             "folder": "00_company",
             "file": "company_profile.json",
-            "rows": 0
+            "rows": null
           },
           {
             "folder": "00_company",

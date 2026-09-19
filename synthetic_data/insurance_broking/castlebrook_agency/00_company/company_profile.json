@@ -1,1 +1,35 @@
-[]
+{
+  "company": "Castlebrook Agency",
+  "short_name": "Castlebrook",
+  "industry": "Insurance Brokerage (Commercial P&C)",
+  "headquarters": "Scranton, PA",
+  "founded": 1987,
+  "employees": 11,
+  "agency_management_system": "HawkSoft (partially adopted) + Excel",
+  "data_quality_tier": "low",
+  "as_of_date": "2026-03-31",
+  "description": "Family-owned main-street agency writing small commercial and trucking accounts in NE Pennsylvania. Records split between HawkSoft, spreadsheets and paper.",
+  "annual_revenue_estimate": 383378.11,
+  "total_written_premium": 3027900,
+  "client_count": 23,
+  "policy_count": 66,
+  "carriers": [
+    "TRV",
+    "HIG",
+    "LIB",
+    "NAT",
+    "PRG",
+    "ERI",
+    "AMT",
+    "GRD"
+  ],
+  "agency_eo": {
+    "policy_type": "Agency E&O",
+    "carrier": "Westport Insurance Corp (Swiss Re)",
+    "limit": 5000000,
+    "deductible": 10000,
+    "annual_premium": 34000,
+    "expiration_date": "2026-09-15"
+  },
+  "synthetic": true
+}

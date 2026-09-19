@@ -1,0 +1,55 @@
+/* Ridgeway Fasteners & Supply — QuickBooks Desktop style: dark green title, grey menu/icon bars, left "Open Windows" list, cream form area, Arial. */
+:root { --qbgreen: #2c5a2e; --qbgreen2: #3d7a40; --bar: #e9e9e9; --bar2: #dcdcdc; --cream: #fbf8ef; --line: #b9b9b9; --ink: #111; --muted: #555; --link: #1a4f9c; --red: #b00020; }
+body { background: #6b6b6b; color: var(--ink); font-family: Arial, Helvetica, sans-serif; font-size: 12px; margin: 0; }
+.qb { display: flex; flex-direction: column; min-height: 100vh; }
+.qb-title { background: var(--qbgreen); color: #fff; font-weight: bold; padding: 5px 10px; font-size: 12px; }
+.qb-menu { background: var(--bar); display: flex; gap: 16px; padding: 4px 10px; border-bottom: 1px solid var(--line); }
+.qb-menu span:first-letter { text-decoration: underline; }
+.qb-icons { background: var(--bar2); display: flex; gap: 6px; padding: 5px 8px; border-bottom: 1px solid var(--line); }
+.qb-icons span { background: linear-gradient(#fff, #e3e3e3); border: 1px solid #a9a9a9; border-radius: 3px; padding: 4px 10px; font-size: 11px; }
+.qb-body { display: flex; flex: 1; min-height: 0; }
+.qb-left { width: 240px; background: #f2f2f2; border-right: 1px solid var(--line); padding: 8px; display: flex; flex-direction: column; }
+.qb-left-head { font-weight: bold; margin-bottom: 8px; color: var(--qbgreen); font-size: 13px; }
+.qb-left-head small { color: var(--muted); font-weight: normal; font-size: 11px; }
+#nav { flex: 1; overflow: auto; }
+.vt-nav-group-label { background: var(--qbgreen2); color: #fff; padding: 3px 6px; font-size: 11px; letter-spacing: 0; text-transform: none; font-weight: bold; margin-top: 8px; }
+.vt-nav-item { color: var(--link); text-decoration: underline; padding: 3px 8px; border-radius: 0; font-size: 12px; }
+.vt-nav-item.vt-active { background: #fff3b0; color: var(--ink); text-decoration: none; font-weight: bold; }
+.vt-nav-icon { display: none; }
+.qb-warn { margin-top: 10px; background: #fff3b0; border: 1px solid #c9a300; padding: 6px; font-size: 11px; }
+.qb-main { flex: 1; background: var(--cream); overflow: auto; }
+.qb-form-head { background: linear-gradient(#f4f4f4, #dedede); border-bottom: 1px solid var(--line); padding: 6px 14px; display: flex; justify-content: space-between; font-weight: bold; font-size: 14px; }
+.qb-date { font-weight: normal; font-size: 11px; color: var(--muted); align-self: center; }
+#content { padding: 12px 14px 30px; }
+.vt-module-title { font-size: 15px; font-weight: bold; color: var(--qbgreen); }
+.vt-module-desc { color: var(--muted); }
+.vt-kpi { background: #fff; border: 1px solid var(--line); border-radius: 0; box-shadow: inset 0 0 0 1px #fff, 1px 1px 0 #999; }
+.vt-kpi-value { font-size: 20px; color: var(--ink); }
+.vt-kpi-label { color: var(--muted); font-size: 11px; }
+.vt-card { background: #fff; border: 1px solid var(--line); border-radius: 0; box-shadow: 1px 1px 0 #999; }
+.vt-card-head { background: #eef3ee; border-bottom: 1px solid var(--line); padding: 6px 10px; }
+.vt-card-title { font-size: 13px; font-weight: bold; color: var(--qbgreen); }
+.vt-source { color: var(--muted); font-family: "Courier New", monospace; font-size: 10px; }
+.vt-search { border: 1px solid #888; border-radius: 0; padding: 3px 6px; font-size: 12px; background: #fff; }
+.vt-table th { background: #d9e4d9; color: var(--ink); border: 1px solid #b7c7b7; font-size: 11px; text-transform: none; font-weight: bold; }
+.vt-table td { border: 1px solid #e3e3e3; font-size: 11.5px; }
+.vt-table tbody tr:nth-child(even) td { background: #f7f7f2; }
+.vt-row:hover td { background: #fff3b0 !important; }
+.vt-pill { border-radius: 0; background: none; padding: 0; font-weight: bold; }
+.vt-pill.vt-good { color: #1b6b1f; }
+.vt-pill.vt-warn { color: #9a6a00; }
+.vt-pill.vt-bad { color: var(--red); }
+.vt-btn { background: linear-gradient(#fff, #e3e3e3); border: 1px solid #a9a9a9; border-radius: 3px; color: var(--ink); font-size: 11px; }
+.vt-pager { color: var(--muted); }
+.vt-missing { background: #fff3b0; border: 1px solid #c9a300; border-radius: 0; box-shadow: none; }
+.vt-detail { background: var(--cream); border-left: 3px solid var(--qbgreen); border-radius: 0; }
+.vt-detail-kicker { color: var(--qbgreen); }
+.vt-detail-title { color: var(--ink); }
+.vt-field dt { color: var(--muted); }
+.vt-related h4 { color: var(--qbgreen); border-bottom: 1px solid var(--line); }
+.vt-close { background: var(--qbgreen); border-radius: 0; }
+.vt-doc-item.vt-active { background: #fff3b0; color: var(--ink); font-weight: bold; }
+.vt-doc-ext { background: #d9e4d9; color: var(--qbgreen); }
+.vt-doc-text { background: #fff; border: 1px solid var(--line); font-family: "Courier New", monospace; font-size: 11px; }
+.qb-status { background: var(--bar); border-top: 1px solid var(--line); display: flex; gap: 2px; padding: 3px 6px; font-size: 11px; }
+.qb-status span { border: 1px inset #ccc; padding: 1px 10px; }

@@ -269,7 +269,7 @@
 
           <div class="banner" id="rv-banner">
             <div class="dot" style="width:10px;height:10px;border-radius:50%;background:var(--accent)"></div>
-            <div><b id="rv-banner-t">Analyzing your session…</b><div id="rv-banner-s" style="font-size:12.5px">Runs entirely on this computer. Nothing is uploaded.</div></div>
+            <div><b id="rv-banner-t">Analyzing your session…</b><div id="rv-banner-s" style="font-size:12.5px">Analysis runs on this computer. Reports are shared only when you choose Upload report.</div></div>
             <div class="sp"></div>
             <button class="btn sm" id="rv-note">Add a general summary</button>
             <button class="btn sm primary" id="rv-done">Back to today</button>
@@ -335,8 +335,8 @@
         <!-- ============ RECORDINGS ============ -->
         <div id="view-recordings" class="hidden">
           <h1>My recordings</h1>
-          <p class="lede">Every session lives in a folder on this computer. Nothing is uploaded until your company's analyst collects it.</p>
-          <div class="card" style="padding:6px 0 0">
+          <p class="lede">Every session lives in a folder on this computer. Use Upload report to share a completed analysis with your company. Screenshots, video and raw interaction logs stay here.</p>
+          <div class="card" style="padding:6px 0 0;overflow-x:auto">
             <table>
               <thead><tr><th>Session</th><th>Length</th><th>Interactions</th><th>Screens</th><th>Redacted</th><th>Processing</th><th>Notes</th><th></th></tr></thead>
               <tbody id="rec-rows"></tbody>
@@ -384,6 +384,15 @@
           <p class="lede">Defaults are set by your company; you can always make recording stricter.</p>
           <div class="card set" id="settings"></div>
           <section class="card">
+            <h2>Cloud workspace</h2>
+            <p class="muted">Connect to review completed reports on the website. Uploads include activity labels, app names, case IDs, notes and pseudonymous user IDs. Screenshots, video and raw interaction logs stay on this computer.</p>
+            <label for="cloud-url">Website address</label><input id="cloud-url" type="url" placeholder="https://bumpsolutions.org" />
+            <label for="cloud-company">Company ID (shown on the website)</label><input id="cloud-company" type="text" />
+            <label for="cloud-key">Personal access key</label><input id="cloud-key" type="password" autocomplete="off" placeholder="Stored securely in your system keychain" />
+            <div style="margin-top:14px"><button class="btn primary" id="cloud-connect">Connect</button> <button class="btn" id="cloud-disconnect">Disconnect</button></div>
+            <p class="muted" id="cloud-state" role="status"></p>
+          </section>
+          <section class="card">
             <h2>Private apps and words</h2>
             <p class="muted" style="margin:0 0 8px">Capture is muted while any of these apps are in front or these words appear in the window title.</p>
             <input type="text" id="private-apps" placeholder="1Password, Bitwarden, KeePass" />
@@ -428,7 +437,7 @@
       const QUICK = ['Phone call with a vendor', 'Phone call with a customer', 'Paper invoices / filing', 'Meeting', 'Helped a colleague', 'Break'];
       const colorOf = (() => { const m = new Map(); return (app) => { if (!m.has(app)) m.set(app, PALETTE[m.size % PALETTE.length]); return m.get(app); }; })();
 
-      let status = null, recordings = [], settings = null, info = null, annotating = null;
+      let status = null, recordings = [], settings = null, info = null, annotating = null, cloud = null;
 
       const hm = (sec) => {
         const h = Math.floor(sec / 3600), m = Math.floor((sec % 3600) / 60);
@@ -489,7 +498,7 @@
         $('rv-banner-t').textContent = done ? 'Analysis complete' : p === 'failed' ? 'Analysis could not finish' : p === 'skipped' ? 'Analysis skipped' : 'Analyzing your session…';
         $('rv-banner-s').textContent = done
           ? analystSummary()
-          : p === 'failed' || p === 'skipped' ? (r.processing_note ?? '') : 'Runs entirely on this computer. Nothing is uploaded.';
+          : p === 'failed' || p === 'skipped' ? (r.processing_note ?? '') : 'Analysis runs on this computer. Reports are shared only when you choose Upload report.';
 
         const out = (k) => {
           if (!s) return '';
@@ -798,6 +807,32 @@
         $('quick-chips').querySelectorAll('.chip').forEach((c) => (c.onclick = () => openAnnotate(target?.recording_id, c.dataset.q)));
       }
 
+      function uploadLabel(id) {
+        const u = cloud?.uploads?.[id];
+        if (!u) return '';
+        return u.status === 'uploaded' ? `Last uploaded ${esc(new Date(u.uploadedAt).toLocaleString())} · ${esc(u.url)}<br>Upload again after editing notes.` : `Upload failed: ${esc(u.error)}. Click Upload report to retry.`;
+      }
+      function renderCloud() {
+        $('cloud-url').value = cloud?.url || 'https://bumpsolutions.org';
+        $('cloud-company').value = cloud?.companyId || '';
+        $('cloud-state').textContent = cloud?.connected ? `Connected to ${cloud.companyName} as ${cloud.email}. Reports upload only when you choose Upload report.` : 'Not connected. Enter the details from your workspace.';
+        $('cloud-disconnect').disabled = !cloud?.connected;
+        renderRecordings();
+      }
+      $('cloud-connect').onclick = async () => {
+        $('cloud-connect').disabled = true;
+        const input = {url:$('cloud-url').value.trim(),companyId:$('cloud-company').value.trim(),token:$('cloud-key').value.trim()};
+        $('cloud-key').value = '';
+        try { cloud = await window.vista.cloudConnect(input); renderCloud(); }
+        catch (e) { $('cloud-state').textContent = e.message; }
+        finally { $('cloud-connect').disabled = false; }
+      };
+      $('cloud-disconnect').onclick = async () => {
+        try { cloud = await window.vista.cloudDisconnect(); renderCloud(); }
+        catch (e) { $('cloud-state').textContent = e.message; }
+      };
+      window.vista.cloudStatus().then(value => { cloud = value; renderCloud(); }).catch(e => { $('cloud-state').textContent = e.message; });
+
       // ---- recordings ----
       function renderRecordings() {
         $('n-rec').textContent = recordings.length;
@@ -816,9 +851,15 @@
             <td>${(r.counts?.redactions ?? 0).toLocaleString()}</td>
             <td><span class="pill ${p}">${p}</span>${sum}</td>
             <td>${r.annotations ? `${r.annotations} note${r.annotations === 1 ? '' : 's'}` : '<span class="muted">—</span>'}</td>
-            <td style="white-space:nowrap"><button class="btn sm primary" data-review="${esc(r.recording_id)}">Review</button> <button class="btn sm" data-ann="${esc(r.recording_id)}">Add note</button> <button class="btn sm" data-open="${esc(r.recording_id)}">Folder</button></td>
+            <td style="white-space:nowrap"><button class="btn sm primary" data-review="${esc(r.recording_id)}">Review</button> <button class="btn sm" data-ann="${esc(r.recording_id)}">Add note</button> <button class="btn sm" data-open="${esc(r.recording_id)}">Folder</button> <button class="btn sm" data-upload="${esc(r.recording_id)}" ${p !== 'done' ? 'disabled' : ''}>Upload report</button><div class="muted" style="font-size:11px;white-space:normal">${uploadLabel(r.recording_id)}</div></td>
           </tr>`;
         }).join('');
+        $('rec-rows').querySelectorAll('[data-upload]').forEach(b => b.onclick = async () => {
+          b.disabled = true; b.textContent = 'Uploading…';
+          try { cloud = await window.vista.cloudUpload(b.dataset.upload); }
+          catch (e) { alert(e.message); cloud = await window.vista.cloudStatus(); }
+          finally { renderRecordings(); }
+        });
         $('rec-rows').querySelectorAll('[data-ann]').forEach((b) => (b.onclick = () => openAnnotate(b.dataset.ann)));
         $('rec-rows').querySelectorAll('[data-review]').forEach((b) => (b.onclick = () => openReview(b.dataset.review, true)));
         $('rec-rows').querySelectorAll('[data-open]').forEach((b) => (b.onclick = () => window.vista.openRecording(b.dataset.open)));

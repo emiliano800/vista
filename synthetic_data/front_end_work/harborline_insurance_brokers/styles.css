@@ -1,0 +1,52 @@
+/* Harborline Insurance Brokers — coastal, friendly: teal gradient header with horizontal tabs, rounded white cards, sandy background. */
+:root {
+  --teal: #0b7285; --teal-2: #0ca3b5; --sand: #f7f3ea; --ink: #16303a; --muted: #5b7079; --card: #fff; --line: #e4e0d5;
+  --good: #1c8a5b; --warn: #b8770f; --bad: #c43d3d; --coral: #ff7f66;
+}
+body { font-family: "Trebuchet MS", "Gill Sans", Verdana, sans-serif; background: var(--sand); color: var(--ink); font-size: 14px; }
+.hero { background: linear-gradient(120deg, var(--teal) 0%, var(--teal-2) 70%, #4fc3d0 100%); color: #fff; padding: 22px 32px 0; }
+.hero-inner { display: flex; justify-content: space-between; align-items: center; max-width: 1280px; margin: 0 auto 18px; }
+.brand { display: flex; align-items: center; gap: 12px; }
+.wave { font-size: 38px; line-height: 1; background: rgba(255,255,255,.18); border-radius: 50%; width: 52px; height: 52px; display: grid; place-items: center; }
+.brand-name { font-size: 24px; font-weight: 700; letter-spacing: .01em; }
+.brand-sub { font-size: 12px; opacity: .85; }
+.hero-meta { display: flex; gap: 8px; }
+.chip { background: rgba(255,255,255,.2); padding: 4px 12px; border-radius: 999px; font-size: 12px; }
+.chip-tier { background: #ffe8a3; color: #6b4a00; font-weight: 700; }
+.chip-dim { opacity: .8; }
+.tabs { max-width: 1280px; margin: 0 auto; display: flex; gap: 2px; overflow-x: auto; }
+.tabs .vt-nav-group { display: flex; margin: 0; }
+.tabs .vt-nav-group-label { display: none; }
+.tabs .vt-nav-item { color: rgba(255,255,255,.85); padding: 10px 14px; border-radius: 10px 10px 0 0; font-size: 13px; font-weight: 600; }
+.tabs .vt-nav-item:hover { background: rgba(255,255,255,.15); }
+.tabs .vt-nav-item.vt-active { background: var(--sand); color: var(--teal); }
+.tabs .vt-nav-icon { display: none; }
+.page { max-width: 1280px; margin: 0 auto; padding: 26px 32px 40px; }
+.vt-module-title { font-size: 24px; color: var(--teal); font-weight: 700; }
+.vt-kpi { background: var(--card); border-radius: 14px; box-shadow: 0 2px 8px rgba(11,114,133,.08); border-left: 6px solid var(--teal-2); }
+.vt-kpi-value { color: var(--teal); font-size: 26px; }
+.vt-card { background: var(--card); border-radius: 14px; box-shadow: 0 2px 10px rgba(11,114,133,.08); }
+.vt-card-head { padding: 16px 20px 10px; }
+.vt-card-title { font-size: 17px; color: var(--ink); }
+.vt-search { border: 2px solid #d5e7ea; border-radius: 999px; padding: 7px 14px; background: #f5fbfc; }
+.vt-search:focus { outline: none; border-color: var(--teal-2); }
+.vt-table th { background: #eaf6f8; color: var(--teal); font-size: 12px; }
+.vt-table th:first-child { border-radius: 8px 0 0 0; }
+.vt-table td { border-bottom: 1px solid #f0ece3; }
+.vt-table tbody tr:nth-child(even) td { background: #fbfaf6; }
+.vt-row:hover td { background: #e8f6f8 !important; }
+.vt-pill { border-radius: 6px; }
+.vt-pill.vt-good { background: #dff3ea; color: var(--good); }
+.vt-pill.vt-warn { background: #fdf0d2; color: var(--warn); }
+.vt-pill.vt-bad { background: #fde3e3; color: var(--bad); }
+.vt-btn { border: none; background: var(--teal); color: #fff; border-radius: 999px; padding: 5px 14px; font-weight: 600; }
+.vt-pager { color: var(--muted); }
+.vt-missing { border: 2px dashed #d9d3c5; box-shadow: none; background: #fbf9f3; }
+.vt-detail { background: #fff; border-radius: 20px 0 0 20px; }
+.vt-detail-title { color: var(--teal); }
+.vt-related h4 { color: var(--teal); }
+.vt-close { background: var(--coral); }
+.vt-doc-list { border-right: 1px solid var(--line); }
+.vt-doc-item.vt-active { background: #eaf6f8; color: var(--teal); font-weight: 700; }
+.vt-doc-ext { background: #ffe8a3; color: #6b4a00; }
+.foot { margin-top: 26px; font-size: 12px; color: var(--muted); text-align: center; }

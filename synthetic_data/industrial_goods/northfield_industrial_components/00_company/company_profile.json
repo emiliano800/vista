@@ -1,1 +1,32 @@
-[]
+{
+  "slug": "northfield_industrial_components",
+  "name": "Northfield Industrial Components, Inc.",
+  "short": "Northfield",
+  "tier": "high",
+  "hq": {
+    "city": "Rockford",
+    "state": "IL"
+  },
+  "domain": "northfieldic.com",
+  "erp": "Epicor Kinetic",
+  "employees": 142,
+  "n_customers": 40,
+  "founded": 1979,
+  "description": "Manufactures shaft couplings, machined housings and gearbox sub-assemblies; distributes bearings, seals and power-transmission components.",
+  "as_of_date": "2026-03-31",
+  "business_model": "Make-to-order + make-to-stock manufacturer with distribution",
+  "systems": {
+    "erp": "Epicor Kinetic",
+    "cad": "SolidWorks",
+    "qms": "MasterControl",
+    "shipping": "UPS WorldShip",
+    "payroll": "ADP"
+  },
+  "employee_count": 106,
+  "active_customers": 36,
+  "active_items": 127,
+  "fiscal_year_end": "12-31",
+  "costing_method": "Standard",
+  "data_quality_tier": "high",
+  "data_quality_notes": "Complete ERP export; ISO dates; snake_case headers; strong referential integrity."
+}

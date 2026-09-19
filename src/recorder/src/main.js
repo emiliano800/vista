@@ -6,12 +6,13 @@ import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { BrowserWindow, Menu, Tray, app, clipboard, desktopCapturer, ipcMain, nativeImage, screen, session, shell, systemPreferences } from 'electron';
+import { BrowserWindow, Menu, Tray, app, clipboard, desktopCapturer, ipcMain, nativeImage, screen, session, shell, systemPreferences, safeStorage } from 'electron';
 
 import { CONFIDENCE_THRESHOLD, RESOLVED_STATUSES, SESSION_ID, applyDecision, explainSection, openaiConfig, reviewSummary } from './explain.js';
 import { DEMO_KEYS, DemoHook, demoActiveWindow, demoClipboard } from './demo.js';
 import { DEFAULT_SETTINGS, Recorder, keyNamesFrom, loadSettings } from './recorder.js';
 import { redactText } from './redact.js';
+import { cloudRequest, companyID, uploadReport, workspaceURL } from './cloud.js';
 import { buildSections, parseEvents, recordingName } from './sections.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -568,6 +569,70 @@ async function stopRecording() {
   if (openaiConfig(process.env, recorder.settings)) explainRecording(status.recordingId).catch(() => {});
   return status;
 }
+
+// ---- cloud workspace ----------------------------------------------------------
+const CLOUD_FILE = path.join(HOME, 'cloud.json');
+const UPLOADS_FILE = path.join(HOME, 'uploads.json');
+const activeUploads = new Set();
+function cloudSettings() {
+  try { return JSON.parse(fs.readFileSync(CLOUD_FILE, 'utf8')); } catch { return null; }
+}
+function uploadStates() {
+  try { return JSON.parse(fs.readFileSync(UPLOADS_FILE, 'utf8')); } catch { return {}; }
+}
+function writePrivate(file, data) {
+  const temp = `${file}.tmp`;
+  fs.writeFileSync(temp, JSON.stringify(data, null, 2), {mode:0o600});
+  fs.renameSync(temp,file);
+}
+function requireKeyStorage() {
+  if (!safeStorage.isEncryptionAvailable() || (process.platform === 'linux' && safeStorage.getSelectedStorageBackend() === 'basic_text')) {
+    throw new Error('Unlock your system keychain before connecting a cloud workspace.');
+  }
+}
+function cloudStatus() {
+  const c = cloudSettings();
+  return {connected:!!c, url:c?.url ?? '', companyId:c?.companyId ?? '', email:c?.email ?? '', companyName:c?.companyName ?? '', uploads:uploadStates()};
+}
+function requireDashboard(event) {
+  if (!dashboard || event.sender !== dashboard.webContents || event.senderFrame !== dashboard.webContents.mainFrame) throw new Error('Cloud actions are available only in the dashboard.');
+}
+ipcMain.handle('cloud:status', event => { requireDashboard(event); return cloudStatus(); });
+ipcMain.handle('cloud:connect', async (event, input) => {
+  requireDashboard(event); requireKeyStorage();
+  const url = workspaceURL(input.url), companyId = companyID(input.companyId);
+  if (typeof input.token !== 'string' || input.token.length < 32 || input.token.length > 256) throw new Error('Enter your personal access key.');
+  const config = {url,companyId,token:input.token};
+  const me = await cloudRequest(config,'/auth/me');
+  const companies = await cloudRequest(config,'/deals');
+  const company = companies.find(c => c.id === companyId);
+  if (!company) throw new Error('Your access key does not have access to this company.');
+  writePrivate(CLOUD_FILE,{url,companyId,email:me.email,companyName:company.name, encryptedToken:safeStorage.encryptString(input.token).toString('base64')});
+  return cloudStatus();
+});
+ipcMain.handle('cloud:disconnect', event => {
+  requireDashboard(event);
+  fs.rmSync(CLOUD_FILE,{force:true});
+  return cloudStatus();
+});
+ipcMain.handle('cloud:upload', async (event, id) => {
+  requireDashboard(event); requireKeyStorage();
+  if (typeof id !== 'string' || !/^[a-zA-Z0-9_-]{1,128}$/.test(id)) throw new Error('Invalid recording ID.');
+  const c = cloudSettings();
+  if (!c) throw new Error('Connect your cloud workspace in Settings first.');
+  if (activeUploads.has(id)) throw new Error('This report is already uploading.');
+  activeUploads.add(id);
+  const saveState = state => { const states = uploadStates(); states[id] = {...state,url:c.url,companyId:c.companyId}; writePrivate(UPLOADS_FILE,states); };
+  try {
+    const token = safeStorage.decryptString(Buffer.from(c.encryptedToken,'base64'));
+    const result = await uploadReport({...c,token},RECORDINGS,id);
+    saveState({status:'uploaded',uploadedAt:new Date().toISOString(),recordingId:result.id});
+    return cloudStatus();
+  } catch (error) {
+    saveState({status:'failed',error:error.message});
+    throw error;
+  } finally { activeUploads.delete(id); }
+});
 
 // ---- IPC ----------------------------------------------------------------------
 

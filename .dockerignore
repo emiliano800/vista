@@ -1,0 +1,17 @@
+*
+!Dockerfile
+!pyproject.toml
+!uv.lock
+!alembic.ini
+!migrations/
+!migrations/**
+!src/
+!src/vista/
+!src/vista/**
+!src/taskmining/
+!src/taskmining/**
+!src/web/
+!src/web/public/
+!src/web/public/**
+**/__pycache__
+**/*.pyc

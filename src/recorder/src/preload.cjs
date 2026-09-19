@@ -32,6 +32,10 @@ contextBridge.exposeInMainWorld('vista', {
   permissions: () => ipcRenderer.invoke('permissions:get'),
   openPermission: (kind) => ipcRenderer.invoke('permissions:open', kind),
   onPermissions: on('permissions:changed'),
+  cloudStatus: () => ipcRenderer.invoke('cloud:status'),
+  cloudConnect: (input) => ipcRenderer.invoke('cloud:connect', input),
+  cloudDisconnect: () => ipcRenderer.invoke('cloud:disconnect'),
+  cloudUpload: (id) => ipcRenderer.invoke('cloud:upload', id),
   // capture window only
   onVideoStart: on('video:start'),
   onVideoPause: on('video:pause'),

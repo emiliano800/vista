@@ -25,7 +25,31 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - run: for f in src/main.js src/recorder.js src/demo.js src/preload.cjs; do node --check "$f"; done
+      - run: for f in src/main.js src/recorder.js src/demo.js src/preload.cjs src/cloud.js; do node --check "$f"; done
         working-directory: src/recorder
-      - run: node --test test/*.test.js
-        working-directory: src/recorder
+      - run: npm ci
+      - run: npm test
+      - run: npx wrangler deploy --dry-run
+
+  backend:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: vista
+          POSTGRES_PASSWORD: vista
+          POSTGRES_DB: vista
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U vista"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          python-version: "3.12"
+      - run: uv sync --group dev
+      - run: uv run pytest -q

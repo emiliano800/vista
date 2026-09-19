@@ -1,1 +1,36 @@
-[]
+{
+  "company": "Harborline Insurance Brokers, Inc.",
+  "short_name": "Harborline",
+  "industry": "Insurance Brokerage (Commercial P&C)",
+  "headquarters": "Tampa, FL",
+  "founded": 2006,
+  "employees": 29,
+  "agency_management_system": "Vertafore AMS360",
+  "data_quality_tier": "medium",
+  "as_of_date": "2026-03-31",
+  "description": "Commercial and marine-adjacent P&C brokerage on the Florida Gulf Coast; also writes a small employee-benefits book.",
+  "annual_revenue_estimate": 622501.73,
+  "total_written_premium": 4785618,
+  "client_count": 30,
+  "policy_count": 99,
+  "carriers": [
+    "TRV",
+    "HIG",
+    "LIB",
+    "CNA",
+    "NAT",
+    "PRG",
+    "AMT",
+    "MKL",
+    "GRD"
+  ],
+  "agency_eo": {
+    "policy_type": "Agency E&O",
+    "carrier": "Westport Insurance Corp (Swiss Re)",
+    "limit": 5000000,
+    "deductible": 25000,
+    "annual_premium": 42000,
+    "expiration_date": "2026-11-29"
+  },
+  "synthetic": true
+}

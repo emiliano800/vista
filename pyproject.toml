@@ -38,7 +38,18 @@ testpaths = ["tests"]
 [tool.ruff]
 line-length = 140
 target-version = "py312"
-include = ["src/taskmining/**/*.py", "tests/test_pipeline.py"]
+include = [
+    "src/taskmining/**/*.py", "tests/test_pipeline.py", "tests/test_web.py",
+    "src/vista/security.py", "src/vista/recordings.py", "src/vista/auth.py",
+    "src/vista/main.py", "src/vista/manage.py", "src/vista/api/recordings.py",
+    "src/vista/api/sessions.py", "migrations/platform/versions/0002_browser_sessions.py",
+    "migrations/tenant/versions/0003_recordings.py",
+]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B"]
+
+[tool.ruff.lint.per-file-ignores]
+# FastAPI dependency/query declarations are intentionally evaluated in signatures.
+"src/vista/api/*.py" = ["B008"]
+"src/vista/auth.py" = ["B008"]

@@ -10,6 +10,8 @@ from vista.main import app
 
 # Never spend real API credits in tests — force the stub model.
 settings.openai_api_key = None
+settings.provisioning_key = "test-provisioning-key"
+settings.cookie_secure = False
 
 
 def _db_available() -> bool:
@@ -21,9 +23,7 @@ def _db_available() -> bool:
         return False
 
 
-requires_db = pytest.mark.skipif(
-    not _db_available(), reason="Postgres not reachable (start docker compose)"
-)
+requires_db = pytest.mark.skipif(not _db_available(), reason="Postgres not reachable (start docker compose)")
 
 
 @pytest.fixture(scope="session")
@@ -41,7 +41,9 @@ def tenant_factory(client):
     def _create(name: str | None = None):
         name = name or f"firm-{uuid.uuid4().hex[:8]}"
         resp = client.post(
-            "/tenants", json={"name": name, "owner_email": f"owner@{name}.example.com"}
+            "/tenants",
+            headers={"X-Vista-Provisioning-Key": settings.provisioning_key},
+            json={"name": name, "owner_email": f"owner@{name}.example.com"},
         )
         assert resp.status_code == 201, resp.text
         body = resp.json()
