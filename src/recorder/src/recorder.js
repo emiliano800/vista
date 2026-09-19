@@ -40,6 +40,9 @@ export const DEFAULT_SETTINGS = {
   changeMinGapMs: 1500,       // never more than one change-shot per this window
   privateApps: ['1Password', 'Bitwarden', 'KeePass', 'LastPass', 'Keychain Access', 'Signal', 'WhatsApp'],
   privateTitles: ['password', 'bank', 'banking', 'incognito', 'private browsing'],
+  openaiApiKey: '',           // clarifying questions after a session; OPENAI_API_KEY env overrides
+  openaiModel: 'gpt-4o-mini',
+  clarifyScreenshots: false,  // also send up to 3 low-res frames per section to OpenAI
 };
 
 export function loadSettings(file) {
@@ -110,6 +113,7 @@ export class Recorder extends EventEmitter {
     this.stream = fs.createWriteStream(path.join(this.dir, 'events.jsonl'), { flags: 'a' });
     this.startedAt = now;
     this.pausedMs = 0;
+    this.pauses = [];
     this.counts = this._zeroCounts();
     this.appSeconds = {};
     this.frameNo = 0;
@@ -131,6 +135,7 @@ export class Recorder extends EventEmitter {
     if (this.state !== 'recording') return this.status();
     this.state = 'paused';
     this._pausedAt = Date.now();
+    this.pauses.push({ start: new Date(this._pausedAt).toISOString(), end: null });
     this._note('paused by employee');
     this._emitStatus();
     return this.status();
@@ -140,6 +145,7 @@ export class Recorder extends EventEmitter {
     if (this.state !== 'paused') return this.status();
     this.pausedMs += Date.now() - this._pausedAt;
     this._pausedAt = null;
+    this.pauses[this.pauses.length - 1].end = new Date().toISOString();
     this.state = 'recording';
     this._note('resumed');
     this._pollWindow(true);
@@ -149,7 +155,10 @@ export class Recorder extends EventEmitter {
 
   async stop() {
     if (this.state === 'idle' || this.state === 'finishing') return this.status();
-    if (this.state === 'paused') this.pausedMs += Date.now() - this._pausedAt;
+    if (this.state === 'paused') {
+      this.pausedMs += Date.now() - this._pausedAt;
+      this.pauses[this.pauses.length - 1].end = new Date().toISOString();
+    }
     this.state = 'finishing';
     this._emitStatus();
     this._detachHooks();
@@ -419,6 +428,7 @@ export class Recorder extends EventEmitter {
       active_seconds: final ? Math.round((this.endedAt - this.startedAt - this.pausedMs) / 1000) : null,
       counts: this.counts,
       apps: this._appSummary(),
+      pauses: this.pauses ?? [],
       settings: { keyContent: this.settings.keyContent, clipboard: this.settings.clipboard, screenshots: this.settings.screenshots, video: this.settings.video },
       files: { events: 'events.jsonl', shots: 'shots/', video: this.settings.video ? 'screen.webm' : null },
       processing: final ? 'pending' : null,

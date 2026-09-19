@@ -32,6 +32,26 @@ annotations.jsonl notes the employee adds (phone, paper, meetings)
 processed/        output of `taskmining run`, executed automatically on Stop
 ```
 
+**Review after Stop.** The dashboard splits the session into *sections* — the
+longest stretches in one window, with quick hops (a 4-second Outlook check in
+the middle of Excel work) folded into the surrounding span
+(`src/sections.js`, config in `SECTION_DEFAULTS`). Sections are ranges into the
+one `screen.webm` (`offset_s`, paused time excluded), not separate files; each
+card plays its stretch and can be **Described** (label + note, saved to
+`annotations.jsonl` with `scope: "section"` and `section_id`) or handed to
+**Ask Vista**, which sends the section's metadata (apps, titles, counts,
+copy→paste flows, shortcuts — never keystrokes, screenshots off by default) to
+OpenAI and gets 2–4 clarifying questions back; answers are saved with the
+note. The whole-session card writes a `scope: "session"` summary that names the
+recording (`Tue 09:00–11:30 · Excel, Outlook, SAP — Month-end AP run`) without
+relabelling individual steps. Pause/Resume on the overlay pauses hooks and
+video together; pause intervals are stored in `manifest.json`.
+
+Clarifying questions need `OPENAI_API_KEY` (or Settings → Clarifying
+questions); `VISTA_OPENAI_MODEL` (default `gpt-4o-mini`) and
+`VISTA_OPENAI_URL` (any OpenAI-compatible chat-completions endpoint) are
+optional. The key stays in the Electron main process.
+
 Redaction (emails, phones, IBAN/card/SSN) runs on the device before a line is
 written; typed characters are not stored by default (only key counts and
 shortcut combos); private apps/title keywords mute capture entirely.

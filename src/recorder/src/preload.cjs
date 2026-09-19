@@ -18,6 +18,8 @@ contextBridge.exposeInMainWorld('vista', {
   onRecordings: on('recordings:changed'),
   openRecording: (id) => ipcRenderer.invoke('recordings:open', id),
   annotate: (id, ann) => ipcRenderer.invoke('recordings:annotate', id, ann),
+  sections: (id) => ipcRenderer.invoke('recordings:sections', id),
+  clarify: (id, section, answers) => ipcRenderer.invoke('recordings:clarify', id, section, answers),
   openDashboard: () => ipcRenderer.invoke('dashboard:open'),
   resizeOverlay: (mode) => ipcRenderer.invoke('overlay:resize', mode),
   onReview: on('dashboard:review'),
@@ -30,6 +32,8 @@ contextBridge.exposeInMainWorld('vista', {
   onPermissions: on('permissions:changed'),
   // capture window only
   onVideoStart: on('video:start'),
+  onVideoPause: on('video:pause'),
+  onVideoResume: on('video:resume'),
   onVideoStop: on('video:stop'),
   videoChunk: (dir, buf) => ipcRenderer.send('video:chunk', dir, buf),
   videoDone: () => ipcRenderer.send('video:done'),

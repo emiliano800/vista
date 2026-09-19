@@ -8,9 +8,11 @@ import { fileURLToPath } from 'node:url';
 
 import { BrowserWindow, Menu, Tray, app, clipboard, desktopCapturer, ipcMain, nativeImage, screen, session, shell, systemPreferences } from 'electron';
 
+import { askClarifying, openaiConfig } from './clarify.js';
 import { DEMO_KEYS, DemoHook, demoActiveWindow, demoClipboard } from './demo.js';
 import { DEFAULT_SETTINGS, Recorder, keyNamesFrom, loadSettings } from './recorder.js';
 import { redactText } from './redact.js';
+import { buildSections, parseEvents, recordingName } from './sections.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const UI = path.join(__dirname, '..', 'ui');
@@ -125,6 +127,61 @@ function postProcess(manifest) {
   });
 }
 
+// Video sections: the long single-window stretches of a recording, computed
+// once after Stop (and again when the employee asks) from events.jsonl.
+function readEvents(dir) {
+  try {
+    return parseEvents(fs.readFileSync(path.join(dir, 'events.jsonl'), 'utf8'));
+  } catch {
+    return [];
+  }
+}
+
+function readManifest(dir) {
+  return JSON.parse(fs.readFileSync(path.join(dir, 'manifest.json'), 'utf8'));
+}
+
+function readAnnotations(dir) {
+  try {
+    return parseEvents(fs.readFileSync(path.join(dir, 'annotations.jsonl'), 'utf8'));
+  } catch {
+    return [];
+  }
+}
+
+function sectionsFor(recordingId) {
+  const dir = path.join(RECORDINGS, recordingId);
+  const m = readManifest(dir);
+  const events = readEvents(dir);
+  const sections = buildSections(events, m);
+  const anns = readAnnotations(dir);
+  // attach the notes that cover each section so the UI can show "annotated"
+  for (const s of sections) {
+    s.annotations = anns
+      .filter((a) => a.scope !== 'session' && Date.parse(a.start) < Date.parse(s.end) && Date.parse(a.end) > Date.parse(s.start))
+      .map((a) => ({ label: a.label, note: a.note }));
+  }
+  const video = m.files?.video && fs.existsSync(path.join(dir, m.files.video)) ? path.join(dir, m.files.video) : null;
+  return { recording_id: recordingId, video, video_url: video ? `file://${video}` : null, started_at: m.started_at, ended_at: m.ended_at, pauses: m.pauses ?? [], sections, shots_dir: `file://${path.join(dir, 'shots')}` };
+}
+
+// Clarifying questions for one section (or the whole session) via OpenAI.
+async function clarify(recordingId, section, answers = []) {
+  const api = openaiConfig(process.env, recorder.settings);
+  if (!api) return { error: 'no_key', message: 'Add an OpenAI API key under Settings → Clarifying questions (or set OPENAI_API_KEY).' };
+  const dir = path.join(RECORDINGS, recordingId);
+  const m = readManifest(dir);
+  const events = readEvents(dir);
+  const sections = buildSections(events, m);
+  const ctx = { manifest: { ...m, annotations_preview: readAnnotations(dir).map((a) => `${a.label}${a.note ? ': ' + a.note : ''}`).slice(0, 8) }, sections, events, answers };
+  try {
+    const r = await askClarifying(section, ctx, api, { dir, screenshots: !!recorder.settings.clarifyScreenshots });
+    return { ...r, prompt: undefined }; // prompt stays in main; UI never needs it
+  } catch (e) {
+    return { error: 'request_failed', message: e.message };
+  }
+}
+
 function pickSummary(s) {
   return {
     raw_events: s.n_raw_events,
@@ -208,7 +265,7 @@ function listRecordings() {
       } catch {
         /* none */
       }
-      out.push({ ...m, dir: path.join(RECORDINGS, id), annotations });
+      out.push({ ...m, dir: path.join(RECORDINGS, id), annotations, name: m.name ?? recordingName(m, { summary: m.summary_text ?? '' }) });
     } catch {
       /* corrupt manifest */
     }
@@ -222,9 +279,11 @@ function broadcastRecordings() {
 
 // Employee annotation: what the screen couldn't see (calls, paper, meetings).
 // Same JSONL shape as taskmining.annotations.read_annotations.
-function addAnnotation(recordingId, { label, note = '', start, end, case_id = '' }) {
+// `scope` is 'section' (a video section), 'session' (whole-recording summary)
+// or 'manual'. A session summary also renames the recording.
+function addAnnotation(recordingId, { label, note = '', start, end, case_id = '', scope = 'manual', section_id = null, qa = [] }) {
   const dir = path.join(RECORDINGS, recordingId);
-  const m = JSON.parse(fs.readFileSync(path.join(dir, 'manifest.json'), 'utf8'));
+  const m = readManifest(dir);
   const row = {
     user: m.user,
     start: start ?? m.started_at,
@@ -233,9 +292,17 @@ function addAnnotation(recordingId, { label, note = '', start, end, case_id = ''
     note: redactText(note),
     case_id,
     author: 'employee',
+    scope,
+    section_id,
+    qa: qa.map((x) => ({ q: redactText(x.q), a: redactText(x.a) })),
   };
   fs.appendFileSync(path.join(dir, 'annotations.jsonl'), JSON.stringify(row) + '\n');
-  if (m.ended_at) postProcess(m);
+  if (scope === 'session') {
+    const summary_text = row.note || row.label;
+    const patched = { ...m, summary_text, name: recordingName(m, { summary: summary_text }) };
+    fs.writeFileSync(path.join(dir, 'manifest.json'), JSON.stringify(patched, null, 2));
+  }
+  if (m.ended_at) postProcess(readManifest(dir));
   else broadcastRecordings();
   return row;
 }
@@ -360,9 +427,21 @@ function trayIcon() {
 
 function toggle() {
   if (recorder.state === 'idle') return startRecording();
-  if (recorder.state === 'recording') return recorder.pause();
-  if (recorder.state === 'paused') return recorder.resume();
+  if (recorder.state === 'recording') return pauseRecording();
+  if (recorder.state === 'paused') return resumeRecording();
   return recorder.status();
+}
+
+function pauseRecording() {
+  const status = recorder.pause();
+  if (recorder.settings.video && captureWin) captureWin.webContents.send('video:pause');
+  return status;
+}
+
+function resumeRecording() {
+  const status = recorder.resume();
+  if (recorder.settings.video && captureWin) captureWin.webContents.send('video:resume');
+  return status;
 }
 
 function startRecording() {
@@ -400,14 +479,16 @@ async function stopRecording() {
 // ---- IPC ----------------------------------------------------------------------
 
 ipcMain.handle('rec:start', () => startRecording());
-ipcMain.handle('rec:pause', () => recorder.pause());
-ipcMain.handle('rec:resume', () => recorder.resume());
+ipcMain.handle('rec:pause', () => pauseRecording());
+ipcMain.handle('rec:resume', () => resumeRecording());
 ipcMain.handle('rec:stop', () => stopRecording());
 ipcMain.handle('rec:toggle', () => toggle());
 ipcMain.handle('rec:status', () => recorder.status());
 ipcMain.handle('recordings:list', () => listRecordings());
 ipcMain.handle('recordings:open', (_e, id) => shell.openPath(id ? path.join(RECORDINGS, id) : RECORDINGS));
 ipcMain.handle('recordings:annotate', (_e, id, ann) => addAnnotation(id, ann));
+ipcMain.handle('recordings:sections', (_e, id) => sectionsFor(id));
+ipcMain.handle('recordings:clarify', (_e, id, section, answers) => clarify(id, section, answers));
 ipcMain.handle('dashboard:open', () => createDashboard());
 ipcMain.handle('overlay:resize', (_e, mode) => setOverlayMode(mode));
 ipcMain.handle('settings:get', () => recorder.settings);
@@ -418,7 +499,7 @@ ipcMain.handle('settings:set', (_e, patch) => {
   return recorder.settings;
 });
 ipcMain.handle('settings:defaults', () => DEFAULT_SETTINGS);
-ipcMain.handle('app:info', () => ({ demo: DEMO, home: HOME, platform: process.platform, user: os.userInfo().username }));
+ipcMain.handle('app:info', () => ({ demo: DEMO, home: HOME, platform: process.platform, user: os.userInfo().username, openai: !!openaiConfig(process.env, recorder.settings) }));
 ipcMain.handle('permissions:get', () => permissions(false));
 ipcMain.handle('permissions:open', (_e, kind) => openPermissionPane(kind));
 ipcMain.on('video:chunk', (_e, dir, buf) => {
