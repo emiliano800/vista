@@ -21,6 +21,7 @@ CSV_COLUMNS = [
     "n_keys",
     "n_copies",
     "n_pastes",
+    "n_transfers",
     "activity_source",
     "case_source",
     "note",
@@ -45,6 +46,7 @@ def to_csv(steps: list[Step], fp: TextIO) -> None:
                 s.n_keys,
                 s.n_copies,
                 s.n_pastes,
+                s.n_transfers,
                 s.activity_source.value,
                 s.case_source.value if s.case_source else "",
                 s.note,
@@ -75,6 +77,7 @@ def to_xes(steps: list[Step], fp: TextIO) -> None:
             fp.write(f'      <string key="app" value={quoteattr(s.app)}/>\n')
             fp.write(f'      <int key="n_keys" value="{s.n_keys}"/>\n')
             fp.write(f'      <int key="n_pastes" value="{s.n_pastes}"/>\n')
+            fp.write(f'      <int key="vista:n_transfers" value="{s.n_transfers}"/>\n')
             fp.write(f'      <string key="vista:activity_source" value={quoteattr(s.activity_source.value)}/>\n')
             if s.case_source:
                 fp.write(f'      <string key="vista:case_source" value={quoteattr(s.case_source.value)}/>\n')

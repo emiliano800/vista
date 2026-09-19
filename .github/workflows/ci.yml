@@ -17,3 +17,15 @@ jobs:
       - run: ruff check . && ruff format --check .
       - run: pytest -q tests/test_pipeline.py
       - run: python -m taskmining run --synthetic 20 --annotations auto --out out/
+
+  recorder:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: for f in src/main.js src/recorder.js src/demo.js src/preload.cjs; do node --check "$f"; done
+        working-directory: recorder
+      - run: node --test test/*.test.js
+        working-directory: recorder
