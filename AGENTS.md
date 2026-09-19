@@ -82,3 +82,8 @@ Key product principles (from the business plan):
   `API_ORIGIN` points at the stack's `ApiEndpoint`. The container entrypoint
   (`docker-entrypoint.sh`) migrates on start when `VISTA_MIGRATE_ON_START=true`;
   `VISTA_DB_*` parts compose the database URL and empty S3 endpoint/keys mean IAM-role auth.
+  Live stack (created 2026-09-19): account 630396228214, us-east-1, stack `vista`, cluster
+  `vista`, service `vista-api`, endpoint
+  `https://vi-6526b1efec4446e48c627173e9e805ce.ecs.us-east-1.on.aws`, bucket
+  `vista-reports-630396228214`, RDS `vista-postgres`. Local config in `deploy/aws/.env`
+  (gitignored). Redeploy with `deploy/aws/deploy.sh`.
