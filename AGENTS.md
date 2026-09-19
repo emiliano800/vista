@@ -76,3 +76,9 @@ Key product principles (from the business plan):
 - Web dashboard: `src/web/public`, Cloudflare proxy: `src/web/worker.mjs`. Recording
   reports require the Python/Postgres/S3 backend; follow `deploy/README.md`.
   Only completed summaries and cleaned activity CSVs upload; raw capture stays local.
+- AWS hosting: `deploy/aws/` (CloudFormation: ECS Express Mode on Fargate + RDS Postgres +
+  private S3 + optional worker; `deploy.sh` builds/pushes/deploys, `manage.sh` runs
+  `vista.manage` as a one-off Fargate task). Cloudflare keeps the site; its Worker's
+  `API_ORIGIN` points at the stack's `ApiEndpoint`. The container entrypoint
+  (`docker-entrypoint.sh`) migrates on start when `VISTA_MIGRATE_ON_START=true`;
+  `VISTA_DB_*` parts compose the database URL and empty S3 endpoint/keys mean IAM-role auth.

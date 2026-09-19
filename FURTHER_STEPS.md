@@ -71,7 +71,8 @@ review step. Findings gain a "create task" action (`findings → tasks`).
 - Secrets manager for the OpenAI key (rotate the current one — it was shared in chat).
 - Rate limits, request logging, structured app logs, Sentry-style error tracking.
 - CI: run pytest against a Postgres service container on every push.
-- AWS deploy path: RDS + S3 + ECS (API, worker, scheduler as separate services).
+- AWS deploy path: done in `deploy/aws/` (ECS Express Mode API + RDS + S3 + optional
+  worker). Remaining: scheduler service, private subnets/NAT, WAF, CI deploys via OIDC.
 
 ## 6. Later / keep an eye on
 

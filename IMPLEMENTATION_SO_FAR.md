@@ -18,8 +18,10 @@ Platform migration 0002 hashes existing bearer keys and adds browser sessions; t
 migration 0003 adds recording metadata. Public tenant provisioning is disabled by
 default. `vista.manage` supplies operator provisioning and key rotation; rotations
 invalidate browser sessions. Deployment and operating instructions are in
-[deploy/README.md](deploy/README.md). This implementation requires a hosted API,
-Postgres and private object storage behind the Cloudflare Worker before going live.
+[deploy/README.md](deploy/README.md); the AWS path (ECS Express Mode on Fargate, RDS
+PostgreSQL, private S3, all in one CloudFormation stack) is in
+[deploy/aws/README.md](deploy/aws/README.md). The Cloudflare Worker keeps serving the site
+and proxies `/api` to the AWS endpoint.
 
 ## Stack
 
