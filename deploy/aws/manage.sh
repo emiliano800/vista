@@ -46,8 +46,10 @@ for _ in 1 2 3 4 5 6; do
       --start-from-head --query "events[].message" --output text 2>/dev/null | grep -q .; then break; fi
   sleep 3
 done
-aws logs get-log-events --log-group-name "$LOG_GROUP" --log-stream-name "ecs/Main/$TASK_ID" \
-  --start-from-head --query "events[].message" --output text || true
+OUTPUT=$(aws logs get-log-events --log-group-name "$LOG_GROUP" --log-stream-name "ecs/Main/$TASK_ID" \
+  --start-from-head --query "events[].message" --output text 2>/dev/null || true)
+if [ -n "$OUTPUT" ]; then printf '%s\n' "$OUTPUT"; else echo "(command produced no output)" >&2; fi
+echo "task $TASK_ID finished with exit code $EXIT_CODE" >&2
 
 if [ "$EXIT_CODE" != "0" ]; then
   echo "task exited with code $EXIT_CODE ($REASON)" >&2
