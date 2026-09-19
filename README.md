@@ -58,7 +58,47 @@ idempotency + cost tracking (`test_jobs.py`).
 | `GET /runs/{id}` | Run status + append-only event log |
 | `GET /usage` | Tenant-wide token/cost totals |
 
+## Agent vision: autonomous per-employee agents
+
+The end-state is a three-level hierarchy of autonomous agents:
+
+```
+Portfolio summary   — cross-company synergies and shared inefficiencies
+  └── Company summary   — roll-up of everything that company's agents found
+       └── Employee agent   — one per back-office employee
+```
+
+Each **employee agent** is given only the person's role ("bookkeeper at Cedar
+Climate") and autonomously discovers how they actually work — the systems they use,
+the repetitive sequences they perform, where time is lost — then proposes and
+eventually executes automations. Employees don't operate the agents; they answer a
+few onboarding questions and approve or correct what the agent surfaces. A **company
+summary agent** aggregates all employee-agent findings into one operational picture
+per business, and the **portfolio layer** compares companies.
+
+Autonomy widens in phases (same architecture throughout, only the sensors and
+permissions grow):
+
+| Phase | Employee agent's access | Purpose |
+| --- | --- | --- |
+| 1. Records agent (current) | Documents, imported files | Extract facts, flag inconsistencies |
+| 2. Connector agent (next) | Read-only email, accounting (QuickBooks/Xero), files, calendar | Reconstruct real workflows from digital exhaust; find repetition and double-entry |
+| 3. Shadow agent | + guided interviews, observing approved apps | Validate process maps with the employee |
+| 4. Autonomous agent | Scoped computer-use sessions; executes fixes | Do the work; route exceptions to a human |
+
+Every finding stays evidence-linked (observed fact vs. inefficiency vs. proposed
+automation) and every agent action lands in the append-only run log — that audit
+trail is what makes rising autonomy acceptable to PE owners and employees.
+
+The current backend already supports this shape: tenants = companies, durable jobs =
+long-running agent loops, `agent_runs`/`agent_run_events` = the audit trail,
+`usage_events` = per-agent cost. Next build steps: an employee/agent registry, a
+scheduler for recurring discovery runs, a `findings` table, the company summary run
+type, and the first two connectors (email + QuickBooks).
+
 ## Notes / deferred
 
-Billing, per-document ACLs, RAG/embeddings, SSO/SCIM, real LLM calls (the agent handler in
-`vista/jobs/handlers.py` is a stub), Temporal migration, multi-region.
+Billing, per-document ACLs, RAG/embeddings, SSO/SCIM, Temporal migration, multi-region.
+Agent runs call OpenAI when `VISTA_OPENAI_API_KEY` is set (see `.env.example`); otherwise
+the handler in `vista/jobs/handlers.py` falls back to a stub. Try the end-to-end demo with
+`uv run python scripts/demo.py`.

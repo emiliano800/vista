@@ -12,6 +12,13 @@ a portfolio dashboard, three synthetic HVAC companies (Harbor Heating, Summit Me
 Cedar Climate), live acquisition onboarding, and an evidence-backed synergy agent.
 Full details: BUSINESS_PLAN_AND_IDEAS.md. Milestone 1 walkthrough: IMPLEMENTATION.md.
 
+Agent end-state (user's vision): one autonomous agent per back-office employee that
+knows only the person's role and discovers inefficiencies itself (codex-style, eventually
+with scoped computer access); findings roll up into a per-company summary, then a
+portfolio summary. Autonomy ladder: records agent (current) → read-only connector agent
+(email, QuickBooks) → shadow agent → autonomous execution with review gates. See README
+"Agent vision" section.
+
 Key product principles (from the business plan):
 - Distinguish observed facts vs recommendations vs realized results; every agent finding
   cites source records.
