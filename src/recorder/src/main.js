@@ -403,7 +403,7 @@ function addAnnotation(recordingId, { label, note = '', start, end, case_id = ''
 // ---- windows -----------------------------------------------------------------
 
 // Overlay sizes: `orb` is the idle blue circle, `pill` the recording bar, `panel` the expanded details.
-const SIZES = { orb: { w: 72, h: 72 }, pill: { w: 380, h: 64 }, panel: { w: 380, h: 332 } };
+const SIZES = { orb: { w: 104, h: 104 }, pill: { w: 380, h: 64 }, panel: { w: 380, h: 332 } };
 let overlayMode = 'orb';
 
 function setOverlayMode(mode) {
@@ -411,9 +411,10 @@ function setOverlayMode(mode) {
   const from = SIZES[overlayMode], to = SIZES[mode];
   if (!to) return;
   const [x, y] = overlay.getPosition();
-  // keep the pill centred on where the orb was
+  // keep the pill centred on where the orb was (the orb window is oversized so its glow isn't clipped)
   const nx = Math.round(x + (from.w - to.w) / 2);
-  overlay.setBounds({ x: Math.max(0, nx), y, width: to.w, height: to.h });
+  const ny = overlayMode === 'orb' || mode === 'orb' ? Math.round(y + (from.h - to.h) / 2) : y;
+  overlay.setBounds({ x: Math.max(0, nx), y: Math.max(0, ny), width: to.w, height: to.h });
   overlayMode = mode;
 }
 
@@ -423,7 +424,7 @@ function createOverlay() {
     width: SIZES.orb.w,
     height: SIZES.orb.h,
     x: Math.round(workArea.x + (workArea.width - SIZES.orb.w) / 2),
-    y: workArea.y + 12,
+    y: workArea.y,
     frame: false,
     transparent: true,
     resizable: false,
