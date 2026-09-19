@@ -4,7 +4,7 @@
 // interrupt so the employee sees a handful of meaningful spans, not every flick.
 //
 // Pure functions over parsed events.jsonl rows so they are unit-testable and
-// reusable by the dashboard, the clarifying-question prompt and auto-naming.
+// reusable by the dashboard, the AI explanation prompt and auto-naming.
 
 export const SECTION_DEFAULTS = {
   minSeconds: 45, // spans shorter than this are absorbed by a neighbour

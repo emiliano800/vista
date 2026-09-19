@@ -155,15 +155,36 @@
       .strip .gap { background: transparent; cursor: default; border: 0; }
       .strip .head { position: absolute; top: -3px; bottom: -3px; width: 2px; background: var(--fg); pointer-events: none; transition: left 0.25s linear; }
       .secs { display: grid; gap: 6px; max-height: 420px; overflow: auto; }
-      .sec { display: grid; grid-template-columns: 8px minmax(0, 1fr) auto; gap: 10px; align-items: center; padding: 9px 10px; border: 1px solid var(--line); border-radius: 10px; cursor: pointer; transition: background 0.15s, border-color 0.15s; }
+      .sec { display: grid; grid-template-columns: 8px minmax(0, 1fr); gap: 10px; align-items: start; padding: 9px 10px; border: 1px solid var(--line); border-radius: 10px; cursor: pointer; transition: background 0.15s, border-color 0.15s; }
       .sec:hover, .sec.on { background: #faf9f5; border-color: #cfd7f3; }
-      .sec i.sw { width: 8px; height: 34px; border-radius: 3px; display: block; }
+      .sec i.sw { width: 8px; height: 100%; min-height: 34px; border-radius: 3px; display: block; }
       .sec .nm { font-weight: 600; font-size: 13px; overflow-wrap: anywhere; }
       .sec .st { color: var(--muted); font-size: 12px; }
       .sec .st b { color: var(--ok); font-weight: 600; }
-      .sec .act { display: flex; flex-direction: column; gap: 4px; opacity: 0; width: 0; overflow: hidden; transition: opacity 0.15s; }
-      .sec:hover .act, .sec.on .act { opacity: 1; width: auto; }
       .sec.whole { border-style: dashed; }
+      .sec.unsure { border-color: #f0d9a0; background: #fffaf0; }
+      .sec.resolved { opacity: 0.85; }
+      .ai-read { margin-top: 6px; display: grid; gap: 4px; font-size: 12.5px; }
+      .ai-read .lbl { font-weight: 600; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+      .ai-read .lbl svg { width: 12px; height: 12px; fill: #6d3fc7; flex: none; }
+      .ai-read .ex { color: var(--muted); }
+      .ai-read .why { color: #8a6d1f; font-size: 12px; }
+      .conf { font-size: 11px; font-weight: 600; padding: 1px 7px; border-radius: 999px; border: 1px solid; white-space: nowrap; }
+      .conf.hi { color: var(--ok); border-color: #b9e2c9; background: #f0faf4; }
+      .conf.lo { color: #8a6d1f; border-color: #f0d9a0; background: #fff7e0; }
+      .conf.done { color: var(--ok); border-color: #b9e2c9; background: #f0faf4; }
+      .conf.fail { color: var(--rec); border-color: #f2c1c3; background: #fff2f2; }
+      .sec .act { display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap; align-items: center; }
+      .thinking { color: var(--muted); font-size: 12px; display: inline-flex; align-items: center; gap: 6px; }
+      .thinking i { width: 11px; height: 11px; border-radius: 50%; border: 2px solid #d9d8d1; border-top-color: var(--accent); animation: spin 0.8s linear infinite; display: inline-block; }
+      .btn.ok { background: var(--ok); border-color: var(--ok); color: #fff; }
+      .btn.ok:hover { filter: brightness(0.95); }
+      .btn.warn { background: #fff7e0; border-color: #f0d9a0; color: #8a6d1f; }
+      .btn.warn:hover { background: #fff1cc; }
+      .rv-sum { display: flex; gap: 14px; flex-wrap: wrap; font-size: 12.5px; margin: 4px 0 10px; }
+      .rv-sum span b { font-weight: 700; }
+      .rv-sum .warn-t { color: #8a6d1f; }
+      .rv-sum .ok-t { color: var(--ok); }
       .qa { display: grid; gap: 8px; background: #faf9f5; border: 1px solid var(--line); border-radius: 10px; padding: 12px; }
       .qa .q { font-weight: 600; font-size: 13px; }
       .qa .sum { color: var(--muted); font-size: 12.5px; }
@@ -256,7 +277,8 @@
 
           <section class="card" style="margin:0 0 14px">
             <h2 style="display:flex;justify-content:space-between;align-items:baseline"><span>Session video, by task</span><span class="muted" style="text-transform:none;letter-spacing:0;font-weight:500" id="vs-sub">Split where you switched windows for a while</span></h2>
-            <p class="muted" style="margin:-6px 0 10px;font-size:12.5px"><b>Describe</b> is your own note. <b>Ask AI</b> sends that stretch's activity data (apps, window titles, click/copy/paste counts — never keystrokes or, by default, screenshots) to OpenAI, which asks you 2–4 clarifying questions.</p>
+            <div class="rv-sum" id="rv-sum"></div>
+            <p class="muted" style="margin:-4px 0 10px;font-size:12.5px" id="rv-how">The AI (OpenAI) reads each stretch's activity data — apps, window titles, click/copy/paste counts, never keystrokes or, by default, screenshots — and explains what it thinks you were doing. <b>Approve</b> if it's right, <b>Fix</b> if not. Where it is less than <span id="rv-thr">88</span>% sure, it asks you to explain instead.</p>
             <div class="vid">
               <div>
                 <div class="player" id="player">
@@ -370,8 +392,8 @@
             <div style="margin-top:10px"><button class="btn sm" id="save-private">Save</button> <span class="muted" id="saved-msg"></span></div>
           </section>
           <section class="card">
-            <h2>Clarifying questions (OpenAI)</h2>
-            <p class="muted" style="margin:0 0 8px">After a session, Vista can ask you 2–4 short questions about each stretch of work — the things the screen can't show. Uses your company's OpenAI key; only window names, counts and your notes are sent. <span class="mono">OPENAI_API_KEY</span> in the environment overrides this.</p>
+            <h2>AI explanations (OpenAI)</h2>
+            <p class="muted" style="margin:0 0 8px">After a session, the AI explains each stretch of work for you to approve or fix; where it is under 88% sure it asks you to explain instead. Uses your company's OpenAI key; only window names, counts and your notes are sent — never keystrokes. <span class="mono">OPENAI_API_KEY</span> in the environment overrides this.</p>
             <input type="text" id="openai-key" placeholder="sk-…" autocomplete="off" />
             <div style="height:8px"></div>
             <input type="text" id="openai-model" placeholder="gpt-4o-mini" />
@@ -393,7 +415,7 @@
         <textarea id="ann-note" rows="2" placeholder="What were you doing, and why? Emails and numbers are redacted."></textarea>
         <div class="qa hidden" id="qa"></div>
         <div class="autoname" id="autoname"></div>
-        <div class="actions"><button class="btn ai" id="ann-ask" title="OpenAI reads this stretch's activity data and asks you 2–4 clarifying questions">Ask AI for questions</button><span style="flex:1"></span><button class="btn" id="ann-cancel">Cancel</button><button class="btn primary" id="ann-save">Save note</button></div>
+        <div class="actions"><span style="flex:1"></span><button class="btn" id="ann-cancel">Cancel</button><button class="btn primary" id="ann-save">Save note</button></div>
       </div>
     </div>
 
@@ -466,7 +488,7 @@
         $('rv-lede').textContent = `${when} · ${hm(r.active_seconds ?? 0)} · ${(r.counts?.total ?? 0).toLocaleString()} interactions · ${(r.counts?.redactions ?? 0)} redacted on this device`;
         $('rv-banner-t').textContent = done ? 'Analysis complete' : p === 'failed' ? 'Analysis could not finish' : p === 'skipped' ? 'Analysis skipped' : 'Analyzing your session…';
         $('rv-banner-s').textContent = done
-          ? 'Tell us what this session was about in a line or two — it names the recording and gives the analysis its context. Each stretch below can also get its own note.'
+          ? analystSummary()
           : p === 'failed' || p === 'skipped' ? (r.processing_note ?? '') : 'Runs entirely on this computer. Nothing is uploaded.';
 
         const out = (k) => {
@@ -515,6 +537,39 @@
       $('rv-done').onclick = () => show('today');
       $('rv-note').onclick = () => openAnnotate(reviewing, '', { whole: true });
 
+      // One line for the analyst (and the employee) on where the review stands:
+      // how many stretches the AI explained, how many still need approval, how many it found unclear.
+      function analystSummary() {
+        const rv = vs?.review;
+        if (!rv) return 'Working out the stretches of work…';
+        if (!rv.enabled) return 'Add an OpenAI key under Settings → AI explanations and the AI will explain each stretch for you to approve. Until then, describe them yourself below.';
+        const s = rv.summary;
+        if (rv.generating) return `The AI is explaining each stretch of work… ${s.total ? `${s.total} of ${vs.sections.length} done.` : ''}`;
+        if (!s.total) return 'No explanations yet.';
+        const parts = [`The AI explained ${s.total} stretch${s.total === 1 ? '' : 'es'} of work.`];
+        if (s.awaiting) parts.push(`${s.awaiting} need${s.awaiting === 1 ? 's' : ''} your approval.`);
+        if (s.unclear + s.failed) parts.push(`${s.unclear + s.failed} ${s.unclear + s.failed === 1 ? 'was' : 'were'} unclear (under ${Math.round(s.threshold * 100)}% sure) and need${s.unclear + s.failed === 1 ? 's' : ''} your explanation.`);
+        if (!s.open) parts.push('All confirmed — nothing left to review.');
+        if (rv.session && rv.session.status !== 'approved' && rv.session.status !== 'fixed' && rv.session.status !== 'explained') parts.push('The whole-session summary is waiting for you too.');
+        return parts.join(' ');
+      }
+
+      function renderReviewSummary() {
+        const rv = vs?.review, s = rv?.summary;
+        $('rv-thr').textContent = Math.round((s?.threshold ?? 0.88) * 100);
+        $('rv-how').classList.toggle('hidden', !rv?.enabled);
+        if (!rv?.enabled || !s?.total) { $('rv-sum').innerHTML = ''; return; }
+        $('rv-sum').innerHTML = [
+          `<span><b>${s.total}</b> explained by AI</span>`,
+          `<span class="${s.awaiting ? '' : 'ok-t'}"><b>${s.awaiting}</b> awaiting approval</span>`,
+          `<span class="${s.unclear + s.failed ? 'warn-t' : 'ok-t'}"><b>${s.unclear + s.failed}</b> unclear — need your explanation</span>`,
+          `<span class="ok-t"><b>${s.resolved}</b> confirmed</span>`,
+          rv.generating ? '<span class="thinking"><i></i> still explaining…</span>' : `<button class="btn sm" id="rv-regen" title="Ask the AI again for anything not yet confirmed">Re-run AI</button>`,
+        ].join('');
+        const b = $('rv-regen');
+        if (b) b.onclick = () => window.vista.explain(reviewing, { force: true });
+      }
+
       // ---- session video, split into task sections --------------------------------
       const video = $('video');
       let vs = null, activeSec = null, stopAt = null;
@@ -534,6 +589,51 @@
         $('vs-b').textContent = vs.ended_at ? clock(vs.ended_at) : '…';
         $('vs-sub').textContent = vs.sections.length ? `${vs.sections.length} stretches of work · short hops folded in` : 'No window switches recorded';
         renderSections();
+        // key added after the session ended, or the app was closed mid-way: pick the explanations up now
+        if (vs.review.enabled && vs.ended_at && !vs.review.generating && !vs.review.summary.total && !vs.review.session) window.vista.explain(id).catch(() => {});
+      }
+      // main pushes fresh sections while the AI is explaining and after each decision
+      window.vista.onSections((next) => {
+        if (!reviewing || next.recording_id !== reviewing) return;
+        vs = next;
+        renderSections();
+        renderReview();
+      });
+
+      const RESOLVED = new Set(['approved', 'fixed', 'explained']);
+      const pct = (c) => `${Math.round((c ?? 0) * 100)}%`;
+      // The AI's read of a stretch + the one decision the employee has to make about it.
+      function aiBlock(item, key) {
+        const rv = vs.review;
+        if (!rv.enabled) return { cls: '', read: '', act: `<button class="btn sm primary" data-ann="${key}">Describe</button>` };
+        if (!item) return { cls: '', read: '', act: rv.generating ? '<span class="thinking"><i></i>AI is explaining…</span>' : `<button class="btn sm primary" data-ann="${key}">Describe</button>` };
+        if (RESOLVED.has(item.status)) {
+          const how = { approved: 'AI explanation approved', fixed: 'You corrected the AI', explained: 'You explained it' }[item.status];
+          return {
+            cls: 'resolved',
+            read: `<div class="ai-read"><div class="lbl">${esc(item.final_label)} <span class="conf done">✓ ${how}</span></div>${item.final_note ? `<div class="ex">${esc(item.final_note)}</div>` : ''}</div>`,
+            act: `<button class="btn sm" data-ann="${key}">Edit</button>`,
+          };
+        }
+        if (item.status === 'failed') {
+          return {
+            cls: 'unsure',
+            read: `<div class="ai-read"><div class="lbl">${AI_ICON} AI could not explain this <span class="conf fail">error</span></div><div class="why">${esc(item.error ?? '')}</div></div>`,
+            act: `<button class="btn sm warn" data-explain="${key}">Explain what happened</button>`,
+          };
+        }
+        if (item.status === 'unsure') {
+          return {
+            cls: 'unsure',
+            read: `<div class="ai-read"><div class="lbl">${AI_ICON} ${esc(item.label || 'Not sure what this was')} <span class="conf lo">${pct(item.confidence)} sure · needs you</span></div>${item.explanation ? `<div class="ex">${esc(item.explanation)}</div>` : ''}${item.unclear?.length ? `<div class="why">Unclear: ${esc(item.unclear.join('; '))}</div>` : ''}</div>`,
+            act: `<button class="btn sm warn" data-explain="${key}">Explain what happened</button>`,
+          };
+        }
+        return {
+          cls: '',
+          read: `<div class="ai-read"><div class="lbl">${AI_ICON} ${esc(item.label)} <span class="conf hi">${pct(item.confidence)} sure</span></div><div class="ex">${esc(item.explanation)}</div></div>`,
+          act: `<button class="btn sm ok" data-approve="${key}">Approve</button><button class="btn sm" data-fix="${key}">Fix</button>`,
+        };
       }
 
       function renderSections() {
@@ -552,15 +652,37 @@
         $('strip').querySelectorAll('[data-sec]').forEach((el) => (el.onclick = () => playSection(+el.dataset.sec)));
         // list: whole session first, then the sections
         const whole = { whole: true, name: 'Whole session', seconds: Math.round(span / 1000) };
-        const annotated = (s) => s.annotations?.length ? `<b>✓ ${esc(s.annotations[0].label)}</b>` : 'not yet described';
+        const manual = (s) => (!vs.review.enabled && s.annotations?.length ? ` · <b>✓ ${esc(s.annotations[0].label)}</b>` : '');
+        const w = aiBlock(vs.review.session, 'w');
         $('secs').innerHTML = [
-          `<div class="sec whole" data-w="1"><i class="sw" style="background:#c9c8c1"></i><div><div class="nm">${esc(recordings.find((r) => r.recording_id === reviewing)?.name ?? 'Whole session')}</div><div class="st">${hm(whole.seconds)} · ${vs.sections.length} sections · one summary for the whole recording</div></div><div class="act"><button class="btn sm ai" data-ask="w" title="Sends this session's activity data (apps, titles, counts — no keystrokes) to OpenAI, which asks you 2–4 clarifying questions">${AI_ICON} Ask AI</button><button class="btn sm primary" data-ann="w">Summarise</button></div></div>`,
-          ...vs.sections.map((s) => `<div class="sec ${activeSec === s.index ? 'on' : ''}" data-sec="${s.index}"><i class="sw" style="background:${colorOf(s.app)}"></i><div><div class="nm">${esc(s.name)}</div><div class="st">${hm(s.seconds)} · ${(s.counts.click ?? 0)} clicks · ${(s.counts.copy ?? 0) + (s.counts.paste ?? 0)} copy/paste · ${annotated(s)}</div></div><div class="act"><button class="btn sm ai" data-ask="${s.index}" title="Sends this stretch's activity data (apps, titles, counts — no keystrokes) to OpenAI, which asks you 2–4 clarifying questions">${AI_ICON} Ask AI</button><button class="btn sm primary" data-ann="${s.index}">Describe</button></div></div>`),
+          `<div class="sec whole ${w.cls}" data-w="1"><i class="sw" style="background:#c9c8c1"></i><div><div class="nm">${esc(recordings.find((r) => r.recording_id === reviewing)?.name ?? 'Whole session')}</div><div class="st">${hm(whole.seconds)} · ${vs.sections.length} stretches · general summary of the whole recording</div>${w.read}<div class="act">${w.act}</div></div></div>`,
+          ...vs.sections.map((s) => {
+            const a = aiBlock(s.review, s.index);
+            return `<div class="sec ${activeSec === s.index ? 'on' : ''} ${a.cls}" data-sec="${s.index}"><i class="sw" style="background:${colorOf(s.app)}"></i><div><div class="nm">${esc(s.name)}</div><div class="st">${hm(s.seconds)} · ${(s.counts.click ?? 0)} clicks · ${(s.counts.copy ?? 0) + (s.counts.paste ?? 0)} copy/paste${manual(s)}</div>${a.read}<div class="act">${a.act}</div></div></div>`;
+          }),
         ].join('');
         if (!vs.sections.length) $('secs').insertAdjacentHTML('beforeend', '<div class="empty">No long stretches found — the session may be very short.</div>');
+        renderReviewSummary();
+        const target = (k) => (k === 'w' ? { whole: true } : vs.sections[+k]);
         $('secs').querySelectorAll('.sec[data-sec]').forEach((el) => (el.onclick = (e) => { if (!e.target.closest('button')) playSection(+el.dataset.sec); }));
-        $('secs').querySelectorAll('[data-ann]').forEach((b) => (b.onclick = (e) => { e.stopPropagation(); openAnnotate(reviewing, '', b.dataset.ann === 'w' ? { whole: true } : vs.sections[+b.dataset.ann]); }));
-        $('secs').querySelectorAll('[data-ask]').forEach((b) => (b.onclick = (e) => { e.stopPropagation(); openAnnotate(reviewing, '', b.dataset.ask === 'w' ? { whole: true } : vs.sections[+b.dataset.ask], true); }));
+        $('secs').querySelectorAll('[data-ann]').forEach((b) => (b.onclick = (e) => { e.stopPropagation(); openAnnotate(reviewing, '', target(b.dataset.ann)); }));
+        $('secs').querySelectorAll('[data-approve]').forEach((b) => (b.onclick = async (e) => { e.stopPropagation(); b.disabled = true; await decide(target(b.dataset.approve), 'approve'); }));
+        $('secs').querySelectorAll('[data-fix]').forEach((b) => (b.onclick = (e) => { e.stopPropagation(); openAnnotate(reviewing, '', target(b.dataset.fix), 'fix'); }));
+        $('secs').querySelectorAll('[data-explain]').forEach((b) => (b.onclick = (e) => { e.stopPropagation(); openAnnotate(reviewing, '', target(b.dataset.explain), 'explain'); }));
+      }
+
+      const reviewItemOf = (section) => (section?.whole ? vs?.review?.session : section?.review) ?? null;
+      const reviewKeyOf = (section) => (section?.whole ? 'session' : section?.id);
+      async function decide(section, action, body = {}) {
+        try {
+          vs = await window.vista.decide(reviewing, reviewKeyOf(section), action, body);
+        } catch (e) {
+          alert(e.message);
+        }
+        renderSections();
+        recordings = await window.vista.recordings();
+        renderRecordings();
+        renderReview();
       }
 
       function playSection(i) {
@@ -702,30 +824,38 @@
         $('rec-rows').querySelectorAll('[data-open]').forEach((b) => (b.onclick = () => window.vista.openRecording(b.dataset.open)));
       }
 
-      // ---- annotate ----
-      // `section` is a video section ({index, name, start, end, ...}) or {whole:true}; omitted = free note.
-      let annSection = null, qa = [], vistaSummary = '';
-      function openAnnotate(id, preset = '', section = null, ask = false) {
+      // ---- annotate / fix / explain ----
+      // `section` is a video section ({index, name, start, end, review, ...}) or {whole:true}; omitted = free note.
+      // `mode`: 'fix' (correct a confident AI explanation), 'explain' (AI was unsure — the employee must say
+      // what happened, optionally answering the AI's questions), or null (own note / edit).
+      let annSection = null, annMode = null;
+      function openAnnotate(id, preset = '', section = null, mode = null) {
         if (!id) return alert('Start a recording first — notes attach to a session.');
         annotating = id;
         annSection = section;
-        qa = [];
-        vistaSummary = '';
+        const item = reviewItemOf(section);
+        annMode = mode ?? (!item ? null : item.status === 'unsure' || item.status === 'failed' ? 'explain' : 'fix');
         const r = recordings.find((x) => x.recording_id === id);
         const whole = section?.whole;
-        $('modal-title').textContent = whole ? 'General summary — what was this session about?' : section ? 'Describe this stretch of work' : 'Add a note';
+        const what = whole ? 'this session' : 'this stretch of work';
+        $('modal-title').textContent = annMode === 'fix' ? `Fix the AI's explanation of ${what}`
+          : annMode === 'explain' ? `Explain ${what} — the AI wasn't sure`
+          : whole ? 'General summary — what was this session about?' : section ? 'Describe this stretch of work' : 'Add a note';
         $('modal-sub').textContent = whole
           ? 'A line or two on what you were trying to get done and why. It names the recording and frames the analysis.'
           : section ? `${section.name} · ${hm(section.seconds)}. What were you doing here, and why?`
           : r ? `Attached to your ${clock(r.started_at)} session (${r.active_seconds != null ? hm(r.active_seconds) : 'in progress'}).` : '';
         $('modal-chips').classList.toggle('hidden', !!section);
-        $('ann-save').textContent = whole ? 'Save summary' : 'Save note';
+        $('ann-save').textContent = annMode === 'fix' ? 'Save correction' : annMode === 'explain' ? 'Save explanation' : whole ? 'Save summary' : 'Save note';
         $('modal-chips').innerHTML = QUICK.map((q) => `<span class="chip ${q === preset ? 'on' : ''}" data-q="${esc(q)}">${esc(q)}</span>`).join('');
         $('modal-chips').querySelectorAll('.chip').forEach((c) => (c.onclick = () => { $('ann-label').value = c.dataset.q; $('modal-chips').querySelectorAll('.chip').forEach((x) => x.classList.toggle('on', x === c)); }));
-        $('ann-label').value = preset;
+        // start from the AI's label when fixing (or editing a resolved item) so the employee only edits what's wrong
+        $('ann-label').value = preset || item?.final_label || (annMode === 'fix' ? item?.label ?? '' : '');
         $('ann-label').placeholder = whole ? 'e.g. Month-end AP run for March — entering vendor bills and reconciling the tracker' : section ? `e.g. Matching vendor invoices to POs` : 'e.g. Phone: chased 3 overdue vendors';
-        $('ann-note').value = '';
-        $('ann-note').placeholder = whole
+        $('ann-note').value = item?.final_note ?? '';
+        $('ann-note').placeholder = annMode === 'explain'
+          ? 'What was actually going on here? Phone calls, paper, meetings and anything off-screen count. Emails and numbers are redacted.'
+          : whole
           ? 'Anything that explains the session: what triggered it, what happened off-screen, what was hard. Emails and numbers are redacted.'
           : 'What were you doing, and why? Emails and numbers are redacted.';
         const from = section && !whole ? section.start : r?.started_at;
@@ -733,13 +863,10 @@
         $('ann-from').value = from ? hhmm(from) : '';
         $('ann-to').value = to ? hhmm(to) : '';
         $('ann-from').disabled = $('ann-to').disabled = !!section;
-        $('qa').classList.add('hidden');
-        $('qa').innerHTML = '';
-        $('ann-ask').classList.toggle('hidden', !info?.openai);
+        renderAiContext(item);
         updateAutoName();
         $('modal').classList.remove('hidden');
         $('ann-label').focus();
-        if (ask) askVista();
       }
       // Auto-name preview: "09:12–09:48 · Excel — AP tracker" + what the employee typed.
       function updateAutoName() {
@@ -753,57 +880,44 @@
       }
       $('ann-label').oninput = updateAutoName;
 
-      // Clarifying questions from OpenAI, answered inline; answers are saved with the note.
-      async function askVista() {
+      // What the AI thought, shown above the form so the employee corrects rather than starts from scratch.
+      // For unsure items its questions become optional inputs; answers are saved with the explanation.
+      function renderAiContext(item) {
         const box = $('qa');
+        if (!item || (annMode !== 'fix' && annMode !== 'explain')) { box.classList.add('hidden'); box.innerHTML = ''; return; }
         box.classList.remove('hidden');
-        const answered = collectAnswers();
-        if (answered.length) qa = qa.concat(answered);
-        box.innerHTML = '<div class="thinking"><i></i>AI (OpenAI) is reading this stretch of work — apps, titles and counts only…</div>';
-        const typed = $('ann-label').value.trim() || $('ann-note').value.trim();
-        const prior = typed ? [{ q: 'In your words, what was this?', a: typed }] : [];
-        const sec = annSection?.whole ? { whole: true } : annSection ?? { whole: true };
-        const r = await window.vista.clarify(annotating, sec, [...prior, ...qa]);
-        if (r.error) { box.innerHTML = `<div class="err">${esc(r.message)}</div>`; return; }
-        const done = qa.map((x) => `<div><div class="q">${esc(x.q)}</div><div class="sum">${esc(x.a)}</div></div>`).join('');
-        const fresh = r.questions.map((q, i) => `<div><div class="q">${esc(q)}</div><input type="text" data-q="${esc(q)}" placeholder="One sentence is plenty" ${i === 0 ? 'autofocus' : ''}></div>`).join('');
-        box.innerHTML = (r.summary ? `<div class="sum">AI's read: ${esc(r.summary)}</div>` : '') + done + (fresh || '<div class="sum">Nothing left to ask — save when ready.</div>');
-        vistaSummary = r.summary ?? '';
-        if (r.summary && !$('ann-note').value.trim() && annSection) $('ann-note').placeholder = r.summary;
-        $('ann-ask').textContent = fresh ? 'Send answers & ask more' : 'Ask AI for questions';
-        box.querySelector('input')?.focus();
+        const head = item.status === 'failed'
+          ? `<div class="err">The AI could not explain this stretch${item.error ? ': ' + esc(item.error) : ''}.</div>`
+          : `<div class="sum"><b>AI read (${pct(item.confidence)} sure):</b> ${esc(item.label)}${item.explanation ? ' — ' + esc(item.explanation) : ''}</div>`;
+        const unclear = item.unclear?.length ? `<div class="sum">Unclear to it: ${esc(item.unclear.join('; '))}</div>` : '';
+        const qs = (item.questions ?? []).map((q, i) => `<label><div class="q">${esc(q)}</div><input type="text" data-q="${esc(q)}" id="qa-${i}" placeholder="Optional" /></label>`).join('');
+        box.innerHTML = head + unclear + qs;
       }
-      function collectAnswers() {
-        return [...$('qa').querySelectorAll('input[data-q]')].map((i) => ({ q: i.dataset.q, a: i.value.trim() })).filter((x) => x.a);
-      }
-      $('ann-ask').onclick = askVista;
+      const collectAnswers = () => [...$('qa').querySelectorAll('input[data-q]')].map((el) => ({ q: el.dataset.q, a: el.value.trim() })).filter((x) => x.a);
+
       $('ann-cancel').onclick = () => $('modal').classList.add('hidden');
+      $('modal').onclick = (e) => { if (e.target === $('modal')) $('modal').classList.add('hidden'); };
       $('ann-save').onclick = async () => {
-        const answers = qa.concat(collectAnswers());
-        let label = $('ann-label').value.trim();
-        // answers alone don't name the work: fall back to what Vista thinks it is, then the existing label, then the window
-        if (!label && annSection) {
-          label = vistaSummary.slice(0, 80) || annSection.annotations?.[0]?.label || (annSection.whole ? '' : annSection.name.split(' · ').slice(1).join(' · '));
-        }
-        if (!label) return $('ann-label').focus();
-        const r = recordings.find((x) => x.recording_id === annotating);
-        const at = (t, fallback) => {
-          if (!t || !r || (fallback && t === hhmm(fallback))) return fallback;
-          const d = new Date(r.started_at);
-          const [h, m] = t.split(':').map(Number);
-          d.setHours(h, m, 0, 0);
-          return d.toISOString();
-        };
-        const start = annSection && !annSection.whole ? annSection.start : at($('ann-from').value, r?.started_at);
-        const end = annSection && !annSection.whole ? annSection.end : at($('ann-to').value, r?.ended_at);
-        const note = [$('ann-note').value.trim(), ...answers.map((x) => `${x.q} ${x.a}`)].filter(Boolean).join(' · ');
-        await window.vista.annotate(annotating, {
-          label, note, start, end,
-          scope: annSection?.whole ? 'session' : annSection ? 'section' : 'manual',
-          section_id: annSection && !annSection.whole ? annSection.id : null,
-          qa: answers,
-        });
+        const label = $('ann-label').value.trim();
+        const note = $('ann-note').value.trim();
+        if (!label && !note) return $('ann-label').focus();
         $('modal').classList.add('hidden');
+        if (annMode === 'fix' || annMode === 'explain') {
+          await decide(annSection, annMode, { label, note, answers: collectAnswers() });
+          return;
+        }
+        const r = recordings.find((x) => x.recording_id === annotating);
+        const day = (r?.started_at ?? new Date().toISOString()).slice(0, 10);
+        const at = (v, fallback) => (v ? new Date(`${day}T${v}:00`).toISOString() : fallback);
+        const whole = annSection?.whole;
+        await window.vista.annotate(annotating, {
+          label: label || note.slice(0, 60),
+          note,
+          start: annSection && !whole ? annSection.start : at($('ann-from').value, r?.started_at),
+          end: annSection && !whole ? annSection.end : at($('ann-to').value, r?.ended_at),
+          scope: whole ? 'session' : annSection ? 'section' : 'manual',
+          section_id: annSection && !whole ? annSection.id : null,
+        });
         recordings = await window.vista.recordings();
         renderRecordings();
         renderReview();
@@ -831,7 +945,7 @@
       $('save-openai').onclick = async () => {
         settings = await window.vista.setSettings({ openaiApiKey: $('openai-key').value.trim(), openaiModel: $('openai-model').value.trim(), clarifyScreenshots: $('openai-shots').checked });
         info = await window.vista.info();
-        $('saved-openai').textContent = info.openai ? 'Saved — clarifying questions are on' : 'Saved — no key, questions are off';
+        $('saved-openai').textContent = info.openai ? 'Saved — AI explanations are on' : 'Saved — no key, AI explanations are off';
         setTimeout(() => ($('saved-openai').textContent = ''), 2500);
       };
       $('save-private').onclick = async () => {

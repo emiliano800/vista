@@ -40,7 +40,7 @@ export const DEFAULT_SETTINGS = {
   changeMinGapMs: 1500,       // never more than one change-shot per this window
   privateApps: ['1Password', 'Bitwarden', 'KeePass', 'LastPass', 'Keychain Access', 'Signal', 'WhatsApp'],
   privateTitles: ['password', 'bank', 'banking', 'incognito', 'private browsing'],
-  openaiApiKey: '',           // clarifying questions after a session; OPENAI_API_KEY env overrides
+  openaiApiKey: '',           // AI explanations after a session; OPENAI_API_KEY env overrides
   openaiModel: 'gpt-4o-mini',
   clarifyScreenshots: false,  // also send up to 3 low-res frames per section to OpenAI
 };

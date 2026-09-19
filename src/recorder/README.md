@@ -28,7 +28,8 @@ events.jsonl      one RawEvent per line - the same wire format taskmining reads
 manifest.json     user, platform, start/end, counts, app time, processing state
 shots/NNNNNN.jpg  screenshots referenced by `screen` events (payload.image)
 screen.webm       optional screen video
-annotations.jsonl notes the employee adds (phone, paper, meetings)
+annotations.jsonl notes the employee adds + approved/fixed AI explanations (author, ai provenance)
+review.json       the AI's explanation per section and the employee's decision on each
 processed/        output of `taskmining run`, executed automatically on Stop
 ```
 
@@ -37,20 +38,46 @@ longest stretches in one window, with quick hops (a 4-second Outlook check in
 the middle of Excel work) folded into the surrounding span
 (`src/sections.js`, config in `SECTION_DEFAULTS`). Sections are ranges into the
 one `screen.webm` (`offset_s`, paused time excluded), not separate files; each
-card plays its stretch and can be **Described** (label + note, saved to
-`annotations.jsonl` with `scope: "section"` and `section_id`) or handed to
-**Ask AI**, which sends the section's metadata (apps, titles, counts,
-copy→paste flows, shortcuts — never keystrokes, screenshots off by default) to
-OpenAI and gets 2–4 clarifying questions back; answers are saved with the
-note. The whole-session card writes a `scope: "session"` summary that names the
-recording (`Tue 09:00–11:30 · Excel, Outlook, SAP — Month-end AP run`) without
-relabelling individual steps. Pause/Resume on the overlay pauses hooks and
-video together; pause intervals are stored in `manifest.json`.
+card plays its stretch.
 
-Clarifying questions need `OPENAI_API_KEY` (or Settings → Clarifying
-questions); `VISTA_OPENAI_MODEL` (default `gpt-4o-mini`) and
-`VISTA_OPENAI_URL` (any OpenAI-compatible chat-completions endpoint) are
-optional. The key stays in the Electron main process.
+**AI explanations (`src/explain.js`).** When a key is configured, Stop also
+asks the model to explain every section and the whole session from its
+metadata (apps, titles, counts, copy→paste flows, shortcuts — never
+keystrokes, screenshots off by default). Each answer is
+`{label, explanation, confidence, unclear, questions}` and lands in
+`review.json` with a status:
+
+| confidence | status | employee sees |
+|---|---|---|
+| ≥ `CONFIDENCE_THRESHOLD` (0.88) | `proposed` | label + explanation, **Approve** / **Fix** |
+| < 0.88 | `unsure` | what the AI was unsure about + its questions, **Explain what happened** (required) |
+| request failed | `failed` | treated like `unsure` |
+
+Approve / Fix / Explain (`applyDecision`) move the item to
+`approved` / `fixed` / `explained` and append an annotation
+(`scope: "section"`, `author: "ai"` for approvals, `"employee"` otherwise,
+plus the model's original under `ai`) so the taskmining pass and the analyst
+keep observed vs. AI vs. human facts apart. The banner's analyst summary
+(`reviewSummary`) counts how many sections were unclear, how many still need
+approval and how many are confirmed. The whole-session item writes a
+`scope: "session"` summary that names the recording
+(`Tue 09:00–11:30 · Excel, Outlook, SAP — Month-end AP run`) without
+relabelling individual steps. Without a key the cards fall back to a plain
+**Describe** note. Pause/Resume on the overlay pauses hooks and video together;
+pause intervals are stored in `manifest.json`.
+
+IPC surface (renderer → main, `preload.cjs`): `sections(id)` returns sections
+with their `review` item plus `review.summary`; `explain(id, {force})`
+(re)generates; `decide(id, itemId, action, {label, note, answers})` applies
+Approve/Fix/Explain; `onSections` streams updates while the model runs. The
+same calls are the seam for the backend later: `explainRecording` / `decide`
+in `main.js` can post to the Vista API instead of OpenAI and `review.json`
+directly.
+
+AI explanations need `OPENAI_API_KEY` (or Settings → AI explanations);
+`VISTA_OPENAI_MODEL` (default `gpt-4o-mini`) and `VISTA_OPENAI_URL` (any
+OpenAI-compatible chat-completions endpoint) are optional. The key stays in
+the Electron main process.
 
 Redaction (emails, phones, IBAN/card/SSN) runs on the device before a line is
 written; typed characters are not stored by default (only key counts and

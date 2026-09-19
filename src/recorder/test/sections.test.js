@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
-import { OPENAI_URL, askClarifying, describeSection, openaiConfig, parseReply } from '../src/clarify.js';
+import { CONFIDENCE_THRESHOLD, OPENAI_URL, applyDecision, describeSection, explainSection, openaiConfig, parseExplanation, reviewSummary, statusFor } from '../src/explain.js';
 import { buildSections, focusSpans, parseEvents, pausedBefore, recordingName, sectionName } from '../src/sections.js';
 
 const T0 = Date.parse('2026-03-03T09:00:00.000Z');
@@ -107,25 +107,27 @@ test('describeSection includes counts, paste flows and prior answers', () => {
   assert.match(whole, /Main stretches of work/);
 });
 
-test('askClarifying posts to OpenAI with the key and returns parsed questions', async () => {
+test('explainSection posts to OpenAI and classifies by the 88% threshold', async () => {
   const secs = buildSections(EVENTS, MANIFEST);
   let captured = null;
-  const fetchFn = async (url, init) => {
+  const reply = (content) => async (url, init) => {
     captured = { url, init };
-    return { ok: true, json: async () => ({ model: 'gpt-4o-mini-2024', usage: { total_tokens: 12 }, choices: [{ message: { content: '{"summary":"Sending vendor emails","questions":["Which vendors?","Was this from a list?"]}' } }] }) };
+    return { ok: true, json: async () => ({ model: 'gpt-4o-mini-2024', usage: { total_tokens: 12 }, choices: [{ message: { content } }] }) };
   };
-  const r = await askClarifying(secs[1], { manifest: MANIFEST, sections: secs, events: EVENTS }, { key: 'sk-test', model: 'gpt-4o-mini' }, { fetchFn });
+  const r = await explainSection(secs[1], { manifest: MANIFEST, sections: secs, events: EVENTS }, { key: 'sk-test', model: 'gpt-4o-mini' }, { fetchFn: reply('{"label":"Emailing vendors","explanation":"Replies in Outlook","confidence":0.93,"unclear":[],"questions":[]}') });
   assert.equal(captured.url, OPENAI_URL);
   assert.equal(captured.init.headers.Authorization, 'Bearer sk-test');
-  const body = JSON.parse(captured.init.body);
-  assert.equal(body.model, 'gpt-4o-mini');
-  assert.equal(body.messages[1].content.length, 1); // text only, no screenshots by default
-  assert.deepEqual(r.questions, ['Which vendors?', 'Was this from a list?']);
-  assert.equal(r.summary, 'Sending vendor emails');
-  assert.equal(r.model, 'gpt-4o-mini-2024');
+  assert.equal(JSON.parse(captured.init.body).messages[1].content.length, 1); // text only, no screenshots by default
+  assert.equal(r.id, secs[1].id);
+  assert.equal(r.status, 'proposed');
+  assert.equal(r.confidence, 0.93);
+
+  const low = await explainSection(secs[1], { manifest: MANIFEST, sections: secs, events: EVENTS }, { key: 'k', model: 'm' }, { fetchFn: reply('{"label":"?","explanation":"","confidence":61,"unclear":["purpose"],"questions":["What for?"]}') });
+  assert.equal(low.status, 'unsure');
+  assert.equal(low.confidence, 0.61);
 
   const bad = async () => ({ ok: false, status: 401, statusText: 'Unauthorized', text: async () => 'bad key' });
-  await assert.rejects(askClarifying(secs[1], { manifest: MANIFEST }, { key: 'x', model: 'm' }, { fetchFn: bad }), /OpenAI 401/);
+  await assert.rejects(explainSection(secs[1], { manifest: MANIFEST }, { key: 'x', model: 'm' }, { fetchFn: bad }), /OpenAI 401/);
 });
 
 test('openaiConfig prefers the environment over settings', () => {
@@ -138,8 +140,29 @@ test('openaiConfig prefers the environment over settings', () => {
   });
 });
 
-test('parseReply accepts JSON, fenced JSON and plain question lists', () => {
-  assert.deepEqual(parseReply('{"summary":"s","questions":["a?","b?"]}'), { summary: 's', questions: ['a?', 'b?'] });
-  assert.deepEqual(parseReply('```json\n{"summary":"s","questions":["a?"]}\n```').questions, ['a?']);
-  assert.deepEqual(parseReply('1. What triggered this?\n2. Who else was involved?\nThanks.').questions, ['What triggered this?', 'Who else was involved?']);
+test('parseExplanation tolerates fences and garbage; statusFor uses the threshold', () => {
+  assert.equal(parseExplanation('```json\n{"label":"x","confidence":"0.9"}\n```').confidence, 0.9);
+  assert.equal(parseExplanation('not json').confidence, 0);
+  assert.equal(statusFor(CONFIDENCE_THRESHOLD), 'proposed');
+  assert.equal(statusFor(0.879), 'unsure');
+});
+
+test('applyDecision + reviewSummary: approve only when confident, fix/explain carry provenance', () => {
+  const sure = { id: 'S1', label: 'A', explanation: 'a', confidence: 0.9, status: 'proposed', questions: [] };
+  const unsure = { id: 'S2', label: 'B', explanation: 'b', confidence: 0.5, status: 'unsure', questions: ['Why?'] };
+  assert.throws(() => applyDecision(unsure, 'approve'), /confident/);
+  assert.throws(() => applyDecision(sure, 'fix', { label: '' }), /label/);
+  const ok = applyDecision(sure, 'approve');
+  assert.equal(ok.item.status, 'approved');
+  assert.equal(ok.annotation.author, 'ai');
+  const ex = applyDecision(unsure, 'explain', { note: 'Phoned the vendor', answers: [{ q: 'Why?', a: 'Overdue' }] });
+  assert.equal(ex.item.status, 'explained');
+  assert.equal(ex.annotation.ai.decision, 'explain');
+  assert.deepEqual(ex.annotation.qa, [{ q: 'Why?', a: 'Overdue' }]);
+  const sum = reviewSummary({ S1: ok.item, S2: unsure, S3: { id: 'S3', status: 'proposed' }, session: { id: 'session', status: 'proposed' } });
+  assert.equal(sum.total, 3);
+  assert.equal(sum.awaiting, 1);
+  assert.equal(sum.unclear, 1);
+  assert.equal(sum.resolved, 1);
+  assert.deepEqual(sum.unclear_ids, ['S2']);
 });
