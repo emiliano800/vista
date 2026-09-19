@@ -45,8 +45,8 @@ else
 fi
 
 # --- Electron (installed by npm install; report if already there) ---------------
-if [ -x recorder/node_modules/.bin/electron ]; then
-  ok "Electron $(recorder/node_modules/.bin/electron --version 2>/dev/null | tr -d v)"
+if [ -x src/recorder/node_modules/.bin/electron ]; then
+  ok "Electron $(src/recorder/node_modules/.bin/electron --version 2>/dev/null | tr -d v)"
 else
   warn "Electron not installed yet - npm install will fetch it (~100 MB)"
 fi
@@ -61,13 +61,13 @@ echo; echo "Installing Python engine (uv sync)"
 uv sync --group dev
 
 echo; echo "Installing recorder (npm install)"
-(cd recorder && npm install --no-fund --no-audit)
+(cd src/recorder && npm install --no-fund --no-audit)
 
 # --- Test ----------------------------------------------------------------------
 echo; echo "Running tests"
 uv run ruff check . && uv run ruff format --check .
 uv run pytest -q tests/test_pipeline.py
-(cd recorder && npm test)
+(cd src/recorder && npm test)
 uv run python -m taskmining run --synthetic 5 --out /tmp/vista-setup-check >/dev/null && ok "taskmining CLI"
 
 # --- Next steps ----------------------------------------------------------------

@@ -24,7 +24,7 @@ class RawEvent:
     """A single low-level desktop interaction as recorded by the client.
 
     Wire format is one JSON object per line (``recording.jsonl``). The desktop
-    recorder in ``recorder/`` writes exactly this shape; ``payload`` carries
+    recorder in ``src/recorder/`` writes exactly this shape; ``payload`` carries
     type-specific extras (``button``, ``x``/``y``, ``n_keys``, ``image``,
     ``modifiers``, ``recording_id``).
     """

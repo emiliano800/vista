@@ -13,7 +13,7 @@ test-py:
 	uv run pytest -q tests/test_pipeline.py
 
 test-js:
-	cd recorder && npm test
+	cd src/recorder && npm test
 
 lint:
 	uv run ruff check .
@@ -22,13 +22,13 @@ fmt:
 	uv run ruff format .
 
 demo:             ## recorder with simulated apps, no OS permissions needed
-	cd recorder && npm run start:demo
+	cd src/recorder && npm run start:demo
 
 start:            ## real recorder
-	cd recorder && npm start
+	cd src/recorder && npm start
 
 run:              ## engine on synthetic data -> out/
 	uv run python -m taskmining run --synthetic 40 --annotations auto --out out/
 
 clean:
-	rm -rf out/ .pytest_cache .ruff_cache recorder/node_modules
+	rm -rf out/ .pytest_cache .ruff_cache src/recorder/node_modules
