@@ -1,0 +1,80 @@
+import uuid
+from datetime import datetime
+from decimal import Decimal
+
+from sqlalchemy import BigInteger, DateTime, ForeignKey, Integer, Numeric, String, UniqueConstraint, func
+from sqlalchemy.dialects.postgresql import JSONB, UUID
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
+
+
+class TenantBase(DeclarativeBase):
+    """Tables created inside each tenant's schema (resolved via search_path)."""
+
+
+class Deal(TenantBase):
+    __tablename__ = "deals"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    name: Mapped[str] = mapped_column(String(255))
+    created_by: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True))  # platform.users.id
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class DealMembership(TenantBase):
+    __tablename__ = "deal_memberships"
+    __table_args__ = (UniqueConstraint("deal_id", "user_id"),)
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    deal_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("deals.id"))
+    user_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True))  # platform.users.id
+    role: Mapped[str] = mapped_column(String(16))  # owner|member|viewer
+
+
+class Document(TenantBase):
+    __tablename__ = "documents"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    deal_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("deals.id"))
+    filename: Mapped[str] = mapped_column(String(512))
+    s3_key: Mapped[str] = mapped_column(String(1024))
+    content_type: Mapped[str] = mapped_column(String(255), default="application/octet-stream")
+    size_bytes: Mapped[int | None] = mapped_column(BigInteger, nullable=True)
+    uploaded_by: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class AgentRun(TenantBase):
+    __tablename__ = "agent_runs"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    job_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True))  # platform.jobs.id
+    deal_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("deals.id"))
+    document_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("documents.id"), nullable=True)
+    requested_by: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True))
+    status: Mapped[str] = mapped_column(String(16), default="queued")  # queued|running|succeeded|failed
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    finished_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+
+class AgentRunEvent(TenantBase):
+    __tablename__ = "agent_run_events"
+    __table_args__ = (UniqueConstraint("run_id", "seq"),)
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    run_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("agent_runs.id"))
+    seq: Mapped[int] = mapped_column(Integer)
+    event_type: Mapped[str] = mapped_column(String(64))  # step|tool_call|model_call|error|result
+    data: Mapped[dict] = mapped_column(JSONB, default=dict)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class UsageEvent(TenantBase):
+    __tablename__ = "usage_events"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    run_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("agent_runs.id"))
+    model: Mapped[str] = mapped_column(String(128))
+    input_tokens: Mapped[int] = mapped_column(Integer, default=0)
+    output_tokens: Mapped[int] = mapped_column(Integer, default=0)
+    cost_usd: Mapped[Decimal] = mapped_column(Numeric(12, 6), default=0)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
