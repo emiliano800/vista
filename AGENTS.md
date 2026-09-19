@@ -10,7 +10,10 @@ the portfolio for cross-company synergies (purchasing, software overlap, cross-s
 Initial industry focus: HVAC roll-ups. Near-term goal: 24-hour hackathon prototype with
 a portfolio dashboard, three synthetic HVAC companies (Harbor Heating, Summit Mechanical,
 Cedar Climate), live acquisition onboarding, and an evidence-backed synergy agent.
-Full details: BUSINESS_PLAN_AND_IDEAS.md. Milestone 1 walkthrough: IMPLEMENTATION.md.
+Docs: IMPLEMENTATION_SO_FAR.md (what's built), FURTHER_STEPS.md (tech roadmap +
+frontend spec), BUSINESS_COURSE_OF_ACTION.md (business plan distilled). The original
+verbatim business plan (BUSINESS_PLAN_AND_IDEAS.md) and IMPLEMENTATION.md were removed
+as superseded; both remain in git history.
 
 Agent end-state (user's vision): one autonomous agent per back-office employee that
 knows only the person's role and discovers inefficiencies itself (codex-style, eventually
@@ -55,9 +58,9 @@ Key product principles (from the business plan):
 - Remotes: `origin` = github.com/emiliano800/vista (full repo, including docs);
   `upstream` = github.com/ylemiesa57/vista (code only).
 - Always pull/fetch both remotes before pushing.
-- Push code changes to BOTH remotes. The doc files README.md, IMPLEMENTATION.md,
-  BUSINESS_PLAN_AND_IDEAS.md, and AGENTS.md must NEVER be committed/pushed to
-  `upstream` — they go to `origin` only.
+- Push code changes to BOTH remotes. The doc files README.md, IMPLEMENTATION_SO_FAR.md,
+  FURTHER_STEPS.md, BUSINESS_COURSE_OF_ACTION.md, and AGENTS.md (any root-level .md)
+  must NEVER be committed/pushed to `upstream` — they go to `origin` only.
 - Workflow: `main` tracks origin and carries everything. The `upstream-main` branch
   mirrors the code without those doc files and is pushed to `upstream`'s main.
 - Never commit `.env` (holds the OpenAI API key; gitignored).
