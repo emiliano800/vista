@@ -1,0 +1,10 @@
+Carrier Code,Carrier Name,Am Best Rating,Lines Appointed,Commission Pct,Surplus Lines,Appointment Date,Download Enabled,Agency Code,Payment Terms
+TRV,Travelers Indemnity Company,A++,"GL,PROP,AUTO,WC,UMB",13.0,N,2020-04-13,Y,770099,Net 30 from statement
+HIG,The Hartford Fire Insurance Company,A+,"GL,PROP,WC,BOP",14.0,N,2011-08-25,Y,826851,Net 30 from statement
+LIB,Liberty Mutual Insurance,A,"GL,AUTO,WC,UMB,PROP",12.0,N,11/22/06,Y,186087,Net 30 from statement
+CNA,CNA Insurance,A,"GL,PROP,PL,CYB",12.5,N,2009-11-06,Y,784564,Monthly account current 
+NAT,Nationwide Mutual Insurance,A+,"GL,PROP,AUTO,BOP,WC",13.5,N,2012-11-02,Y,278606,Net 45
+PRG,Progressive Commercial,A+,AUTO,10.0,N,2010-02-07,N,244988,Net 30 from statement
+AMT,AmTrust Financial,A-,"WC,BOP",10.0,N,2019-02-17,N,432899,Net 45
+MKL,Markel Specialty (Evanston Insurance Co.),A,"GL,PL,UMB",12.0,Y,2021-09-10,Y,119658,Monthly account current
+GRD,Guard Insurance (Berkshire Hathaway GUARD),A+,"WC,BOP",11.0,N,2011-02-03,Y,766649,Monthly account current

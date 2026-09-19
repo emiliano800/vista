@@ -1,0 +1,12 @@
+Asset Id,Pm Task,Interval Days,Last Done,Next Due,Assigned To
+A-001,Annual load test,180,2025-12-04,2026-07-04,E008
+A-002,Safety inspection,30,2025-07-03,2026-05-09,E010
+A-003,Annual load test,180,2026-03-06,2026-05-19,E009
+A-004,Safety inspection,180,2025-09-13,2026-07-03,E009
+A-005,Chain/belt inspection,30,2026-01-02,2026-05-30,E005
+A-006,Filter change,90,2026-03-02,2026-07-05,E008 
+A-007,Safety inspection,180,2025-12-06,2026-04-30,E009
+A-008,Safety inspection,365,2025-09-14,2026-05-26,E009
+A-009,Filter change,180,2025-10-02,2026-05-14,E008
+A-010,Filter change,30,2025-08-04,2026-04-12,E010 
+A-011,Hydraulic fluid check,90,2025-12-04,2026-03-04,E010

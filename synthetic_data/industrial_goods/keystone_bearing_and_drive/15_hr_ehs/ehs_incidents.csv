@@ -1,0 +1,7 @@
+Incident Id,Date,Type,Employee Id,Location,Description,Days Away,Osha 300 Logged,Root Cause,Corrective Action,Status
+EHS-001,2025-09-11,Near miss,E009,Dock,Pallet fell from rack,0,N,PPE not worn,Mirror installed,Closed
+EHS-002,2026-01-24,Recordable,E005,Warehouse,Chip in eye - no glasses,4,Y,Procedure not followed,Re-train,Closed
+EHS-003,"May 29, 2025",Near miss,E005,Machine Shop,Slip on coolant spill,0,N,Housekeeping,Guard added,Closed
+EHS-004,"Apr 21, 2025",Near miss,E007,Dock,Slip on coolant spill,0,N,Training,Spill kit relocated,Closed
+EHS-005,2025-07-07,Property damage,E007,Assembly,Pallet fell from rack,0,N,Training,Spill kit relocated,Closed
+EHS-006,2025-09-02,First aid,E010,Assembly,Laceration from burr on housing,0,N,Procedure not followed,Spill kit relocated,Closed

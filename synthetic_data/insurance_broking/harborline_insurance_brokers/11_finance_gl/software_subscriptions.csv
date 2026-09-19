@@ -1,0 +1,13 @@
+Subscription Id,Product,Vendor,Function,Seats Licensed,Seats Active,Billing Frequency,Annual Cost,Contract Start,Renewal Date,Auto Renew,Owner,Notes
+SW001 ,Vertafore AMS360,Vertafore,Agency Management System,29,25,Annual,52983.0,2023-02-10,2026-11-21 ,N,Carlos Harris,
+SW002,IVANS Exchange,IVANS (Applied),Carrier Download / Connectivity,1,1,Monthly,1908.0,2024-02-14,2026-10-03,Y,Betty Rodriguez,3-year term; 60-day notice
+SW003,Zywave Miedge,Zywave,Carrier Appetite / Market Intelligence,1,1,Annual,6825.0,2023-01-14,2026-06-06,N,Matthew Jones,Includes 2 sandbox seats
+SW004,Adobe Acrobat Sign,Adobe,e-Signature,10,8,Monthly,3780.0,2024-06-26,2026-07-09,Y,Priya Garcia,Month-to-month
+SW005,Microsoft 365 Business Standard,Microsoft,Productivity Suite / Email,29,25,Annual,4785.0,2024-01-30,2026-10-17,N,Nancy Scott,Includes 2 sandbox seats
+SW006,HubSpot Sales Hub,HubSpot,CRM,7,6,Annual,8013.6,2024-04-17,2027-01-16,Y,Matthew Choi,
+SW007,Zoom Workplace,Zoom,Video Conferencing,9,9,Annual,1830.6,2023-03-28,2026-11-26,Y,Susan Rodriguez,Includes 2 sandbox seats
+SW008,8x8 Work,8x8,VoIP Phone System,29,24,Annual,9061.92,2024-08-27,2026-12-28,N,Ashley Wilson,
+SW009,QuickBooks Online Advanced,Intuit,Accounting / GL,1,1,Annual,2136.0,2025-01-17,2026-06-16,Y,Patricia Thomas,Includes 2 sandbox seats
+SW010,Paychex Flex,Paychex,Payroll / HRIS,29,27,Monthly,18792.0,2023-06-24,2026-11-11,Y,Nancy Fitzgerald,Includes 2 sandbox seats
+SW011,Dropbox Business,Dropbox,File Storage,29,28,Monthly,7029.6,2024-08-19,2027-01-08,Y,Betty Rodriguez,
+SW012,KnowBe4,KnowBe4,Security Awareness Training,29,28,Annual,809.1,2024-10-05,2026-10-28,Y,Nancy Scott,Includes 2 sandbox seats

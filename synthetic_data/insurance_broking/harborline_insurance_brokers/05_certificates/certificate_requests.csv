@@ -1,0 +1,37 @@
+Certificate Request Id,Client Id,Gl Policy Id,Certificate Holder,Requested Date,Requested By,Project Description,Required Gl Each Occurrence,Required Umbrella Limit,Additional Insured Required,Waiver Of Subrogation Required,Primary Noncontributory Required,Status,Issued Date,Handled By,Turnaround Hours,Exception Note
+HAR-CERT0001,HAR-C0016,HAR-P00049,Gilbane Building Company,2026-01-18,Client portal,Ongoing operations,2000000,1000000,N,Y,Y,Issued,2026-01-20,E007,8,
+HAR-CERT0002,HAR-C0012,HAR-P00037,City of Tampa,"Mar 01, 2026",Client email,Service contract 2026,2000000,2000000,Y,N,N,Exception - limits not supported,,E010,5,"Holder requires $2,000,000 umbrella; account carries $0."
+HAR-CERT0003,HAR-C0018,HAR-P00057,Brookfield Properties,2025-12-05,Client portal,Ongoing operations,1000000,2000000,N,N,N,Exception - limits not supported,,E009,22,"Holder requires $2,000,000 umbrella; account carries $0."
+HAR-CERT0004,HAR-C0027,HAR-P00090,Amazon.com Services LLC,2025-10-25,Client email,Tenant improvement - Suite 200,1000000,0,Y,N,N,Issued,2025-10-27,E011,5,
+HAR-CERT0005,HAR-C0024,HAR-P00079,City of Tampa,2026-01-17,Client email,Tenant improvement - Suite 200,2000000,1000000,Y,Y,Y,Issued,2026-01-19,E008,39,
+HAR-CERT0006,HAR-C0020,HAR-P00064,Skanska USA Building,2026-02-28,Client email,Site work - Phase 2,1000000,2000000,Y,N,Y,Exception - limits not supported,,E012,50,"Holder requires $2,000,000 umbrella; account carries $0."
+HAR-CERT0007,HAR-C0009,HAR-P00027,Kiewit Corporation,2026-02-21,Phone,Tenant improvement - Suite 200,1000000,0,Y,Y,Y,Issued,2026-02-23,E010,33,
+HAR-CERT0008,HAR-C0007,HAR-P00018,Whiting-Turner Contracting,01/10/26,Phone,Bid requirement,1000000,1000000,N,N,Y,Exception - limits not supported,,E011,8,"Holder requires $1,000,000 umbrella; account carries $0."
+HAR-CERT0009,HAR-C0016,HAR-P00049,Amazon.com Services LLC,2026-01-21,Phone,Annual vendor compliance,2000000,2000000,N,N,N,Issued,2026-01-23,E007,71,
+HAR-CERT0010,HAR-C0009,HAR-P00027,"Home Depot U.S.A., Inc.",2025-12-19,Holder direct,Service contract 2026,1000000,0,Y,N,Y,Issued,2025-12-19,E010,40,
+HAR-CERT0011,HAR-C0012,HAR-P00037,Walmart Inc.,2026-01-25,Client email,Service contract 2026,2000000,2000000,N,N,Y,Exception - limits not supported,,E010,31,"Holder requires $2,000,000 umbrella; account carries $0."
+HAR-CERT0012,HAR-C0007,HAR-P00018,Kiewit Corporation,2026-02-24,Holder direct,Site work - Phase 2,2000000,0,Y,N,Y,Issued,2026-02-24,E011,27,
+HAR-CERT0013,HAR-C0012,HAR-P00037,Skanska USA Building,2025-11-01,Holder direct,Service contract 2026,1000000,0,N,Y,Y,Issued,2025-11-03,E010,61,
+HAR-CERT0014,HAR-C0023,HAR-P00076,JLL Property Management,2025-11-20,Holder direct,Site work - Phase 2,1000000,2000000,Y,N,N,Exception - limits not supported,,E009,42,"Holder requires $2,000,000 umbrella; account carries $0."
+HAR-CERT0015,HAR-C0002,HAR-P00003,Amazon.com Services LLC,2025-11-18,Phone,Tenant improvement - Suite 200,2000000,0,Y,Y,Y,Issued,2025-11-18,E012,8,
+HAR-CERT0016,HAR-C0027,HAR-P00090,Suffolk Construction,2026-01-27,Holder direct,Ongoing operations,2000000,1000000,Y,N,Y,Exception - limits not supported,,E011,11,"Holder requires $1,000,000 umbrella; account carries $0."
+HAR-CERT0017,HAR-C0027,HAR-P00090,Whiting-Turner Contracting,2025-11-27,Client portal,Bid requirement,2000000,1000000,N,N,Y,Exception - limits not supported,,E011,9,"Holder requires $1,000,000 umbrella; account carries $0."
+HAR-CERT0018,HAR-C0004,HAR-P00011,Turner Construction Company,2025-12-13,Holder direct,Bid requirement,2000000,5000000,N,N,N,Exception - limits not supported,,E007,17,"Holder requires $5,000,000 umbrella; account carries $0."
+HAR-CERT0019,HAR-C0009,HAR-P00027,State DOT,2025-12-10,Phone,Bid requirement,2000000,1000000,Y,N,N,Exception - limits not supported,,E010,38,"Holder requires $1,000,000 umbrella; account carries $0."
+HAR-CERT0020,HAR-C0023,HAR-P00076,City of Tampa ,2026-02-06,Phone,Bid requirement,2000000,0,Y,N,Y,Issued,2026-02-06,E009,3,
+HAR-CERT0021,HAR-C0003,HAR-P00007,CBRE Property Management,2025-10-25,Phone,Ongoing operations,1000000,2000000,N,N,Y,Issued,2025-10-25,E011,23,
+HAR-CERT0022,HAR-C0009,HAR-P00027,Kiewit Corporation,2025-10-08,Client portal,Tenant improvement - Suite 200,2000000,2000000,Y,N,Y,Exception - limits not supported,,E010,42,"Holder requires $2,000,000 umbrella; account carries $0."
+HAR-CERT0023,HAR-C0009,HAR-P00027,Walmart Inc.,2026-02-26,Client portal,Service contract 2026,1000000,2000000,N,Y,Y,Exception - limits not supported,,E010,8,"Holder requires $2,000,000 umbrella; account carries $0."
+HAR-CERT0024,HAR-C0010,HAR-P00032,City of Tampa,2026-01-21,Client portal,Bid requirement,1000000,0,N,Y,Y,Issued,2026-01-22,E006,38,
+HAR-CERT0025,HAR-C0008,HAR-P00023,Whiting-Turner Contracting,2026-02-09,Client portal,Bid requirement,2000000,0,Y,N,N,Issued,2026-02-10,E009,45,
+HAR-CERT0026,HAR-C0010,HAR-P00032,Whiting-Turner Contracting,2025-11-10,Client email,Service contract 2026,1000000,0,Y,Y,Y ,Issued,2025-11-12,E006,50,
+HAR-CERT0027,HAR-C0030,HAR-P00096,Walmart Inc.,2026-03-19,Client portal,Service contract 2026,2000000,0,Y,Y,Y,Issued,2026-03-21,E009,68,
+HAR-CERT0028,HAR-C0006,HAR-P00017,Amazon.com Services LLC,2025-12-01,Client portal,Ongoing operations,2000000,1000000,Y,N,N,Exception - limits not supported,,E012,42,"Holder requires $1,000,000 umbrella; account carries $0."
+HAR-CERT0029,HAR-C0004,HAR-P00011,Kiewit Corporation,2025-12-13,Client portal,Service contract 2026,1000000,5000000,N,Y,Y,Exception - limits not supported,,E007,22,"Holder requires $5,000,000 umbrella; account carries $0."
+HAR-CERT0030,HAR-C0010,HAR-P00032,Kiewit Corporation,2025-12-15,Client portal,Bid requirement,1000000,0,Y,N,N,Issued,2025-12-17,E006,10,
+HAR-CERT0031,HAR-C0023,HAR-P00076,Turner Construction Company,2025-11-28,Holder direct,Ongoing operations,1000000,0,Y,N,N,Issued,2025-11-30,E009,31,
+HAR-CERT0032,HAR-C0028,HAR-P00091,Skanska USA Building,10/04/25,Client email,Ongoing operations,1000000,0,Y,Y,N,Issued,2025-10-05,E010,17,
+HAR-CERT0033,HAR-C0016,HAR-P00049,JLL Property Management,2025-11-01,Phone,Service contract 2026,1000000,0,Y,Y,Y,Issued,2025-11-03,E007,26,
+HAR-CERT0034,HAR-C0008,HAR-P00023,State DOT,2026-02-21,Phone,Tenant improvement - Suite 200,1000000,2000000,Y,Y,N,Exception - limits not supported,,E009,13,"Holder requires $2,000,000 umbrella; account carries $0."
+HAR-CERT0035,HAR-C0016,HAR-P00049,JLL Property Management,2026-01-03,Phone ,Service contract 2026,1000000,5000000,N,Y,Y ,Exception - limits not supported,,E007,69,"Holder requires $5,000,000 umbrella; account carries $3,000,000."
+HAR-CERT0036,HAR-C0003,HAR-P00007,Port Tampa Bay,2026-03-30,Client email,Berth 212 fender repair,1000000,0,Y,Y,N,Exception - endorsement missing,,E011,,Blanket waiver of subrogation endorsement (CG 24 04) not on policy.

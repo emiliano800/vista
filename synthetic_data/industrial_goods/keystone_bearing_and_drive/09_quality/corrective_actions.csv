@@ -1,0 +1,3 @@
+Capa Id,Ncr Id,Opened Date,Root Cause,Corrective Action,Owner Id,Due Date,Effectiveness Check,Status
+CAPA-001,NCR-0001,2025-12-11,Packaging inadequate,Require PPAP on process change,E045,2026-01-25,,Open
+CAPA-002,NCR-0003,"Feb 11, 2026",Tool wear not tracked,Require PPAP on process change,E045,2026-03-28,Verified,Open

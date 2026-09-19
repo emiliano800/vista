@@ -1,0 +1,261 @@
+po_number,supplier_id,supplier_name,po_date,buyer_id,payment_terms,ship_via,freight_terms,po_total,po_status,approved_by,sent_method
+PO-31001,NIC-V018,"W.W. Grainger, Inc.",2025-07-10,E061,Net 30,UPS Ground,FOB Origin,5200.2,Closed,E061,Supplier Portal
+PO-31002,NIC-V017,Uline,2025-12-15,E063,Net 30,UPS Ground,Collect,15.62,Closed,E063,Phone
+PO-31003,NIC-V009,Haas Automation,2025-12-06,E062,Net 30,FedEx Ground,FOB Origin,1731.82,Open,E062,Email PDF
+PO-31004,NIC-V006,Cintas Corporation,2026-03-04,E063,Net 30,Will Call,Prepaid & Add,1654.8,Closed,E063,Email PDF
+PO-31005,NIC-V007,Fastenal,2025-05-09,E061,Net 30,UPS Ground,FOB Origin,1497.96,Closed,E061,Phone
+PO-31006,NIC-V001,Alro Steel,2026-02-11,E062,Net 30,Supplier Truck,FOB Destination,1591.46,Closed,E062,EDI 850
+PO-31007,NIC-V001,Alro Steel,2025-05-07,E060,Net 30,FedEx Ground,Prepaid & Add,2804.51,Open,E060,Phone
+PO-31008,NIC-V018,"W.W. Grainger, Inc.",2025-06-22,E060,Net 30,UPS Ground,Prepaid & Add,11942.0,Closed,E001,Email PDF
+PO-31009,NIC-V008,Garlock Sealing Technologies,2025-10-03,E061,Net 30,Supplier Truck,FOB Origin,26890.41,Open,E001,Phone
+PO-31010,NIC-V004,Baldor-Reliance (ABB),2025-07-24,E062,Net 45,LTL - Estes,FOB Origin,4645.2,Open,E062,EDI 850
+PO-31011,NIC-V011,McMaster-Carr,2025-08-22,E060,Net 30,UPS Ground,FOB Destination,570.6,Closed,E060,Phone
+PO-31012,NIC-V016,Sandvik Coromant,2026-01-22,E062,Net 30,Supplier Truck,FOB Destination,25.08,Closed,E062,Phone
+PO-31013,NIC-V004,Baldor-Reliance (ABB),2025-04-17,E061,Net 45,LTL - Estes,Collect,5385.34,Closed,E061,Supplier Portal
+PO-31014,NIC-V004,Baldor-Reliance (ABB),2025-07-12,E062,Net 45,Supplier Truck,FOB Origin,15992.57,Closed,E001,Supplier Portal
+PO-31015,NIC-V014,Regal Rexnord,2025-10-03,E062,Net 45,Supplier Truck,FOB Origin,1150.0,Closed,E062,Email PDF
+PO-31016,NIC-V007,Fastenal,2025-08-02,E062,Net 30,LTL - Estes,FOB Destination,5884.2,Closed,E062,Email PDF
+PO-31017,NIC-V017,Uline,2025-04-11,E061,Net 30,LTL - Estes,Prepaid & Add,502.5,Closed,E061,Email PDF
+PO-31018,NIC-V005,Brighton-Best International,2025-08-05,E063,Net 30,LTL - Estes,FOB Destination,3134.07,Closed,E063,Supplier Portal
+PO-31019,NIC-V014,Regal Rexnord,2025-08-15,E060,Net 45,Will Call,Prepaid & Add,1730.52,Closed,E060,Supplier Portal
+PO-31020,NIC-V007,Fastenal,2025-05-24,E061,Net 30,LTL - Estes,Collect,124.16,Closed,E061,EDI 850
+PO-31021,NIC-V018,"W.W. Grainger, Inc.",2025-11-27,E063,Net 30,FedEx Ground,Prepaid & Add,4130.2,Closed,E063,Phone
+PO-31022,NIC-V004,Baldor-Reliance (ABB),2025-06-04,E062,Net 45,Will Call,FOB Destination,2710.0,Closed,E062,Email PDF
+PO-31023,NIC-V010,MSC Industrial Supply,2025-10-09,E063,Net 30,FedEx Ground,Prepaid & Add,626.08,Closed,E063,EDI 850
+PO-31024,NIC-V009,Haas Automation,2025-10-31,E060,Net 30,UPS Ground,Prepaid & Add,6583.1,Closed,E060,Email PDF
+PO-31025,NIC-V006,Cintas Corporation,2025-04-29,E063,Net 30,Supplier Truck,Prepaid & Add,3080.75,Closed,E063,Phone
+PO-31026,NIC-V010,MSC Industrial Supply,2025-04-20,E060,Net 30,Will Call,FOB Destination,5949.2,Open,E060,Email PDF
+PO-31027,NIC-V008,Garlock Sealing Technologies,2025-05-16,E062,Net 30,Supplier Truck,FOB Destination,8333.64,Closed,E062,Supplier Portal
+PO-31028,NIC-V009,Haas Automation,2025-12-10,E063,Net 30,Supplier Truck,Prepaid & Add,1197.58,Closed,E063,EDI 850
+PO-31029,NIC-V006,Cintas Corporation,2025-06-12,E061,Net 30,FedEx Ground,FOB Destination,2273.05,Closed,E061,Supplier Portal
+PO-31030,NIC-V016,Sandvik Coromant,2026-02-04,E060,Net 30,LTL - Estes,FOB Destination,6259.5,Closed,E060,EDI 850
+PO-31031,NIC-V002,Apex Fastener Corp,2026-03-15,E061,Net 30,LTL - Estes,FOB Destination,8261.44,Open,E061,Supplier Portal
+PO-31032,NIC-V004,Baldor-Reliance (ABB),2025-09-07,E061,Net 45,LTL - Estes,FOB Destination,7877.15,Closed,E061,Phone
+PO-31033,NIC-V013,Parker Hannifin,2026-01-28,E060,Net 45,UPS Ground,FOB Destination,2272.68,Closed,E060,EDI 850
+PO-31034,NIC-V003,Applied Industrial Technologies,2025-06-05,E062,Net 30,FedEx Ground,FOB Origin,17521.88,Closed,E001,EDI 850
+PO-31035,NIC-V009,Haas Automation,2025-10-04,E062,Net 30,FedEx Ground,Prepaid & Add,1372.0,Closed,E062,Email PDF
+PO-31036,NIC-V005,Brighton-Best International,2025-08-05,E061,Net 30,LTL - Estes,Collect,942.83,Closed,E061,EDI 850
+PO-31037,NIC-V009,Haas Automation,2025-07-28,E063,Net 30,LTL - Estes,Prepaid & Add,6198.6,Closed,E063,Email PDF
+PO-31038,NIC-V010,MSC Industrial Supply,2025-08-06,E062,Net 30,FedEx Ground,FOB Origin,3357.8,Open,E062,Supplier Portal
+PO-31039,NIC-V011,McMaster-Carr,2025-07-21,E063,Net 30,LTL - Estes,FOB Origin,5545.79,Closed,E063,Email PDF
+PO-31040,NIC-V001,Alro Steel,2025-07-19,E061,Net 30,LTL - Estes,Prepaid & Add,2263.7,Closed,E061,EDI 850
+PO-31041,NIC-V013,Parker Hannifin,2026-02-14,E060,Net 45,FedEx Ground,Collect,31540.73,Open,E001,Supplier Portal
+PO-31042,NIC-V018,"W.W. Grainger, Inc.",2025-06-21,E062,Net 30,Supplier Truck,Collect,11737.2,Open,E001,Phone
+PO-31043,NIC-V011,McMaster-Carr,2025-09-01,E061,Net 30,Will Call,Prepaid & Add,25550.22,Closed,E001,Supplier Portal
+PO-31044,NIC-V007,Fastenal,2025-09-11,E060,Net 30,Will Call,FOB Origin,5413.8,Open,E060,Supplier Portal
+PO-31045,NIC-V004,Baldor-Reliance (ABB),2025-07-25,E063,Net 45,LTL - Estes,FOB Origin,2029.17,Closed,E063,Email PDF
+PO-31046,NIC-V004,Baldor-Reliance (ABB),2026-02-15,E063,Net 45,Supplier Truck,FOB Origin,9664.21,Closed,E063,EDI 850
+PO-31047,NIC-V001,Alro Steel,2026-01-29,E060,Net 30,UPS Ground,FOB Destination,1059.06,Open,E060,Supplier Portal
+PO-31048,NIC-V003,Applied Industrial Technologies,2026-01-28,E063,Net 30,FedEx Ground,Collect,18335.78,Open,E001,Email PDF
+PO-31049,NIC-V004,Baldor-Reliance (ABB),2025-05-20,E060,Net 45,FedEx Ground,Collect,31974.47,Closed,E001,Email PDF
+PO-31050,NIC-V007,Fastenal,2026-01-04,E062,Net 30,UPS Ground,Prepaid & Add,10346.67,Open,E001,EDI 850
+PO-31051,NIC-V006,Cintas Corporation,2025-12-19,E062,Net 30,FedEx Ground,FOB Destination,5496.0,Closed,E062,EDI 850
+PO-31052,NIC-V006,Cintas Corporation,2025-06-23,E061,Net 30,UPS Ground,Collect,4883.3,Open,E061,EDI 850
+PO-31053,NIC-V003,Applied Industrial Technologies,2025-09-07,E061,Net 30,Supplier Truck,FOB Destination,17326.88,Open,E001,Supplier Portal
+PO-31054,NIC-V018,"W.W. Grainger, Inc.",2026-03-23,E061,Net 30,FedEx Ground,FOB Destination,16520.8,Open,E001,Email PDF
+PO-31055,NIC-V007,Fastenal,2025-07-04,E063,Net 30,Will Call,Prepaid & Add,6105.0,Closed,E063,Phone
+PO-31056,NIC-V016,Sandvik Coromant,2026-01-05,E060,Net 30,Will Call,Collect,1120.96,Closed,E060,EDI 850
+PO-31057,NIC-V009,Haas Automation,2025-11-19,E062,Net 30,Will Call,Prepaid & Add,1076.92,Closed,E062,EDI 850
+PO-31058,NIC-V016,Sandvik Coromant,2026-01-12,E061,Net 30,LTL - Estes,Prepaid & Add,20074.36,Closed,E001,Supplier Portal
+PO-31059,NIC-V015,Ryerson,2026-02-25,E061,Net 45,UPS Ground,Prepaid & Add,273.76,Closed,E061,EDI 850
+PO-31060,NIC-V010,MSC Industrial Supply,2025-09-28,E063,Net 30,UPS Ground,Collect,2420.4,Open,E063,Supplier Portal
+PO-31061,NIC-V014,Regal Rexnord,2026-03-06,E060,Net 45,Supplier Truck,Prepaid & Add,2450.0,Open,E060,Phone
+PO-31062,NIC-V004,Baldor-Reliance (ABB),2026-02-16,E062,Net 45,LTL - Estes,Prepaid & Add,152.57,Open,E062,EDI 850
+PO-31063,NIC-V018,"W.W. Grainger, Inc.",2025-12-26,E061,Net 30,FedEx Ground,FOB Destination,9090.0,Closed,E061,Supplier Portal
+PO-31064,NIC-V010,MSC Industrial Supply,2025-11-16,E063,Net 30,LTL - Estes,FOB Origin,229.68,Closed,E063,Email PDF
+PO-31065,NIC-V018,"W.W. Grainger, Inc.",2025-04-23,E063,Net 30,Will Call,Collect,17740.6,Closed,E001,Email PDF
+PO-31066,NIC-V008,Garlock Sealing Technologies,2026-03-21,E060,Net 30,Supplier Truck,Prepaid & Add,16968.8,Open,E001,Email PDF
+PO-31067,NIC-V015,Ryerson,2025-08-09,E061,Net 45,FedEx Ground,Collect,130.0,Closed,E061,Email PDF
+PO-31068,NIC-V017,Uline,2025-10-23,E060,Net 30,Supplier Truck,Prepaid & Add,15606.74,Closed,E001,EDI 850
+PO-31069,NIC-V013,Parker Hannifin,2025-10-18,E062,Net 45,Supplier Truck,FOB Origin,4327.68,Closed,E062,Supplier Portal
+PO-31070,NIC-V010,MSC Industrial Supply,2026-03-19,E061,Net 30,UPS Ground,Prepaid & Add,2850.0,Closed,E061,Email PDF
+PO-31071,NIC-V013,Parker Hannifin,2025-06-01,E062,Net 45,LTL - Estes,Prepaid & Add,9373.18,Closed,E062,Email PDF
+PO-31072,NIC-V002,Apex Fastener Corp,2025-04-05,E062,Net 30,Supplier Truck,FOB Origin,4321.17,Closed,E062,Email PDF
+PO-31073,NIC-V008,Garlock Sealing Technologies,2025-07-02,E062,Net 30,Supplier Truck,Prepaid & Add,12387.9,Closed,E001,EDI 850
+PO-31074,NIC-V010,MSC Industrial Supply,2025-04-18,E060,Net 30,Will Call,FOB Origin,1030.64,Closed,E060,Email PDF
+PO-31075,NIC-V012,Motion Industries,2025-08-23,E060,Net 30,Supplier Truck,FOB Destination,2928.0,Closed,E060,Email PDF
+PO-31076,NIC-V013,Parker Hannifin,2026-03-04,E060,Net 45,LTL - Estes,FOB Origin,2026.25,Open,E060,Email PDF
+PO-31077,NIC-V005,Brighton-Best International,2025-06-30,E062,Net 30,UPS Ground,FOB Destination,4228.51,Closed,E062,EDI 850
+PO-31078,NIC-V017,Uline,2025-08-15,E061,Net 30,LTL - Estes,Prepaid & Add,76.0,Closed,E061,Supplier Portal
+PO-31079,NIC-V015,Ryerson,2025-04-17,E062,Net 45,UPS Ground,Collect,562.06,Closed,E062,EDI 850
+PO-31080,NIC-V003,Applied Industrial Technologies,2025-08-19,E062,Net 30,Will Call,Collect,27996.25,Closed,E001,Supplier Portal
+PO-31081,NIC-V013,Parker Hannifin,2026-02-25,E061,Net 45,Will Call,FOB Origin,9.69,Open,E061,Supplier Portal
+PO-31082,NIC-V012,Motion Industries,2025-09-14,E061,Net 30,FedEx Ground,FOB Origin,137.0,Closed,E061,Email PDF
+PO-31083,NIC-V008,Garlock Sealing Technologies,2025-04-21,E061,Net 30,Will Call,FOB Destination,619.25,Closed,E061,EDI 850
+PO-31084,NIC-V013,Parker Hannifin,2026-03-12,E062,Net 45,Will Call,FOB Origin,4327.68,Open,E062,EDI 850
+PO-31085,NIC-V018,"W.W. Grainger, Inc.",2025-09-19,E061,Net 30,FedEx Ground,Collect,4130.2,Closed,E061,Email PDF
+PO-31086,NIC-V011,McMaster-Carr,2025-05-01,E061,Net 30,FedEx Ground,FOB Origin,3827.2,Closed,E061,Phone
+PO-31087,NIC-V010,MSC Industrial Supply,2025-12-16,E062,Net 30,Supplier Truck,Prepaid & Add,627.5,Closed,E062,Email PDF
+PO-31088,NIC-V008,Garlock Sealing Technologies,2026-01-29,E060,Net 30,Will Call,FOB Origin,15859.73,Closed,E001,Supplier Portal
+PO-31089,NIC-V005,Brighton-Best International,2025-12-31,E062,Net 30,FedEx Ground,FOB Destination,185.73,Open,E062,Phone
+PO-31090,NIC-V016,Sandvik Coromant,2025-06-30,E061,Net 30,FedEx Ground,Collect,5082.81,Open,E061,Supplier Portal
+PO-31091,NIC-V015,Ryerson,2026-01-05,E063,Net 45,UPS Ground,Collect,510.0,Closed,E063,Email PDF
+PO-31092,NIC-V017,Uline,2025-08-19,E061,Net 30,Will Call,Collect,7778.0,Open,E061,Phone
+PO-31093,NIC-V003,Applied Industrial Technologies,2025-07-02,E063,Net 30,FedEx Ground,Prepaid & Add,5947.55,Open,E063,Email PDF
+PO-31094,NIC-V001,Alro Steel,2026-01-09,E060,Net 30,FedEx Ground,FOB Origin,1447.14,Closed,E060,Phone
+PO-31095,NIC-V010,MSC Industrial Supply,2026-03-19,E061,Net 30,Will Call,Prepaid & Add,11188.0,Open,E001,Phone
+PO-31096,NIC-V017,Uline,2025-06-16,E062,Net 30,Will Call,FOB Destination,7547.63,Closed,E062,Supplier Portal
+PO-31097,NIC-V009,Haas Automation,2025-08-21,E060,Net 30,FedEx Ground,Collect,1203.4,Closed,E060,Email PDF
+PO-31098,NIC-V013,Parker Hannifin,2025-12-13,E060,Net 45,Supplier Truck,Collect,8196.84,Open,E060,Phone
+PO-31099,NIC-V017,Uline,2025-04-19,E062,Net 30,Supplier Truck,Prepaid & Add,7.1,Closed,E062,Email PDF
+PO-31100,NIC-V018,"W.W. Grainger, Inc.",2025-04-06,E062,Net 30,Will Call,FOB Origin,6920.19,Closed,E062,Email PDF
+PO-31101,NIC-V007,Fastenal,2025-11-12,E063,Net 30,UPS Ground,FOB Destination,4251.8,Open,E063,Supplier Portal
+PO-31102,NIC-V004,Baldor-Reliance (ABB),2025-04-12,E061,Net 45,Supplier Truck,FOB Origin,303.6,Closed,E061,Supplier Portal
+PO-31103,NIC-V016,Sandvik Coromant,2025-11-06,E063,Net 30,Will Call,Prepaid & Add,18002.0,Closed,E001,Email PDF
+PO-31104,NIC-V004,Baldor-Reliance (ABB),2025-12-13,E060,Net 45,LTL - Estes,FOB Destination,155.65,Closed,E060,Email PDF
+PO-31105,NIC-V003,Applied Industrial Technologies,2026-01-21,E062,Net 30,FedEx Ground,FOB Origin,3559.1,Closed,E062,Phone
+PO-31106,NIC-V005,Brighton-Best International,2025-12-01,E060,Net 30,Supplier Truck,Collect,2994.46,Closed,E060,Supplier Portal
+PO-31107,NIC-V005,Brighton-Best International,2026-03-11,E063,Net 30,UPS Ground,FOB Origin,34.7,Open,E063,Email PDF
+PO-31108,NIC-V010,MSC Industrial Supply,2025-04-07,E063,Net 30,LTL - Estes,FOB Destination,3964.0,Open,E063,Phone
+PO-31109,NIC-V002,Apex Fastener Corp,2025-11-15,E061,Net 30,Will Call,Prepaid & Add,42.0,Open,E061,Email PDF
+PO-31110,NIC-V015,Ryerson,2025-07-22,E061,Net 45,Will Call,Collect,444.56,Open,E061,Supplier Portal
+PO-31111,NIC-V009,Haas Automation,2025-08-27,E061,Net 30,Will Call,Collect,3793.1,Open,E061,Email PDF
+PO-31112,NIC-V002,Apex Fastener Corp,2025-11-19,E060,Net 30,LTL - Estes,Prepaid & Add,3451.2,Open,E060,Supplier Portal
+PO-31113,NIC-V016,Sandvik Coromant,2025-09-13,E060,Net 30,Will Call,FOB Destination,1067.64,Closed,E060,EDI 850
+PO-31114,NIC-V013,Parker Hannifin,2026-03-29,E061,Net 45,FedEx Ground,FOB Destination,10760.43,Open,E001,Phone
+PO-31115,NIC-V007,Fastenal,2025-06-09,E062,Net 30,UPS Ground,FOB Destination,945.8,Open,E062,Email PDF
+PO-31116,NIC-V004,Baldor-Reliance (ABB),2025-12-24,E063,Net 45,LTL - Estes,FOB Origin,5251.66,Closed,E063,Supplier Portal
+PO-31117,NIC-V005,Brighton-Best International,2025-05-05,E061,Net 30,Will Call,FOB Destination,105.43,Closed,E061,EDI 850
+PO-31118,NIC-V005,Brighton-Best International,2025-10-08,E062,Net 30,UPS Ground,FOB Destination,927.08,Closed,E062,Supplier Portal
+PO-31119,NIC-V006,Cintas Corporation,2025-04-25,E062,Net 30,LTL - Estes,FOB Destination,4964.4,Closed,E062,Email PDF
+PO-31120,NIC-V018,"W.W. Grainger, Inc.",2025-04-08,E060,Net 30,UPS Ground,Prepaid & Add,18892.0,Closed,E001,Phone
+PO-31121,NIC-V011,McMaster-Carr,2025-08-08,E063,Net 30,Will Call,Collect,13196.6,Closed,E001,Email PDF
+PO-31122,NIC-V005,Brighton-Best International,2025-09-14,E060,Net 30,LTL - Estes,FOB Origin,1033.51,Open,E060,EDI 850
+PO-31123,NIC-V002,Apex Fastener Corp,2025-04-28,E063,Net 30,Will Call,FOB Destination,10510.9,Open,E001,Phone
+PO-31124,NIC-V012,Motion Industries,2025-08-05,E061,Net 30,LTL - Estes,FOB Destination,1049.16,Closed,E061,Email PDF
+PO-31125,NIC-V012,Motion Industries,2026-01-08,E060,Net 30,Will Call,Collect,18447.12,Closed,E001,Supplier Portal
+PO-31126,NIC-V010,MSC Industrial Supply,2025-08-21,E060,Net 30,Will Call,FOB Origin,17419.4,Open,E001,EDI 850
+PO-31127,NIC-V003,Applied Industrial Technologies,2025-07-14,E060,Net 30,Will Call,FOB Destination,7712.22,Closed,E060,Phone
+PO-31128,NIC-V014,Regal Rexnord,2025-07-24,E060,Net 45,Will Call,Prepaid & Add,1900.0,Closed,E060,Email PDF
+PO-31129,NIC-V010,MSC Industrial Supply,2026-02-27,E061,Net 30,LTL - Estes,FOB Destination,2250.64,Open,E061,EDI 850
+PO-31130,NIC-V001,Alro Steel,2026-03-10,E062,Net 30,LTL - Estes,Collect,14600.92,Open,E001,Phone
+PO-31131,NIC-V003,Applied Industrial Technologies,2025-04-12,E061,Net 30,Will Call,FOB Origin,2999.68,Closed,E061,Email PDF
+PO-31132,NIC-V003,Applied Industrial Technologies,2025-09-29,E062,Net 30,FedEx Ground,Collect,4500.55,Closed,E062,Email PDF
+PO-31133,NIC-V010,MSC Industrial Supply,2026-01-07,E063,Net 30,Will Call,FOB Destination,4869.4,Closed,E063,Phone
+PO-31134,NIC-V007,Fastenal,2025-12-21,E062,Net 30,Supplier Truck,FOB Origin,8412.17,Open,E062,Phone
+PO-31135,NIC-V003,Applied Industrial Technologies,2026-01-15,E063,Net 30,Supplier Truck,Prepaid & Add,1474.0,Closed,E063,Email PDF
+PO-31136,NIC-V002,Apex Fastener Corp,2025-10-19,E063,Net 30,FedEx Ground,Collect,6616.1,Closed,E063,EDI 850
+PO-31137,NIC-V017,Uline,2025-09-23,E062,Net 30,FedEx Ground,Prepaid & Add,3324.34,Closed,E062,EDI 850
+PO-31138,NIC-V014,Regal Rexnord,2026-01-13,E061,Net 45,Supplier Truck,FOB Destination,5525.0,Closed,E061,Phone
+PO-31139,NIC-V002,Apex Fastener Corp,2025-04-20,E061,Net 30,LTL - Estes,Collect,2592.46,Closed,E061,Email PDF
+PO-31140,NIC-V010,MSC Industrial Supply,2025-06-06,E062,Net 30,FedEx Ground,FOB Destination,2722.94,Closed,E062,Email PDF
+PO-31141,NIC-V015,Ryerson,2025-04-15,E061,Net 45,Supplier Truck,FOB Destination,109.2,Closed,E061,Email PDF
+PO-31142,NIC-V014,Regal Rexnord,2025-05-14,E061,Net 45,Supplier Truck,FOB Origin,250.0,Closed,E061,Email PDF
+PO-31143,NIC-V006,Cintas Corporation,2025-07-13,E060,Net 30,UPS Ground,Prepaid & Add,3829.35,Closed,E060,Email PDF
+PO-31144,NIC-V005,Brighton-Best International,2026-02-13,E061,Net 30,Will Call,FOB Destination,217.16,Open,E061,Phone
+PO-31145,NIC-V014,Regal Rexnord,2025-10-14,E062,Net 45,Will Call,FOB Destination,2481.0,Closed,E062,Phone
+PO-31146,NIC-V006,Cintas Corporation,2025-06-12,E060,Net 30,Supplier Truck,Prepaid & Add,3630.6,Closed,E060,EDI 850
+PO-31147,NIC-V004,Baldor-Reliance (ABB),2026-03-23,E061,Net 45,LTL - Estes,Prepaid & Add,7289.92,Open,E061,Phone
+PO-31148,NIC-V005,Brighton-Best International,2025-07-17,E061,Net 30,Will Call,FOB Origin,2994.46,Closed,E061,EDI 850
+PO-31149,NIC-V006,Cintas Corporation,2025-11-04,E060,Net 30,UPS Ground,Prepaid & Add,3276.0,Closed,E060,Email PDF
+PO-31150,NIC-V018,"W.W. Grainger, Inc.",2025-11-19,E061,Net 30,FedEx Ground,FOB Origin,4130.2,Closed,E061,Phone
+PO-31151,NIC-V016,Sandvik Coromant,2026-01-23,E061,Net 30,LTL - Estes,Collect,3592.85,Closed,E061,EDI 850
+PO-31152,NIC-V005,Brighton-Best International,2025-10-02,E063,Net 30,FedEx Ground,Collect,6011.92,Closed,E063,EDI 850
+PO-31153,NIC-V016,Sandvik Coromant,2026-01-29,E063,Net 30,Will Call,FOB Destination,2234.87,Closed,E063,Email PDF
+PO-31154,NIC-V015,Ryerson,2026-03-06,E061,Net 45,Supplier Truck,Collect,150.4,Open,E061,Email PDF
+PO-31155,NIC-V016,Sandvik Coromant,2025-12-28,E062,Net 30,Will Call,Prepaid & Add,5450.04,Open,E062,Email PDF
+PO-31156,NIC-V002,Apex Fastener Corp,2025-09-29,E062,Net 30,Supplier Truck,FOB Origin,2576.75,Closed,E062,Supplier Portal
+PO-31157,NIC-V010,MSC Industrial Supply,2025-11-16,E062,Net 30,LTL - Estes,Prepaid & Add,6100.0,Closed,E062,EDI 850
+PO-31158,NIC-V006,Cintas Corporation,2026-03-23,E060,Net 30,LTL - Estes,FOB Origin,3396.75,Open,E060,Email PDF
+PO-31159,NIC-V004,Baldor-Reliance (ABB),2025-06-28,E062,Net 45,UPS Ground,Collect,866.5,Closed,E062,EDI 850
+PO-31160,NIC-V008,Garlock Sealing Technologies,2025-07-23,E063,Net 30,UPS Ground,Collect,5688.31,Open,E063,Email PDF
+PO-31161,NIC-V016,Sandvik Coromant,2025-08-08,E062,Net 30,UPS Ground,Collect,1042.56,Closed,E062,EDI 850
+PO-31162,NIC-V003,Applied Industrial Technologies,2025-06-18,E063,Net 30,Will Call,FOB Origin,2328.06,Closed,E063,Email PDF
+PO-31163,NIC-V018,"W.W. Grainger, Inc.",2025-10-18,E063,Net 30,Will Call,FOB Origin,21285.51,Closed,E001,EDI 850
+PO-31164,NIC-V017,Uline,2025-07-03,E060,Net 30,FedEx Ground,Collect,207.13,Closed,E060,Email PDF
+PO-31165,NIC-V015,Ryerson,2025-09-18,E061,Net 45,Supplier Truck,Prepaid & Add,56.4,Closed,E061,Supplier Portal
+PO-31166,NIC-V003,Applied Industrial Technologies,2026-01-03,E063,Net 30,Will Call,Collect,888.4,Open,E063,Phone
+PO-31167,NIC-V018,"W.W. Grainger, Inc.",2025-07-23,E062,Net 30,UPS Ground,Prepaid & Add,17977.6,Closed,E001,Phone
+PO-31168,NIC-V014,Regal Rexnord,2025-10-06,E063,Net 45,LTL - Estes,FOB Destination,603.52,Closed,E063,Email PDF
+PO-31169,NIC-V006,Cintas Corporation,2025-07-26,E062,Net 30,Supplier Truck,FOB Origin,325.0,Closed,E062,Supplier Portal
+PO-31170,NIC-V011,McMaster-Carr,2026-02-22,E061,Net 30,Will Call,FOB Origin,4592.94,Open,E061,Phone
+PO-31171,NIC-V003,Applied Industrial Technologies,2025-10-18,E063,Net 30,LTL - Estes,FOB Origin,4939.84,Closed,E063,Phone
+PO-31172,NIC-V016,Sandvik Coromant,2025-08-04,E061,Net 30,Will Call,FOB Destination,99.94,Closed,E061,Supplier Portal
+PO-31173,NIC-V006,Cintas Corporation,2025-06-23,E060,Net 30,FedEx Ground,Prepaid & Add,2639.8,Closed,E060,EDI 850
+PO-31174,NIC-V014,Regal Rexnord,2025-12-28,E061,Net 45,FedEx Ground,FOB Destination,1719.48,Closed,E061,Email PDF
+PO-31175,NIC-V008,Garlock Sealing Technologies,2025-11-19,E061,Net 30,Supplier Truck,FOB Origin,15326.06,Closed,E001,Email PDF
+PO-31176,NIC-V018,"W.W. Grainger, Inc.",2025-09-10,E060,Net 30,UPS Ground,Prepaid & Add,5350.0,Closed,E060,Email PDF
+PO-31177,NIC-V018,"W.W. Grainger, Inc.",2025-09-09,E060,Net 30,UPS Ground,FOB Destination,19753.8,Open,E001,Email PDF
+PO-31178,NIC-V012,Motion Industries,2025-09-26,E063,Net 30,Will Call,Prepaid & Add,2212.68,Open,E063,Phone
+PO-31179,NIC-V010,MSC Industrial Supply,2025-06-06,E060,Net 30,Supplier Truck,Collect,7574.07,Closed,E060,Email PDF
+PO-31180,NIC-V018,"W.W. Grainger, Inc.",2025-06-06,E062,Net 30,FedEx Ground,FOB Destination,16767.2,Closed,E001,Supplier Portal
+PO-31181,NIC-V013,Parker Hannifin,2025-12-28,E060,Net 45,LTL - Estes,Prepaid & Add,17030.19,Open,E001,Phone
+PO-31182,NIC-V007,Fastenal,2026-03-29,E060,Net 30,FedEx Ground,Collect,93.2,Open,E060,Email PDF
+PO-31183,NIC-V008,Garlock Sealing Technologies,2025-05-17,E063,Net 30,LTL - Estes,Collect,9099.56,Open,E063,Supplier Portal
+PO-31184,NIC-V016,Sandvik Coromant,2026-01-14,E060,Net 30,Will Call,FOB Destination,25.08,Closed,E060,Email PDF
+PO-31185,NIC-V018,"W.W. Grainger, Inc.",2025-10-02,E061,Net 30,Supplier Truck,FOB Destination,11942.0,Closed,E001,Supplier Portal
+PO-31186,NIC-V003,Applied Industrial Technologies,2025-05-28,E061,Net 30,FedEx Ground,Prepaid & Add,32704.56,Closed,E001,Email PDF
+PO-31187,NIC-V006,Cintas Corporation,2025-10-20,E063,Net 30,UPS Ground,Prepaid & Add,3375.2,Closed,E063,EDI 850
+PO-31188,NIC-V001,Alro Steel,2026-01-30,E060,Net 30,LTL - Estes,FOB Origin,436.24,Closed,E060,Supplier Portal
+PO-31189,NIC-V006,Cintas Corporation,2026-01-15,E061,Net 30,UPS Ground,FOB Origin,3309.6,Closed,E061,Email PDF
+PO-31190,NIC-V006,Cintas Corporation,2026-02-15,E062,Net 30,Will Call,Collect,519.75,Closed,E062,Email PDF
+PO-31191,NIC-V014,Regal Rexnord,2025-12-02,E063,Net 45,Supplier Truck,Prepaid & Add,1275.0,Closed,E063,Email PDF
+PO-31192,NIC-V012,Motion Industries,2025-10-26,E061,Net 30,UPS Ground,FOB Destination,320611.02,Closed,E001,EDI 850
+PO-31193,NIC-V004,Baldor-Reliance (ABB),2025-07-20,E061,Net 45,LTL - Estes,Prepaid & Add,1141.45,Closed,E061,Phone
+PO-31194,NIC-V002,Apex Fastener Corp,2025-06-12,E060,Net 30,UPS Ground,Prepaid & Add,4989.35,Closed,E060,Supplier Portal
+PO-31195,NIC-V015,Ryerson,2026-02-25,E061,Net 45,Will Call,FOB Origin,290.76,Closed,E061,Email PDF
+PO-31196,NIC-V013,Parker Hannifin,2025-09-04,E062,Net 45,Will Call,FOB Destination,8992.68,Closed,E062,Email PDF
+PO-31197,NIC-V011,McMaster-Carr,2026-03-22,E063,Net 30,Supplier Truck,FOB Destination,1460.2,Open,E063,Email PDF
+PO-31198,NIC-V015,Ryerson,2025-06-03,E063,Net 45,Supplier Truck,Collect,345.52,Open,E063,Phone
+PO-31199,NIC-V004,Baldor-Reliance (ABB),2026-01-11,E063,Net 45,Supplier Truck,Prepaid & Add,2010.28,Closed,E063,Phone
+PO-31200,NIC-V008,Garlock Sealing Technologies,2025-09-13,E063,Net 30,UPS Ground,FOB Origin,4018.77,Closed,E063,EDI 850
+PO-31201,NIC-V014,Regal Rexnord,2025-08-08,E063,Net 45,Supplier Truck,FOB Destination,575.0,Closed,E063,EDI 850
+PO-31202,NIC-V009,Haas Automation,2026-01-13,E062,Net 30,Will Call,FOB Origin,8552.95,Closed,E062,Email PDF
+PO-31203,NIC-V006,Cintas Corporation,2025-11-28,E060,Net 30,UPS Ground,Collect,2561.0,Closed,E060,Email PDF
+PO-31204,NIC-V010,MSC Industrial Supply,2025-09-25,E061,Net 30,Supplier Truck,Prepaid & Add,2052.5,Closed,E061,Supplier Portal
+PO-31205,NIC-V011,McMaster-Carr,2025-04-25,E060,Net 30,FedEx Ground,Collect,5014.9,Closed,E060,Supplier Portal
+PO-31206,NIC-V012,Motion Industries,2025-06-30,E062,Net 30,Supplier Truck,Collect,894411.72,Closed,E001,Email PDF
+PO-31207,NIC-V013,Parker Hannifin,2026-03-02,E061,Net 45,LTL - Estes,FOB Origin,3131.2,Open,E061,Email PDF
+PO-31208,NIC-V001,Alro Steel,2025-08-07,E060,Net 30,Supplier Truck,FOB Destination,666.02,Closed,E060,Email PDF
+PO-31209,NIC-V017,Uline,2025-05-28,E063,Net 30,UPS Ground,FOB Origin,8929.8,Closed,E063,Email PDF
+PO-31210,NIC-V002,Apex Fastener Corp,2026-02-04,E062,Net 30,Supplier Truck,FOB Origin,27401.96,Closed,E001,Phone
+PO-31211,NIC-V007,Fastenal,2026-02-19,E062,Net 30,Supplier Truck,FOB Destination,2333.31,Closed,E062,Email PDF
+PO-31212,NIC-V005,Brighton-Best International,2025-12-18,E063,Net 30,LTL - Estes,FOB Destination,12248.5,Closed,E001,EDI 850
+PO-31213,NIC-V012,Motion Industries,2026-02-24,E063,Net 30,Supplier Truck,FOB Origin,760.0,Closed,E063,EDI 850
+PO-31214,NIC-V014,Regal Rexnord,2025-04-17,E063,Net 45,Supplier Truck,Prepaid & Add,3705.52,Open,E063,Email PDF
+PO-31215,NIC-V016,Sandvik Coromant,2025-12-20,E062,Net 30,FedEx Ground,FOB Destination,7573.31,Closed,E062,EDI 850
+PO-31216,NIC-V012,Motion Industries,2025-11-24,E063,Net 30,Will Call,FOB Destination,6770.88,Closed,E063,Supplier Portal
+PO-31217,NIC-V002,Apex Fastener Corp,2025-09-07,E060,Net 30,UPS Ground,Collect,3109.58,Closed,E060,Phone
+PO-31218,NIC-V016,Sandvik Coromant,2025-04-11,E060,Net 30,LTL - Estes,Prepaid & Add,64.28,Closed,E060,Supplier Portal
+PO-31219,NIC-V004,Baldor-Reliance (ABB),2025-11-22,E062,Net 45,FedEx Ground,FOB Origin,7543.75,Open,E062,Phone
+PO-31220,NIC-V010,MSC Industrial Supply,2025-10-18,E061,Net 30,Supplier Truck,FOB Destination,1193.48,Closed,E061,Email PDF
+PO-31221,NIC-V014,Regal Rexnord,2025-05-20,E063,Net 45,UPS Ground,Collect,2975.0,Open,E063,Phone
+PO-31222,NIC-V013,Parker Hannifin,2025-06-08,E060,Net 45,LTL - Estes,FOB Destination,18204.25,Open,E001,Email PDF
+PO-31223,NIC-V011,McMaster-Carr,2026-03-17,E060,Net 30,UPS Ground,FOB Destination,18997.82,Open,E001,Email PDF
+PO-31224,NIC-V017,Uline,2025-12-13,E060,Net 30,FedEx Ground,FOB Origin,7945.25,Closed,E060,Email PDF
+PO-31225,NIC-V008,Garlock Sealing Technologies,2026-03-20,E060,Net 30,FedEx Ground,FOB Origin,10859.57,Open,E001,Email PDF
+PO-31226,NIC-V002,Apex Fastener Corp,2025-08-26,E061,Net 30,Supplier Truck,FOB Origin,602.0,Closed,E061,Email PDF
+PO-31227,NIC-V009,Haas Automation,2026-01-21,E062,Net 30,UPS Ground,Prepaid & Add,19981.1,Closed,E001,Phone
+PO-31228,NIC-V011,McMaster-Carr,2026-03-08,E060,Net 30,FedEx Ground,FOB Origin,13261.22,Open,E001,Email PDF
+PO-31229,NIC-V008,Garlock Sealing Technologies,2025-12-24,E062,Net 30,Will Call,Prepaid & Add,34274.1,Closed,E001,Email PDF
+PO-31230,NIC-V014,Regal Rexnord,2025-04-23,E062,Net 45,UPS Ground,Collect,2137.5,Open,E062,Supplier Portal
+PO-31231,NIC-V003,Applied Industrial Technologies,2025-10-11,E063,Net 30,UPS Ground,Collect,9581.06,Open,E063,Email PDF
+PO-31232,NIC-V005,Brighton-Best International,2025-12-22,E063,Net 30,FedEx Ground,Collect,3049.23,Open,E063,Supplier Portal
+PO-31233,NIC-V008,Garlock Sealing Technologies,2026-03-29,E060,Net 30,UPS Ground,Collect,9107.91,Open,E060,Email PDF
+PO-31234,NIC-V017,Uline,2025-11-09,E062,Net 30,Supplier Truck,FOB Destination,7873.46,Open,E062,Email PDF
+PO-31235,NIC-V007,Fastenal,2026-03-11,E063,Net 30,UPS Ground,Collect,7672.82,Closed,E063,EDI 850
+PO-31236,NIC-V017,Uline,2025-06-29,E062,Net 30,FedEx Ground,Collect,246.0,Closed,E062,EDI 850
+PO-31237,NIC-V017,Uline,2025-11-14,E061,Net 30,FedEx Ground,FOB Origin,207.13,Closed,E061,EDI 850
+PO-31238,NIC-V006,Cintas Corporation,2026-01-16,E062,Net 30,FedEx Ground,FOB Destination,519.75,Closed,E062,Supplier Portal
+PO-31239,NIC-V011,McMaster-Carr,2025-06-03,E061,Net 30,UPS Ground,FOB Destination,22207.37,Open,E001,Phone
+PO-31240,NIC-V009,Haas Automation,2025-05-12,E061,Net 30,UPS Ground,FOB Destination,10910.35,Closed,E001,Supplier Portal
+PO-31241,NIC-V015,Ryerson,2026-01-11,E062,Net 45,LTL - Estes,FOB Destination,362.0,Closed,E062,Phone
+PO-31242,NIC-V003,Applied Industrial Technologies,2025-08-06,E061,Net 30,LTL - Estes,Collect,2669.4,Closed,E061,Supplier Portal
+PO-31243,NIC-V015,Ryerson,2025-09-29,E060,Net 45,Supplier Truck,Collect,427.08,Open,E060,Supplier Portal
+PO-31244,NIC-V001,Alro Steel,2026-03-05,E061,Net 30,Will Call,Prepaid & Add,344.56,Open,E061,Supplier Portal
+PO-31245,NIC-V005,Brighton-Best International,2025-04-19,E061,Net 30,Supplier Truck,FOB Origin,8428.0,Closed,E061,EDI 850
+PO-31246,NIC-V016,Sandvik Coromant,2026-03-15,E061,Net 30,Supplier Truck,Prepaid & Add,759.87,Open,E061,Email PDF
+PO-31247,NIC-V012,Motion Industries,2025-09-09,E061,Net 30,LTL - Estes,Prepaid & Add,6698.0,Closed,E061,Email PDF
+PO-31248,NIC-V016,Sandvik Coromant,2025-07-31,E063,Net 30,Will Call,Collect,64.28,Closed,E063,Supplier Portal
+PO-31249,NIC-V008,Garlock Sealing Technologies,2025-04-05,E061,Net 30,FedEx Ground,Prepaid & Add,18215.82,Closed,E001,Email PDF
+PO-31250,NIC-V007,Fastenal,2025-12-23,E063,Net 30,LTL - Estes,Prepaid & Add,4613.7,Open,E063,Phone
+PO-31251,NIC-V018,"W.W. Grainger, Inc.",2026-01-18,E063,Net 30,Will Call,FOB Destination,18770.51,Closed,E001,Email PDF
+PO-31252,NIC-V004,Baldor-Reliance (ABB),2025-07-30,E063,Net 45,UPS Ground,Collect,8952.2,Closed,E063,Phone
+PO-31253,NIC-V002,Apex Fastener Corp,2025-04-06,E062,Net 30,UPS Ground,Collect,2896.52,Closed,E062,EDI 850
+PO-31254,NIC-V007,Fastenal,2025-11-18,E062,Net 30,Supplier Truck,FOB Origin,116.46,Closed,E062,Email PDF
+PO-31255,NIC-V005,Brighton-Best International,2026-01-12,E061,Net 30,Supplier Truck,Collect,4211.24,Closed,E061,Email PDF
+PO-31256,NIC-V012,Motion Industries,2026-02-01,E061,Net 30,Will Call,Prepaid & Add,261930.9,Closed,E001,Supplier Portal
+PO-31257,NIC-V008,Garlock Sealing Technologies,2025-12-12,E063,Net 30,Will Call,FOB Destination,7080.37,Closed,E063,Email PDF
+PO-31258,NIC-V014,Regal Rexnord,2025-09-06,E063,Net 45,FedEx Ground,Collect,4325.0,Closed,E063,Phone
+PO-31259,NIC-V003,Applied Industrial Technologies,2026-03-03,E062,Net 30,LTL - Estes,FOB Origin,33494.4,Open,E001,Email PDF
+PO-31260,NIC-V007,Fastenal,2025-08-15,E062,Net 30,FedEx Ground,Collect,44.16,Closed,E062,EDI 850

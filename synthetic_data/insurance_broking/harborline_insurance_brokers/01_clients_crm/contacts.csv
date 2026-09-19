@@ -1,0 +1,56 @@
+Contact Id,Client Id,Full Name,Title,Email,Phone,Is Primary,Role
+HAR-C0001-P1,HAR-C0001,Brian Martin,Controller,bmartin@liberty.com,(580) 464-9210,Y,Decision Maker
+HAR-C0001-P2,HAR-C0001,Linda Nakamura,Office Manager,lnakamura@liberty.com,(581) 836-2865,N,Claims
+HAR-C0002-P1,HAR-C0002,Brian Young,Office Manager,byoung@liberty.com,(591) 886-9479,Y,Decision Maker
+HAR-C0002-P2,HAR-C0002,Sarah Garcia,CFO,sgarcia@liberty.com,(214) 273-3454,N,HR
+HAR-C0002-P3,HAR-C0002,Priya Walker,Controller,pwalker@liberty.com,(407) 672-6603,N,Claims
+HAR-C0003-P1,HAR-C0003,Betty Davis,Owner,bdavis@blue.com ,(677) 683-9776,Y,Decision Maker
+HAR-C0003-P2,HAR-C0003,Lisa Thomas,President,lthomas@blue.com,(892) 560-7719,N,Claims
+HAR-C0004-P1,HAR-C0004,Elena Fitzgerald,Controller,efitzgerald@riverside.com,(950) 944-6382,Y,Decision Maker
+HAR-C0005-P1,HAR-C0005,Steven Williams,Office Manager ,swilliams@keystone.com,(265) 440-4530,Y,Decision Maker
+HAR-C0006-P1,HAR-C0006,Brian Martin,CFO,bmartin@sterling.com,(506) 356-9457,Y,Decision Maker
+HAR-C0006-P2,HAR-C0006,Grace Anderson,CFO,ganderson@sterling.com,(894) 763-1743,N,Billing
+HAR-C0006-P3,HAR-C0006,Emily Johnson,Office Manager,ejohnson@sterling.com,(713) 962-9657,N,Certificates
+HAR-C0007-P1,HAR-C0007,Thomas Anderson,Controller,tanderson@keystone.com,(548) 225-4741,Y,Decision Maker
+HAR-C0007-P2,HAR-C0007,Anthony Thomas,VP Operations,athomas@keystone.com,(501) 461-9920,N,HR
+HAR-C0008-P1,HAR-C0008,Donna Young,Controller,dyoung@coastal.com,(215) 307-7518,Y,Decision Maker
+HAR-C0008-P2,HAR-C0008,Donna Jackson,Controller,djackson@coastal.com,(325) 254-7984,N,Certificates
+HAR-C0009-P1 ,HAR-C0009,Omar Okafor,Controller,ookafor@ironclad.com,(516) 869-2434,Y,Decision Maker
+HAR-C0009-P2,HAR-C0009,Betty Walker,VP Operations,bwalker@ironclad.com,(305) 489-5899,N,Certificates
+HAR-C0010-P1,HAR-C0010,Grace Anderson,VP Operations,ganderson@summit.com,(854) 355-6794,Y,Decision Maker
+HAR-C0010-P2,HAR-C0010,Andrew Delgado,Office Manager,adelgado@summit.com,(941) 538-9731,N,Billing
+HAR-C0010-P3,HAR-C0010,William Johnson,HR Director,wjohnson@summit.com,(773) 200-4761,N,Certificates
+HAR-C0011-P1,HAR-C0011,Nancy Schneider,Risk Manager,nschneider@lakeshore.com,(276) 658-2238,Y,Decision Maker
+HAR-C0011-P2,HAR-C0011,Brian Scott,President,bscott@lakeshore.com,(587) 632-1318,N,Certificates
+HAR-C0012-P1,HAR-C0012,Paul Hernandez,President,phernandez@pioneer.com,(577) 735-7427,Y,Decision Maker
+HAR-C0013-P1,HAR-C0013,Paul Smith,President,psmith@granite.com,(281) 532-2918,Y,Decision Maker
+HAR-C0013-P2,HAR-C0013,Emily Clark,Controller,eclark@granite.com,(811) 374-9084,N,Billing
+HAR-C0014-P1,HAR-C0014,Wei Davis,Office Manager,wdavis@highland.com,(707) 390-5673,Y,Decision Maker
+HAR-C0015-P1,HAR-C0015,Patricia O'Brien,Office Manager,pobrien@heritage.com,(209) 521-4220,Y,Decision Maker
+HAR-C0016-P1,HAR-C0016,Michael Taylor,VP Operations,mtaylor@summit.com,(554) 438-4438,Y,Decision Maker
+HAR-C0016-P2,HAR-C0016,Karen Lee,Controller,klee@summit.com,(843) 819-5198,N,HR
+HAR-C0016-P3,HAR-C0016,Grace Robinson,Owner,grobinson@summit.com,(714) 271-7784,N ,HR
+HAR-C0017-P1,HAR-C0017,Lisa Taylor,Controller,ltaylor@summit.com,(932) 246-8086,Y,Decision Maker
+HAR-C0017-P2,HAR-C0017,Grace Wright,President,gwright@summit.com,(672) 918-5307,N,Certificates
+HAR-C0017-P3,HAR-C0017,Robert King,President,rking@summit.com,(389) 616-9189,N,Certificates
+HAR-C0018-P1,HAR-C0018,Fatima Hernandez,HR Director,fhernandez@northgate.com,(274) 691-1258,Y,Decision Maker
+HAR-C0019-P1,HAR-C0019,Omar Kowalski,Controller,okowalski@beacon.com,(592) 275-9177,Y,Decision Maker
+HAR-C0020-P1,HAR-C0020,Susan Garcia,CFO,sgarcia@beacon.com,(694) 455-8602,Y,Decision Maker
+HAR-C0020-P2,HAR-C0020,Michael Nakamura,CFO,mnakamura@beacon.com,(708) 963-9063,N ,HR
+HAR-C0020-P3,HAR-C0020,Michael Lewis,Office Manager,mlewis@beacon.com,(229) 336-9307,N,HR
+HAR-C0021-P1,HAR-C0021,Grace Anderson,Owner,ganderson@beacon.com,(479) 334-3999,Y,Decision Maker
+HAR-C0022-P1,HAR-C0022,Michelle Moore,VP Operations,mmoore@blue.com,(430) 439-2836,Y,Decision Maker
+HAR-C0022-P2,HAR-C0022,William Kowalski,CFO,wkowalski@blue.com,(308) 231-7022,N,Claims
+HAR-C0023-P1,HAR-C0023,Sarah Clark,Risk Manager,sclark@coastal.com,(228) 441-4900,Y,Decision Maker
+HAR-C0023-P2,HAR-C0023,Mark Martin,HR Director,mmartin@coastal.com,(681) 910-7359,N,Certificates
+HAR-C0024-P1,HAR-C0024,Carlos Clark,President,cclark@beacon.com,(966) 266-6443,Y,Decision Maker
+HAR-C0025-P1 ,HAR-C0025,Thomas Delgado,Controller,tdelgado@heritage.com,(971) 880-3000,Y,Decision Maker
+HAR-C0025-P2,HAR-C0025,James Walker,HR Director,jwalker@heritage.com,(612) 828-8006,N,Billing
+HAR-C0025-P3,HAR-C0025,Luis Wilson,CFO,lwilson@heritage.com,(673) 287-2246,N,Billing
+HAR-C0026-P1,HAR-C0026,Jennifer Robinson,Office Manager,jrobinson@valley.com,(930) 957-9710,Y,Decision Maker
+HAR-C0027-P1,HAR-C0027,Sandra Young,VP Operations,syoung@lakeshore.com ,(624) 997-6589,Y,Decision Maker
+HAR-C0027-P2,HAR-C0027,Andrew White,VP Operations,awhite@lakeshore.com,(656) 966-6088,N,Billing
+HAR-C0028-P1,HAR-C0028,Nancy Garcia,Office Manager,ngarcia@sterling.com,(599) 885-3986,Y,Decision Maker
+HAR-C0028-P2,HAR-C0028,Jennifer Patel,Owner,jpatel@sterling.com,(860) 553-9822,N,Claims
+HAR-C0029-P1,HAR-C0029,Karen Okafor,Risk Manager,kokafor@tristate.com,(742) 576-1104,Y,Decision Maker
+HAR-C0030-P1,HAR-C0030,Sandra Lopez,VP Operations,slopez@anchor.com,(265) 907-8621,Y,Decision Maker

@@ -1,0 +1,8 @@
+service_order_id,customer_id,request_date,type,technician_id,hours,billable,rate,parts_used,status
+FSO-001,NIC-CUST0011,2025-08-19,Install support,E093,7.0,Y,145.0,,Complete
+FSO-002,NIC-CUST0001,2025-08-19,Install support,E091,2.5,Y,145.0,Coupling insert x2,Complete
+FSO-003,NIC-CUST0018,2025-06-28,Install support,E089,13.0,N,145.0,Shim kit,Scheduled
+FSO-004,NIC-CUST0019,2025-10-19,Vibration analysis,E088,5.5,Y,145.0,,Complete
+FSO-005,NIC-CUST0023,2025-04-24,Install support,E092,9.0,Y,145.0,,Scheduled
+FSO-006,NIC-CUST0039,2025-08-02,Vibration analysis,E088,8.5,Y,145.0,,Scheduled
+FSO-007,NIC-CUST0019,2025-05-08,Drive package commissioning,E089,11.5,Y,145.0,Bearing 6205,Complete

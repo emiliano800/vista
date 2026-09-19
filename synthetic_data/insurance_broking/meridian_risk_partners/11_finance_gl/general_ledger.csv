@@ -1,0 +1,97 @@
+journal_id,posting_date,account_number,account_name,debit,credit,memo,source
+JE00001,2025-04-30,1200,Premiums Receivable (Agency Bill),12636.06,0,Agency bill commission earned 2025-04,AMS
+JE00001,2025-04-30,4000,Commission Income - Agency Bill,0,12636.06,Agency bill commission earned 2025-04,AMS
+JE00002,2025-04-30,1000,Operating Cash,32410.44,0,Direct bill commissions received 2025-04,Bank
+JE00002,2025-04-30,4010,Commission Income - Direct Bill,0,32410.44,Direct bill commissions received 2025-04,Bank
+JE00003,2025-04-30,6000,Salaries & Wages,208583.33,0,Payroll 2025-04,Payroll
+JE00003,2025-04-30,1000,Operating Cash,0,208583.33,Payroll 2025-04,Payroll
+JE00004,2025-04-30,6700,Office & Supplies,62988.05,0,AP invoices 2025-04 (summary),AP
+JE00004,2025-04-30,2000,Accounts Payable,0,62988.05,AP invoices 2025-04 (summary),AP
+JE00005,2025-05-31,1200,Premiums Receivable (Agency Bill),34360.91,0,Agency bill commission earned 2025-05,AMS
+JE00005,2025-05-31,4000,Commission Income - Agency Bill,0,34360.91,Agency bill commission earned 2025-05,AMS
+JE00006,2025-05-31,1000,Operating Cash,62581.48,0,Direct bill commissions received 2025-05,Bank
+JE00006,2025-05-31,4010,Commission Income - Direct Bill,0,62581.48,Direct bill commissions received 2025-05,Bank
+JE00007,2025-05-31,6000,Salaries & Wages,208583.33,0,Payroll 2025-05,Payroll
+JE00007,2025-05-31,1000,Operating Cash,0,208583.33,Payroll 2025-05,Payroll
+JE00008,2025-05-31,6700,Office & Supplies,34818.23,0,AP invoices 2025-05 (summary),AP
+JE00008,2025-05-31,2000,Accounts Payable,0,34818.23,AP invoices 2025-05 (summary),AP
+JE00009,2025-06-30,1200,Premiums Receivable (Agency Bill),25662.84,0,Agency bill commission earned 2025-06,AMS
+JE00009,2025-06-30,4000,Commission Income - Agency Bill,0,25662.84,Agency bill commission earned 2025-06,AMS
+JE00010,2025-06-30,1000,Operating Cash,29217.74,0,Direct bill commissions received 2025-06,Bank
+JE00010,2025-06-30,4010,Commission Income - Direct Bill,0,29217.74,Direct bill commissions received 2025-06,Bank
+JE00011,2025-06-30,6000,Salaries & Wages,208583.33,0,Payroll 2025-06,Payroll
+JE00011,2025-06-30,1000,Operating Cash,0,208583.33,Payroll 2025-06,Payroll
+JE00012,2025-06-30,6700,Office & Supplies,50950.95,0,AP invoices 2025-06 (summary),AP
+JE00012,2025-06-30,2000,Accounts Payable,0,50950.95,AP invoices 2025-06 (summary),AP
+JE00013,2025-07-31,1200,Premiums Receivable (Agency Bill),10439.32,0,Agency bill commission earned 2025-07,AMS
+JE00013,2025-07-31,4000,Commission Income - Agency Bill,0,10439.32,Agency bill commission earned 2025-07,AMS
+JE00014,2025-07-31,1000,Operating Cash,93179.72,0,Direct bill commissions received 2025-07,Bank
+JE00014,2025-07-31,4010,Commission Income - Direct Bill,0,93179.72,Direct bill commissions received 2025-07,Bank
+JE00015,2025-07-31,6000,Salaries & Wages,208583.33,0,Payroll 2025-07,Payroll
+JE00015,2025-07-31,1000,Operating Cash,0,208583.33,Payroll 2025-07,Payroll
+JE00016,2025-07-31,6700,Office & Supplies,50087.4,0,AP invoices 2025-07 (summary),AP
+JE00016,2025-07-31,2000,Accounts Payable,0,50087.4,AP invoices 2025-07 (summary),AP
+JE00017,2025-08-31,1200,Premiums Receivable (Agency Bill),39070.65,0,Agency bill commission earned 2025-08,AMS
+JE00017,2025-08-31,4000,Commission Income - Agency Bill,0,39070.65,Agency bill commission earned 2025-08,AMS
+JE00018,2025-08-31,1000,Operating Cash,65941.81,0,Direct bill commissions received 2025-08,Bank
+JE00018,2025-08-31,4010,Commission Income - Direct Bill,0,65941.81,Direct bill commissions received 2025-08,Bank
+JE00019,2025-08-31,6000,Salaries & Wages,208583.33,0,Payroll 2025-08,Payroll
+JE00019,2025-08-31,1000,Operating Cash,0,208583.33,Payroll 2025-08,Payroll
+JE00020,2025-08-31,6700,Office & Supplies,79047.13,0,AP invoices 2025-08 (summary),AP
+JE00020,2025-08-31,2000,Accounts Payable,0,79047.13,AP invoices 2025-08 (summary),AP
+JE00021,2025-09-30,1200,Premiums Receivable (Agency Bill),16880.49,0,Agency bill commission earned 2025-09,AMS
+JE00021,2025-09-30,4000,Commission Income - Agency Bill,0,16880.49,Agency bill commission earned 2025-09,AMS
+JE00022,2025-09-30,1000,Operating Cash,57586.39,0,Direct bill commissions received 2025-09,Bank
+JE00022,2025-09-30,4010,Commission Income - Direct Bill,0,57586.39,Direct bill commissions received 2025-09,Bank
+JE00023,2025-09-30,6000,Salaries & Wages,208583.33,0,Payroll 2025-09,Payroll
+JE00023,2025-09-30,1000,Operating Cash,0,208583.33,Payroll 2025-09,Payroll
+JE00024,2025-09-30,6700,Office & Supplies,35424.32,0,AP invoices 2025-09 (summary),AP
+JE00024,2025-09-30,2000,Accounts Payable,0,35424.32,AP invoices 2025-09 (summary),AP
+JE00025,2025-10-31,1200,Premiums Receivable (Agency Bill),22227.09,0,Agency bill commission earned 2025-10,AMS
+JE00025,2025-10-31,4000,Commission Income - Agency Bill,0,22227.09,Agency bill commission earned 2025-10,AMS
+JE00026,2025-10-31,1000,Operating Cash,25985.38,0,Direct bill commissions received 2025-10,Bank
+JE00026,2025-10-31,4010,Commission Income - Direct Bill,0,25985.38,Direct bill commissions received 2025-10,Bank
+JE00027,2025-10-31,6000,Salaries & Wages,208583.33,0,Payroll 2025-10,Payroll
+JE00027,2025-10-31,1000,Operating Cash,0,208583.33,Payroll 2025-10,Payroll
+JE00028,2025-10-31,6700,Office & Supplies,53262.0,0,AP invoices 2025-10 (summary),AP
+JE00028,2025-10-31,2000,Accounts Payable,0,53262.0,AP invoices 2025-10 (summary),AP
+JE00029,2025-11-30,1200,Premiums Receivable (Agency Bill),2694.48,0,Agency bill commission earned 2025-11,AMS
+JE00029,2025-11-30,4000,Commission Income - Agency Bill,0,2694.48,Agency bill commission earned 2025-11,AMS
+JE00030,2025-11-30,1000,Operating Cash,50744.01,0,Direct bill commissions received 2025-11,Bank
+JE00030,2025-11-30,4010,Commission Income - Direct Bill,0,50744.01,Direct bill commissions received 2025-11,Bank
+JE00031,2025-11-30,6000,Salaries & Wages,208583.33,0,Payroll 2025-11,Payroll
+JE00031,2025-11-30,1000,Operating Cash,0,208583.33,Payroll 2025-11,Payroll
+JE00032,2025-11-30,6700,Office & Supplies,35678.33,0,AP invoices 2025-11 (summary),AP
+JE00032,2025-11-30,2000,Accounts Payable,0,35678.33,AP invoices 2025-11 (summary),AP
+JE00033,2025-12-31,1200,Premiums Receivable (Agency Bill),14490.24,0,Agency bill commission earned 2025-12,AMS
+JE00033,2025-12-31,4000,Commission Income - Agency Bill,0,14490.24,Agency bill commission earned 2025-12,AMS
+JE00034,2025-12-31,1000,Operating Cash,25848.38,0,Direct bill commissions received 2025-12,Bank
+JE00034,2025-12-31,4010,Commission Income - Direct Bill,0,25848.38,Direct bill commissions received 2025-12,Bank
+JE00035,2025-12-31,6000,Salaries & Wages,208583.33,0,Payroll 2025-12,Payroll
+JE00035,2025-12-31,1000,Operating Cash,0,208583.33,Payroll 2025-12,Payroll
+JE00036,2025-12-31,6700,Office & Supplies,31140.6,0,AP invoices 2025-12 (summary),AP
+JE00036,2025-12-31,2000,Accounts Payable,0,31140.6,AP invoices 2025-12 (summary),AP
+JE00037,2026-01-31,1200,Premiums Receivable (Agency Bill),15347.79,0,Agency bill commission earned 2026-01,AMS
+JE00037,2026-01-31,4000,Commission Income - Agency Bill,0,15347.79,Agency bill commission earned 2026-01,AMS
+JE00038,2026-01-31,1000,Operating Cash,8375.54,0,Direct bill commissions received 2026-01,Bank
+JE00038,2026-01-31,4010,Commission Income - Direct Bill,0,8375.54,Direct bill commissions received 2026-01,Bank
+JE00039,2026-01-31,6000,Salaries & Wages,208583.33,0,Payroll 2026-01,Payroll
+JE00039,2026-01-31,1000,Operating Cash,0,208583.33,Payroll 2026-01,Payroll
+JE00040,2026-01-31,6700,Office & Supplies,35289.05,0,AP invoices 2026-01 (summary),AP
+JE00040,2026-01-31,2000,Accounts Payable,0,35289.05,AP invoices 2026-01 (summary),AP
+JE00041,2026-02-28,1200,Premiums Receivable (Agency Bill),8173.5,0,Agency bill commission earned 2026-02,AMS
+JE00041,2026-02-28,4000,Commission Income - Agency Bill,0,8173.5,Agency bill commission earned 2026-02,AMS
+JE00042,2026-02-28,1000,Operating Cash,32561.15,0,Direct bill commissions received 2026-02,Bank
+JE00042,2026-02-28,4010,Commission Income - Direct Bill,0,32561.15,Direct bill commissions received 2026-02,Bank
+JE00043,2026-02-28,6000,Salaries & Wages,208583.33,0,Payroll 2026-02,Payroll
+JE00043,2026-02-28,1000,Operating Cash,0,208583.33,Payroll 2026-02,Payroll
+JE00044,2026-02-28,6700,Office & Supplies,21377.45,0,AP invoices 2026-02 (summary),AP
+JE00044,2026-02-28,2000,Accounts Payable,0,21377.45,AP invoices 2026-02 (summary),AP
+JE00045,2026-03-31,1200,Premiums Receivable (Agency Bill),28073.22,0,Agency bill commission earned 2026-03,AMS
+JE00045,2026-03-31,4000,Commission Income - Agency Bill,0,28073.22,Agency bill commission earned 2026-03,AMS
+JE00046,2026-03-31,1000,Operating Cash,48733.1,0,Direct bill commissions received 2026-03,Bank
+JE00046,2026-03-31,4010,Commission Income - Direct Bill,0,48733.1,Direct bill commissions received 2026-03,Bank
+JE00047,2026-03-31,6000,Salaries & Wages,208583.33,0,Payroll 2026-03,Payroll
+JE00047,2026-03-31,1000,Operating Cash,0,208583.33,Payroll 2026-03,Payroll
+JE00048,2026-03-31,6700,Office & Supplies,42939.2,0,AP invoices 2026-03 (summary),AP
+JE00048,2026-03-31,2000,Accounts Payable,0,42939.2,AP invoices 2026-03 (summary),AP

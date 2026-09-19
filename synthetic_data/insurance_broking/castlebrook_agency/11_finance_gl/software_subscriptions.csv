@@ -1,0 +1,8 @@
+SUBSCRIPTION_ID,PRODUCT,VENDOR,FUNCTION,SEATS_LICENSED,SEATS_ACTIVE,BILLING_FREQUENCY,ANNUAL_COST,CONTRACT_START,RENEWAL_DATE,AUTO_RENEW,OWNER,NOTES
+SW001,HawkSoft CMS,HAWKSOFT,Agency Management System,11,10,Annual,"$10,098.00",2024-11-06,2026-09-21,Y,ANDREW LEE,3-year term; 60-day notice
+SW002,Microsoft 365 Business Standard,Microsoft,Productivity Suite / Email,12,10,MONTHLY,1584.0,2024-07-29,2027-03-01,Y,Andrew Lee,
+SW003,QuickBooks Desktop Enterprise,Intuit ,Accounting / GL,1,1,Monthly,1805.0,2023-04-15,13-Oct-2026,Y,,Month-to-month
+SW004,Gusto,Gusto,Payroll / HRIS,11,11,Monthly,5174.4,2023-05-02,11/14/2026,Y,Joseph White,
+SW005,Dropbox Business,DROPBOX,File Storage,11,11,Annual,2692.8,2024-05-16,2026-11-19,Y,Joseph White,Month-to-month
+SW006,Zoom Workplace,Zoom,Video Conferencing,11,11,Annual,1960.2,2023-10-27,2026-09-08,N,Michael Wright,
+SW007,DocuSign eSignature,DocuSign,e-Signature,10,9,Annual,5184.0,2024-11-19,2026-08-12,Y,,Includes 2 sandbox seats

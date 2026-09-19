@@ -1,0 +1,10 @@
+Carrier Code,Carrier Name,State,Appointment Type,Appointment Date,Status,Binding Authority,Agency Agreement On File
+TRV,Travelers Indemnity Company,FL,Agency,2020-04-13,Active,None,Y
+HIG,The Hartford Fire Insurance Company,FL,Agency,2011-08-25,Active,BOP < $10k premium,Y
+LIB,Liberty Mutual Insurance,FL,Agency,2006-11-22,Active,Auto - up to 10 units,Y
+CNA,CNA Insurance,FL,Agency,2009-11-06,Active,None,Y
+NAT,Nationwide Mutual Insurance,FL,Agency,2012-11-02,Active,BOP < $10k premium,Y
+PRG,Progressive Commercial,FL,Agency,2010-02-07,Active,Auto - up to 10 units,Y
+AMT,AmTrust Financial,FL,Agency,2019-02-17,Active,BOP < $10k premium,Y
+MKL,Markel Specialty (Evanston Insurance Co.),FL,Agency,2021-09-10,Active,Auto - up to 10 units,Y
+GRD,Guard Insurance (Berkshire Hathaway GUARD),FL,Agency,2011-02-03,Active,Auto - up to 10 units,Y

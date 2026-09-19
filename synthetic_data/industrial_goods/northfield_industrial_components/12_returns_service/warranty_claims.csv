@@ -1,0 +1,2 @@
+claim_id,rma_number,customer_id,item_id,failure_mode,hours_in_service,warranty_period_months,in_warranty,claim_amount,root_cause,status
+WC-001,RMA-0004,NIC-CUST0019,A-20087,Seal leak,4849,12,Y,1015.96,Material defect,Denied

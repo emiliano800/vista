@@ -1,0 +1,33 @@
+Renewal Id,Policy Id,Client Id,Line Of Business,Carrier Code,Expiration Date,Days To Expiration,Expiring Premium,Renewal Stage,Renewal Strategy,Exposure Update Received,Loss Runs Ordered,Renewal Quote Premium,Account Manager Id,Producer Id
+REN-HAR-P00001,HAR-P00001,HAR-C0001,PROP,TRV ,2026-04-24,24,51021,30-day: Proposal / bind,Market to 3 carriers,Y,N,57144,E009,E001
+REN-HAR-P00005,HAR-P00005,HAR-C0002,AUTO,LIB,2026-08-16,138,83356,120-day: Renewal identified,Market to 3 carriers,N,N,,E012,E004
+REN-HAR-P00012,HAR-P00012,HAR-C0004,CYB,CNA,2026-08-27,118,4733,120-day: Renewal identified,Renew as-is (rate < 5%),N,N,,E007,E001
+REN-HAR-P00017,HAR-P00017,HAR-C0006,GL,NAT,2026-04-29,29,63651,30-day: Proposal / bind,Renew as-is (rate < 5%),Y,Y,61105,E012 ,E004
+REN-HAR-P00024,HAR-P00024,HAR-C0008,AUTO,PRG,2026-05-12,42,49669,60-day: Marketing,Renew as-is (rate < 5%),Y,Y,48676,E009,E004
+REN-HAR-P00026,HAR-P00026,HAR-C0009,PL,CNA,"Jul 03, 2026",94,7910,120-day: Renewal identified ,Remarket - incumbent non-renewing,N,Y,,E010,E005
+REN-HAR-P00027,HAR-P00027,HAR-C0009,GL,CNA,08/19/26,141,51890,120-day: Renewal identified,Renew with incumbent,N,N,,E010,E005
+REN-HAR-P00031,HAR-P00031,HAR-C0010,PL,MKL,2026-05-10,40,5088,60-day: Marketing,Renew as-is (rate < 5%),Y,Y,4935,E006,E003
+REN-HAR-P00032 ,HAR-P00032,HAR-C0010,GL,HIG,2026-08-01,123,17202,120-day: Renewal identified,Renew as-is (rate < 5%),N,N,,E006,E003
+REN-HAR-P00040,HAR-P00040,HAR-C0013,PROP,HIG,2026-04-10,10,75578,30-day: Proposal / bind,Renew with incumbent,Y,Y,76334,E013,E004
+REN-HAR-P00041,HAR-P00041,HAR-C0013,GL,CNA,2026-07-08,99,11983,120-day: Renewal identified,Remarket - incumbent non-renewing,N,Y,,E013,E004
+REN-HAR-P00042,HAR-P00042,HAR-C0013,UMB,TRV,2026-06-19,80,17709,90-day: Exposure update requested,Remarket - incumbent non-renewing,N,Y,,E013,E004
+REN-HAR-P00047,HAR-P00047,HAR-C0015,AUTO,PRG,2026-07-12,103,54691,120-day: Renewal identified,Renew as-is (rate < 5%),N,N,,E010,E005
+REN-HAR-P00048,HAR-P00048,HAR-C0015,UMB,MKL,2026-06-18,79,26973,90-day: Exposure update requested,Market to 3 carriers,N,Y,,E010,E005
+REN-HAR-P00049,HAR-P00049,HAR-C0016,GL,LIB,2026-07-13,104,8083,120-day: Renewal identified,Market to 3 carriers,N,N,,E007,E003
+REN-HAR-P00053,HAR-P00053,HAR-C0016,PROP,HIG,2026-07-21,112,83134,120-day: Renewal identified,Market to 3 carriers,N,N,,E007,E003
+REN-HAR-P00054,HAR-P00054,HAR-C0017,PROP,TRV,2026-04-12,12,45015,30-day: Proposal / bind,Market to 3 carriers,Y,N,48616,E010,E004
+REN-HAR-P00058,HAR-P00058,HAR-C0018,PROP,LIB,2026-07-01,92,62352,120-day: Renewal identified,Market to 3 carriers,N,Y,,E009,E004
+REN-HAR-P00062,HAR-P00062,HAR-C0019,BOP,NAT,2026-06-04,65,5879,90-day: Exposure update requested,Renew as-is (rate < 5%),N,N,,E006,E005
+REN-HAR-P00065,HAR-P00065,HAR-C0020,PROP,LIB,2026-06-09,70,49131,90-day: Exposure update requested,Remarket - incumbent non-renewing,N,Y,,E012,E003
+REN-HAR-P00066,HAR-P00066,HAR-C0020,WC,GRD,2026-04-04,4,42272,30-day: Proposal / bind,Renew with incumbent,Y,N,45654,E012,E003
+REN-HAR-P00068,HAR-P00068,HAR-C0021,PROP,NAT,2026-08-05,127,27604,120-day: Renewal identified,Remarket - incumbent non-renewing,N,N,,E010,E001
+REN-HAR-P00074,HAR-P00074,HAR-C0022,CYB,CNA,2026-08-08,130,14124,120-day: Renewal identified,Market to 3 carriers,N,N,,E007,E004
+REN-HAR-P00075,HAR-P00075,HAR-C0022,WC,LIB,2026-06-15,76,119539,90-day: Exposure update requested,Renew as-is (rate < 5%),N,Y,,E007,E004
+REN-HAR-P00076 ,HAR-P00076,HAR-C0023,GL,TRV,2026-08-13,135,17177,120-day: Renewal identified,Market to 3 carriers,N,N,,E009,E005
+REN-HAR-P00078,HAR-P00078,HAR-C0023,WC,HIG,2026-08-21,143,67885,120-day: Renewal identified,Remarket - incumbent non-renewing,N,N,,E009,E005
+REN-HAR-P00079,HAR-P00079,HAR-C0024,GL,CNA,2026-04-12 ,12,60607,30-day: Proposal / bind,Remarket - incumbent non-renewing,Y,Y,69698,E008,E005
+REN-HAR-P00081,HAR-P00081,HAR-C0024,AUTO,NAT,2026-06-23,84,11753,90-day: Exposure update requested,Renew as-is (rate < 5%),N,Y,,E008,E005
+REN-HAR-P00083,HAR-P00083,HAR-C0025,GL,CNA,2026-04-23,23,10975,30-day: Proposal / bind ,Remarket - incumbent non-renewing,N,Y,10975,E009,E004
+REN-HAR-P00091,HAR-P00091,HAR-C0028,GL,HIG,2026-06-06,67,26396,90-day: Exposure update requested,Market to 3 carriers,N,N,,E010,E004
+REN-HAR-P00092,HAR-P00092,HAR-C0028,UMB,LIB,2026-06-15,76,25596,90-day: Exposure update requested,Renew as-is (rate < 5%),N,Y,,E010,E004
+REN-HAR-P00095,HAR-P00095,HAR-C0029,WC,TRV,2026-06-08,69,80856,90-day: Exposure update requested,Renew with incumbent,N,Y,,E007,E005

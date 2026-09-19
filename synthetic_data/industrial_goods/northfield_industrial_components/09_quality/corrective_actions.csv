@@ -1,0 +1,9 @@
+capa_id,ncr_id,opened_date,root_cause,corrective_action,owner_id,due_date,effectiveness_check,status
+CAPA-001,NCR-0001,2025-04-21,Packaging inadequate,Add tool-life counter,E059,2025-06-05,,Closed
+CAPA-002,NCR-0004,2025-05-24,Packaging inadequate,Change to foam-lined cartons,E055,2025-07-08,Verified,Closed
+CAPA-003,NCR-0005,2026-03-05,Drawing revision control,Change to foam-lined cartons,E057,2026-04-19,Pending,Closed
+CAPA-004,NCR-0008,2026-03-30,Drawing revision control,Retrain and re-certify operator,E059,2026-05-14,Verified,Open
+CAPA-005,NCR-0011,2025-11-14,Operator training gap,Retrain and re-certify operator,E059,2025-12-29,Verified,Closed
+CAPA-006,NCR-0013,2025-07-02,Tool wear not tracked,Require PPAP on process change,E058,2025-08-16,Verified,Open
+CAPA-007,NCR-0014,2026-03-21,Tool wear not tracked,Add tool-life counter,E056,2026-05-05,Pending,Open
+CAPA-008,NCR-0016,2025-10-13,Drawing revision control,Require PPAP on process change,E058,2025-11-27,Verified,Open

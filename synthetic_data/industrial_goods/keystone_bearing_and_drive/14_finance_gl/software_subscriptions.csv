@@ -1,0 +1,13 @@
+Product,Vendor,Function,Seats,Annual Cost,Renewal Date,Owner Id,Contract Term,Auto Renew,Payment Method,Gl Account
+NetSuite,Oracle,ERP,30,108000,2026-08-17,E015,Monthly,N,Invoice,6400
+Autodesk Inventor,Autodesk,CAD,9,20700,2027-02-10,E042,Monthly,Y ,ACH,6400
+uniPoint QMS,uniPoint,Quality Management System,11,4800,2026-07-25,E008,Annual,Y,Invoice,6400
+Microsoft 365 Business Standard,Microsoft,Productivity Suite / Email,63,9450,2027-01-20,E034,3-year,Y,Corporate card,6400
+Paycom,Paycom,Payroll / HRIS,36,23760,2027-02-26,E028,Monthly,Y,ACH,6400
+ShipStation,Auctane,Shipping / Parcel,6,14400,2026-07-21,E015,Monthly,N ,Corporate card,6400
+HubSpot Sales Hub,HubSpot,CRM,8,8640,2026-12-04,E043,Monthly,Y,Corporate card,6400
+Expensify,Expensify,Expense Management,63,6804,2027-02-22,E006,Annual,Y,Invoice,6400
+Dropbox Business,Dropbox,File Storage,44,10560,13-Dec-2026,E021,Monthly,Y,ACH,6400
+Zoom Workplace,Zoom,Video Conferencing,42,7560,2026-08-22,E022,Annual,Y,Corporate card,6400
+8x8 Work,8x8,VoIP Phone System,14,4704,2027-03-15,E037,Annual,N,Corporate card,6400
+Zoom Workplace,Zoom ,Video Conferencing,8,1440,2026-09-01,E013,Annual,Y,Corporate card,6800
