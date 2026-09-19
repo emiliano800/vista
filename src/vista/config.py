@@ -11,6 +11,10 @@ class Settings(BaseSettings):
     s3_bucket: str = "vista-documents"
     openai_api_key: str | None = None
     openai_model: str = "gpt-4o-mini"
+    provisioning_key: str | None = None  # /tenants disabled unless configured
+    cookie_secure: bool = True
+    allowed_origins: list[str] = []
+    session_hours: int = 8
 
 
 settings = Settings()

@@ -9,4 +9,8 @@ build/
 .ruff_cache/
 out/
 node_modules/
-Vista/
+/Vista/
+.wrangler/
+.dev.vars*
+.env.*
+!.env.example

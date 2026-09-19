@@ -135,3 +135,22 @@ class UsageEvent(TenantBase):
     output_tokens: Mapped[int] = mapped_column(Integer, default=0)
     cost_usd: Mapped[Decimal] = mapped_column(Numeric(12, 6), default=0)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class Recording(TenantBase):
+    __tablename__ = "recordings"
+    __table_args__ = (UniqueConstraint("deal_id", "uploaded_by", "source_id"),)
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    deal_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("deals.id"), index=True)
+    uploaded_by: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True))
+    source_id: Mapped[str] = mapped_column(String(128))
+    started_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    ended_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    active_seconds: Mapped[int] = mapped_column(Integer)
+    manifest: Mapped[dict] = mapped_column(JSONB)
+    summary: Mapped[dict] = mapped_column(JSONB)
+    s3_key: Mapped[str] = mapped_column(String(1024))
+    content_hash: Mapped[str] = mapped_column(String(64))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
