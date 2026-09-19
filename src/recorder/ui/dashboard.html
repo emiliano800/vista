@@ -52,6 +52,9 @@
       .btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
       .btn.danger { color: var(--rec); }
       .btn.sm { padding: 5px 11px; font-size: 12.5px; font-weight: 500; }
+      .btn.ai { color: #6d3fc7; border-color: #d9ccf5; background: #f7f3ff; display: inline-flex; align-items: center; gap: 5px; }
+      .btn.ai:hover { background: #efe7ff; }
+      .btn.ai svg { width: 12px; height: 12px; fill: currentColor; flex: none; }
       .btn:hover { filter: brightness(0.97); }
       /* apps */
       .apps { display: grid; gap: 10px; }
@@ -247,12 +250,13 @@
             <div class="dot" style="width:10px;height:10px;border-radius:50%;background:var(--accent)"></div>
             <div><b id="rv-banner-t">Analyzing your session…</b><div id="rv-banner-s" style="font-size:12.5px">Runs entirely on this computer. Nothing is uploaded.</div></div>
             <div class="sp"></div>
-            <button class="btn sm" id="rv-note">Add what the screen didn't see</button>
+            <button class="btn sm" id="rv-note">Add a general summary</button>
             <button class="btn sm primary" id="rv-done">Back to today</button>
           </div>
 
           <section class="card" style="margin:0 0 14px">
             <h2 style="display:flex;justify-content:space-between;align-items:baseline"><span>Session video, by task</span><span class="muted" style="text-transform:none;letter-spacing:0;font-weight:500" id="vs-sub">Split where you switched windows for a while</span></h2>
+            <p class="muted" style="margin:-6px 0 10px;font-size:12.5px"><b>Describe</b> is your own note. <b>Ask AI</b> sends that stretch's activity data (apps, window titles, click/copy/paste counts — never keystrokes or, by default, screenshots) to OpenAI, which asks you 2–4 clarifying questions.</p>
             <div class="vid">
               <div>
                 <div class="player" id="player">
@@ -389,7 +393,7 @@
         <textarea id="ann-note" rows="2" placeholder="What were you doing, and why? Emails and numbers are redacted."></textarea>
         <div class="qa hidden" id="qa"></div>
         <div class="autoname" id="autoname"></div>
-        <div class="actions"><button class="btn" id="ann-ask">Ask Vista</button><span style="flex:1"></span><button class="btn" id="ann-cancel">Cancel</button><button class="btn primary" id="ann-save">Save note</button></div>
+        <div class="actions"><button class="btn ai" id="ann-ask" title="OpenAI reads this stretch's activity data and asks you 2–4 clarifying questions">Ask AI for questions</button><span style="flex:1"></span><button class="btn" id="ann-cancel">Cancel</button><button class="btn primary" id="ann-save">Save note</button></div>
       </div>
     </div>
 
@@ -398,6 +402,7 @@
       const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
       const short = (app) => app.replace(/^Microsoft /, '').replace(/ Desktop$/, '');
       const PALETTE = ['#3d63dd', '#2f9e6a', '#d9a120', '#e5484d', '#8e5cd9', '#1f9fb5', '#c96b2b', '#7a7a72'];
+      const AI_ICON = '<svg viewBox="0 0 16 16"><path d="M8 1l1.6 4.4L14 7l-4.4 1.6L8 13l-1.6-4.4L2 7l4.4-1.6zM13 11l.7 1.8 1.8.7-1.8.7L13 16l-.7-1.8-1.8-.7 1.8-.7z"/></svg>';
       const QUICK = ['Phone call with a vendor', 'Phone call with a customer', 'Paper invoices / filing', 'Meeting', 'Helped a colleague', 'Break'];
       const colorOf = (() => { const m = new Map(); return (app) => { if (!m.has(app)) m.set(app, PALETTE[m.size % PALETTE.length]); return m.get(app); }; })();
 
@@ -461,7 +466,7 @@
         $('rv-lede').textContent = `${when} · ${hm(r.active_seconds ?? 0)} · ${(r.counts?.total ?? 0).toLocaleString()} interactions · ${(r.counts?.redactions ?? 0)} redacted on this device`;
         $('rv-banner-t').textContent = done ? 'Analysis complete' : p === 'failed' ? 'Analysis could not finish' : p === 'skipped' ? 'Analysis skipped' : 'Analyzing your session…';
         $('rv-banner-s').textContent = done
-          ? 'Add a note for anything the screen could not see — calls, paper, a chat at a desk — and the agent re-runs.'
+          ? 'Tell us what this session was about in a line or two — it names the recording and gives the analysis its context. Each stretch below can also get its own note.'
           : p === 'failed' || p === 'skipped' ? (r.processing_note ?? '') : 'Runs entirely on this computer. Nothing is uploaded.';
 
         const out = (k) => {
@@ -508,7 +513,7 @@
           : '<div class="empty">No copy → paste between apps seen</div>';
       }
       $('rv-done').onclick = () => show('today');
-      $('rv-note').onclick = () => openAnnotate(reviewing);
+      $('rv-note').onclick = () => openAnnotate(reviewing, '', { whole: true });
 
       // ---- session video, split into task sections --------------------------------
       const video = $('video');
@@ -549,8 +554,8 @@
         const whole = { whole: true, name: 'Whole session', seconds: Math.round(span / 1000) };
         const annotated = (s) => s.annotations?.length ? `<b>✓ ${esc(s.annotations[0].label)}</b>` : 'not yet described';
         $('secs').innerHTML = [
-          `<div class="sec whole" data-w="1"><i class="sw" style="background:#c9c8c1"></i><div><div class="nm">${esc(recordings.find((r) => r.recording_id === reviewing)?.name ?? 'Whole session')}</div><div class="st">${hm(whole.seconds)} · ${vs.sections.length} sections · one summary for the whole recording</div></div><div class="act"><button class="btn sm" data-ask="w">Ask Vista</button><button class="btn sm primary" data-ann="w">Summarise</button></div></div>`,
-          ...vs.sections.map((s) => `<div class="sec ${activeSec === s.index ? 'on' : ''}" data-sec="${s.index}"><i class="sw" style="background:${colorOf(s.app)}"></i><div><div class="nm">${esc(s.name)}</div><div class="st">${hm(s.seconds)} · ${(s.counts.click ?? 0)} clicks · ${(s.counts.copy ?? 0) + (s.counts.paste ?? 0)} copy/paste · ${annotated(s)}</div></div><div class="act"><button class="btn sm" data-ask="${s.index}">Ask Vista</button><button class="btn sm primary" data-ann="${s.index}">Describe</button></div></div>`),
+          `<div class="sec whole" data-w="1"><i class="sw" style="background:#c9c8c1"></i><div><div class="nm">${esc(recordings.find((r) => r.recording_id === reviewing)?.name ?? 'Whole session')}</div><div class="st">${hm(whole.seconds)} · ${vs.sections.length} sections · one summary for the whole recording</div></div><div class="act"><button class="btn sm ai" data-ask="w" title="Sends this session's activity data (apps, titles, counts — no keystrokes) to OpenAI, which asks you 2–4 clarifying questions">${AI_ICON} Ask AI</button><button class="btn sm primary" data-ann="w">Summarise</button></div></div>`,
+          ...vs.sections.map((s) => `<div class="sec ${activeSec === s.index ? 'on' : ''}" data-sec="${s.index}"><i class="sw" style="background:${colorOf(s.app)}"></i><div><div class="nm">${esc(s.name)}</div><div class="st">${hm(s.seconds)} · ${(s.counts.click ?? 0)} clicks · ${(s.counts.copy ?? 0) + (s.counts.paste ?? 0)} copy/paste · ${annotated(s)}</div></div><div class="act"><button class="btn sm ai" data-ask="${s.index}" title="Sends this stretch's activity data (apps, titles, counts — no keystrokes) to OpenAI, which asks you 2–4 clarifying questions">${AI_ICON} Ask AI</button><button class="btn sm primary" data-ann="${s.index}">Describe</button></div></div>`),
         ].join('');
         if (!vs.sections.length) $('secs').insertAdjacentHTML('beforeend', '<div class="empty">No long stretches found — the session may be very short.</div>');
         $('secs').querySelectorAll('.sec[data-sec]').forEach((el) => (el.onclick = (e) => { if (!e.target.closest('button')) playSection(+el.dataset.sec); }));
@@ -708,17 +713,21 @@
         vistaSummary = '';
         const r = recordings.find((x) => x.recording_id === id);
         const whole = section?.whole;
-        $('modal-title').textContent = whole ? 'Describe the whole session' : section ? 'Describe this stretch of work' : 'What the screen didn\'t see';
+        $('modal-title').textContent = whole ? 'General summary — what was this session about?' : section ? 'Describe this stretch of work' : 'Add a note';
         $('modal-sub').textContent = whole
-          ? 'One line on what this session was about. It becomes the recording\'s name.'
+          ? 'A line or two on what you were trying to get done and why. It names the recording and frames the analysis.'
           : section ? `${section.name} · ${hm(section.seconds)}. What were you doing here, and why?`
           : r ? `Attached to your ${clock(r.started_at)} session (${r.active_seconds != null ? hm(r.active_seconds) : 'in progress'}).` : '';
-        $('modal-chips').classList.toggle('hidden', !!section && !whole);
+        $('modal-chips').classList.toggle('hidden', !!section);
+        $('ann-save').textContent = whole ? 'Save summary' : 'Save note';
         $('modal-chips').innerHTML = QUICK.map((q) => `<span class="chip ${q === preset ? 'on' : ''}" data-q="${esc(q)}">${esc(q)}</span>`).join('');
         $('modal-chips').querySelectorAll('.chip').forEach((c) => (c.onclick = () => { $('ann-label').value = c.dataset.q; $('modal-chips').querySelectorAll('.chip').forEach((x) => x.classList.toggle('on', x === c)); }));
         $('ann-label').value = preset;
-        $('ann-label').placeholder = whole ? 'e.g. Month-end AP run for March' : section ? `e.g. Matching vendor invoices to POs` : 'e.g. Phone: chased 3 overdue vendors';
+        $('ann-label').placeholder = whole ? 'e.g. Month-end AP run for March — entering vendor bills and reconciling the tracker' : section ? `e.g. Matching vendor invoices to POs` : 'e.g. Phone: chased 3 overdue vendors';
         $('ann-note').value = '';
+        $('ann-note').placeholder = whole
+          ? 'Anything that explains the session: what triggered it, what happened off-screen, what was hard. Emails and numbers are redacted.'
+          : 'What were you doing, and why? Emails and numbers are redacted.';
         const from = section && !whole ? section.start : r?.started_at;
         const to = section && !whole ? section.end : (r?.ended_at ?? new Date().toISOString());
         $('ann-from').value = from ? hhmm(from) : '';
@@ -750,7 +759,7 @@
         box.classList.remove('hidden');
         const answered = collectAnswers();
         if (answered.length) qa = qa.concat(answered);
-        box.innerHTML = '<div class="thinking"><i></i>Vista is looking at this stretch of work…</div>';
+        box.innerHTML = '<div class="thinking"><i></i>AI (OpenAI) is reading this stretch of work — apps, titles and counts only…</div>';
         const typed = $('ann-label').value.trim() || $('ann-note').value.trim();
         const prior = typed ? [{ q: 'In your words, what was this?', a: typed }] : [];
         const sec = annSection?.whole ? { whole: true } : annSection ?? { whole: true };
@@ -758,10 +767,10 @@
         if (r.error) { box.innerHTML = `<div class="err">${esc(r.message)}</div>`; return; }
         const done = qa.map((x) => `<div><div class="q">${esc(x.q)}</div><div class="sum">${esc(x.a)}</div></div>`).join('');
         const fresh = r.questions.map((q, i) => `<div><div class="q">${esc(q)}</div><input type="text" data-q="${esc(q)}" placeholder="One sentence is plenty" ${i === 0 ? 'autofocus' : ''}></div>`).join('');
-        box.innerHTML = (r.summary ? `<div class="sum">Vista thinks: ${esc(r.summary)}</div>` : '') + done + (fresh || '<div class="sum">Nothing left to ask — save when ready.</div>');
+        box.innerHTML = (r.summary ? `<div class="sum">AI's read: ${esc(r.summary)}</div>` : '') + done + (fresh || '<div class="sum">Nothing left to ask — save when ready.</div>');
         vistaSummary = r.summary ?? '';
         if (r.summary && !$('ann-note').value.trim() && annSection) $('ann-note').placeholder = r.summary;
-        $('ann-ask').textContent = fresh ? 'Answer & ask more' : 'Ask Vista';
+        $('ann-ask').textContent = fresh ? 'Send answers & ask more' : 'Ask AI for questions';
         box.querySelector('input')?.focus();
       }
       function collectAnswers() {

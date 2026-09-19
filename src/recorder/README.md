@@ -39,7 +39,7 @@ the middle of Excel work) folded into the surrounding span
 one `screen.webm` (`offset_s`, paused time excluded), not separate files; each
 card plays its stretch and can be **Described** (label + note, saved to
 `annotations.jsonl` with `scope: "section"` and `section_id`) or handed to
-**Ask Vista**, which sends the section's metadata (apps, titles, counts,
+**Ask AI**, which sends the section's metadata (apps, titles, counts,
 copy→paste flows, shortcuts — never keystrokes, screenshots off by default) to
 OpenAI and gets 2–4 clarifying questions back; answers are saved with the
 note. The whole-session card writes a `scope: "session"` summary that names the
