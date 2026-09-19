@@ -1,1 +1,46 @@
-[]
+{
+  "form": "ACORD 125 (2016/03) - Commercial Insurance Application",
+  "agency": {
+    "name": "Harborline Insurance Brokers, Inc.",
+    "address": "Tampa, FL"
+  },
+  "applicant": {
+    "named_insured": "Liberty Manufacturing LP",
+    "fein": "50-8167890",
+    "naics": "326199",
+    "mailing_address": "5033 Main St, Orlando, FL 32816",
+    "entity_type": "Corporation",
+    "years_in_business": 33,
+    "annual_revenue": 6200000,
+    "employees_full_time": 34
+  },
+  "policy_information": {
+    "proposed_effective_date": "2025-04-24",
+    "proposed_expiration_date": "2026-04-24",
+    "lines_requested": [
+      "PROP",
+      "GL",
+      "WC"
+    ],
+    "billing_plan": "Direct Bill"
+  },
+  "premises": [
+    {
+      "loc": 1,
+      "address": "5033 Main St, Orlando, FL 32816",
+      "occupancy": "Retail",
+      "sq_ft": 86351
+    },
+    {
+      "loc": 2,
+      "address": "6400 Oak Ave, Orlando, FL 32871",
+      "occupancy": "Retail",
+      "sq_ft": 24088
+    }
+  ],
+  "loss_history_5yr": [],
+  "signature": {
+    "producer": "Betty Rodriguez",
+    "date": "2025-03-15"
+  }
+}
