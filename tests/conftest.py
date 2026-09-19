@@ -5,7 +5,11 @@ from fastapi.testclient import TestClient
 from sqlalchemy import text
 
 import vista.db as db
+from vista.config import settings
 from vista.main import app
+
+# Never spend real API credits in tests — force the stub model.
+settings.openai_api_key = None
 
 
 def _db_available() -> bool:

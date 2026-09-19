@@ -45,8 +45,15 @@ Key product principles (from the business plan):
 
 ## Git
 
-- Push to `origin` (github.com/emiliano800/vista) ONLY. Never push to `upstream`
-  (ylemiesa57/vista) unless explicitly asked.
+- Remotes: `origin` = github.com/emiliano800/vista (full repo, including docs);
+  `upstream` = github.com/ylemiesa57/vista (code only).
+- Always pull/fetch both remotes before pushing.
+- Push code changes to BOTH remotes. The doc files README.md, IMPLEMENTATION.md,
+  BUSINESS_PLAN_AND_IDEAS.md, and AGENTS.md must NEVER be committed/pushed to
+  `upstream` — they go to `origin` only.
+- Workflow: `main` tracks origin and carries everything. The `upstream-main` branch
+  mirrors the code without those doc files and is pushed to `upstream`'s main.
+- Never commit `.env` (holds the OpenAI API key; gitignored).
 
 ## Gotchas
 

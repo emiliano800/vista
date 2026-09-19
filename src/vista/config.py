@@ -9,6 +9,8 @@ class Settings(BaseSettings):
     s3_access_key: str = "vista"
     s3_secret_key: str = "vista-secret"
     s3_bucket: str = "vista-documents"
+    openai_api_key: str | None = None
+    openai_model: str = "gpt-4o-mini"
 
 
 settings = Settings()

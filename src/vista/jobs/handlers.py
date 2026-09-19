@@ -4,9 +4,57 @@ from decimal import Decimal
 
 from sqlalchemy import select
 
+from vista.config import settings
 from vista.db import tenant_session
 from vista.models.platform import Job
 from vista.models.tenant import AgentRun, AgentRunEvent, Document, UsageEvent
+
+# USD per token: (input, output). Extend as models are adopted.
+MODEL_PRICING = {
+    "gpt-4o-mini": (Decimal("0.00000015"), Decimal("0.00000060")),
+    "gpt-4o": (Decimal("0.0000025"), Decimal("0.00001")),
+}
+DEFAULT_PRICING = (Decimal("0.000003"), Decimal("0.000015"))
+
+
+def _pricing(model: str) -> tuple[Decimal, Decimal]:
+    for prefix, prices in sorted(MODEL_PRICING.items(), key=lambda kv: -len(kv[0])):
+        if model.startswith(prefix):
+            return prices
+    return DEFAULT_PRICING
+
+
+def _call_model(document: Document | None) -> tuple[str, str, int, int]:
+    """Returns (model, output_text, input_tokens, output_tokens). Uses OpenAI when
+    a key is configured, otherwise a deterministic stub."""
+    if settings.openai_api_key:
+        from openai import OpenAI
+
+        client = OpenAI(api_key=settings.openai_api_key)
+        subject = (
+            f"a document named {document.filename!r}" if document else "a deal with no document"
+        )
+        resp = client.chat.completions.create(
+            model=settings.openai_model,
+            max_tokens=200,
+            messages=[
+                {
+                    "role": "system",
+                    "content": "You are Vista, an analyst agent for private-equity deal teams.",
+                },
+                {
+                    "role": "user",
+                    "content": f"In 2-3 sentences, describe what analysis you would run on {subject} during diligence.",
+                },
+            ],
+        )
+        return (
+            resp.model,
+            resp.choices[0].message.content or "",
+            resp.usage.prompt_tokens,
+            resp.usage.completion_tokens,
+        )
+    return "stub-model-v0", "stub analysis complete", 1200, 300
 
 
 def _emit(session, run_id: uuid.UUID, seq: int, event_type: str, data: dict) -> int:
@@ -41,10 +89,9 @@ def handle_agent_run(job: Job, tenant_schema: str) -> None:
                 {"tool": "read_document", "s3_key": document.s3_key, "filename": document.filename},
             )
 
-        # Stub model call — deterministic fake usage numbers.
-        input_tokens, output_tokens = 1200, 300
-        model = "stub-model-v0"
-        cost = Decimal(input_tokens) * Decimal("0.000003") + Decimal(output_tokens) * Decimal("0.000015")
+        model, output_text, input_tokens, output_tokens = _call_model(document)
+        in_price, out_price = _pricing(model)
+        cost = Decimal(input_tokens) * in_price + Decimal(output_tokens) * out_price
         seq = _emit(
             session, run_id, seq, "model_call",
             {"model": model, "input_tokens": input_tokens, "output_tokens": output_tokens},
@@ -59,7 +106,7 @@ def handle_agent_run(job: Job, tenant_schema: str) -> None:
             )
         )
 
-        seq = _emit(session, run_id, seq, "result", {"summary": "stub analysis complete"})
+        seq = _emit(session, run_id, seq, "result", {"summary": output_text})
         run.status = "succeeded"
         run.finished_at = datetime.now(timezone.utc)
         session.commit()
