@@ -15,8 +15,9 @@ Screen capture and analysis still happen in Electron. No mock company data is se
   log and summary. No raw events, screenshots or video are uploaded.
 
 Cloudflare's static hosting alone cannot run this FastAPI/Postgres stack. Deploy the
-backend to a Docker-capable server or a container host with managed Postgres and S3.
-The server needs a public HTTPS URL before connecting the Worker. The existing
+backend either to AWS (recommended: ECS Express Mode + RDS + S3, see
+[aws/README.md](aws/README.md)) or to a single Docker server as described below. The
+backend needs a public HTTPS URL before connecting the Worker. The existing
 `bumpsolutions.org` custom domain stays attached to the `vista` Worker.
 
 ## Local end-to-end run
@@ -56,13 +57,14 @@ private report bucket before API startup. Caddy obtains/renews the HTTPS certifi
 Check `https://api.bumpsolutions.org/api/health`. Persist and back up the Postgres,
 report-storage and Caddy volumes. `down -v` deletes that data; do not use it for updates.
 
-For a managed host, build the root Dockerfile, set `VISTA_DATABASE_URL`,
-`VISTA_S3_ENDPOINT_URL`, `VISTA_S3_ACCESS_KEY`, `VISTA_S3_SECRET_KEY`,
-`VISTA_S3_BUCKET`, and `VISTA_ALLOWED_ORIGINS` (a JSON array of the two web origins),
-then run `.venv/bin/python -m vista.manage migrate` as the release command before
-starting the API. Use a private bucket and credentials scoped to that bucket.
-`VISTA_COOKIE_SECURE` defaults to true; only disable it for local HTTP development.
-OpenAI credentials and the job worker are not needed for recording reports.
+For another managed host, build the root Dockerfile, set `VISTA_DATABASE_URL` (or the
+`VISTA_DB_HOST` / `VISTA_DB_USER` / `VISTA_DB_PASSWORD` parts, which the app composes and
+URL-escapes), `VISTA_S3_BUCKET`, `VISTA_S3_ENDPOINT_URL` + keys (leave empty on AWS to use
+the instance/task IAM role), and `VISTA_ALLOWED_ORIGINS` (a JSON array of the two web
+origins). Set `VISTA_MIGRATE_ON_START=true` or run `.venv/bin/python -m vista.manage migrate`
+as the release command before starting the API. Use a private bucket and credentials scoped
+to that bucket. `VISTA_COOKIE_SECURE` defaults to true; only disable it for local HTTP
+development. OpenAI credentials and the job worker are not needed for recording reports.
 
 ## Connect Cloudflare
 

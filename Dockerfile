@@ -6,8 +6,10 @@ COPY pyproject.toml uv.lock ./
 RUN uv sync --frozen --no-dev --no-install-project
 COPY src ./src
 COPY migrations ./migrations
-COPY alembic.ini ./
-RUN uv sync --frozen --no-dev && useradd --create-home vista && chown -R vista:vista /app
+COPY alembic.ini docker-entrypoint.sh ./
+RUN uv sync --frozen --no-dev && useradd --create-home vista && chown -R vista:vista /app \
+    && chmod +x docker-entrypoint.sh
 USER vista
 EXPOSE 8000
-CMD [".venv/bin/uvicorn", "vista.main:app", "--host", "0.0.0.0", "--port", "8000"]
+ENTRYPOINT ["./docker-entrypoint.sh"]
+# No CMD: the entrypoint runs the API unless VISTA_ROLE or explicit arguments say otherwise.
