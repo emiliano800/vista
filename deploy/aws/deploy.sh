@@ -57,6 +57,12 @@ fi
 [ -n "$SUBNET_IDS" ] || { echo "No public subnets found in $VPC_ID; set SUBNET_IDS" >&2; exit 1; }
 echo "account=$ACCOUNT_ID region=$REGION vpc=$VPC_ID subnets=$SUBNET_IDS"
 
+# ------------------------------------------------------- one-time account setup
+# Fresh accounts lack the ECS service-linked role; CreateCluster fails without it.
+for svc in ecs.amazonaws.com ecs.application-autoscaling.amazonaws.com elasticloadbalancing.amazonaws.com; do
+  aws iam create-service-linked-role --aws-service-name "$svc" >/dev/null 2>&1 || true
+done
+
 # ------------------------------------------------------------------- image
 REGISTRY="$ACCOUNT_ID.dkr.ecr.$REGION.amazonaws.com"
 aws ecr describe-repositories --repository-names "$ECR_REPO" >/dev/null 2>&1 || \
@@ -79,24 +85,30 @@ fi
 echo "image=$IMAGE_URI"
 
 # ------------------------------------------------------------------- stack
-# SubnetIds is a List<> parameter: commas inside the value must be escaped for --parameter-overrides.
-PARAMS=(
-  "ImageUri=$IMAGE_URI"
-  "VpcId=$VPC_ID"
-  "SubnetIds=${SUBNET_IDS//,/\\,}"
-  "WorkerDesiredCount=${WORKER_DESIRED_COUNT:-0}"
-  "DBDeletionProtection=${DB_DELETION_PROTECTION:-true}"
-)
-[ -n "${ALLOWED_ORIGINS:-}" ] && PARAMS+=("AllowedOrigins=$ALLOWED_ORIGINS")
-[ -n "${OPENAI_API_KEY:-}" ] && PARAMS+=("OpenAIApiKey=$OPENAI_API_KEY")
-[ -n "${PROVISIONING_KEY:-}" ] && PARAMS+=("ProvisioningKey=$PROVISIONING_KEY")
+# Parameters go through a JSON file so list values (SubnetIds) need no shell escaping.
+PARAMS_FILE=$(mktemp)
+trap 'rm -f "$PARAMS_FILE"' EXIT
+python3 - "$PARAMS_FILE" <<PY
+import json, os, sys
+params = {
+    "ImageUri": "$IMAGE_URI",
+    "VpcId": "$VPC_ID",
+    "SubnetIds": "$SUBNET_IDS",
+    "WorkerDesiredCount": os.environ.get("WORKER_DESIRED_COUNT", "0"),
+    "DBDeletionProtection": os.environ.get("DB_DELETION_PROTECTION", "true"),
+}
+for key, env in (("AllowedOrigins", "ALLOWED_ORIGINS"), ("OpenAIApiKey", "OPENAI_API_KEY"), ("ProvisioningKey", "PROVISIONING_KEY")):
+    if os.environ.get(env):
+        params[key] = os.environ[env]
+json.dump([{"ParameterKey": k, "ParameterValue": v} for k, v in params.items()], open(sys.argv[1], "w"))
+PY
 
 aws cloudformation deploy \
   --stack-name "$STACK_NAME" \
   --template-file deploy/aws/template.yaml \
   --capabilities CAPABILITY_NAMED_IAM \
   --no-fail-on-empty-changeset \
-  --parameter-overrides "${PARAMS[@]}"
+  --parameter-overrides "file://$PARAMS_FILE"
 
 # ECS Exec is a service-level switch that the Express resource does not expose; turn it on
 # so `aws ecs execute-command` works against the API tasks (task role already allows it).
