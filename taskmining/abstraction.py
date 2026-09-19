@@ -11,7 +11,7 @@ import re
 from collections.abc import Iterable
 from dataclasses import dataclass
 
-from taskmining.models import EventType, RawEvent, Step
+from taskmining.models import EventType, RawEvent, Source, Step
 
 
 @dataclass(frozen=True)
@@ -51,11 +51,11 @@ DEFAULT_RULES: list[ActivityRule] = [
 ]
 
 
-def classify(e: RawEvent, rules: list[ActivityRule]) -> str:
+def classify(e: RawEvent, rules: list[ActivityRule]) -> tuple[str, Source]:
     for r in rules:
         if r.matches(e):
-            return r.activity
-    return f"Other ({e.app})"
+            return r.activity, Source.RULE
+    return f"Other ({e.app})", Source.FALLBACK
 
 
 def _bump(step: Step, e: RawEvent) -> None:
@@ -74,7 +74,7 @@ def abstract(sessioned: Iterable[tuple[str, RawEvent]], rules: list[ActivityRule
     rules = rules if rules is not None else DEFAULT_RULES
     steps: list[Step] = []
     for sid, e in sessioned:
-        act = classify(e, rules)
+        act, src = classify(e, rules)
         cur = steps[-1] if steps else None
         if cur and cur.session_id == sid and cur.activity == act:
             _bump(cur, e)
@@ -89,6 +89,7 @@ def abstract(sessioned: Iterable[tuple[str, RawEvent]], rules: list[ActivityRule
             window_title=e.window_title,
             url=e.url,
             n_events=0,
+            activity_source=src,
         )
         _bump(s, e)
         steps.append(s)

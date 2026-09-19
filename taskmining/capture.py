@@ -13,7 +13,7 @@ from collections.abc import Iterable
 from datetime import datetime, timedelta
 from typing import Protocol, TextIO
 
-from taskmining.models import EventType, RawEvent, read_jsonl
+from taskmining.models import Annotation, EventType, RawEvent, read_jsonl
 
 
 class EventSource(Protocol):
@@ -39,13 +39,34 @@ class SyntheticSource:
 
     USERS = ("alice", "bob", "carol")
 
+    OFFSCREEN_LABELS = (
+        "Phone: chase overdue invoices",
+        "Paper: file signed delivery notes",
+        "Meeting: weekly AP review",
+    )
+
     def __init__(self, n_cases: int = 40, seed: int = 7, start: datetime | None = None):
         self.n_cases = n_cases
         self.rng = random.Random(seed)
         self.start = start or datetime(2026, 3, 2, 8, 0, 0)
+        self._events: list[RawEvent] | None = None
+        self._annotations: list[Annotation] = []
 
     def events(self) -> Iterable[RawEvent]:
+        if self._events is None:
+            self._generate()
+        return list(self._events or [])
+
+    def annotations(self) -> list[Annotation]:
+        """Employee statements covering the idle gaps the recorder cannot see,
+        plus one analyst correction of a rule label."""
+        if self._events is None:
+            self._generate()
+        return list(self._annotations)
+
+    def _generate(self) -> None:
         out: list[RawEvent] = []
+        anns: list[Annotation] = []
         t = self.start
         for i in range(self.n_cases):
             user = self.rng.choice(self.USERS)
@@ -54,9 +75,33 @@ class SyntheticSource:
             email = f"{user}@vista.example"
             t += timedelta(seconds=self.rng.randint(5, 90))
             if self.rng.random() < 0.1:
+                gap_start = t
                 t += timedelta(minutes=self.rng.randint(20, 60))
+                anns.append(
+                    Annotation(
+                        user=user,
+                        start=gap_start + timedelta(minutes=1),
+                        end=t - timedelta(minutes=1),
+                        label=self.rng.choice(self.OFFSCREEN_LABELS),
+                        note="self-reported in daily check-in",
+                    )
+                )
             t = self._case(out, t, user, inv, vendor, email)
-        return out
+        excel = [e for e in out if e.app == "Excel"]
+        if excel:
+            first = excel[0]
+            burst = [e for e in excel if e.user == first.user and e.timestamp - first.timestamp < timedelta(minutes=1)]
+            anns.append(
+                Annotation(
+                    user=first.user,
+                    start=first.timestamp,
+                    end=burst[-1].timestamp,
+                    label="Reconcile AP tracker with SAP",
+                    note="Analyst: tracker entry is a reconciliation step, not data entry",
+                    author="analyst",
+                )
+            )
+        self._events, self._annotations = out, anns
 
     def _e(self, out, t, user, typ, app, title, url="", element="", text="", **payload):
         out.append(RawEvent(t, user, typ, app, title, url, element, text, payload))

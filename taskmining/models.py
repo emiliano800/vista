@@ -45,6 +45,55 @@ class RawEvent:
         return cls(**d)
 
 
+OFF_SCREEN_APP = "(off-screen)"  # app value of steps that only exist because a human reported them
+
+
+class Source(str, Enum):
+    """Provenance of a derived field, so observed facts stay separable from inference."""
+
+    OBSERVED = "observed"  # read directly from a screen (id in window title / url)
+    RULE = "rule"  # produced by an ActivityRule
+    FALLBACK = "fallback"  # no rule matched -> "Other (<app>)"
+    FILLED = "filled"  # propagated from a neighbouring step
+    EPISODE = "episode"  # synthetic case from a contiguous burst of work (no id available)
+    HUMAN = "human"  # stated by an employee / analyst annotation
+
+
+@dataclass
+class Annotation:
+    """A human statement about what happened in a time range.
+
+    Employees or analysts attach these to hours that the recorder cannot
+    explain (phone calls, paper records, meetings) or to correct labels.
+    """
+
+    user: str
+    start: datetime
+    end: datetime
+    label: str
+    note: str = ""
+    case_id: str = ""
+    author: str = "employee"
+
+    def to_json(self) -> str:
+        d = asdict(self)
+        d["start"] = self.start.isoformat()
+        d["end"] = self.end.isoformat()
+        return json.dumps(d, sort_keys=True)
+
+    @classmethod
+    def from_dict(cls, d: dict) -> Annotation:
+        return cls(
+            user=d["user"],
+            start=datetime.fromisoformat(d["start"]),
+            end=datetime.fromisoformat(d["end"]),
+            label=d["label"],
+            note=d.get("note", "") or "",
+            case_id=d.get("case_id", "") or "",
+            author=d.get("author", "employee") or "employee",
+        )
+
+
 @dataclass
 class Step:
     """A business-level activity abstracted from one or more raw events."""
@@ -62,6 +111,9 @@ class Step:
     n_pastes: int = 0
     n_keys: int = 0
     case_id: str = ""
+    activity_source: Source = Source.RULE
+    case_source: Source | None = None
+    note: str = ""
 
     @property
     def duration_s(self) -> float:

@@ -36,11 +36,12 @@ def redact(events: Iterable[RawEvent]) -> list[RawEvent]:
     return out
 
 
-def pseudonymize_users(events: Iterable[RawEvent], salt: str = "vista") -> list[RawEvent]:
-    def h(u: str) -> str:
-        return "user_" + hashlib.sha256(f"{salt}:{u}".encode()).hexdigest()[:8]
+def pseudonym(user: str, salt: str = "vista") -> str:
+    return "user_" + hashlib.sha256(f"{salt}:{user}".encode()).hexdigest()[:8]
 
-    return [replace(e, user=h(e.user)) for e in events]
+
+def pseudonymize_users(events: Iterable[RawEvent], salt: str = "vista") -> list[RawEvent]:
+    return [replace(e, user=pseudonym(e.user, salt)) for e in events]
 
 
 def aggregate_keystrokes(events: Iterable[RawEvent], gap: timedelta = timedelta(seconds=2)) -> list[RawEvent]:

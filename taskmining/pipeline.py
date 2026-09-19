@@ -1,13 +1,14 @@
 from __future__ import annotations
 
 import json
-from dataclasses import dataclass
+from collections import Counter
+from dataclasses import dataclass, field, replace
 from datetime import timedelta
 from pathlib import Path
 
-from taskmining import abstraction, analytics, correlation, discovery, eventlog, preprocess
+from taskmining import abstraction, analytics, annotations, correlation, discovery, eventlog, preprocess
 from taskmining.capture import EventSource
-from taskmining.models import RawEvent, Step, write_jsonl
+from taskmining.models import Annotation, RawEvent, Step, write_jsonl
 
 
 @dataclass
@@ -17,6 +18,8 @@ class PipelineResult:
     steps: list[Step]
     discovery: discovery.DiscoveryResult
     automation: list[analytics.AutomationScore]
+    annotations: list[Annotation] = field(default_factory=list)
+    questions: list[annotations.Question] = field(default_factory=list)
 
     def write(self, out: Path) -> None:
         out.mkdir(parents=True, exist_ok=True)
@@ -30,12 +33,22 @@ class PipelineResult:
             eventlog.to_xes(self.steps, fp)
         (out / "dfg.dot").write_text(self.discovery.to_dot())
         (out / "dfg.mmd").write_text(self.discovery.to_mermaid())
+        with (out / "annotations.jsonl").open("w") as fp:
+            annotations.write_annotations(self.annotations, fp)
+        (out / "questions.json").write_text(json.dumps([q.to_dict() for q in self.questions], indent=2, ensure_ascii=False))
         summary = {
             "n_raw_events": len(self.raw),
             "n_clean_events": len(self.clean),
             "n_steps": len(self.steps),
             "n_cases": len(self.discovery.cases),
             "n_uncorrelated_steps": sum(1 for s in self.steps if not s.case_id),
+            "n_annotations": len(self.annotations),
+            "n_open_questions": len(self.questions),
+            "provenance": {
+                "activity_source": dict(Counter(s.activity_source.value for s in self.steps)),
+                "case_source": dict(Counter(s.case_source.value if s.case_source else "none" for s in self.steps)),
+            },
+            "off_screen_hours": round(sum(s.duration_s for s in self.steps if s.app == annotations.OFF_SCREEN_APP) / 3600, 3),
             "variants": [
                 {"count": v.count, "mean_throughput_s": round(v.mean_throughput_s, 1), "activities": list(v.activities)}
                 for v in self.discovery.variants
@@ -65,21 +78,28 @@ class Pipeline:
         idle_gap: timedelta = timedelta(minutes=10),
         key_gap: timedelta = timedelta(seconds=2),
         pseudonymize: bool = True,
+        episode_fallback: bool = True,
     ):
         self.rules = rules
         self.idle_gap = idle_gap
         self.key_gap = key_gap
         self.pseudonymize = pseudonymize
+        self.episode_fallback = episode_fallback
 
-    def run(self, source: EventSource) -> PipelineResult:
+    def run(self, source: EventSource, human: list[Annotation] | None = None) -> PipelineResult:
         raw = list(source.events())
+        human = list(human or [])
         clean = preprocess.redact(raw)
+        human = [replace(a, note=preprocess.redact_text(a.note)) for a in human]
         if self.pseudonymize:
             clean = preprocess.pseudonymize_users(clean)
+            human = [replace(a, user=preprocess.pseudonym(a.user)) for a in human]
         clean = preprocess.aggregate_keystrokes(clean, self.key_gap)
         sessioned = preprocess.sessionize(clean, self.idle_gap)
         steps = abstraction.abstract(sessioned, self.rules)
-        correlation.correlate(steps)
+        steps = annotations.apply_annotations(steps, human)
+        correlation.correlate(steps, episodes=self.episode_fallback)
         disc = discovery.discover(steps)
         auto = analytics.score_automation(steps)
-        return PipelineResult(raw, clean, steps, disc, auto)
+        questions = annotations.open_questions(steps)
+        return PipelineResult(raw, clean, steps, disc, auto, human, questions)
