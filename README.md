@@ -73,18 +73,35 @@ number of open questions for the next interview.
 
 ## Getting started
 
+One command installs the engine and the recorder and runs both test suites
+(needs [uv](https://docs.astral.sh/uv/) and Node 18+; `./setup.sh --check`
+tells you what is missing and how to install it):
+
 ```bash
-pip install -e . pytest ruff   # or: uv sync
-pytest tests/test_pipeline.py
+git clone https://github.com/ylemiesa57/vista.git && cd vista
+./setup.sh          # uv sync + npm install + ruff/pytest/node tests
+make demo           # recorder with simulated apps
+make start          # real recorder
+```
+
+`make test` re-runs everything; `make run` processes 40 synthetic cases into
+`out/`. No Docker: the recorder has to run on the employee's own desktop
+(screen, input hooks, OS permissions) and the engine is stdlib-only.
+
+Engine only:
+
+```bash
+uv sync --group dev
+uv run pytest tests/test_pipeline.py
 
 # generate raw events, then process them (mirrors client -> server hand-off)
-python -m taskmining generate --cases 100 --out raw.jsonl
-python -m taskmining run --input raw.jsonl --out out/
+uv run python -m taskmining generate --cases 100 --out raw.jsonl
+uv run python -m taskmining run --input raw.jsonl --out out/
 
 # add what the recorder cannot see (phone, paper, meetings, corrections)
-python -m taskmining generate --cases 100 --out raw.jsonl --annotations-out ann.jsonl
-python -m taskmining run --input raw.jsonl --annotations ann.jsonl --out out/
-#   or: python -m taskmining run --synthetic 40 --annotations auto --out out/
+uv run python -m taskmining generate --cases 100 --out raw.jsonl --annotations-out ann.jsonl
+uv run python -m taskmining run --input raw.jsonl --annotations ann.jsonl --out out/
+#   or: uv run python -m taskmining run --synthetic 40 --annotations auto --out out/
 
 # render the process graph
 dot -Tpng out/dfg.dot -o dfg.png
@@ -138,18 +155,19 @@ written; typed characters are not stored by default (only key counts and
 shortcut combos); private apps/title keywords mute capture entirely.
 
 ```bash
-cd recorder && npm install
-npm start                # real hooks
-npm run start:demo       # simulated Outlook/Acrobat/QuickBooks/Excel activity, no hooks
-VISTA_PYTHON=/path/to/python npm start   # interpreter that has taskmining installed
+make demo                # simulated Outlook/Acrobat/QuickBooks/Excel activity, no hooks
+make start               # real hooks
 ```
+
+On Stop the recorder runs `python -m taskmining run` with the repo's `.venv`
+(created by `uv sync` / `setup.sh`); set `VISTA_PYTHON=/path/to/python` to use
+another interpreter.
 
 ### macOS
 
 ```bash
-brew install node            # Node 20+
-python3 -m venv .venv && .venv/bin/pip install -e .   # taskmining for post-processing
-cd recorder && npm install && VISTA_PYTHON=$PWD/../.venv/bin/python npm start
+brew install uv node
+./setup.sh && make start
 ```
 
 macOS asks for three permissions the first time (System Settings → Privacy &
