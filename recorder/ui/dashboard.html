@@ -1,0 +1,636 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Vista — my recordings</title>
+    <style>
+      :root {
+        --accent: #3d63dd; --accent-soft: #e8edfb; --bg: #f4f4f1; --card: #fff; --line: #e7e6e0;
+        --fg: #1f1e1b; --muted: #6f6d66; --rec: #e5484d; --ok: #2f9e6a; --warn: #d9a120;
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0; background: var(--bg); color: var(--fg);
+        font-family: 'Instrument Sans', -apple-system, 'Segoe UI', system-ui, sans-serif; font-size: 14px; line-height: 1.45;
+      }
+      a { color: var(--accent); cursor: pointer; text-decoration: none; }
+      .shell { display: grid; grid-template-columns: 220px 1fr; min-height: 100vh; }
+      /* ---- sidebar ---- */
+      nav { border-right: 1px solid var(--line); padding: 22px 18px; background: #faFaf8; display: flex; flex-direction: column; gap: 6px; }
+      .brand { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 17px; margin-bottom: 18px; letter-spacing: -0.01em; }
+      .brand i { width: 22px; height: 22px; border-radius: 7px; background: var(--accent); display: inline-block; }
+      nav button {
+        text-align: left; background: transparent; border: 0; padding: 9px 12px; border-radius: 8px; font: inherit; color: var(--muted); cursor: pointer;
+        display: flex; justify-content: space-between; align-items: center;
+      }
+      nav button.active, nav button:hover { background: #fff; color: var(--fg); box-shadow: 0 1px 0 var(--line); }
+      nav .spacer { flex: 1; }
+      .who { font-size: 12px; color: var(--muted); padding: 10px 12px; border-top: 1px solid var(--line); }
+      .who b { display: block; color: var(--fg); font-weight: 600; }
+      /* ---- main ---- */
+      main { padding: 28px 34px 48px; max-width: 1080px; }
+      h1 { font-size: 24px; margin: 0 0 4px; letter-spacing: -0.02em; }
+      .lede { color: var(--muted); margin: 0 0 22px; }
+      .card { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 18px 20px; }
+      .grid { display: grid; gap: 14px; }
+      .cols-3 { grid-template-columns: repeat(3, 1fr); }
+      .cols-2 { grid-template-columns: 1.4fr 1fr; }
+      .kpi b { display: block; font-size: 28px; font-weight: 600; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
+      .kpi span { color: var(--muted); font-size: 13px; }
+      .kpi small { display: block; color: var(--muted); font-size: 12px; margin-top: 4px; }
+      h2 { font-size: 13px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); margin: 0 0 12px; font-weight: 600; }
+      section { margin-top: 18px; }
+      .hidden { display: none !important; }
+      /* hero */
+      .hero { display: grid; grid-template-columns: auto 1fr auto; gap: 18px; align-items: center; }
+      .hero .dot { width: 14px; height: 14px; border-radius: 50%; background: #c9c8c1; }
+      .hero.recording .dot { background: var(--rec); box-shadow: 0 0 0 5px rgba(229, 72, 77, 0.15); }
+      .hero.paused .dot { background: var(--warn); }
+      .hero .t { font-weight: 600; font-size: 16px; }
+      .hero .s { color: var(--muted); font-size: 13px; }
+      .btn { appearance: none; border: 1px solid var(--line); background: #fff; color: var(--fg); border-radius: 999px; padding: 9px 16px; font: inherit; font-weight: 600; cursor: pointer; }
+      .btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+      .btn.danger { color: var(--rec); }
+      .btn.sm { padding: 5px 11px; font-size: 12.5px; font-weight: 500; }
+      .btn:hover { filter: brightness(0.97); }
+      /* apps */
+      .apps { display: grid; gap: 10px; }
+      .apps .row { display: grid; grid-template-columns: 1fr auto; gap: 8px; font-size: 13.5px; }
+      .apps .bar { grid-column: 1 / -1; height: 6px; border-radius: 3px; background: #eeede8; overflow: hidden; }
+      .apps .bar i { display: block; height: 100%; background: var(--accent); border-radius: 3px; }
+      /* timeline */
+      .tl { display: flex; height: 26px; border-radius: 6px; overflow: hidden; background: #eeede8; }
+      .tl i { display: block; height: 100%; }
+      .tl-axis { display: flex; justify-content: space-between; color: var(--muted); font-size: 11px; margin-top: 4px; }
+      .legend { display: flex; gap: 14px; flex-wrap: wrap; font-size: 12px; color: var(--muted); margin-top: 10px; }
+      .legend i { width: 9px; height: 9px; border-radius: 2px; display: inline-block; margin-right: 5px; vertical-align: -1px; }
+      /* recordings list */
+      table { width: 100%; border-collapse: collapse; }
+      th { text-align: left; font-size: 11.5px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); font-weight: 600; padding: 0 10px 10px; border-bottom: 1px solid var(--line); }
+      td { padding: 12px 10px; border-bottom: 1px solid var(--line); vertical-align: top; font-variant-numeric: tabular-nums; }
+      tr:last-child td { border-bottom: 0; }
+      .pill { display: inline-block; padding: 2px 9px; border-radius: 999px; font-size: 12px; font-weight: 600; background: #eeede8; color: var(--muted); }
+      .pill.done { background: #e3f4ea; color: var(--ok); }
+      .pill.running, .pill.pending { background: var(--accent-soft); color: var(--accent); }
+      .pill.failed { background: #fbe4e5; color: var(--rec); }
+      .pill.skipped { background: #f7efd8; color: #8a6a10; }
+      .muted { color: var(--muted); }
+      .mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; }
+      /* privacy */
+      .pv { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+      .pv ul { margin: 6px 0 0; padding-left: 18px; color: var(--muted); }
+      .pv h3 { margin: 0; font-size: 14px; }
+      .pv .yes h3::before { content: '●'; color: var(--ok); margin-right: 8px; }
+      .pv .no h3::before { content: '●'; color: var(--rec); margin-right: 8px; }
+      /* settings */
+      .set { display: grid; gap: 10px; }
+      .set label { display: grid; grid-template-columns: 1fr auto; gap: 12px; align-items: center; padding: 12px 0; border-bottom: 1px solid var(--line); }
+      .set label:last-child { border-bottom: 0; }
+      .set label span { color: var(--muted); font-size: 12.5px; display: block; }
+      .set input[type='checkbox'] { width: 38px; height: 22px; appearance: none; background: #d9d8d1; border-radius: 999px; position: relative; cursor: pointer; transition: background 0.15s; }
+      .set input[type='checkbox']::after { content: ''; position: absolute; top: 2px; left: 2px; width: 18px; height: 18px; border-radius: 50%; background: #fff; transition: left 0.15s; box-shadow: 0 1px 2px rgba(0,0,0,.2); }
+      .set input[type='checkbox']:checked { background: var(--accent); }
+      .set input[type='checkbox']:checked::after { left: 18px; }
+      textarea, input[type='text'] { width: 100%; font: inherit; padding: 9px 11px; border: 1px solid var(--line); border-radius: 8px; background: #fff; color: var(--fg); }
+      /* modal */
+      .modal { position: fixed; inset: 0; background: rgba(31, 30, 27, 0.35); display: grid; place-items: center; }
+      .modal .card { width: 460px; display: grid; gap: 12px; }
+      .modal .actions { display: flex; justify-content: flex-end; gap: 8px; }
+      .modal .when { display: flex; align-items: center; gap: 8px; }
+      .modal .when input { width: auto; }
+      .chips { display: flex; gap: 6px; flex-wrap: wrap; }
+      .chip { border: 1px solid var(--line); border-radius: 999px; padding: 4px 10px; font-size: 12.5px; cursor: pointer; background: #fff; }
+      .chip:hover, .chip.on { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); }
+      .empty { color: var(--muted); text-align: center; padding: 30px 0; }
+      /* review / agent */
+      .agent { display: grid; grid-template-columns: 1fr 1.3fr; gap: 14px; }
+      .stages { display: grid; gap: 0; }
+      .stage { display: grid; grid-template-columns: 22px 1fr auto; gap: 12px; align-items: center; padding: 11px 0; border-bottom: 1px solid var(--line); color: var(--muted); }
+      .stage:last-child { border-bottom: 0; }
+      .stage i { width: 18px; height: 18px; border-radius: 50%; border: 2px solid #d9d8d1; display: inline-block; position: relative; }
+      .stage.active { color: var(--fg); }
+      .stage.active i { border-color: var(--accent); border-top-color: transparent; animation: spin 0.8s linear infinite; }
+      .stage.done { color: var(--fg); }
+      .stage.done i { border-color: var(--ok); background: var(--ok); }
+      .stage.done i::after { content: ''; position: absolute; left: 5px; top: 1px; width: 4px; height: 8px; border: solid #fff; border-width: 0 2px 2px 0; transform: rotate(45deg); }
+      .stage.failed i { border-color: var(--rec); background: var(--rec); }
+      .stage small { color: var(--muted); font-size: 12px; display: block; }
+      .stage .out { font-size: 12.5px; color: var(--muted); font-variant-numeric: tabular-nums; }
+      @keyframes spin { to { transform: rotate(360deg); } }
+      .rank { display: grid; gap: 10px; }
+      .rank .row { display: grid; grid-template-columns: 26px 1fr auto; gap: 10px; align-items: center; }
+      .rank .n { width: 26px; height: 26px; border-radius: 8px; background: var(--accent-soft); color: var(--accent); font-weight: 700; display: grid; place-items: center; font-size: 12.5px; }
+      .rank .bar { grid-column: 2 / -1; height: 6px; border-radius: 3px; background: #eeede8; overflow: hidden; }
+      .rank .bar i { display: block; height: 100%; background: var(--accent); }
+      .path { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; font-size: 13px; }
+      .path span { background: #f1f0eb; border-radius: 6px; padding: 4px 9px; }
+      .path em { color: var(--muted); font-style: normal; }
+      .banner { display: flex; align-items: center; gap: 14px; padding: 14px 18px; border-radius: 12px; background: var(--accent-soft); color: #22397f; margin-bottom: 16px; }
+      .banner b { font-size: 15px; }
+      .banner .sp { flex: 1; }
+      .banner.warn { background: #fff4e0; color: #6b4300; }
+      .perms { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; }
+      .perm { display: flex; align-items: center; gap: 10px; font-size: 13px; }
+      .perm i { width: 8px; height: 8px; border-radius: 50%; background: #d18f00; flex: none; }
+      .perm.ok i { background: #1f9d55; }
+      .perm .sp { flex: 1; }
+    </style>
+  </head>
+  <body>
+    <div class="shell">
+      <nav>
+        <div class="brand"><i></i> Vista</div>
+        <button data-view="today" class="active">Today</button>
+        <button data-view="review" id="nav-review" class="hidden">Last session</button>
+        <button data-view="recordings">My recordings <span id="n-rec" class="pill">0</span></button>
+        <button data-view="privacy">What is recorded</button>
+        <button data-view="settings">Settings</button>
+        <div class="spacer"></div>
+        <div class="who"><b id="who-name">—</b><span id="who-sub">this computer</span></div>
+      </nav>
+
+      <main>
+        <!-- ============ TODAY ============ -->
+        <div id="view-today">
+          <h1>Good day.</h1>
+          <p class="lede">One button. Press it when you start working, stop it when you leave. Everything else is automatic.</p>
+
+          <div class="banner warn hidden" id="perm-banner">
+            <div style="flex:1">
+              <b>macOS needs your OK before Vista can record</b>
+              <div>Grant each one in System Settings, then come back. Vista only records while you press Start.</div>
+              <div class="perms" id="perm-list"></div>
+            </div>
+            <button class="btn sm" id="perm-recheck">Check again</button>
+          </div>
+
+          <div id="hero" class="card hero idle">
+            <div class="dot"></div>
+            <div><div class="t" id="hero-t">Not recording</div><div class="s" id="hero-s">Nothing is captured until you press Start.</div></div>
+            <div style="display:flex;gap:8px">
+              <button class="btn primary" id="h-start">Start recording</button>
+              <button class="btn hidden" id="h-pause">Pause</button>
+              <button class="btn primary hidden" id="h-resume">Resume</button>
+              <button class="btn danger hidden" id="h-stop">Stop &amp; save</button>
+            </div>
+          </div>
+
+          <section class="grid cols-3">
+            <div class="card kpi"><b id="k-hours">0h 00m</b><span>recorded today</span><small id="k-hours-sub">across 0 sessions</small></div>
+            <div class="card kpi"><b id="k-events">0</b><span>interactions captured</span><small id="k-events-sub">clicks, keys, shortcuts, copy/paste</small></div>
+            <div class="card kpi"><b id="k-redact">0</b><span>items redacted on this device</span><small>emails, phone numbers, card &amp; account numbers</small></div>
+          </section>
+
+          <section class="grid cols-2">
+            <div class="card">
+              <h2>Your day, by application</h2>
+              <div class="tl" id="tl"></div>
+              <div class="tl-axis"><span id="tl-a">—</span><span id="tl-b">—</span></div>
+              <div class="legend" id="legend"></div>
+            </div>
+            <div class="card">
+              <h2>Where the time went</h2>
+              <div class="apps" id="apps"><div class="empty">No recordings yet today</div></div>
+            </div>
+          </section>
+
+          <section class="card">
+            <h2>What the screen can't see</h2>
+            <p class="muted" style="margin:0 0 10px">Phone calls, paper invoices, a chat at someone's desk — tell us in one line so the picture of your day is complete. Never required.</p>
+            <div class="chips" id="quick-chips"></div>
+          </section>
+        </div>
+
+        <!-- ============ REVIEW (after Stop) ============ -->
+        <div id="view-review" class="hidden">
+          <h1 id="rv-title">Session saved</h1>
+          <p class="lede" id="rv-lede">Your recording is on this computer. The analysis agent is turning clicks into steps.</p>
+
+          <div class="banner" id="rv-banner">
+            <div class="dot" style="width:10px;height:10px;border-radius:50%;background:var(--accent)"></div>
+            <div><b id="rv-banner-t">Analyzing your session…</b><div id="rv-banner-s" style="font-size:12.5px">Runs entirely on this computer. Nothing is uploaded.</div></div>
+            <div class="sp"></div>
+            <button class="btn sm" id="rv-note">Add what the screen didn't see</button>
+            <button class="btn sm primary" id="rv-done">Back to today</button>
+          </div>
+
+          <div class="agent">
+            <div class="card">
+              <h2>Analysis agent</h2>
+              <div class="stages" id="rv-stages"></div>
+            </div>
+            <div style="display:grid;gap:14px">
+              <section class="grid cols-3" style="margin:0">
+                <div class="card kpi"><b id="rv-steps">—</b><span>work steps</span><small id="rv-steps-sub">from interactions</small></div>
+                <div class="card kpi"><b id="rv-cases">—</b><span>cases followed</span><small id="rv-cases-sub">start to finish</small></div>
+                <div class="card kpi"><b id="rv-q">—</b><span>open questions</span><small>things only you can answer</small></div>
+              </section>
+              <div class="card">
+                <h2>Where the time went</h2>
+                <div class="rank" id="rv-acts"><div class="empty">Waiting for the agent…</div></div>
+              </div>
+              <div class="card">
+                <h2>Most common path</h2>
+                <div class="path" id="rv-path"><span class="muted">—</span></div>
+              </div>
+              <div class="card">
+                <h2>Re-keyed between apps</h2>
+                <div class="rank" id="rv-flows"><div class="empty">—</div></div>
+              </div>
+              <div class="card">
+                <h2>Automation candidates</h2>
+                <div class="rank" id="rv-auto"><div class="empty">—</div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ============ RECORDINGS ============ -->
+        <div id="view-recordings" class="hidden">
+          <h1>My recordings</h1>
+          <p class="lede">Every session lives in a folder on this computer. Nothing is uploaded until your company's analyst collects it.</p>
+          <div class="card" style="padding:6px 0 0">
+            <table>
+              <thead><tr><th>When</th><th>Length</th><th>Interactions</th><th>Screens</th><th>Redacted</th><th>Processing</th><th>Notes</th><th></th></tr></thead>
+              <tbody id="rec-rows"></tbody>
+            </table>
+            <div id="rec-empty" class="empty">No recordings yet — press Start on the overlay.</div>
+          </div>
+          <p class="muted" style="margin-top:12px"><a id="open-folder">Open the recordings folder</a></p>
+        </div>
+
+        <!-- ============ PRIVACY ============ -->
+        <div id="view-privacy" class="hidden">
+          <h1>What is recorded</h1>
+          <p class="lede">The recorder watches how work moves between applications, not what you write.</p>
+          <div class="pv">
+            <div class="card yes">
+              <h3>Captured</h3>
+              <ul>
+                <li>Which application and window is in front (e.g. <em>Excel — AP tracker.xlsx</em>)</li>
+                <li>Clicks, scrolls and <b>counts</b> of keystrokes</li>
+                <li>Shortcut combinations (Ctrl+C, Ctrl+S, Alt+Tab)</li>
+                <li>A low-resolution screenshot when you switch windows, when the screen changes, and every 15 s</li>
+                <li>Copied text after redaction, and which app a paste came from, so re-keying between systems is visible</li>
+              </ul>
+            </div>
+            <div class="card no">
+              <h3>Never captured</h3>
+              <ul>
+                <li>Passwords or anything typed into a private app (1Password, banking, …)</li>
+                <li>The letters you type — only how many, unless your company turns that on</li>
+                <li>Emails, phone numbers, card and account numbers — replaced with <span class="mono">[EMAIL]</span>, <span class="mono">[PHONE]</span>, <span class="mono">[CARD]</span> before saving</li>
+                <li>Anything while the recorder is paused or off</li>
+                <li>Audio, webcam, or files on your disk</li>
+              </ul>
+            </div>
+          </div>
+          <section class="card">
+            <h2>Where it goes</h2>
+            <p class="muted" style="margin:0">Recordings are saved to <span class="mono" id="home-path">~/Vista/recordings</span>. Each folder holds <span class="mono">events.jsonl</span> (one line per interaction), <span class="mono">shots/</span>, <span class="mono">screen.webm</span> and <span class="mono">manifest.json</span>. Your name is replaced with a code before analysis.</p>
+          </section>
+        </div>
+
+        <!-- ============ SETTINGS ============ -->
+        <div id="view-settings" class="hidden">
+          <h1>Settings</h1>
+          <p class="lede">Defaults are set by your company; you can always make recording stricter.</p>
+          <div class="card set" id="settings"></div>
+          <section class="card">
+            <h2>Private apps and words</h2>
+            <p class="muted" style="margin:0 0 8px">Capture is muted while any of these apps are in front or these words appear in the window title.</p>
+            <input type="text" id="private-apps" placeholder="1Password, Bitwarden, KeePass" />
+            <div style="height:8px"></div>
+            <input type="text" id="private-titles" placeholder="password, bank, incognito" />
+            <div style="margin-top:10px"><button class="btn sm" id="save-private">Save</button> <span class="muted" id="saved-msg"></span></div>
+          </section>
+        </div>
+      </main>
+    </div>
+
+    <!-- annotation modal -->
+    <div id="modal" class="modal hidden">
+      <div class="card">
+        <h2 style="margin:0">What the screen didn't see</h2>
+        <div class="muted" id="modal-sub"></div>
+        <div class="chips" id="modal-chips"></div>
+        <input type="text" id="ann-label" placeholder="e.g. Phone: chased 3 overdue vendors" />
+        <div class="when"><span class="muted">From</span><input type="time" id="ann-from" /><span class="muted">to</span><input type="time" id="ann-to" /></div>
+        <textarea id="ann-note" rows="2" placeholder="Anything else (optional). Emails and numbers are redacted."></textarea>
+        <div class="actions"><button class="btn" id="ann-cancel">Cancel</button><button class="btn primary" id="ann-save">Save note</button></div>
+      </div>
+    </div>
+
+    <script>
+      const $ = (id) => document.getElementById(id);
+      const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+      const short = (app) => app.replace(/^Microsoft /, '').replace(/ Desktop$/, '');
+      const PALETTE = ['#3d63dd', '#2f9e6a', '#d9a120', '#e5484d', '#8e5cd9', '#1f9fb5', '#c96b2b', '#7a7a72'];
+      const QUICK = ['Phone call with a vendor', 'Phone call with a customer', 'Paper invoices / filing', 'Meeting', 'Helped a colleague', 'Break'];
+      const colorOf = (() => { const m = new Map(); return (app) => { if (!m.has(app)) m.set(app, PALETTE[m.size % PALETTE.length]); return m.get(app); }; })();
+
+      let status = null, recordings = [], settings = null, info = null, annotating = null;
+
+      const hm = (sec) => {
+        const h = Math.floor(sec / 3600), m = Math.floor((sec % 3600) / 60);
+        return h ? `${h}h ${String(m).padStart(2, '0')}m` : m ? `${m}m` : `${Math.round(sec)}s`;
+      };
+      const hhmm = (iso) => { const d = new Date(iso); return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`; };
+      const clock = (iso) => new Date(iso).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      const isToday = (iso) => iso && new Date(iso).toDateString() === new Date().toDateString();
+
+      // ---- views ----
+      document.querySelectorAll('nav button').forEach((b) => (b.onclick = () => show(b.dataset.view)));
+      function show(v) {
+        document.querySelectorAll('nav button').forEach((b) => b.classList.toggle('active', b.dataset.view === v));
+        for (const x of ['today', 'review', 'recordings', 'privacy', 'settings']) $('view-' + x).classList.toggle('hidden', x !== v);
+      }
+
+      // ---- review: the analysis agent, shown when the dashboard comes back after Stop ----
+      const STAGES = [
+        ['save', 'Saving screen capture and events', 'events.jsonl, shots/, screen.webm'],
+        ['redact', 'Redacting and pseudonymising', 'emails, phones, cards → tokens; your name → a code'],
+        ['steps', 'Grouping clicks into work steps', 'window + activity rules'],
+        ['cases', 'Linking steps into cases', 'invoice / ticket ids, or time episodes'],
+        ['discover', 'Mapping the process', 'paths, variants, rework'],
+        ['score', 'Ranking automation potential', 'frequency × regularity × re-keying'],
+      ];
+      let reviewing = null, stageIdx = -1, stageTimer = null;
+
+      function openReview(id) {
+        reviewing = id;
+        stageIdx = 0;
+        clearInterval(stageTimer);
+        $('nav-review').classList.remove('hidden');
+        show('review');
+        // pace the stage list so the employee can follow it even when taskmining finishes in <1s
+        stageTimer = setInterval(() => {
+          const r = recordings.find((x) => x.recording_id === reviewing);
+          const finished = r && r.processing && r.processing !== 'running' && r.processing !== 'pending';
+          if (stageIdx < STAGES.length - 1) stageIdx++;
+          else if (finished) clearInterval(stageTimer);
+          renderReview();
+        }, 650);
+        renderReview();
+      }
+
+      function renderReview() {
+        if (!reviewing) return;
+        const r = recordings.find((x) => x.recording_id === reviewing);
+        if (!r) return;
+        const p = r.processing ?? 'pending';
+        const finished = p !== 'running' && p !== 'pending';
+        const allShown = stageIdx >= STAGES.length - 1;
+        const done = finished && allShown && p === 'done';
+        const s = r.summary;
+        const when = `${clock(r.started_at)}–${r.ended_at ? clock(r.ended_at) : '…'}`;
+        $('rv-title').textContent = done ? 'Session analyzed' : 'Session saved';
+        $('rv-lede').textContent = `${when} · ${hm(r.active_seconds ?? 0)} · ${(r.counts?.total ?? 0).toLocaleString()} interactions · ${(r.counts?.redactions ?? 0)} redacted on this device`;
+        $('rv-banner-t').textContent = done ? 'Analysis complete' : p === 'failed' ? 'Analysis could not finish' : p === 'skipped' ? 'Analysis skipped' : 'Analyzing your session…';
+        $('rv-banner-s').textContent = done
+          ? 'Add a note for anything the screen could not see — calls, paper, a chat at a desk — and the agent re-runs.'
+          : p === 'failed' || p === 'skipped' ? (r.processing_note ?? '') : 'Runs entirely on this computer. Nothing is uploaded.';
+
+        const out = (k) => {
+          if (!s) return '';
+          return { save: `${(r.counts?.total ?? 0).toLocaleString()} events`, redact: `${s.raw_events} → ${s.clean_events} clean`, steps: `${s.steps} steps`, cases: `${s.cases} case${s.cases === 1 ? '' : 's'}`, discover: s.top_variant ? `${s.top_variant.activities.length}-step path` : '', score: s.automation?.length ? `top ${s.automation.length}` : '' }[k] ?? '';
+        };
+        $('rv-stages').innerHTML = STAGES.map(([k, t, sub], i) => {
+          let cls = '';
+          if (i < stageIdx) cls = 'done';
+          else if (i === stageIdx) cls = finished ? (p === 'done' ? 'done' : 'failed') : 'active';
+          return `<div class="stage ${cls}"><i></i><div>${t}<small>${sub}</small></div><span class="out">${cls === 'done' ? esc(out(k)) : ''}</span></div>`;
+        }).join('');
+
+        if (!(done && s)) {
+          $('rv-steps').textContent = $('rv-cases').textContent = $('rv-q').textContent = '—';
+          $('rv-acts').innerHTML = `<div class="empty">${finished && p !== 'done' ? 'No analysis available' : 'Waiting for the agent…'}</div>`;
+          $('rv-path').innerHTML = '<span class="muted">—</span>';
+          $('rv-auto').innerHTML = '<div class="empty">—</div>';
+          $('rv-flows').innerHTML = '<div class="empty">—</div>';
+          return;
+        }
+        $('rv-steps').textContent = s.steps;
+        $('rv-steps-sub').textContent = `from ${s.raw_events.toLocaleString()} interactions`;
+        $('rv-cases').textContent = s.cases;
+        $('rv-cases-sub').textContent = s.annotations ? `${s.annotations} note${s.annotations === 1 ? '' : 's'} from you` : 'start to finish';
+        $('rv-q').textContent = s.open_questions;
+        const acts = s.top_activities ?? [];
+        const tot = acts.reduce((a, b) => a + b.total_s, 0) || 1;
+        $('rv-acts').innerHTML = acts.length
+          ? acts.map((a) => `<div class="row" style="grid-template-columns:1fr auto"><span>${esc(a.activity)}</span><span class="muted">${hm(a.total_s)} · ×${a.count}</span><div class="bar" style="grid-column:1/-1"><i style="width:${(a.total_s / tot) * 100}%"></i></div></div>`).join('')
+          : '<div class="empty">No steps found</div>';
+        const v = s.top_variant;
+        $('rv-path').innerHTML = v
+          ? v.activities.map((a) => `<span>${esc(a)}</span>`).join('<em>→</em>') + `<em style="margin-left:6px">· ${v.count}×, ${hm(v.mean_throughput_s)} each</em>`
+          : '<span class="muted">Not enough steps yet</span>';
+        const au = s.automation ?? [];
+        $('rv-auto').innerHTML = au.length
+          ? au.map((a, i) => `<div class="row"><span class="n">${i + 1}</span><span>${esc(a.activity)}</span><span class="muted">${Math.round(a.score * 100)} / 100</span><div class="bar"><i style="width:${a.score * 100}%"></i></div></div>`).join('')
+          : '<div class="empty">Nothing repetitive enough yet</div>';
+        const fl = s.data_flows ?? [];
+        const flMax = fl[0]?.count || 1;
+        $('rv-flows').innerHTML = fl.length
+          ? fl.map((f) => `<div class="row"><span class="n">${f.count}×</span><span>${esc(short(f.from))} → ${esc(short(f.to))}</span><span class="muted">~${hm(f.mean_transfer_s)} each</span><div class="bar"><i style="width:${(f.count / flMax) * 100}%"></i></div></div>`).join('')
+          : '<div class="empty">No copy → paste between apps seen</div>';
+      }
+      $('rv-done').onclick = () => show('today');
+      $('rv-note').onclick = () => openAnnotate(reviewing);
+
+      // ---- today ----
+      function renderHero(st) {
+        const h = $('hero');
+        h.className = 'card hero ' + st.state;
+        const live = st.state === 'recording' || st.state === 'paused';
+        $('h-start').classList.toggle('hidden', st.state !== 'idle');
+        $('h-pause').classList.toggle('hidden', st.state !== 'recording');
+        $('h-resume').classList.toggle('hidden', st.state !== 'paused');
+        $('h-stop').classList.toggle('hidden', !live);
+        if (st.state === 'recording') {
+          $('hero-t').textContent = st.current.private ? 'Recording — private app, capture muted' : `Recording · ${short(st.current.app || '…')}`;
+          $('hero-s').textContent = `${hm(st.elapsedMs / 1000)} this session · ${st.counts.total.toLocaleString()} interactions · ${st.counts.redactions} redacted`;
+        } else if (st.state === 'paused') {
+          $('hero-t').textContent = 'Paused';
+          $('hero-s').textContent = 'Nothing is being recorded. Resume when you are back at your work.';
+        } else if (st.state === 'finishing') {
+          $('hero-t').textContent = 'Saving…';
+          $('hero-s').textContent = 'Writing files and running the first pass of processing.';
+        } else {
+          $('hero-t').textContent = 'Not recording';
+          $('hero-s').textContent = 'Nothing is captured until you press Start.';
+        }
+      }
+
+      function renderToday() {
+        const today = recordings.filter((r) => isToday(r.started_at));
+        const liveSec = status && status.state !== 'idle' ? status.elapsedMs / 1000 : 0;
+        const sec = today.reduce((a, r) => a + (r.active_seconds ?? 0), 0) + liveSec;
+        const ev = today.reduce((a, r) => a + (r.counts?.total ?? 0), 0) + (status && status.state !== 'idle' ? status.counts.total : 0);
+        const red = today.reduce((a, r) => a + (r.counts?.redactions ?? 0), 0) + (status && status.state !== 'idle' ? status.counts.redactions : 0);
+        $('k-hours').textContent = hm(sec);
+        $('k-hours-sub').textContent = `across ${today.length + (status && status.state !== 'idle' ? 1 : 0)} session${today.length === 1 ? '' : 's'}`;
+        $('k-events').textContent = ev.toLocaleString();
+        $('k-redact').textContent = red.toLocaleString();
+
+        // app totals (finished sessions + live)
+        const totals = {};
+        for (const r of today) for (const a of r.apps ?? []) totals[a.app] = (totals[a.app] ?? 0) + a.seconds;
+        if (status && status.state !== 'idle') for (const a of status.apps) totals[a.app] = (totals[a.app] ?? 0) + a.seconds;
+        const list = Object.entries(totals).map(([app, seconds]) => ({ app, seconds })).sort((a, b) => b.seconds - a.seconds);
+        const sum = list.reduce((a, b) => a + b.seconds, 0) || 1;
+        $('apps').innerHTML = list.length
+          ? list.slice(0, 7).map((a) => `<div class="row"><span><i class="legend" style="display:inline-block;width:9px;height:9px;border-radius:2px;background:${colorOf(a.app)};margin-right:8px"></i>${esc(short(a.app))}</span><span class="muted">${hm(a.seconds)} · ${Math.round((a.seconds / sum) * 100)}%</span><div class="bar"><i style="width:${(a.seconds / sum) * 100}%;background:${colorOf(a.app)}"></i></div></div>`).join('')
+          : '<div class="empty">No recordings yet today</div>';
+
+        // timeline: sessions laid out over the day, coloured by dominant app
+        const segs = today.map((r) => ({ s: new Date(r.started_at), e: new Date(r.ended_at ?? Date.now()), app: r.apps?.[0]?.app ?? '?' }));
+        if (status && status.state !== 'idle' && status.startedAt) segs.push({ s: new Date(status.startedAt), e: new Date(), app: status.apps?.[0]?.app ?? status.current.app ?? '…' });
+        if (segs.length) {
+          const t0 = Math.min(...segs.map((x) => x.s)), t1 = Math.max(...segs.map((x) => x.e)) + 1;
+          const span = t1 - t0;
+          const sorted = segs.sort((a, b) => a.s - b.s);
+          let cursor = t0, html = '';
+          for (const g of sorted) {
+            if (g.s - cursor > 0) html += `<i style="width:${((g.s - cursor) / span) * 100}%;background:transparent"></i>`;
+            html += `<i title="${esc(short(g.app))}" style="width:${((g.e - g.s) / span) * 100}%;background:${colorOf(g.app)}"></i>`;
+            cursor = g.e;
+          }
+          $('tl').innerHTML = html;
+          $('tl-a').textContent = clock(t0);
+          $('tl-b').textContent = clock(t1);
+          $('legend').innerHTML = [...new Set(sorted.map((g) => g.app))].map((a) => `<span><i style="background:${colorOf(a)}"></i>${esc(short(a))}</span>`).join('');
+        } else {
+          $('tl').innerHTML = '';
+          $('tl-a').textContent = $('tl-b').textContent = '—';
+          $('legend').innerHTML = '';
+        }
+        const target = recordings[0];
+        $('quick-chips').innerHTML = QUICK.map((q) => `<span class="chip" data-q="${esc(q)}">${esc(q)}</span>`).join('');
+        $('quick-chips').querySelectorAll('.chip').forEach((c) => (c.onclick = () => openAnnotate(target?.recording_id, c.dataset.q)));
+      }
+
+      // ---- recordings ----
+      function renderRecordings() {
+        $('n-rec').textContent = recordings.length;
+        $('rec-empty').classList.toggle('hidden', recordings.length > 0);
+        $('rec-rows').innerHTML = recordings.map((r) => {
+          const d = new Date(r.started_at);
+          const when = `${d.toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' })} · ${clock(r.started_at)}${r.ended_at ? '–' + clock(r.ended_at) : ''}`;
+          const p = r.processing ?? 'pending';
+          const sum = r.summary ? `<div class="muted" style="font-size:12px;margin-top:3px">${r.summary.steps} steps · ${r.summary.cases} case${r.summary.cases === 1 ? '' : 's'} · ${r.summary.open_questions} question${r.summary.open_questions === 1 ? '' : 's'}</div>` : (r.processing_note ? `<div class="muted" style="font-size:12px;margin-top:3px">${esc(r.processing_note)}</div>` : '');
+          return `<tr>
+            <td>${esc(when)}<div class="muted" style="font-size:12px">${(r.apps ?? []).slice(0, 3).map((a) => esc(short(a.app))).join(' · ')}</div></td>
+            <td>${r.active_seconds != null ? hm(r.active_seconds) : '<span class="muted">live</span>'}</td>
+            <td>${(r.counts?.total ?? 0).toLocaleString()}</td>
+            <td>${(r.counts?.screen ?? 0).toLocaleString()}</td>
+            <td>${(r.counts?.redactions ?? 0).toLocaleString()}</td>
+            <td><span class="pill ${p}">${p}</span>${sum}</td>
+            <td>${r.annotations ? `${r.annotations} note${r.annotations === 1 ? '' : 's'}` : '<span class="muted">—</span>'}</td>
+            <td style="white-space:nowrap"><button class="btn sm" data-ann="${esc(r.recording_id)}">Add note</button> <button class="btn sm" data-open="${esc(r.recording_id)}">Folder</button></td>
+          </tr>`;
+        }).join('');
+        $('rec-rows').querySelectorAll('[data-ann]').forEach((b) => (b.onclick = () => openAnnotate(b.dataset.ann)));
+        $('rec-rows').querySelectorAll('[data-open]').forEach((b) => (b.onclick = () => window.vista.openRecording(b.dataset.open)));
+      }
+
+      // ---- annotate ----
+      function openAnnotate(id, preset = '') {
+        if (!id) return alert('Start a recording first — notes attach to a session.');
+        annotating = id;
+        const r = recordings.find((x) => x.recording_id === id);
+        $('modal-sub').textContent = r ? `Attached to your ${clock(r.started_at)} session (${r.active_seconds != null ? hm(r.active_seconds) : 'in progress'}).` : '';
+        $('modal-chips').innerHTML = QUICK.map((q) => `<span class="chip ${q === preset ? 'on' : ''}" data-q="${esc(q)}">${esc(q)}</span>`).join('');
+        $('modal-chips').querySelectorAll('.chip').forEach((c) => (c.onclick = () => { $('ann-label').value = c.dataset.q; $('modal-chips').querySelectorAll('.chip').forEach((x) => x.classList.toggle('on', x === c)); }));
+        $('ann-label').value = preset;
+        $('ann-note').value = '';
+        $('ann-from').value = r ? hhmm(r.started_at) : '';
+        $('ann-to').value = r ? hhmm(r.ended_at ?? new Date().toISOString()) : '';
+        $('modal').classList.remove('hidden');
+        $('ann-label').focus();
+      }
+      $('ann-cancel').onclick = () => $('modal').classList.add('hidden');
+      $('ann-save').onclick = async () => {
+        const label = $('ann-label').value.trim();
+        if (!label) return $('ann-label').focus();
+        const r = recordings.find((x) => x.recording_id === annotating);
+        const at = (t, fallback) => {
+          if (!t || !r || (fallback && t === hhmm(fallback))) return fallback;
+          const d = new Date(r.started_at);
+          const [h, m] = t.split(':').map(Number);
+          d.setHours(h, m, 0, 0);
+          return d.toISOString();
+        };
+        const start = at($('ann-from').value, r?.started_at);
+        const end = at($('ann-to').value, r?.ended_at);
+        await window.vista.annotate(annotating, { label, note: $('ann-note').value.trim(), start, end });
+        $('modal').classList.add('hidden');
+        recordings = await window.vista.recordings();
+        renderRecordings();
+        renderReview();
+      };
+
+      // ---- settings ----
+      const SETTINGS_UI = [
+        ['screenshots', 'Screenshots', 'Low-resolution frame when you change window, when the screen changes, and every 15 seconds.'],
+        ['changeDetect', 'Screenshot when the screen changes', 'Compares a tiny thumbnail twice a second; shoots when at least 4% of it moves (a new email, sheet or dialog).'],
+        ['video', 'Screen video', 'Low frame-rate recording of the screen, saved next to the events.'],
+        ['clipboard', 'Copied text (redacted)', 'Shows where information is re-typed between systems.'],
+        ['keyContent', 'Typed characters', 'Off: only the number of keys is stored. Usually left off.'],
+      ];
+      function renderSettings() {
+        if (!settings) return;
+        $('settings').innerHTML = SETTINGS_UI.map(([k, t, s]) => `<label><div>${t}<span>${s}</span></div><input type="checkbox" data-k="${k}" ${settings[k] ? 'checked' : ''}></label>`).join('');
+        $('settings').querySelectorAll('input').forEach((i) => (i.onchange = async () => { settings = await window.vista.setSettings({ [i.dataset.k]: i.checked }); }));
+        $('private-apps').value = settings.privateApps.join(', ');
+        $('private-titles').value = settings.privateTitles.join(', ');
+      }
+      $('save-private').onclick = async () => {
+        const split = (v) => v.split(',').map((s) => s.trim()).filter(Boolean);
+        settings = await window.vista.setSettings({ privateApps: split($('private-apps').value), privateTitles: split($('private-titles').value) });
+        $('saved-msg').textContent = 'Saved';
+        setTimeout(() => ($('saved-msg').textContent = ''), 1500);
+      };
+
+      // ---- macOS permissions ----
+      const PERMS = [
+        ['accessibility', 'Accessibility', 'lets Vista see which window is in front'],
+        ['inputMonitoring', 'Input Monitoring', 'lets Vista count clicks, keys and shortcuts'],
+        ['screen', 'Screen Recording', 'lets Vista take screenshots and read window titles'],
+      ];
+      function renderPermissions(p) {
+        $('perm-banner').classList.toggle('hidden', !p.needed || p.ok);
+        if (!p.needed) return;
+        $('perm-list').innerHTML = PERMS.map(([k, name, why]) => {
+          const st = p[k];
+          const label = st === 'granted' ? 'granted' : st === 'unknown' ? 'grant if clicks are not counted' : 'not granted';
+          return `<div class="perm ${st === 'granted' ? 'ok' : ''}"><i></i><b>${name}</b><span>${why}</span><span class="sp"></span><span>${label}</span><button class="btn sm" data-perm="${k}">Open settings</button></div>`;
+        }).join('');
+        for (const b of $('perm-list').querySelectorAll('[data-perm]')) b.onclick = () => window.vista.openPermission(b.dataset.perm);
+      }
+      async function checkPermissions() { renderPermissions(await window.vista.permissions()); }
+      $('perm-recheck').onclick = checkPermissions;
+      window.vista.onPermissions(renderPermissions);
+      document.addEventListener('visibilitychange', () => { if (!document.hidden) checkPermissions(); });
+
+      // ---- wiring ----
+      $('h-start').onclick = () => window.vista.start();
+      $('h-pause').onclick = () => window.vista.pause();
+      $('h-resume').onclick = () => window.vista.resume();
+      $('h-stop').onclick = () => window.vista.stop();
+      $('open-folder').onclick = () => window.vista.openRecording(null);
+
+      window.vista.onStatus((st) => { status = st; renderHero(st); renderToday(); });
+      window.vista.onRecordings((rs) => { recordings = rs; renderRecordings(); renderToday(); renderReview(); });
+      window.vista.onReview(async (id) => { recordings = await window.vista.recordings(); renderRecordings(); openReview(id); });
+
+      (async () => {
+        [status, recordings, settings, info] = await Promise.all([window.vista.status(), window.vista.recordings(), window.vista.getSettings(), window.vista.info()]);
+        $('who-name').textContent = info.user;
+        $('who-sub').textContent = info.demo ? 'demo mode · simulated apps' : `${info.platform} · this computer`;
+        $('home-path').textContent = info.home + '/recordings';
+        renderHero(status); renderRecordings(); renderToday(); renderSettings(); checkPermissions();
+        setInterval(async () => { if (status && status.state !== 'idle') { status = await window.vista.status(); renderHero(status); renderToday(); } }, 1000);
+      })();
+    </script>
+  </body>
+</html>

@@ -1,0 +1,13 @@
+vendor_id,vendor_name,category,payment_terms,tax_id_on_file,1099_eligible,status
+V001,Iron Mountain Inc.,Records Storage / Shredding,Net 30,Y,N,Active
+V002,Grainger,MRO Supplies,Net 15,Y,N,Active
+V003,Staples Business Advantage,Office Supplies,Net 30,Y,N,Active
+V004,Landlord - Constitution Plaza Assoc.,Rent,Net 30,Y,N,Active
+V005,PPL Electric,Utilities,Net 30,N,N,Active
+V006,Frontier,Telecom / Internet,Net 30,Y,N,Active
+V007,Marsh Berry (consulting),Professional Fees,Net 30,N,Y,Active
+V008,IIABCT,Association Dues,Net 30,Y,N,Active
+V009,Swiss Re Corporate Solutions,E&O Insurance,Net 30,Y,N,Active
+V010,Shred-it,Shredding,Net 30,Y,N,Active
+V011,Aramark Refreshments,Office,Net 30,N,N,Active
+V012,Local Print Shop,Marketing,Net 30,N,N,Active

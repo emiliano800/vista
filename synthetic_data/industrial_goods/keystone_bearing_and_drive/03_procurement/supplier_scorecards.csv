@@ -1,0 +1,55 @@
+Supplier Id,Supplier Name,Period,Po Count,On Time Delivery Pct,Quality Ppm,Invoice Accuracy Pct,Responsiveness Score,Overall Rating
+KBD-V001,Alro Steel,2025-Q3,3,86.9,4796,90.9,2,Conditional
+KBD-V001,Alro Steel,2025-Q4,3,88.1,6269,94.6,3,Conditional
+KBD-V001,Alro Steel,2026-Q1,3,96.3,5956,91.8,2,Approved
+KBD-V002,Apex Fastener Corp,2025-Q3,5,85.3,3566,88.0,3,Conditional
+KBD-V002,Apex Fastener Corp ,2025-Q4,5,95.1,5296,93.6,2,Approved
+KBD-V002,Apex Fastener Corp,2026-Q1,5,84.0,6780,93.6,2,Approved
+KBD-V003,Applied Industrial Technologies,2025-Q3,5,84.5,23,93.7,5,Conditional
+KBD-V003,Applied Industrial Technologies,2025-Q4,5,94.7,4505,89.9,2,Conditional
+KBD-V003,Applied Industrial Technologies,2026-Q1,5,91.4,2225,96.5,5,Conditional
+KBD-V004,Baldor-Reliance (ABB),2025-Q3,8,85.0,5510,97.0,2,Conditional
+KBD-V004,Baldor-Reliance (ABB),2025-Q4,8,87.3,6536,93.2,2,Conditional
+KBD-V004,Baldor-Reliance (ABB),2026-Q1,8,81.4,3430,94.1,2,Approved
+KBD-V005,Brighton-Best International,2025-Q3,5,83.8,2312,95.3,2,Conditional
+KBD-V005,Brighton-Best International,2025-Q4,5,92.1,2990,99.2,2,Preferred
+KBD-V005,Brighton-Best International,2026-Q1,5,94.8,2898,98.4,3,Preferred
+KBD-V006,Fastenal,2025-Q3,5,90.7,801,92.0,5,Approved
+KBD-V006,Fastenal,2025-Q4,5,91.8,4797,93.7,5,Conditional
+KBD-V006,Fastenal,2026-Q1,5,81.4,7712,97.1,3,Preferred
+KBD-V007,GRAINGER,2025-Q3,4,81.3,1309,96.0,4,Conditional
+KBD-V007,GRAINGER,2025-Q4,4,85.6,6355,91.6,4,Conditional
+KBD-V007,GRAINGER,2026-Q1,4,96.4,7596,97.1,3,Preferred
+KBD-V008,Garlock Sealing Technologies,2025-Q3,4,97.8,4020,88.6,2,Preferred
+KBD-V008,Garlock Sealing Technologies,2025-Q4,4,87.7,4213,99.9,5,Conditional
+KBD-V008,Garlock Sealing Technologies,2026-Q1,4,97.7,5588,92.5,2,Approved
+KBD-V009,Haas Automation,2025-Q3,6,84.4,2220,88.0,2,Approved
+KBD-V009,Haas Automation,2025-Q4,6,93.3,909,93.6,3,Approved
+KBD-V009,Haas Automation,2026-Q1,6,90.7,7817,91.4,5,Preferred
+KBD-V010,Kaman Industrial Technologies,2025-Q3,6,87.5,4450,91.8,3,Preferred
+KBD-V010,Kaman Industrial Technologies,2025-Q4,6,87.5,3371,97.5,5,Approved
+KBD-V010,Kaman Industrial Technologies,2026-Q1,6,85.8,6780,89.0,2,Conditional
+KBD-V011,MSC Industrial Supply,2025-Q3,6,91.6,5884,92.0,2,Preferred
+KBD-V011,MSC Industrial Supply,2025-Q4,6,86.2,7964,94.7,2,Preferred
+KBD-V011 ,MSC Industrial Supply,2026-Q1,6,85.3,7265,99.2,2,Preferred
+KBD-V012,McMaster-Carr,2025-Q3,3,98.1,2079,89.0,2,Preferred
+KBD-V012,McMaster-Carr,2025-Q4,3,86.9,369,93.7,2,Approved
+KBD-V012,McMaster-Carr,2026-Q1,3,81.9,3604,93.5,5,Approved
+KBD-V013,Motion Industries,2025-Q3,6,96.4,6630,91.6,4,Preferred
+KBD-V013,Motion Industries,2025-Q4,6,88.2,3301,90.8,2,Approved
+KBD-V013,Motion Industries,2026-Q1,6,92.1,1585,90.6,3,Conditional
+KBD-V014,Parker Hannifin,2025-Q3,5,90.7,5300,94.2,3,Approved
+KBD-V014,Parker Hannifin,2025-Q4,5,80.6,2098,96.1,5,Approved
+KBD-V014,Parker Hannifin,2026-Q1,5,84.9,4642,91.1,3,Approved
+KBD-V015,Regal Rexnord,2025-Q3,5,81.2,6846,93.5,4,Approved
+KBD-V015,Regal Rexnord,2025-Q4,5,78.6,7299,98.2,5,Conditional
+KBD-V015,Regal Rexnord,2026-Q1,5,82.9,7129,98.1,2,Conditional
+KBD-V016,Ryerson,2025-Q3,2,88.8,6843,98.1,5,Conditional
+KBD-V016,Ryerson,2025-Q4,2,87.4,7813,99.1,2,Preferred
+KBD-V016,Ryerson,2026-Q1,2,95.6,298,98.9,5,Approved
+KBD-V017,Sandvik Coromant,2025-Q3,6,85.9,1857,97.5,3,Approved
+KBD-V017,Sandvik Coromant,2025-Q4,6,90.2,1197,88.9,3,Approved
+KBD-V017,Sandvik Coromant,2026-Q1,6,81.1,7010,97.9,2,Preferred
+KBD-V018,Uline,2025-Q3,7,90.3,1503,89.0,5,Approved
+KBD-V018,Uline,2025-Q4,7,87.4,7740,99.6,4,Preferred
+KBD-V018,Uline,2026-Q1,7,97.4,4043,93.5,2,Approved

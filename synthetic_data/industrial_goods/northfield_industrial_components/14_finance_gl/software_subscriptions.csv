@@ -1,0 +1,13 @@
+product,vendor,function,seats,annual_cost,renewal_date,owner_id,contract_term,auto_renew,payment_method,gl_account
+Epicor Kinetic,Epicor,ERP,45,189000,2026-12-21,E070,3-year,Y,ACH,6400
+SolidWorks Standard,Dassault Systemes,CAD,10,12950,2027-01-06,E040,Annual,Y,Corporate card,6400
+MasterControl,MasterControl,Quality Management System,6,12000,2026-08-12,E016,Annual,Y,Invoice,6400
+Microsoft 365 Business Standard,Microsoft,Productivity Suite / Email,142,21300,2026-07-07,E094,3-year,Y,Corporate card,6400
+ADP Workforce Now,ADP,Payroll / HRIS,82,59040,2026-05-21,E059,Annual,Y,ACH,6400
+UPS WorldShip,UPS,Shipping / Parcel,51,0,2026-06-13,E043,3-year,Y,ACH,6400
+Salesforce Sales Cloud,Salesforce,CRM,6,10800,2026-09-28,E079,Monthly,Y,Corporate card,6400
+Bill.com,BILL,AP Automation,7,8400,2026-09-25,E098,3-year,Y,Invoice,6400
+Box Business,Box,File Storage,126,37800,2027-03-20,E094,Annual,Y,Invoice,6400
+Zoom Workplace,Zoom,Video Conferencing,96,17280,2026-05-04,E010,Monthly,Y,ACH,6400
+RingCentral MVP,RingCentral,VoIP Phone System,34,12240,2026-11-27,E019,3-year,Y,Corporate card,6400
+KnowBe4,KnowBe4,Security Awareness Training,142,4260,2026-11-20,E094,Annual,N,Invoice,6400

@@ -1,0 +1,16 @@
+asset_id,description,location,manufacturer,serial_number,install_date,criticality,pm_interval_days,status
+A-001,Haas ST-30 CNC Lathe,Machine Shop,Haas,707370,2017-09-09,Medium,180,In Service
+A-002,Haas VF-4 VMC,Assembly,Haas,344617,2008-09-23,High,90,In Service
+A-003,Okuma LB3000 Lathe,Dock,Okuma,273475,2019-11-02,High,180,In Service
+A-004,Amada Band Saw,Yard,Amada,533745,2016-12-30,Low,365,In Service
+A-005,Timesaver Deburr,Assembly,Timesaver,578861,2014-05-24,Low,90,In Service
+A-006,Overhead Crane 5T,Warehouse,Overhead,232099,2017-10-17,Medium,30,In Service
+A-007,Toyota Forklift 8FGU25,Dock,Toyota,213302,2018-01-30,High,365,In Service
+A-008,Toyota Forklift 8FGU25,Warehouse,Toyota,882123,2015-03-17,Low,180,In Service
+A-009,Air Compressor Quincy QGS-30,Yard,Air,646602,2015-10-22,Low,30,In Service
+A-010,Parts Washer,Assembly,Parts,373448,2015-07-04,Low,90,Down
+A-011,Baldor Motor Test Stand,Machine Shop,Baldor,949260,2019-05-10,Low,365,In Service
+A-012,Stretch Wrapper Lantech Q300,Warehouse,Stretch,783058,2017-10-08,Low,30,In Service
+A-013,Dock Leveler 1,Assembly,Dock,586108,2016-02-21,High,365,In Service
+A-014,Dock Leveler 2,Yard,Dock,441131,2024-09-01,High,180,In Service
+A-015,Hyster Reach Truck,Warehouse,Hyster,325038,2017-05-02,Medium,180,In Service

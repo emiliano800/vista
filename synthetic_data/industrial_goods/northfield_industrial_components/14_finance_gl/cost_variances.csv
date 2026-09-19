@@ -1,0 +1,49 @@
+period,variance_type,amount,gl_account,explanation
+2025-04,Purchase Price Variance,231.69,5500,Supplier price increase
+2025-04,Labor Efficiency,7826.02,5200,Scrap on WO batch
+2025-04,Overhead Absorption,7766.89,5200,
+2025-04,Material Usage,-4122.19,5200,Supplier price increase
+2025-05,Purchase Price Variance,-3005.78,5500,Steel surcharge
+2025-05,Labor Efficiency,6437.36,5200,Overtime on rush order
+2025-05,Overhead Absorption,7594.15,5200,
+2025-05,Material Usage,10478.98,5200,Scrap on WO batch
+2025-06,Purchase Price Variance,-1556.16,5500,Overtime on rush order
+2025-06,Labor Efficiency,2975.86,5200,
+2025-06,Overhead Absorption,-5242.22,5200,Steel surcharge
+2025-06,Material Usage,-40.78,5200,Overtime on rush order
+2025-07,Purchase Price Variance,-2116.55,5500,
+2025-07,Labor Efficiency,5883.27,5200,
+2025-07,Overhead Absorption,9834.62,5200,Overtime on rush order
+2025-07,Material Usage,-5859.9,5200,Scrap on WO batch
+2025-08,Purchase Price Variance,10468.1,5500,Steel surcharge
+2025-08,Labor Efficiency,10777.64,5200,Overtime on rush order
+2025-08,Overhead Absorption,9481.86,5200,Scrap on WO batch
+2025-08,Material Usage,2762.88,5200,
+2025-09,Purchase Price Variance,214.19,5500,Overtime on rush order
+2025-09,Labor Efficiency,7800.45,5200,Scrap on WO batch
+2025-09,Overhead Absorption,-6375.09,5200,Steel surcharge
+2025-09,Material Usage,1568.88,5200,Steel surcharge
+2025-10,Purchase Price Variance,7307.16,5500,Supplier price increase
+2025-10,Labor Efficiency,11609.99,5200,Supplier price increase
+2025-10,Overhead Absorption,461.54,5200,
+2025-10,Material Usage,9176.87,5200,
+2025-11,Purchase Price Variance,4544.31,5500,
+2025-11,Labor Efficiency,-3349.83,5200,
+2025-11,Overhead Absorption,3921.09,5200,Steel surcharge
+2025-11,Material Usage,9418.53,5200,Steel surcharge
+2025-12,Purchase Price Variance,-5407.9,5500,Steel surcharge
+2025-12,Labor Efficiency,-5533.39,5200,
+2025-12,Overhead Absorption,-7329.55,5200,Overtime on rush order
+2025-12,Material Usage,6750.22,5200,Scrap on WO batch
+2026-01,Purchase Price Variance,4426.23,5500,Scrap on WO batch
+2026-01,Labor Efficiency,10481.69,5200,Steel surcharge
+2026-01,Overhead Absorption,-3116.55,5200,
+2026-01,Material Usage,1127.87,5200,Supplier price increase
+2026-02,Purchase Price Variance,1037.66,5500,
+2026-02,Labor Efficiency,402.41,5200,
+2026-02,Overhead Absorption,11903.11,5200,Steel surcharge
+2026-02,Material Usage,10569.91,5200,Supplier price increase
+2026-03,Purchase Price Variance,-7583.43,5500,
+2026-03,Labor Efficiency,-7487.67,5200,Scrap on WO batch
+2026-03,Overhead Absorption,-2093.28,5200,Steel surcharge
+2026-03,Material Usage,3234.71,5200,

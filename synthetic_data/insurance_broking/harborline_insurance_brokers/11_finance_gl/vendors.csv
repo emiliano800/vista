@@ -1,0 +1,14 @@
+Vendor Id,Vendor Name,Category,Payment Terms,Tax Id On File,1099 Eligible,Status
+V001,IRON MOUNTAIN INFO MGMT,Records Storage / Shredding ,Net 15,Y,N,Active
+V002,Staples Advantage,Office Supplies,Net 15,N,N,Active
+V003,Waste Management Inc of Florida,Waste / Recycling,Net 30,Y,N ,Active
+V004,Grainger Consulting Group,HR Consulting,Net 30 ,Y,Y,Active
+V005,Landlord - Constitution Plaza Assoc.,Rent,Net 30,Y,N,Active
+V006,TECO Energy,Utilities,Net 30,Y,N,Active
+V007,Comcast Business,Telecom / Internet,Net 30,Y,N,Active
+V008,Kaplan & Sons CPA,Professional Fees,Net 30,Y,Y,Active
+V009,Big I FL,Association Dues,Net 30,Y,N,Active
+V010,Westport Insurance Corp (Swiss Re),E&O Insurance,Net 30,Y,N,Active
+V011,Shred-it,Shredding,Net 30,N,N,Active
+V012,Aramark Refreshments,Office,Net 30,N,N,Active
+V013,Local Print Shop,Marketing,Net 30,Y,N,Active

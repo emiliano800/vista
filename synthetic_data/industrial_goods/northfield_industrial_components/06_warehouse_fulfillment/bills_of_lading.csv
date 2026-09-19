@@ -1,0 +1,309 @@
+bol_number,shipment_id,carrier,ship_date,shipper,consignee,nmfc_class,pallets,weight_lb,freight_terms,hazmat,signed
+BOL-SH-50001,SH-50001,FedEx Ground,2025-09-03,"Northfield Industrial Components, Inc.",Fox River Lumber LP - Plant 6,55,2,1180.7,Prepaid,N,Y
+BOL-SH-50003,SH-50003,Company Truck,2025-08-20,"Northfield Industrial Components, Inc.",Iron City Chemical Inc. - Plant 9,50,1,239.2,Prepaid,N,Y
+BOL-SH-50004,SH-50004,Company Truck,2025-08-28,"Northfield Industrial Components, Inc.",Cumberland Materials LP - Plant 12,85,1,327.2,Prepaid & Add,N,Y
+BOL-SH-50005,SH-50005,Customer Pickup,2025-06-03,"Northfield Industrial Components, Inc.",Cardinal Poultry Inc. - Plant 1,70,1,204.0,Prepaid & Add,N,Y
+BOL-SH-50006,SH-50006,UPS Ground,2025-12-21,"Northfield Industrial Components, Inc.",Pioneer Lumber Co. - Plant 1,55,1,622.2,Prepaid & Add,N,Y
+BOL-SH-50007,SH-50007,UPS Ground,2025-10-18,"Northfield Industrial Components, Inc.",Iron City Conveyor Inc. - Plant 6,85,1,533.4,Prepaid,N,Y
+BOL-SH-50008,SH-50008,LTL - XPO,2025-10-05,"Northfield Industrial Components, Inc.",Midwest Climate Corp. - Plant 12,85,1,426.8,Prepaid & Add,N,Y
+BOL-SH-50009,SH-50009,Company Truck,2025-12-30,"Northfield Industrial Components, Inc.",Summit Conveyor LLC - Plant 4,70,1,396.8,Collect,N,Y
+BOL-SH-50010,SH-50010,LTL - Estes,2025-08-08,"Northfield Industrial Components, Inc.",Great Lakes Automotive LLC - Plant 4,85,1,798.6,Prepaid,N,Y
+BOL-SH-50011,SH-50011,FedEx Ground,2025-07-23,"Northfield Industrial Components, Inc.",Cardinal Conveyor Corp. - Plant 3,60,1,562.5,Prepaid & Add,N,Y
+BOL-SH-50012,SH-50012,LTL - XPO,2025-09-22,"Northfield Industrial Components, Inc.",Pioneer Paper Co. - Plant 11,70,1,173.3,Prepaid,N,Y
+BOL-SH-50015,SH-50015,Company Truck,2025-06-24,"Northfield Industrial Components, Inc.",Summit Conveyor LLC - Plant 4,50,1,343.0,Collect,N,Y
+BOL-SH-50016,SH-50016,UPS Ground,2025-12-30,"Northfield Industrial Components, Inc.",Prairie Materials Co. - Plant 9,85,1,467.4,Prepaid & Add,N,Y
+BOL-SH-50017,SH-50017,UPS Ground,2025-08-29,"Northfield Industrial Components, Inc.",Prairie Poultry Co. - Plant 7,55,2,999.8,Collect,N,Y
+BOL-SH-50020,SH-50020,UPS Ground,2025-10-17,"Northfield Industrial Components, Inc.",Iron City Conveyor Inc. - Plant 6,55,1,494.9,Prepaid & Add,N,Y
+BOL-SH-50021,SH-50021,LTL - Estes,2025-11-24,"Northfield Industrial Components, Inc.",Lehigh Valley Paper LP - Plant 7,85,1,448.5,Prepaid & Add,N,Y
+BOL-SH-50022,SH-50022,FedEx Ground,2025-07-31,"Northfield Industrial Components, Inc.",Allegheny Paper LP - Plant 5,50,2,975.5,Prepaid & Add,N,Y
+BOL-SH-50023,SH-50023,LTL - Estes,2025-06-19,"Northfield Industrial Components, Inc.",Lehigh Valley Paper LP - Plant 7,55,1,530.7,Collect,N,Y
+BOL-SH-50024,SH-50024,Company Truck,2026-01-29,"Northfield Industrial Components, Inc.",Iron City Chemical Inc. - Plant 9,70,1,769.8,Prepaid,N,Y
+BOL-SH-50025,SH-50025,Company Truck,2026-02-09,"Northfield Industrial Components, Inc.",Cumberland Materials LP - Plant 12,60,1,409.1,Prepaid,N,Y
+BOL-SH-50026,SH-50026,Customer Pickup,2026-03-25,"Northfield Industrial Components, Inc.",Fox River Paper LP - Plant 7,70,1,690.5,Collect,N,Y
+BOL-SH-50027,SH-50027,UPS Ground,2026-03-26,"Northfield Industrial Components, Inc.",Riverbend Conveyor LP - Plant 7,55,1,320.8,Prepaid,N,Y
+BOL-SH-50028,SH-50028,FedEx Ground,2025-12-10,"Northfield Industrial Components, Inc.",Allegheny Paper LP - Plant 5,50,1,523.7,Prepaid & Add,N,Y
+BOL-SH-50029,SH-50029,Company Truck,2026-01-04,"Northfield Industrial Components, Inc.",Tri-County Poultry LP - Plant 11,50,2,828.0,Prepaid & Add,N,Y
+BOL-SH-50030,SH-50030,UPS Ground,2025-09-21,"Northfield Industrial Components, Inc.",Prairie Materials Co. - Plant 9,70,1,368.5,Prepaid & Add,N,Y
+BOL-SH-50032,SH-50032,LTL - Estes,2025-07-02,"Northfield Industrial Components, Inc.",Rock River Steel Inc. - Plant 8,55,2,1021.2,Collect,N,Y
+BOL-SH-50033,SH-50033,LTL - XPO,2025-05-13,"Northfield Industrial Components, Inc.",Midwest Climate Corp. - Plant 12,85,1,312.7,Collect,N,Y
+BOL-SH-50034,SH-50034,LTL - Estes,2026-02-06,"Northfield Industrial Components, Inc.",Great Lakes Automotive LLC - Plant 4,55,1,176.9,Collect,N,Y
+BOL-SH-50035,SH-50035,LTL - XPO,2025-09-15,"Northfield Industrial Components, Inc.",Midwest Ag Equipment LP - Plant 8,50,1,751.1,Prepaid & Add,N,Y
+BOL-SH-50036,SH-50036,Customer Pickup,2025-12-31,"Northfield Industrial Components, Inc.",Great Lakes Lumber LLC - Plant 2,70,1,287.2,Prepaid,N,Y
+BOL-SH-50038,SH-50038,Customer Pickup,2025-12-28,"Northfield Industrial Components, Inc.",Blue Ridge Lumber LLC - Plant 11,85,1,597.7,Prepaid,N,Y
+BOL-SH-50039,SH-50039,FedEx Ground,2026-01-06,"Northfield Industrial Components, Inc.",Summit Foods Co. - Plant 12,85,1,554.5,Prepaid,N,Y
+BOL-SH-50040,SH-50040,Customer Pickup,2026-03-25,"Northfield Industrial Components, Inc.",Blue Ridge Poultry Inc. - Plant 11,60,1,237.1,Prepaid & Add,N,Y
+BOL-SH-50041,SH-50041,UPS Ground,2025-11-09,"Northfield Industrial Components, Inc.",Prairie Poultry Co. - Plant 7,55,1,378.4,Prepaid & Add,N,Y
+BOL-SH-50042,SH-50042,LTL - Estes,2026-02-20,"Northfield Industrial Components, Inc.",Susquehanna Water Authority LLC - Plant 2,85,1,501.9,Collect,N,Y
+BOL-SH-50043,SH-50043,Company Truck,2025-07-01,"Northfield Industrial Components, Inc.",Tri-County Poultry LP - Plant 11,55,1,524.1,Prepaid,N,Y
+BOL-SH-50044,SH-50044,Customer Pickup,2025-06-20,"Northfield Industrial Components, Inc.",Cardinal Poultry Inc. - Plant 1,60,1,697.7,Prepaid & Add,N,Y
+BOL-SH-50046,SH-50046,Customer Pickup,2025-05-28,"Northfield Industrial Components, Inc.",Blue Ridge Poultry Inc. - Plant 11,60,1,384.7,Prepaid & Add,N,Y
+BOL-SH-50047,SH-50047,FedEx Ground,2025-05-28,"Northfield Industrial Components, Inc.",Rock River Plastics LLC - Plant 10,50,1,257.5,Collect,N,Y
+BOL-SH-50048,SH-50048,LTL - Estes,2025-05-12,"Northfield Industrial Components, Inc.",Susquehanna Water Authority LLC - Plant 2,60,1,503.2,Prepaid & Add,N,Y
+BOL-SH-50049,SH-50049,Customer Pickup,2026-03-06,"Northfield Industrial Components, Inc.","Cardinal Foods Group - Plant 07 - Rochelle, IL",70,1,260.0,Collect,N,Y
+BOL-SH-50052,SH-50052,Customer Pickup,2025-12-17,"Northfield Industrial Components, Inc.",Keystone Chemical Corp. - Plant 5,85,1,798.2,Prepaid,N,Y
+BOL-SH-50053,SH-50053,Customer Pickup,2025-05-03,"Northfield Industrial Components, Inc.","Cardinal Foods Group - Plant 07 - Rochelle, IL",50,1,204.0,Prepaid & Add,N,Y
+BOL-SH-50054,SH-50054,LTL - Estes,2025-09-30,"Northfield Industrial Components, Inc.",Rock River Steel Inc. - Plant 8,60,1,470.1,Collect,N,Y
+BOL-SH-50055,SH-50055,Customer Pickup,2025-07-25,"Northfield Industrial Components, Inc.",Fox River Paper LP - Plant 7,50,1,692.5,Collect,N,Y
+BOL-SH-50056,SH-50056,Company Truck,2025-12-08,"Northfield Industrial Components, Inc.",Cumberland Materials LP - Plant 12,70,1,260.1,Prepaid & Add,N,Y
+BOL-SH-50057,SH-50057,Company Truck,2026-02-11,"Northfield Industrial Components, Inc.",Prairie Climate LLC - Plant 7,50,1,668.9,Prepaid,N,Y
+BOL-SH-50058,SH-50058,Customer Pickup,2025-04-28,"Northfield Industrial Components, Inc.",Fox River Paper LP - Plant 7,85,2,923.9,Collect,N,Y
+BOL-SH-50059,SH-50059,Customer Pickup,2026-03-25,"Northfield Industrial Components, Inc.","Cardinal Foods Group - Plant 07 - Rochelle, IL",70,1,314.6,Prepaid,N,Y
+BOL-SH-50062,SH-50062,Company Truck,2025-08-02,"Northfield Industrial Components, Inc.",Cumberland Materials LP - Plant 12,50,1,661.8,Collect,N,Y
+BOL-SH-50063,SH-50063,UPS Ground,2025-10-01,"Northfield Industrial Components, Inc.",Rock River Plastics Inc. - Plant 8,60,1,206.7,Prepaid & Add,N,Y
+BOL-SH-50064,SH-50064,LTL - XPO,2026-01-29,"Northfield Industrial Components, Inc.",Rock River Water Authority Corp. - Plant 2,50,1,304.0,Collect,N,Y
+BOL-SH-50065,SH-50065,UPS Ground,2025-09-28,"Northfield Industrial Components, Inc.",Riverbend Conveyor LP - Plant 7,50,1,203.7,Prepaid & Add,N,Y
+BOL-SH-50067,SH-50067,Company Truck,2025-11-13,"Northfield Industrial Components, Inc.",Iron City Chemical Inc. - Plant 9,55,1,253.6,Collect,N,Y
+BOL-SH-50068,SH-50068,LTL - XPO,2026-01-04,"Northfield Industrial Components, Inc.",Midwest Climate Corp. - Plant 12,70,1,387.3,Collect,N,Y
+BOL-SH-50069,SH-50069,LTL - XPO,2025-12-04,"Northfield Industrial Components, Inc.",Midwest Climate Corp. - Plant 12,50,1,235.3,Collect,N,Y
+BOL-SH-50070,SH-50070,LTL - Estes,2025-04-30,"Northfield Industrial Components, Inc.",Rock River Steel Inc. - Plant 8,70,1,768.4,Prepaid,N,Y
+BOL-SH-50071,SH-50071,UPS Ground,2026-01-10,"Northfield Industrial Components, Inc.",Cardinal Lumber LP - Plant 8,60,1,581.1,Prepaid,N,Y
+BOL-SH-50072,SH-50072,UPS Ground,2026-03-23,"Northfield Industrial Components, Inc.",Riverbend Conveyor LP - Plant 7,70,1,305.5,Prepaid & Add,N,Y
+BOL-SH-50073,SH-50073,UPS Ground,2025-05-26,"Northfield Industrial Components, Inc.",Iron City Conveyor Inc. - Plant 6,55,1,429.2,Prepaid & Add,N,Y
+BOL-SH-50075,SH-50075,UPS Ground,2025-06-22,"Northfield Industrial Components, Inc.",Iron City Conveyor Inc. - Plant 6,85,1,344.0,Prepaid,N,Y
+BOL-SH-50076,SH-50076,Company Truck,2025-12-04,"Northfield Industrial Components, Inc.",Summit Conveyor LLC - Plant 4,55,2,1053.9,Prepaid,N,Y
+BOL-SH-50077,SH-50077,Customer Pickup,2025-10-23,"Northfield Industrial Components, Inc.",Blue Ridge Lumber LLC - Plant 11,55,1,307.8,Prepaid & Add,N,Y
+BOL-SH-50078,SH-50078,LTL - XPO,2025-08-06,"Northfield Industrial Components, Inc.",Midwest Ag Equipment LP - Plant 8,50,1,257.6,Prepaid & Add,N,Y
+BOL-SH-50079,SH-50079,UPS Ground,2026-03-09,"Northfield Industrial Components, Inc.",Iron City Conveyor Inc. - Plant 6,50,1,577.1,Prepaid,N,Y
+BOL-SH-50080,SH-50080,Company Truck,2025-05-10,"Northfield Industrial Components, Inc.",Iron City Chemical Inc. - Plant 9,50,1,266.7,Prepaid & Add,N,Y
+BOL-SH-50081,SH-50081,FedEx Ground,2025-06-25,"Northfield Industrial Components, Inc.",Rock River Plastics LLC - Plant 10,70,1,416.8,Collect,N,Y
+BOL-SH-50082,SH-50082,Customer Pickup,2025-09-27,"Northfield Industrial Components, Inc.",Cardinal Poultry Inc. - Plant 1,85,1,332.9,Prepaid & Add,N,Y
+BOL-SH-50083,SH-50083,Company Truck,2025-07-04,"Northfield Industrial Components, Inc.",Iron City Chemical Inc. - Plant 9,55,1,589.0,Prepaid,N,Y
+BOL-SH-50084,SH-50084,LTL - Estes,2025-05-17,"Northfield Industrial Components, Inc.",Rock River Steel Inc. - Plant 8,55,1,284.9,Prepaid,N,Y
+BOL-SH-50085,SH-50085,LTL - XPO,2026-03-11,"Northfield Industrial Components, Inc.",Pioneer Paper Co. - Plant 11,60,1,464.2,Prepaid & Add,N,Y
+BOL-SH-50086,SH-50086,UPS Ground,2025-05-27,"Northfield Industrial Components, Inc.",Prairie Poultry Co. - Plant 7,85,1,260.0,Prepaid & Add,N,Y
+BOL-SH-50088,SH-50088,FedEx Ground,2025-12-25,"Northfield Industrial Components, Inc.",Fox River Lumber LP - Plant 6,70,2,886.9,Prepaid & Add,N,Y
+BOL-SH-50089,SH-50089,Customer Pickup,2025-10-31,"Northfield Industrial Components, Inc.",Blue Ridge Poultry Inc. - Plant 11,70,1,684.3,Prepaid,N,Y
+BOL-SH-50092,SH-50092,Customer Pickup,2025-08-26,"Northfield Industrial Components, Inc.","Cardinal Foods Group - Plant 07 - Rochelle, IL",50,1,539.5,Prepaid & Add,N,Y
+BOL-SH-50093,SH-50093,LTL - Estes,2025-07-03,"Northfield Industrial Components, Inc.",Great Lakes Automotive LLC - Plant 4,85,1,468.6,Prepaid & Add,N,Y
+BOL-SH-50095,SH-50095,FedEx Ground,2025-05-08,"Northfield Industrial Components, Inc.",Cardinal Conveyor Corp. - Plant 3,50,2,880.2,Collect,N,Y
+BOL-SH-50096,SH-50096,FedEx Ground,2025-05-16,"Northfield Industrial Components, Inc.",Fox River Lumber LP - Plant 6,70,1,440.9,Collect,N,Y
+BOL-SH-50098,SH-50098,FedEx Ground,2025-12-17,"Northfield Industrial Components, Inc.",Rock River Plastics LLC - Plant 10,50,1,231.0,Prepaid & Add,N,Y
+BOL-SH-50100,SH-50100,LTL - Estes,2025-09-29,"Northfield Industrial Components, Inc.",Lehigh Valley Paper LP - Plant 7,50,1,489.0,Prepaid & Add,N,Y
+BOL-SH-50101,SH-50101,FedEx Ground,2025-04-27,"Northfield Industrial Components, Inc.",Allegheny Paper LP - Plant 5,70,1,636.4,Prepaid & Add,N,Y
+BOL-SH-50102,SH-50102,Customer Pickup,2026-02-16,"Northfield Industrial Components, Inc.",Cardinal Poultry Inc. - Plant 1,50,2,850.0,Prepaid & Add,N,Y
+BOL-SH-50103,SH-50103,Company Truck,2025-07-13,"Northfield Industrial Components, Inc.",Prairie Climate LLC - Plant 7,60,1,642.3,Prepaid,N,Y
+BOL-SH-50104,SH-50104,Company Truck,2026-01-14,"Northfield Industrial Components, Inc.",Prairie Climate LLC - Plant 7,50,1,418.5,Prepaid & Add,N,Y
+BOL-SH-50105,SH-50105,FedEx Ground,2025-08-05,"Northfield Industrial Components, Inc.",Allegheny Paper LP - Plant 5,70,2,888.0,Prepaid & Add,N,Y
+BOL-SH-50106,SH-50106,LTL - XPO,2025-06-17,"Northfield Industrial Components, Inc.",Allegheny Climate Inc. - Plant 9,85,1,544.0,Collect,N,Y
+BOL-SH-50108,SH-50108,FedEx Ground,2025-09-17,"Northfield Industrial Components, Inc.",Rock River Plastics LLC - Plant 10,70,1,197.8,Prepaid,N,Y
+BOL-SH-50110,SH-50110,Customer Pickup,2025-09-16,"Northfield Industrial Components, Inc.",Allegheny Foods Co. - Plant 5,60,1,227.4,Collect,N,Y
+BOL-SH-50111,SH-50111,UPS Ground,2025-11-20,"Northfield Industrial Components, Inc.",Iron City Conveyor Inc. - Plant 6,60,1,590.1,Prepaid & Add,N,Y
+BOL-SH-50113,SH-50113,FedEx Ground,2025-12-08,"Northfield Industrial Components, Inc.",Allegheny Paper LP - Plant 5,50,1,501.3,Prepaid & Add,N,Y
+BOL-SH-50114,SH-50114,Customer Pickup,2025-08-02,"Northfield Industrial Components, Inc.",Allegheny Foods Co. - Plant 5,50,1,334.3,Collect,N,Y
+BOL-SH-50115,SH-50115,Customer Pickup,2026-02-07,"Northfield Industrial Components, Inc.",Blue Ridge Lumber LLC - Plant 11,50,1,611.9,Prepaid & Add,N,Y
+BOL-SH-50116,SH-50116,Company Truck,2026-02-06,"Northfield Industrial Components, Inc.",Cumberland Materials LP - Plant 12,85,1,176.6,Prepaid & Add,N,Y
+BOL-SH-50117,SH-50117,Customer Pickup,2026-02-12,"Northfield Industrial Components, Inc.",Allegheny Foods Co. - Plant 5,85,1,339.9,Collect,N,Y
+BOL-SH-50118,SH-50118,LTL - Estes,2026-01-26,"Northfield Industrial Components, Inc.",Rock River Steel Inc. - Plant 8,85,1,281.8,Prepaid,N,Y
+BOL-SH-50119,SH-50119,Company Truck,2025-12-21,"Northfield Industrial Components, Inc.",Iron City Chemical Inc. - Plant 9,70,1,178.4,Prepaid,N,Y
+BOL-SH-50120,SH-50120,FedEx Ground,2025-08-17,"Northfield Industrial Components, Inc.",Cardinal Conveyor Corp. - Plant 3,85,2,1508.8,Prepaid,N,Y
+BOL-SH-50121,SH-50121,Customer Pickup,2025-11-04,"Northfield Industrial Components, Inc.",Keystone Chemical Corp. - Plant 5,50,1,550.8,Prepaid & Add,N,Y
+BOL-SH-50123,SH-50123,Customer Pickup,2025-08-04,"Northfield Industrial Components, Inc.",Blue Ridge Lumber LLC - Plant 11,55,1,467.8,Collect,N,Y
+BOL-SH-50126,SH-50126,UPS Ground,2025-08-03,"Northfield Industrial Components, Inc.",Riverbend Conveyor LP - Plant 7,85,2,905.8,Collect,N,Y
+BOL-SH-50127,SH-50127,LTL - Estes,2025-04-22,"Northfield Industrial Components, Inc.",Lehigh Valley Paper LP - Plant 7,50,1,162.6,Prepaid & Add,N,Y
+BOL-SH-50128,SH-50128,Customer Pickup,2026-01-15,"Northfield Industrial Components, Inc.",Fox River Paper LP - Plant 7,60,1,264.3,Prepaid & Add,N,Y
+BOL-SH-50129,SH-50129,LTL - XPO,2025-10-17,"Northfield Industrial Components, Inc.",Midwest Ag Equipment LP - Plant 8,55,1,458.2,Prepaid & Add,N,Y
+BOL-SH-50130,SH-50130,UPS Ground,2025-06-28,"Northfield Industrial Components, Inc.",Riverbend Conveyor LP - Plant 7,70,1,234.5,Collect,N,Y
+BOL-SH-50131,SH-50131,UPS Ground,2025-08-17,"Northfield Industrial Components, Inc.",Riverbend Conveyor LP - Plant 7,55,1,675.6,Collect,N,Y
+BOL-SH-50132,SH-50132,FedEx Ground,2025-06-01,"Northfield Industrial Components, Inc.",Fox River Lumber LP - Plant 6,55,1,578.2,Collect,N,Y
+BOL-SH-50134,SH-50134,LTL - Estes,2025-12-29,"Northfield Industrial Components, Inc.",Rock River Steel Inc. - Plant 8,70,1,304.2,Prepaid,N,Y
+BOL-SH-50135,SH-50135,LTL - XPO,2025-10-02,"Northfield Industrial Components, Inc.",Rock River Water Authority Corp. - Plant 2,85,2,993.2,Prepaid & Add,N,Y
+BOL-SH-50136,SH-50136,FedEx Ground,2025-09-15,"Northfield Industrial Components, Inc.",Cardinal Conveyor Corp. - Plant 3,70,1,289.7,Prepaid & Add,N,Y
+BOL-SH-50137,SH-50137,Customer Pickup,2026-01-29,"Northfield Industrial Components, Inc.",Allegheny Foods Co. - Plant 5,85,1,740.2,Collect,N,Y
+BOL-SH-50139,SH-50139,LTL - XPO,2025-08-04,"Northfield Industrial Components, Inc.",Riverbend Poultry LLC - Plant 12,55,1,194.5,Collect,N,Y
+BOL-SH-50141,SH-50141,LTL - Estes,2025-08-17,"Northfield Industrial Components, Inc.",Lehigh Valley Paper LP - Plant 7,85,1,217.8,Prepaid & Add,N,Y
+BOL-SH-50142,SH-50142,UPS Ground,2025-12-26,"Northfield Industrial Components, Inc.",Prairie Materials Co. - Plant 9,50,1,396.0,Prepaid,N,Y
+BOL-SH-50143,SH-50143,LTL - Estes,2025-10-27,"Northfield Industrial Components, Inc.",Susquehanna Water Authority LLC - Plant 2,50,1,521.0,Prepaid & Add,N,Y
+BOL-SH-50145,SH-50145,UPS Ground,2025-05-12,"Northfield Industrial Components, Inc.",Appalachian Lumber Corp. - Plant 6,60,1,296.4,Prepaid & Add,N,Y
+BOL-SH-50146,SH-50146,LTL - XPO,2025-06-13,"Northfield Industrial Components, Inc.",Rock River Water Authority Corp. - Plant 2,55,1,636.3,Collect,N,Y
+BOL-SH-50150,SH-50150,UPS Ground,2025-10-28,"Northfield Industrial Components, Inc.",Cardinal Lumber LP - Plant 8,50,1,478.7,Prepaid & Add,N,Y
+BOL-SH-50151,SH-50151,FedEx Ground,2026-02-01,"Northfield Industrial Components, Inc.",Summit Foods Co. - Plant 12,60,1,465.5,Prepaid,N,Y
+BOL-SH-50152,SH-50152,LTL - XPO,2025-07-26,"Northfield Industrial Components, Inc.",Midwest Ag Equipment LP - Plant 8,85,1,544.0,Prepaid,N,Y
+BOL-SH-50153,SH-50153,UPS Ground,2026-03-25,"Northfield Industrial Components, Inc.",Iron City Conveyor Inc. - Plant 6,60,1,267.1,Collect,N,Y
+BOL-SH-50154,SH-50154,Customer Pickup,2025-12-25,"Northfield Industrial Components, Inc.",Great Lakes Lumber LLC - Plant 2,50,2,812.8,Collect,N,Y
+BOL-SH-50155,SH-50155,LTL - Estes,2025-08-01,"Northfield Industrial Components, Inc.",Rock River Steel Inc. - Plant 8,85,1,627.0,Prepaid,N,Y
+BOL-SH-50156,SH-50156,LTL - Estes,2025-07-04,"Northfield Industrial Components, Inc.",Susquehanna Water Authority LLC - Plant 2,85,1,417.2,Prepaid,N,Y
+BOL-SH-50157,SH-50157,FedEx Ground,2026-02-11,"Northfield Industrial Components, Inc.",Allegheny Paper LP - Plant 5,55,1,255.2,Prepaid & Add,N,Y
+BOL-SH-50159,SH-50159,UPS Ground,2026-03-27,"Northfield Industrial Components, Inc.",Rock River Plastics Inc. - Plant 8,60,1,755.8,Prepaid & Add,N,Y
+BOL-SH-50160,SH-50160,FedEx Ground,2025-09-28,"Northfield Industrial Components, Inc.",Cardinal Conveyor Corp. - Plant 3,85,1,383.5,Prepaid,N,Y
+BOL-SH-50162,SH-50162,Company Truck,2025-09-01,"Northfield Industrial Components, Inc.",Iron City Chemical Inc. - Plant 9,50,1,498.6,Prepaid & Add,N,Y
+BOL-SH-50163,SH-50163,Customer Pickup,2026-03-25,"Northfield Industrial Components, Inc.",Cardinal Poultry Inc. - Plant 1,60,1,359.4,Prepaid,N,Y
+BOL-SH-50164,SH-50164,UPS Ground,2025-09-22,"Northfield Industrial Components, Inc.",Prairie Materials Co. - Plant 9,85,1,486.1,Collect,N,Y
+BOL-SH-50165,SH-50165,FedEx Ground,2026-02-17,"Northfield Industrial Components, Inc.",Allegheny Paper LP - Plant 5,70,1,153.9,Collect,N,Y
+BOL-SH-50166,SH-50166,Customer Pickup,2025-11-12,"Northfield Industrial Components, Inc.","Cardinal Foods Group - Plant 07 - Rochelle, IL",50,1,321.1,Collect,N,Y
+BOL-SH-50167,SH-50167,UPS Ground,2025-07-28,"Northfield Industrial Components, Inc.",Pioneer Lumber Co. - Plant 1,55,2,820.1,Prepaid,N,Y
+BOL-SH-50168,SH-50168,LTL - Estes,2025-09-30,"Northfield Industrial Components, Inc.",Rock River Steel Inc. - Plant 8,70,1,365.4,Collect,N,Y
+BOL-SH-50169,SH-50169,Customer Pickup,2025-04-26,"Northfield Industrial Components, Inc.",Cardinal Poultry Inc. - Plant 1,60,1,180.6,Prepaid,N,Y
+BOL-SH-50171,SH-50171,LTL - Estes,2025-10-14,"Northfield Industrial Components, Inc.",Great Lakes Automotive LLC - Plant 4,55,1,628.2,Prepaid & Add,N,Y
+BOL-SH-50173,SH-50173,Customer Pickup,2025-08-01,"Northfield Industrial Components, Inc.",Fox River Paper LP - Plant 7,70,1,150.9,Prepaid & Add,N,Y
+BOL-SH-50174,SH-50174,LTL - Estes,2026-02-12,"Northfield Industrial Components, Inc.",Lehigh Valley Paper LP - Plant 7,85,1,431.7,Prepaid & Add,N,Y
+BOL-SH-50175,SH-50175,UPS Ground,2025-12-25,"Northfield Industrial Components, Inc.",Pioneer Lumber Co. - Plant 1,60,2,826.7,Prepaid,N,Y
+BOL-SH-50176,SH-50176,Customer Pickup,2026-03-20,"Northfield Industrial Components, Inc.","Cardinal Foods Group - Plant 07 - Rochelle, IL",55,1,344.8,Prepaid & Add,N,Y
+BOL-SH-50177,SH-50177,UPS Ground,2025-04-16,"Northfield Industrial Components, Inc.",Riverbend Conveyor LP - Plant 7,70,1,476.1,Prepaid,N,Y
+BOL-SH-50179,SH-50179,Customer Pickup,2026-03-15,"Northfield Industrial Components, Inc.",Fox River Paper LP - Plant 7,60,1,452.6,Collect,N,Y
+BOL-SH-50180,SH-50180,UPS Ground,2025-10-28,"Northfield Industrial Components, Inc.",Prairie Materials Co. - Plant 9,70,1,319.5,Collect,N,Y
+BOL-SH-50182,SH-50182,LTL - Estes,2025-11-14,"Northfield Industrial Components, Inc.",Rock River Steel Inc. - Plant 8,50,1,192.4,Prepaid & Add,N,Y
+BOL-SH-50183,SH-50183,UPS Ground,2025-12-13,"Northfield Industrial Components, Inc.",Prairie Materials Co. - Plant 9,60,1,283.6,Collect,N,Y
+BOL-SH-50184,SH-50184,UPS Ground,2025-12-17,"Northfield Industrial Components, Inc.",Pioneer Lumber Co. - Plant 1,70,1,205.8,Collect,N,Y
+BOL-SH-50186,SH-50186,FedEx Ground,2025-09-25,"Northfield Industrial Components, Inc.",Fox River Lumber LP - Plant 6,50,1,292.8,Prepaid & Add,N,Y
+BOL-SH-50187,SH-50187,LTL - Estes,2025-08-21,"Northfield Industrial Components, Inc.",Susquehanna Water Authority LLC - Plant 2,55,1,727.0,Prepaid & Add,N,Y
+BOL-SH-50188,SH-50188,FedEx Ground,2025-05-14,"Northfield Industrial Components, Inc.",Allegheny Paper LP - Plant 5,55,1,287.6,Prepaid,N,Y
+BOL-SH-50189,SH-50189,Company Truck,2025-08-27,"Northfield Industrial Components, Inc.",Prairie Climate LLC - Plant 7,85,1,195.8,Collect,N,Y
+BOL-SH-50190,SH-50190,Customer Pickup,2026-03-10,"Northfield Industrial Components, Inc.",Blue Ridge Poultry Inc. - Plant 11,60,1,403.4,Prepaid,N,Y
+BOL-SH-50192,SH-50192,Company Truck,2025-12-15,"Northfield Industrial Components, Inc.",Prairie Climate LLC - Plant 7,85,1,180.4,Collect,N,Y
+BOL-SH-50193,SH-50193,Company Truck,2025-07-15,"Northfield Industrial Components, Inc.",Prairie Climate LLC - Plant 7,55,1,498.0,Collect,N,Y
+BOL-SH-50194,SH-50194,Customer Pickup,2025-06-16,"Northfield Industrial Components, Inc.",Great Lakes Lumber LLC - Plant 2,50,1,192.4,Prepaid,N,Y
+BOL-SH-50197,SH-50197,Customer Pickup,2026-01-27,"Northfield Industrial Components, Inc.",Fox River Paper LP - Plant 7,55,1,233.4,Prepaid & Add,N,Y
+BOL-SH-50198,SH-50198,Customer Pickup,2026-01-01,"Northfield Industrial Components, Inc.","Cardinal Foods Group - Plant 07 - Rochelle, IL",85,1,788.0,Prepaid & Add,N,Y
+BOL-SH-50199,SH-50199,LTL - XPO,2025-06-20,"Northfield Industrial Components, Inc.",Allegheny Climate Inc. - Plant 9,55,1,721.1,Collect,N,Y
+BOL-SH-50200,SH-50200,LTL - XPO,2025-11-20,"Northfield Industrial Components, Inc.",Allegheny Climate Inc. - Plant 9,50,1,394.1,Prepaid,N,Y
+BOL-SH-50201,SH-50201,Customer Pickup,2025-09-15,"Northfield Industrial Components, Inc.",Blue Ridge Lumber LLC - Plant 11,85,1,794.0,Collect,N,Y
+BOL-SH-50202,SH-50202,UPS Ground,2026-01-02,"Northfield Industrial Components, Inc.",Rock River Plastics Inc. - Plant 8,70,1,362.0,Collect,N,Y
+BOL-SH-50203,SH-50203,LTL - XPO,2025-10-28,"Northfield Industrial Components, Inc.",Midwest Climate Corp. - Plant 12,85,1,268.5,Prepaid & Add,N,Y
+BOL-SH-50204,SH-50204,FedEx Ground,2026-03-22,"Northfield Industrial Components, Inc.",Allegheny Paper LP - Plant 5,60,1,408.9,Collect,N,Y
+BOL-SH-50205,SH-50205,Customer Pickup,2026-03-13,"Northfield Industrial Components, Inc.",Keystone Chemical Corp. - Plant 5,50,1,714.3,Prepaid,N,Y
+BOL-SH-50206,SH-50206,UPS Ground,2025-07-24,"Northfield Industrial Components, Inc.",Appalachian Lumber Corp. - Plant 6,50,1,492.8,Prepaid & Add,N,Y
+BOL-SH-50207,SH-50207,Customer Pickup,2026-01-22,"Northfield Industrial Components, Inc.",Cardinal Poultry Inc. - Plant 1,70,1,219.1,Prepaid,N,Y
+BOL-SH-50208,SH-50208,Customer Pickup,2025-12-16,"Northfield Industrial Components, Inc.",Allegheny Foods Co. - Plant 5,50,1,334.6,Prepaid & Add,N,Y
+BOL-SH-50209,SH-50209,FedEx Ground,2025-05-29,"Northfield Industrial Components, Inc.",Allegheny Paper LP - Plant 5,60,1,410.2,Prepaid & Add,N,Y
+BOL-SH-50210,SH-50210,Customer Pickup,2025-07-04,"Northfield Industrial Components, Inc.","Cardinal Foods Group - Plant 07 - Rochelle, IL",85,2,1001.4,Prepaid & Add,N,Y
+BOL-SH-50211,SH-50211,Customer Pickup,2026-01-02,"Northfield Industrial Components, Inc.",Allegheny Foods Co. - Plant 5,60,1,413.7,Prepaid,N,Y
+BOL-SH-50213,SH-50213,UPS Ground,2025-10-05,"Northfield Industrial Components, Inc.",Rock River Plastics Inc. - Plant 8,85,1,280.7,Collect,N,Y
+BOL-SH-50214,SH-50214,UPS Ground,2025-11-02,"Northfield Industrial Components, Inc.",Pioneer Lumber Co. - Plant 1,60,1,381.4,Prepaid & Add,N,Y
+BOL-SH-50215,SH-50215,Company Truck,2025-11-15,"Northfield Industrial Components, Inc.",Tri-County Poultry LP - Plant 11,50,1,232.2,Prepaid & Add,N,Y
+BOL-SH-50216,SH-50216,Company Truck,2025-11-01,"Northfield Industrial Components, Inc.",Prairie Climate LLC - Plant 7,70,1,750.8,Prepaid & Add,N,Y
+BOL-SH-50217,SH-50217,LTL - XPO,2026-01-04,"Northfield Industrial Components, Inc.",Midwest Climate Corp. - Plant 12,70,1,576.0,Prepaid & Add,N,Y
+BOL-SH-50218,SH-50218,LTL - Estes,2026-01-16,"Northfield Industrial Components, Inc.",Susquehanna Water Authority LLC - Plant 2,85,1,576.6,Collect,N,Y
+BOL-SH-50219,SH-50219,Customer Pickup,2025-07-16,"Northfield Industrial Components, Inc.","Cardinal Foods Group - Plant 07 - Rochelle, IL",55,1,696.7,Collect,N,Y
+BOL-SH-50222,SH-50222,LTL - XPO,2025-08-15,"Northfield Industrial Components, Inc.",Riverbend Poultry LLC - Plant 12,50,1,202.8,Prepaid & Add,N,Y
+BOL-SH-50224,SH-50224,Company Truck,2025-09-15,"Northfield Industrial Components, Inc.",Iron City Chemical Inc. - Plant 9,50,1,274.2,Prepaid & Add,N,Y
+BOL-SH-50225,SH-50225,FedEx Ground,2025-10-24,"Northfield Industrial Components, Inc.",Cardinal Conveyor Corp. - Plant 3,85,2,962.4,Collect,N,Y
+BOL-SH-50227,SH-50227,UPS Ground,2025-07-09,"Northfield Industrial Components, Inc.",Iron City Conveyor Inc. - Plant 6,85,1,515.2,Prepaid,N,Y
+BOL-SH-50230,SH-50230,UPS Ground,2025-09-05,"Northfield Industrial Components, Inc.",Prairie Poultry Co. - Plant 7,50,1,165.4,Prepaid & Add,N,Y
+BOL-SH-50231,SH-50231,UPS Ground,2025-09-18,"Northfield Industrial Components, Inc.",Iron City Conveyor Inc. - Plant 6,85,1,260.0,Prepaid,N,Y
+BOL-SH-50232,SH-50232,UPS Ground,2025-06-03,"Northfield Industrial Components, Inc.",Appalachian Lumber Corp. - Plant 6,70,1,333.5,Prepaid & Add,N,Y
+BOL-SH-50233,SH-50233,FedEx Ground,2026-01-03,"Northfield Industrial Components, Inc.",Fox River Lumber LP - Plant 6,55,1,156.8,Prepaid,N,Y
+BOL-SH-50234,SH-50234,FedEx Ground,2025-09-21,"Northfield Industrial Components, Inc.",Fox River Lumber LP - Plant 6,85,1,222.0,Prepaid & Add,N,Y
+BOL-SH-50235,SH-50235,LTL - XPO,2025-05-17,"Northfield Industrial Components, Inc.",Riverbend Poultry LLC - Plant 12,50,1,388.3,Prepaid,N,Y
+BOL-SH-50236,SH-50236,UPS Ground,2025-05-20,"Northfield Industrial Components, Inc.",Prairie Materials Co. - Plant 9,85,1,207.9,Prepaid & Add,N,Y
+BOL-SH-50237,SH-50237,UPS Ground,2025-08-24,"Northfield Industrial Components, Inc.",Pioneer Lumber Co. - Plant 1,60,1,343.6,Prepaid & Add,N,Y
+BOL-SH-50239,SH-50239,Customer Pickup,2025-04-25,"Northfield Industrial Components, Inc.",Great Lakes Lumber LLC - Plant 2,55,1,395.1,Prepaid & Add,N,Y
+BOL-SH-50240,SH-50240,UPS Ground,2025-05-04,"Northfield Industrial Components, Inc.",Riverbend Conveyor LP - Plant 7,70,1,323.5,Collect,N,Y
+BOL-SH-50241,SH-50241,UPS Ground,2025-11-23,"Northfield Industrial Components, Inc.",Prairie Poultry Co. - Plant 7,70,1,165.8,Prepaid & Add,N,Y
+BOL-SH-50243,SH-50243,Company Truck,2026-02-23,"Northfield Industrial Components, Inc.",Prairie Climate LLC - Plant 7,50,2,945.8,Prepaid,N,Y
+BOL-SH-50244,SH-50244,Company Truck,2025-09-17,"Northfield Industrial Components, Inc.",Prairie Climate LLC - Plant 7,50,1,244.7,Prepaid,N,Y
+BOL-SH-50245,SH-50245,UPS Ground,2025-10-26,"Northfield Industrial Components, Inc.",Prairie Poultry Co. - Plant 7,85,1,172.8,Prepaid,N,Y
+BOL-SH-50246,SH-50246,Company Truck,2025-05-28,"Northfield Industrial Components, Inc.",Cumberland Materials LP - Plant 12,50,1,251.8,Prepaid & Add,N,Y
+BOL-SH-50247,SH-50247,LTL - Estes,2025-12-22,"Northfield Industrial Components, Inc.",Lehigh Valley Paper LP - Plant 7,70,1,416.9,Collect,N,Y
+BOL-SH-50250,SH-50250,LTL - XPO,2025-11-27,"Northfield Industrial Components, Inc.",Riverbend Poultry LLC - Plant 12,50,1,289.2,Collect,N,Y
+BOL-SH-50251,SH-50251,FedEx Ground,2025-12-21,"Northfield Industrial Components, Inc.",Allegheny Paper LP - Plant 5,50,1,483.5,Collect,N,Y
+BOL-SH-50252,SH-50252,LTL - Estes,2026-02-05,"Northfield Industrial Components, Inc.",Rock River Steel Inc. - Plant 8,50,1,285.9,Prepaid,N,Y
+BOL-SH-50254,SH-50254,LTL - Estes,2025-05-01,"Northfield Industrial Components, Inc.",Rock River Steel Inc. - Plant 8,85,1,206.8,Collect,N,Y
+BOL-SH-50255,SH-50255,Company Truck,2025-12-20,"Northfield Industrial Components, Inc.",Iron City Chemical Inc. - Plant 9,50,1,619.0,Prepaid & Add,N,Y
+BOL-SH-50256,SH-50256,Customer Pickup,2026-01-08,"Northfield Industrial Components, Inc.",Fox River Paper LP - Plant 7,60,1,713.4,Prepaid & Add,N,Y
+BOL-SH-50257,SH-50257,FedEx Ground,2025-11-06,"Northfield Industrial Components, Inc.",Allegheny Paper LP - Plant 5,85,1,242.2,Prepaid & Add,N,Y
+BOL-SH-50258,SH-50258,Customer Pickup,2026-01-27,"Northfield Industrial Components, Inc.",Allegheny Foods Co. - Plant 5,70,1,256.1,Prepaid,N,Y
+BOL-SH-50259,SH-50259,Customer Pickup,2025-08-15,"Northfield Industrial Components, Inc.",Fox River Paper LP - Plant 7,55,1,454.2,Prepaid & Add,N,Y
+BOL-SH-50261,SH-50261,FedEx Ground,2025-11-30,"Northfield Industrial Components, Inc.",Rock River Plastics LLC - Plant 10,60,2,849.0,Prepaid & Add,N,Y
+BOL-SH-50262,SH-50262,Customer Pickup,2026-03-10,"Northfield Industrial Components, Inc.",Allegheny Foods Co. - Plant 5,85,1,221.4,Prepaid & Add,N,Y
+BOL-SH-50264,SH-50264,FedEx Ground,2025-12-06,"Northfield Industrial Components, Inc.",Rock River Plastics LLC - Plant 10,60,1,511.6,Prepaid & Add,N,Y
+BOL-SH-50265,SH-50265,LTL - XPO,2025-09-10,"Northfield Industrial Components, Inc.",Rock River Water Authority Corp. - Plant 2,50,1,209.7,Prepaid & Add,N,Y
+BOL-SH-50266,SH-50266,UPS Ground,2026-01-29,"Northfield Industrial Components, Inc.",Riverbend Conveyor LP - Plant 7,60,1,519.7,Collect,N,Y
+BOL-SH-50267,SH-50267,Customer Pickup,2025-11-26,"Northfield Industrial Components, Inc.",Blue Ridge Lumber LLC - Plant 11,55,1,265.9,Prepaid & Add,N,Y
+BOL-SH-50268,SH-50268,LTL - XPO,2025-08-20,"Northfield Industrial Components, Inc.",Midwest Climate Corp. - Plant 12,55,1,498.8,Prepaid & Add,N,Y
+BOL-SH-50269,SH-50269,Customer Pickup,2026-01-26,"Northfield Industrial Components, Inc.",Cardinal Poultry Inc. - Plant 1,70,1,311.4,Prepaid & Add,N,Y
+BOL-SH-50270,SH-50270,Customer Pickup,2025-05-05,"Northfield Industrial Components, Inc.",Fox River Paper LP - Plant 7,50,1,310.1,Prepaid & Add,N,Y
+BOL-SH-50271,SH-50271,Customer Pickup,2025-10-14,"Northfield Industrial Components, Inc.",Keystone Chemical Corp. - Plant 5,60,1,772.1,Prepaid & Add,N,Y
+BOL-SH-50272,SH-50272,LTL - XPO,2025-07-07,"Northfield Industrial Components, Inc.",Pioneer Paper Co. - Plant 11,60,1,721.6,Prepaid & Add,N,Y
+BOL-SH-50274,SH-50274,Customer Pickup,2026-01-30,"Northfield Industrial Components, Inc.",Blue Ridge Poultry Inc. - Plant 11,85,1,264.1,Prepaid & Add,N,Y
+BOL-SH-50276,SH-50276,LTL - Estes,2025-07-17,"Northfield Industrial Components, Inc.",Great Lakes Automotive LLC - Plant 4,85,1,476.2,Collect,N,Y
+BOL-SH-50279,SH-50279,Company Truck,2026-03-07,"Northfield Industrial Components, Inc.",Summit Conveyor LLC - Plant 4,50,1,622.6,Prepaid,N,Y
+BOL-SH-50280,SH-50280,LTL - XPO,2025-06-08,"Northfield Industrial Components, Inc.",Pioneer Paper Co. - Plant 11,60,1,253.6,Collect,N,Y
+BOL-SH-50281,SH-50281,LTL - XPO,2025-05-24,"Northfield Industrial Components, Inc.",Rock River Water Authority Corp. - Plant 2,85,1,231.7,Prepaid & Add,N,Y
+BOL-SH-50282,SH-50282,Customer Pickup,2025-09-04,"Northfield Industrial Components, Inc.",Blue Ridge Poultry Inc. - Plant 11,50,1,170.5,Prepaid,N,Y
+BOL-SH-50283,SH-50283,UPS Ground,2025-04-20,"Northfield Industrial Components, Inc.",Prairie Poultry Co. - Plant 7,55,1,152.1,Prepaid,N,Y
+BOL-SH-50284,SH-50284,Customer Pickup,2025-07-09,"Northfield Industrial Components, Inc.","Cardinal Foods Group - Plant 07 - Rochelle, IL",55,1,326.0,Collect,N,Y
+BOL-SH-50285,SH-50285,LTL - Estes,2026-01-10,"Northfield Industrial Components, Inc.",Lehigh Valley Paper LP - Plant 7,60,1,335.9,Prepaid & Add,N,Y
+BOL-SH-50286,SH-50286,LTL - Estes,2025-06-24,"Northfield Industrial Components, Inc.",Susquehanna Water Authority LLC - Plant 2,85,2,943.7,Collect,N,Y
+BOL-SH-50287,SH-50287,Company Truck,2025-10-05,"Northfield Industrial Components, Inc.",Iron City Chemical Inc. - Plant 9,70,1,230.1,Prepaid & Add,N,Y
+BOL-SH-50290,SH-50290,LTL - Estes,2025-11-21,"Northfield Industrial Components, Inc.",Susquehanna Water Authority LLC - Plant 2,70,1,484.2,Prepaid & Add,N,Y
+BOL-SH-50291,SH-50291,LTL - XPO,2025-07-28,"Northfield Industrial Components, Inc.",Midwest Ag Equipment LP - Plant 8,85,1,594.6,Collect,N,Y
+BOL-SH-50292,SH-50292,FedEx Ground,2025-08-26,"Northfield Industrial Components, Inc.",Allegheny Paper LP - Plant 5,50,1,179.4,Prepaid & Add,N,Y
+BOL-SH-50293,SH-50293,Customer Pickup,2025-07-09,"Northfield Industrial Components, Inc.","Cardinal Foods Group - Plant 07 - Rochelle, IL",55,1,589.6,Prepaid & Add,N,Y
+BOL-SH-50294,SH-50294,Company Truck,2026-03-13,"Northfield Industrial Components, Inc.",Summit Conveyor LLC - Plant 4,50,1,384.8,Prepaid & Add,N,Y
+BOL-SH-50295,SH-50295,Company Truck,2025-09-04,"Northfield Industrial Components, Inc.",Cumberland Materials LP - Plant 12,85,2,934.4,Prepaid,N,Y
+BOL-SH-50296,SH-50296,Company Truck,2025-07-15,"Northfield Industrial Components, Inc.",Iron City Chemical Inc. - Plant 9,50,1,531.9,Prepaid & Add,N,Y
+BOL-SH-50297,SH-50297,UPS Ground,2025-12-19,"Northfield Industrial Components, Inc.",Cardinal Lumber LP - Plant 8,85,1,155.2,Collect,N,Y
+BOL-SH-50298,SH-50298,LTL - XPO,2025-11-01,"Northfield Industrial Components, Inc.",Allegheny Climate Inc. - Plant 9,60,1,534.1,Collect,N,Y
+BOL-SH-50299,SH-50299,Customer Pickup,2025-05-02,"Northfield Industrial Components, Inc.",Fox River Paper LP - Plant 7,70,1,651.8,Collect,N,Y
+BOL-SH-50300,SH-50300,FedEx Ground,2026-03-27,"Northfield Industrial Components, Inc.",Allegheny Paper LP - Plant 5,55,1,258.5,Prepaid,N,Y
+BOL-SH-50301,SH-50301,LTL - Estes,2025-09-06,"Northfield Industrial Components, Inc.",Susquehanna Water Authority LLC - Plant 2,70,1,285.6,Prepaid,N,Y
+BOL-SH-50303,SH-50303,Company Truck,2025-09-28,"Northfield Industrial Components, Inc.",Prairie Climate LLC - Plant 7,85,1,358.9,Prepaid & Add,N,Y
+BOL-SH-50304,SH-50304,Company Truck,2025-08-08,"Northfield Industrial Components, Inc.",Cumberland Materials LP - Plant 12,60,1,507.3,Prepaid,N,Y
+BOL-SH-50306,SH-50306,UPS Ground,2025-10-26,"Northfield Industrial Components, Inc.",Prairie Poultry Co. - Plant 7,55,1,229.5,Collect,N,Y
+BOL-SH-50307,SH-50307,FedEx Ground,2025-08-29,"Northfield Industrial Components, Inc.",Summit Foods Co. - Plant 12,85,1,229.7,Prepaid,N,Y
+BOL-SH-50308,SH-50308,LTL - Estes,2026-03-22,"Northfield Industrial Components, Inc.",Lehigh Valley Paper LP - Plant 7,55,1,343.8,Prepaid,N,Y
+BOL-SH-50309,SH-50309,UPS Ground,2025-06-08,"Northfield Industrial Components, Inc.",Riverbend Conveyor LP - Plant 7,50,1,381.6,Prepaid,N,Y
+BOL-SH-50311,SH-50311,LTL - XPO,2025-05-13,"Northfield Industrial Components, Inc.",Midwest Ag Equipment LP - Plant 8,85,1,340.0,Prepaid & Add,N,Y
+BOL-SH-50313,SH-50313,Customer Pickup,2025-06-19,"Northfield Industrial Components, Inc.",Blue Ridge Poultry Inc. - Plant 11,50,1,335.6,Prepaid & Add,N,Y
+BOL-SH-50314,SH-50314,UPS Ground,2026-03-16,"Northfield Industrial Components, Inc.",Appalachian Lumber Corp. - Plant 6,50,1,395.1,Prepaid & Add,N,Y
+BOL-SH-50315,SH-50315,UPS Ground,2026-02-07,"Northfield Industrial Components, Inc.",Prairie Materials Co. - Plant 9,60,1,614.1,Prepaid & Add,N,Y
+BOL-SH-50316,SH-50316,LTL - XPO,2025-08-30,"Northfield Industrial Components, Inc.",Allegheny Climate Inc. - Plant 9,60,2,951.7,Collect,N,Y
+BOL-SH-50317,SH-50317,FedEx Ground,2025-09-07,"Northfield Industrial Components, Inc.",Cardinal Conveyor Corp. - Plant 3,55,1,363.8,Prepaid & Add,N,Y
+BOL-SH-50318,SH-50318,Company Truck,2025-06-05,"Northfield Industrial Components, Inc.",Tri-County Poultry LP - Plant 11,50,1,540.7,Prepaid & Add,N,Y
+BOL-SH-50319,SH-50319,UPS Ground,2025-06-21,"Northfield Industrial Components, Inc.",Riverbend Conveyor LP - Plant 7,70,1,780.5,Collect,N,Y
+BOL-SH-50321,SH-50321,UPS Ground,2025-11-30,"Northfield Industrial Components, Inc.",Prairie Poultry Co. - Plant 7,70,1,435.2,Prepaid & Add,N,Y
+BOL-SH-50322,SH-50322,Customer Pickup,2026-01-07,"Northfield Industrial Components, Inc.",Keystone Chemical Corp. - Plant 5,60,1,786.5,Prepaid & Add,N,Y
+BOL-SH-50323,SH-50323,Company Truck,2026-03-20,"Northfield Industrial Components, Inc.",Tri-County Poultry LP - Plant 11,70,1,442.9,Prepaid & Add,N,Y
+BOL-SH-50325,SH-50325,Customer Pickup,2026-03-17,"Northfield Industrial Components, Inc.",Fox River Paper LP - Plant 7,50,1,500.1,Collect,N,Y
+BOL-SH-50327,SH-50327,UPS Ground,2025-11-08,"Northfield Industrial Components, Inc.",Prairie Materials Co. - Plant 9,55,1,209.8,Collect,N,Y
+BOL-SH-50328,SH-50328,LTL - Estes,2026-03-13,"Northfield Industrial Components, Inc.",Lehigh Valley Paper LP - Plant 7,50,1,176.2,Prepaid & Add,N,Y
+BOL-SH-50329,SH-50329,Customer Pickup,2025-06-05,"Northfield Industrial Components, Inc.",Fox River Paper LP - Plant 7,55,1,328.4,Collect,N,Y
+BOL-SH-50330,SH-50330,LTL - XPO,2025-10-21,"Northfield Industrial Components, Inc.",Riverbend Poultry LLC - Plant 12,70,1,635.2,Prepaid,N,Y
+BOL-SH-50331,SH-50331,Customer Pickup,2025-05-01,"Northfield Industrial Components, Inc.",Keystone Chemical Corp. - Plant 5,60,1,169.1,Collect,N,Y
+BOL-SH-50332,SH-50332,UPS Ground,2025-10-16,"Northfield Industrial Components, Inc.",Pioneer Lumber Co. - Plant 1,70,1,336.0,Prepaid & Add,N,Y
+BOL-SH-50334,SH-50334,Customer Pickup,2025-10-13,"Northfield Industrial Components, Inc.",Great Lakes Lumber LLC - Plant 2,55,1,494.4,Prepaid & Add,N,Y
+BOL-SH-50335,SH-50335,FedEx Ground,2025-04-21,"Northfield Industrial Components, Inc.",Allegheny Paper LP - Plant 5,60,1,511.0,Prepaid,N,Y
+BOL-SH-50337,SH-50337,LTL - Estes,2025-06-07,"Northfield Industrial Components, Inc.",Susquehanna Water Authority LLC - Plant 2,85,1,501.6,Prepaid & Add,N,Y
+BOL-SH-50338,SH-50338,UPS Ground,2025-05-06,"Northfield Industrial Components, Inc.",Prairie Materials Co. - Plant 9,50,2,904.6,Collect,N,Y
+BOL-SH-50339,SH-50339,UPS Ground,2025-11-01,"Northfield Industrial Components, Inc.",Iron City Conveyor Inc. - Plant 6,85,1,598.8,Prepaid & Add,N,Y
+BOL-SH-50343,SH-50343,LTL - Estes,2026-01-26,"Northfield Industrial Components, Inc.",Lehigh Valley Paper LP - Plant 7,85,1,631.4,Prepaid,N,Y
+BOL-SH-50344,SH-50344,LTL - XPO,2025-07-05,"Northfield Industrial Components, Inc.",Rock River Water Authority Corp. - Plant 2,55,1,154.8,Collect,N,Y
+BOL-SH-50346,SH-50346,Company Truck,2025-07-17,"Northfield Industrial Components, Inc.",Cumberland Materials LP - Plant 12,55,1,304.3,Prepaid,N,Y
+BOL-SH-50347,SH-50347,Customer Pickup,2025-11-04,"Northfield Industrial Components, Inc.",Blue Ridge Poultry Inc. - Plant 11,85,2,1024.5,Collect,N,Y
+BOL-SH-50348,SH-50348,Customer Pickup,2026-03-23,"Northfield Industrial Components, Inc.",Cardinal Poultry Inc. - Plant 1,55,1,169.1,Prepaid,N,Y
+BOL-SH-50349,SH-50349,FedEx Ground,2025-06-01,"Northfield Industrial Components, Inc.",Rock River Plastics LLC - Plant 10,50,1,457.9,Prepaid,N,Y
+BOL-SH-50350,SH-50350,Customer Pickup,2025-11-19,"Northfield Industrial Components, Inc.",Keystone Chemical Corp. - Plant 5,60,1,449.3,Prepaid,N,Y
+BOL-SH-50351,SH-50351,LTL - Estes,2026-02-11,"Northfield Industrial Components, Inc.",Susquehanna Water Authority LLC - Plant 2,55,1,376.5,Prepaid & Add,N,Y
+BOL-SH-50352,SH-50352,FedEx Ground,2025-06-11,"Northfield Industrial Components, Inc.",Allegheny Paper LP - Plant 5,50,2,867.2,Prepaid & Add,N,Y
+BOL-SH-50353,SH-50353,Customer Pickup,2025-08-04,"Northfield Industrial Components, Inc.",Great Lakes Lumber LLC - Plant 2,85,1,221.5,Prepaid & Add,N,Y
+BOL-SH-50355,SH-50355,Company Truck,2026-02-25,"Northfield Industrial Components, Inc.",Iron City Chemical Inc. - Plant 9,55,1,311.1,Prepaid,N,Y
+BOL-SH-50357,SH-50357,UPS Ground,2026-01-28,"Northfield Industrial Components, Inc.",Prairie Poultry Co. - Plant 7,70,1,165.2,Prepaid & Add,N,Y
+BOL-SH-50359,SH-50359,UPS Ground,2026-03-24,"Northfield Industrial Components, Inc.",Prairie Poultry Co. - Plant 7,70,1,378.8,Collect,N,Y
+BOL-SH-50361,SH-50361,FedEx Ground,2025-11-30,"Northfield Industrial Components, Inc.",Allegheny Paper LP - Plant 5,60,1,484.4,Prepaid & Add,N,Y
+BOL-SH-50362,SH-50362,UPS Ground,2026-02-19,"Northfield Industrial Components, Inc.",Prairie Materials Co. - Plant 9,50,1,419.9,Collect,N,Y
+BOL-SH-50363,SH-50363,UPS Ground,2025-11-29,"Northfield Industrial Components, Inc.",Cardinal Lumber LP - Plant 8,55,1,506.5,Prepaid,N,Y
+BOL-SH-50364,SH-50364,LTL - Estes,2025-12-12,"Northfield Industrial Components, Inc.",Lehigh Valley Paper LP - Plant 7,50,1,413.0,Collect,N,Y
+BOL-SH-50365,SH-50365,UPS Ground,2025-08-05,"Northfield Industrial Components, Inc.",Prairie Materials Co. - Plant 9,85,2,929.8,Prepaid & Add,N,Y
+BOL-SH-50367,SH-50367,UPS Ground,2025-10-28,"Northfield Industrial Components, Inc.",Riverbend Conveyor LP - Plant 7,55,1,190.6,Prepaid & Add,N,Y
+BOL-SH-50368,SH-50368,LTL - XPO,2025-10-23,"Northfield Industrial Components, Inc.",Rock River Water Authority Corp. - Plant 2,55,1,216.7,Prepaid & Add,N,Y
+BOL-SH-50369,SH-50369,LTL - XPO,2026-02-19,"Northfield Industrial Components, Inc.",Rock River Water Authority Corp. - Plant 2,50,1,389.6,Prepaid & Add,N,Y
+BOL-SH-50370,SH-50370,Customer Pickup,2025-09-30,"Northfield Industrial Components, Inc.",Keystone Chemical Corp. - Plant 5,60,1,451.5,Prepaid,N,Y
+BOL-SH-50371,SH-50371,UPS Ground,2025-07-15,"Northfield Industrial Components, Inc.",Appalachian Lumber Corp. - Plant 6,55,1,790.2,Prepaid & Add,N,Y
+BOL-SH-50372,SH-50372,Customer Pickup,2026-01-21,"Northfield Industrial Components, Inc.",Keystone Chemical Corp. - Plant 5,70,1,498.9,Prepaid & Add,N,Y
+BOL-SH-50373,SH-50373,UPS Ground,2026-02-13,"Northfield Industrial Components, Inc.",Pioneer Lumber Co. - Plant 1,50,1,658.8,Prepaid,N,Y
+BOL-SH-50374,SH-50374,FedEx Ground,2025-11-26,"Northfield Industrial Components, Inc.",Cardinal Conveyor Corp. - Plant 3,70,1,445.0,Collect,N,Y
+BOL-SH-50375,SH-50375,Company Truck,2025-10-31,"Northfield Industrial Components, Inc.",Cumberland Materials LP - Plant 12,50,1,659.8,Prepaid,N,Y
+BOL-SH-50376,SH-50376,UPS Ground,2025-05-15,"Northfield Industrial Components, Inc.",Riverbend Conveyor LP - Plant 7,55,1,382.5,Prepaid & Add,N,Y
+BOL-SH-50377,SH-50377,UPS Ground,2025-09-25,"Northfield Industrial Components, Inc.",Prairie Materials Co. - Plant 9,55,1,414.8,Prepaid & Add,N,Y
+BOL-SH-50378,SH-50378,Customer Pickup,2025-10-29,"Northfield Industrial Components, Inc.",Keystone Chemical Corp. - Plant 5,85,1,299.8,Collect,N,Y
+BOL-SH-50379,SH-50379,Company Truck,2026-02-13,"Northfield Industrial Components, Inc.",Iron City Chemical Inc. - Plant 9,85,1,248.9,Prepaid & Add,N,Y
+BOL-SH-50380,SH-50380,LTL - XPO,2025-11-10,"Northfield Industrial Components, Inc.",Midwest Ag Equipment LP - Plant 8,50,1,528.9,Prepaid & Add,N,Y
+BOL-SH-50381,SH-50381,FedEx Ground,2025-05-06,"Northfield Industrial Components, Inc.",Summit Foods Co. - Plant 12,85,2,807.4,Collect,N,Y
+BOL-SH-50382,SH-50382,FedEx Ground,2025-11-09,"Northfield Industrial Components, Inc.",Cardinal Conveyor Corp. - Plant 3,60,1,717.8,Collect,N,Y
+BOL-SH-50384,SH-50384,LTL - Estes,2025-12-05,"Northfield Industrial Components, Inc.",Great Lakes Automotive LLC - Plant 4,60,2,1145.8,Prepaid & Add,N,Y
+BOL-SH-50385,SH-50385,LTL - XPO,2026-01-21,"Northfield Industrial Components, Inc.",Rock River Water Authority Corp. - Plant 2,50,2,901.1,Prepaid,N,Y
+BOL-SH-50387,SH-50387,FedEx Ground,2026-03-22,"Northfield Industrial Components, Inc.",Summit Foods Co. - Plant 12,60,1,318.4,Collect,N,Y
+BOL-SH-50388,SH-50388,UPS Ground,2025-10-09,"Northfield Industrial Components, Inc.",Cardinal Lumber LP - Plant 8,50,1,490.2,Prepaid & Add,N,Y
+BOL-SH-50389,SH-50389,Customer Pickup,2025-06-14,"Northfield Industrial Components, Inc.",Fox River Paper LP - Plant 7,50,1,469.3,Prepaid,N,Y
+BOL-SH-50390,SH-50390,LTL - XPO,2025-07-02,"Northfield Industrial Components, Inc.",Midwest Climate Corp. - Plant 12,70,1,499.1,Prepaid & Add,N,Y
+BOL-SH-50391,SH-50391,UPS Ground,2025-09-07,"Northfield Industrial Components, Inc.",Prairie Materials Co. - Plant 9,85,1,306.5,Collect,N,Y

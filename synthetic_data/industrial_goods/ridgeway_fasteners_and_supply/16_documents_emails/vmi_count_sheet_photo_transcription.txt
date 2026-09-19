@@ -1,0 +1,9 @@
+TRANSCRIBED FROM PHOTO OF PAPER COUNT SHEET (03/24/26) - customer site bins
+
+BIN 012  HHCS 1/2-13x2 G8   min 100 max 400   count: 60   -> refill 340
+BIN 013  HN 1/2-13 G8       min 200 max 600   count 410
+BIN 014  FW 1/2 SAE         min 200 max 600   count ~150?? (bag torn)
+BIN 020  6205 brg           min 6 max 24      count 4    -> refill (which one? SKF or import - cust wants SKF)
+BIN 021  nitrile L          min 5 max 20      count 2    refill
+
+tech: Danny   truck 2   left invoice copy w/ receiving

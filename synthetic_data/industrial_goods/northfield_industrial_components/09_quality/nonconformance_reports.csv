@@ -1,0 +1,17 @@
+ncr_id,opened_date,source,reference,item_id,supplier_id,qty_affected,defect_code,description,disposition,owner_id,status,closed_date,capa_required
+NCR-0001,2025-04-21,Receiving,RCV-40095,P-10035,NIC-V018,26,DIM-OOT,Rust on incoming bar stock,Use-as-is,E059,Closed,2025-05-03,Y
+NCR-0002,2026-02-10,Receiving,RCV-40189,P-20103,NIC-V004,20,DAMAGE,No material cert with shipment,Scrap,E059,Closed,2026-03-06,N
+NCR-0003,2025-12-01,Receiving,RCV-40193,P-10049,NIC-V006,30,THREAD,No material cert with shipment,Rework,E058,Closed,2025-12-18,N
+NCR-0004,2025-05-24,Receiving,RCV-40218,P-20088,NIC-V014,19,DIM-OOT,Wrong revision received,Rework,E055,Closed,2025-06-03,Y
+NCR-0005,2026-03-05,Receiving,RCV-40058,P-10105,NIC-V015,15,DAMAGE,No material cert with shipment,Pending MRB,E057,Closed,2026-03-30,Y
+NCR-0006,2025-06-28,Receiving,RCV-40164,P-10049,NIC-V006,34,WRONG-PART,No material cert with shipment,Use-as-is,E055,Closed,2025-07-26,N
+NCR-0007,2025-12-29,Receiving,RCV-40056,P-20014,NIC-V009,13,DAMAGE,Wrong revision received,Pending MRB,E057,Open,,Y
+NCR-0008,2026-03-30,Receiving,RCV-40246,P-20048,NIC-V003,34,DIM-OOT,Bore diameter oversize 0.003in,Pending MRB,E059,Open,,Y
+NCR-0009,2026-03-23,Final,WO-70017,A-20092,,36,MISSING-CERT,Wrong revision received,Use-as-is,E056,Open,,N
+NCR-0010,2025-12-13,Final,WO-70039,A-20114,,4,SURFACE,Chipped teeth on gear,Return to vendor,E057,Closed,2026-01-10,N
+NCR-0011,2025-11-14,Final,WO-70042,A-20107,,9,DIM-OOT,Wrong revision received,Scrap,E059,Closed,2025-11-19,Y
+NCR-0012,2026-01-09,Final,WO-70048,A-20087,,8,SURFACE,No material cert with shipment,Scrap,E056,Closed,2026-02-09,N
+NCR-0013,2025-07-02,Final,WO-70052,A-20033,,27,SURFACE,Thread gauge no-go accepted,Return to vendor,E058,Open,,Y
+NCR-0014,2026-03-21,Final,WO-70054,A-20093,,32,DIM-OOT,Bore diameter oversize 0.003in,Rework,E056,Open,,Y
+NCR-0015,2025-08-22,Final,WO-70086,A-20097,,8,THREAD,No material cert with shipment,Rework,E056,Closed,2025-09-06,N
+NCR-0016,2025-10-13,Final,WO-70088,A-20078,,33,DAMAGE,Chipped teeth on gear,Return to vendor,E058,Closed,2025-11-09,Y

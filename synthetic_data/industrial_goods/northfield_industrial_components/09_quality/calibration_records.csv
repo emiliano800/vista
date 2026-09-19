@@ -1,0 +1,26 @@
+gauge_id,description,location,calibration_interval_months,last_calibration_date,next_due_date,calibrated_by,status
+G-001,Bore gauge set,CNC1,12,2025-04-06,2026-04-06,Cross Precision,In Cal
+G-002,Micrometer 1-2in,QC Lab,6,2025-07-08,2026-07-08,Transcat,In Cal
+G-003,CMM probe,CNC1,12,2025-05-07,2026-05-07,Internal,In Cal
+G-004,Digital caliper 0-6in,QC Lab,12,2025-09-22,2026-09-22,Internal,In Cal
+G-005,Micrometer 1-2in,CNC1,12,2025-07-15,2026-07-15,Internal,In Cal
+G-006,Thread plug gauge 1/2-13,QC Lab,12,2025-07-19,2026-07-19,Transcat,In Cal
+G-007,Height gauge 12in,QC Lab,12,2025-06-26,2026-06-26,Transcat,In Cal
+G-008,Torque wrench 20-100 ft-lb,CNC1,12,2026-01-06,2027-01-06,Cross Precision,In Cal
+G-009,Surface plate,Assembly,12,2025-04-25,2026-04-25,Cross Precision,In Cal
+G-010,Micrometer 1-2in,CNC2,6,2025-12-12,2026-12-12,Cross Precision,In Cal
+G-011,Surface plate,CNC2,12,2025-11-14,2026-11-14,Cross Precision,In Cal
+G-012,Micrometer 1-2in,QC Lab,12,2025-03-14,2026-03-14,Transcat,Overdue
+G-013,CMM probe,QC Lab,12,2025-08-15,2026-08-15,Internal,In Cal
+G-014,Thread plug gauge 1/2-13,QC Lab,6,2026-02-11,2027-02-11,Cross Precision,In Cal
+G-015,Height gauge 12in,CNC1,12,2025-10-10,2026-10-10,Transcat,In Cal
+G-016,Torque wrench 20-100 ft-lb,QC Lab,12,2025-06-18,2026-06-18,Cross Precision,In Cal
+G-017,Thread plug gauge 1/2-13,QC Lab,6,2025-06-21,2026-06-21,Transcat,In Cal
+G-018,Thread plug gauge 1/2-13,CNC1,12,2025-11-18,2026-11-18,Cross Precision,In Cal
+G-019,Digital caliper 0-6in,CNC1,12,2026-02-18,2027-02-18,Cross Precision,In Cal
+G-020,Surface plate,QC Lab,12,2025-10-19,2026-10-19,Transcat,In Cal
+G-021,Torque wrench 20-100 ft-lb,Receiving,12,2025-06-30,2026-06-30,Cross Precision,In Cal
+G-022,Height gauge 12in,Assembly,6,2025-10-01,2026-10-01,Cross Precision,In Cal
+G-023,Digital caliper 0-6in,Receiving,12,2025-10-23,2026-10-23,Internal,In Cal
+G-024,CMM probe,Assembly,6,2025-10-13,2026-10-13,Transcat,In Cal
+G-025,CMM probe,Receiving,12,2025-04-30,2026-04-30,Internal,In Cal

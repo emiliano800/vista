@@ -5,3 +5,8 @@ __pycache__/
 .pytest_cache/
 dist/
 *.egg-info/
+build/
+.ruff_cache/
+out/
+node_modules/
+Vista/

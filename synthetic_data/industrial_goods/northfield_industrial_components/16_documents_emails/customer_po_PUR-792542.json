@@ -1,0 +1,59 @@
+[
+  {
+    "document_type": "Customer Purchase Order",
+    "source": "Email attachment (PDF, OCR)",
+    "customer_po_number": "PUR-792542",
+    "po_date": "2025-12-03",
+    "buyer": "Pioneer Lumber Co.",
+    "ship_to": "Pioneer Lumber Co. - Plant 1",
+    "payment_terms": "COD",
+    "lines": [
+      {
+        "line": 1,
+        "customer_part_number": "CP-96887",
+        "our_item_id": "A-20063",
+        "description": "Gearbox Sub-Assembly 5/8-11",
+        "qty": 3,
+        "unit_price": 1702.06,
+        "requested_date": "2025-12-18"
+      },
+      {
+        "line": 2,
+        "customer_part_number": "CP-37762",
+        "our_item_id": "",
+        "description": "Machined Housing 1.250",
+        "qty": 3,
+        "unit_price": 512.35,
+        "requested_date": "2025-12-07"
+      },
+      {
+        "line": 3,
+        "customer_part_number": "CP-42061",
+        "our_item_id": "A-20013",
+        "description": "Shaft Coupling 5/8-11",
+        "qty": 1,
+        "unit_price": 218.8,
+        "requested_date": "2025-12-08"
+      },
+      {
+        "line": 4,
+        "customer_part_number": "CP-34089",
+        "our_item_id": "A-20033",
+        "description": "Shaft Coupling 2.000",
+        "qty": 3,
+        "unit_price": 508.87,
+        "requested_date": "2025-12-20"
+      },
+      {
+        "line": 5,
+        "customer_part_number": "CP-42346",
+        "our_item_id": "A-20002",
+        "description": "Gearbox Sub-Assembly 3/8-16",
+        "qty": 1,
+        "unit_price": 2440.01,
+        "requested_date": "2025-12-15"
+      }
+    ],
+    "notes": "Please reference our PO number on all packages and invoices."
+  }
+]

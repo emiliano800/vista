@@ -1,0 +1,6 @@
+contract_id,supplier_id,supplier_name,type,start_date,end_date,annual_commitment,rebate_pct,auto_renew,document
+NIC-SC001,NIC-V013,Parker Hannifin,Consignment,2025-01-01,2026-12-31,100000,1.0,Y,parker_agreement_2025.pdf
+NIC-SC002,NIC-V008,Garlock Sealing Technologies,Consignment,2025-01-01,2026-12-31,25000,0,Y,garlock_agreement_2025.pdf
+NIC-SC003,NIC-V018,"W.W. Grainger, Inc.",Rebate Agreement,2025-01-01,2025-12-31,100000,2.0,Y,w.w._agreement_2025.pdf
+NIC-SC004,NIC-V007,Fastenal,Consignment,2025-01-01,2026-12-31,100000,0,N,fastenal_agreement_2025.pdf
+NIC-SC005,NIC-V014,Regal Rexnord,Blanket PO,2025-01-01,2026-12-31,100000,2.0,Y,regal_agreement_2025.pdf

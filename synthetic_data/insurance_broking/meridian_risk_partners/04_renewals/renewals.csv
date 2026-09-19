@@ -1,0 +1,62 @@
+renewal_id,policy_id,client_id,line_of_business,carrier_code,expiration_date,days_to_expiration,expiring_premium,renewal_stage,renewal_strategy,exposure_update_received,loss_runs_ordered,renewal_quote_premium,account_manager_id,producer_id
+REN-MER-P00003,MER-P00003,MER-C0001,AUTO,LIB,2026-05-28,58,41642,60-day: Marketing,Renew as-is (rate < 5%),Y,Y,,E011,E003
+REN-MER-P00006,MER-P00006,MER-C0002,AUTO,TRV,2026-08-09,131,92008,120-day: Renewal identified,Renew as-is (rate < 5%),N,N,,E021,E008
+REN-MER-P00010,MER-P00010,MER-C0003,WC,AMT,2026-07-04,95,175318,120-day: Renewal identified,Renew with incumbent,N,Y,,E009,E002
+REN-MER-P00011,MER-P00011,MER-C0003,UMB,TRV,2026-05-19,49,6964,60-day: Marketing,Renew as-is (rate < 5%),N,Y,,E009,E002
+REN-MER-P00012,MER-P00012,MER-C0004,GL,CNA,2026-08-09,131,56974,120-day: Renewal identified,Renew as-is (rate < 5%),N,N,,E021,E002
+REN-MER-P00014,MER-P00014,MER-C0004,WC,HIG,2026-07-29,120,42657,120-day: Renewal identified,Market to 3 carriers,N,N,,E021,E002
+REN-MER-P00016,MER-P00016,MER-C0005,GL,TRV,2026-06-12,73,35193,90-day: Exposure update requested,Renew with incumbent,N,Y,,E013,E008
+REN-MER-P00019,MER-P00019,MER-C0006,CYB,BEZ,2026-08-17,139,22115,120-day: Renewal identified,Renew with incumbent,N,N,,E014,E007
+REN-MER-P00021,MER-P00021,MER-C0007,PROP,CHB,2026-06-03,64,10990,90-day: Exposure update requested,Renew with incumbent,Y,Y,,E016,E008
+REN-MER-P00023,MER-P00023,MER-C0007,AUTO,LIB,2026-05-08,38,29647,60-day: Marketing,Remarket - incumbent non-renewing,Y,N,29943,E016,E008
+REN-MER-P00024,MER-P00024,MER-C0007,WC,AMT,2026-06-17,78,95996,90-day: Exposure update requested,Renew with incumbent,N,Y,,E016,E008
+REN-MER-P00025,MER-P00025,MER-C0008,GL,TRV,2026-04-12,12,43055,30-day: Proposal / bind,Renew with incumbent,Y,Y,45208,E016,E002
+REN-MER-P00031,MER-P00031,MER-C0009,WC,TRV,2026-07-18,109,162253,120-day: Renewal identified,Renew with incumbent,N,N,,E020,E007
+REN-MER-P00036,MER-P00036,MER-C0011,CYB,BEZ,2026-04-25,25,14783,30-day: Proposal / bind,Renew with incumbent,Y,N,14340,E014,E002
+REN-MER-P00039,MER-P00039,MER-C0011,DO,CHB,2026-08-28,150,20735,120-day: Renewal identified,Renew with incumbent,N,N,,E014,E002
+REN-MER-P00043,MER-P00043,MER-C0013,PL,MKL,2026-08-28,150,35623,120-day: Renewal identified,Market to 3 carriers,N,N,,E014,E002
+REN-MER-P00046,MER-P00046,MER-C0013,CYB,CHB,2026-07-20,111,9680,120-day: Renewal identified,Renew as-is (rate < 5%),N,N,,E014,E002
+REN-MER-P00047,MER-P00047,MER-C0013,WC,AMT,2026-08-23,145,80141,120-day: Renewal identified,Market to 3 carriers,N,N,,E014,E002
+REN-MER-P00048,MER-P00048,MER-C0014,PROP,CNA,2026-05-27,57,47600,60-day: Marketing,Market to 3 carriers,N,Y,,E009,E006
+REN-MER-P00050,MER-P00050,MER-C0014,AUTO,TRV,2026-07-25,116,68025,120-day: Renewal identified,Renew with incumbent,N,N,,E009,E006
+REN-MER-P00053,MER-P00053,MER-C0015,WC,LIB,2026-08-12,134,40891,120-day: Renewal identified,Renew as-is (rate < 5%),N,N,,E019,E008
+REN-MER-P00055,MER-P00055,MER-C0015,UMB,MKL,2026-05-20,50,5005,60-day: Marketing,Market to 3 carriers,N,Y,,E019,E008
+REN-MER-P00056,MER-P00056,MER-C0016,BOP,HIG,2026-05-25,55,8130,60-day: Marketing,Remarket - incumbent non-renewing,N,N,,E012,E001
+REN-MER-P00058,MER-P00058,MER-C0017,PL,CNA,2026-05-03,33,5328,60-day: Marketing,Renew as-is (rate < 5%),Y,N,5914,E012,E006
+REN-MER-P00059,MER-P00059,MER-C0017,CYB,CHB,2026-07-28,119,21436,120-day: Renewal identified,Renew with incumbent,N,N,,E012,E006
+REN-MER-P00063,MER-P00063,MER-C0019,PL,CNA,2026-08-09,131,14419,120-day: Renewal identified,Renew as-is (rate < 5%),N,N,,E011,E004
+REN-MER-P00064,MER-P00064,MER-C0019,GL,LIB,2026-08-07,129,59497,120-day: Renewal identified,Renew with incumbent,N,N,,E011,E004
+REN-MER-P00066,MER-P00066,MER-C0020,GL,LIB,2026-06-01,62,64192,90-day: Exposure update requested,Market to 3 carriers,Y,Y,,E018,E002
+REN-MER-P00067,MER-P00067,MER-C0020,PROP,TRV,2026-07-20,111,4354,120-day: Renewal identified,Market to 3 carriers,N,N,,E018,E002
+REN-MER-P00068,MER-P00068,MER-C0020,WC,LIB,2026-05-18,48,113538,60-day: Marketing,Renew as-is (rate < 5%),Y,Y,,E018,E002
+REN-MER-P00069,MER-P00069,MER-C0020,AUTO,TRV,2026-05-20,50,64702,60-day: Marketing,Market to 3 carriers,Y,Y,,E018,E002
+REN-MER-P00070,MER-P00070,MER-C0021,GL,TRV,2026-05-22,52,34386,60-day: Marketing,Renew as-is (rate < 5%),Y,Y,,E015,E002
+REN-MER-P00071,MER-P00071,MER-C0021,WC,HIG,2026-05-14,44,25853,60-day: Marketing,Renew as-is (rate < 5%),Y,N,24560,E015,E002
+REN-MER-P00072,MER-P00072,MER-C0022,PROP,HIG,2026-08-09,131,69693,120-day: Renewal identified,Market to 3 carriers,N,N,,E021,E005
+REN-MER-P00074,MER-P00074,MER-C0022,WC,HIG,2026-07-17,108,115148,120-day: Renewal identified,Renew with incumbent,N,N,,E021,E005
+REN-MER-P00075,MER-P00075,MER-C0023,PROP,HIG,2026-08-14,136,21432,120-day: Renewal identified,Renew with incumbent,N,N,,E021,E001
+REN-MER-P00076,MER-P00076,MER-C0023,GL,CHB,2026-08-04,126,19163,120-day: Renewal identified,Renew with incumbent,N,N,,E021,E001
+REN-MER-P00079,MER-P00079,MER-C0024,GL,CNA,2026-06-07,68,61333,90-day: Exposure update requested,Market to 3 carriers,N,Y,,E016,E001
+REN-MER-P00081,MER-P00081,MER-C0025,WC,LIB,2026-08-19,141,46839,120-day: Renewal identified,Renew with incumbent,N,N,,E019,E006
+REN-MER-P00086,MER-P00086,MER-C0027,PROP,HIG,2026-08-23,145,16406,120-day: Renewal identified,Market to 3 carriers,N,N,,E011,E003
+REN-MER-P00087,MER-P00087,MER-C0027,WC,TRV,2026-05-30,60,142814,60-day: Marketing,Renew as-is (rate < 5%),Y,Y,,E011,E003
+REN-MER-P00089,MER-P00089,MER-C0028,GL,CNA,2026-04-03,3,55435,30-day: Proposal / bind,Remarket - incumbent non-renewing,Y,Y,65413,E021,E003
+REN-MER-P00090,MER-P00090,MER-C0028,WC,LIB,2026-07-22,113,9276,120-day: Renewal identified,Renew with incumbent,N,N,,E021,E003
+REN-MER-P00092,MER-P00092,MER-C0028,UMB,LIB,2026-04-26,26,7418,30-day: Proposal / bind,Renew with incumbent,N,Y,7047,E021,E003
+REN-MER-P00093,MER-P00093,MER-C0029,PROP,CNA,2026-06-05,66,54862,90-day: Exposure update requested,Renew with incumbent,Y,N,,E020,E005
+REN-MER-P00094,MER-P00094,MER-C0029,GL,HIG,2026-07-10,101,41228,120-day: Renewal identified,Renew as-is (rate < 5%),N,N,,E020,E005
+REN-MER-P00096,MER-P00096,MER-C0030,BOP,AMT,2026-08-08,130,5761,120-day: Renewal identified,Remarket - incumbent non-renewing,N,N,,E011,E006
+REN-MER-P00097,MER-P00097,MER-C0030,WC,HIG,2026-04-14,14,87336,30-day: Proposal / bind,Renew with incumbent,Y,Y,89083,E011,E006
+REN-MER-P00098,MER-P00098,MER-C0031,CYB,BEZ,2026-05-18,48,6878,60-day: Marketing,Remarket - incumbent non-renewing,Y,Y,,E013,E006
+REN-MER-P00099,MER-P00099,MER-C0031,PL,BEZ,2026-04-17,17,11209,30-day: Proposal / bind,Renew with incumbent,Y,Y,12330,E013,E006
+REN-MER-P00103,MER-P00103,MER-C0032,PROP,CHB,2026-05-14,44,79449,60-day: Marketing,Market to 3 carriers,N,Y,87394,E018,E006
+REN-MER-P00105,MER-P00105,MER-C0032,WC,TRV,2026-07-25,116,114982,120-day: Renewal identified,Renew as-is (rate < 5%),N,N,,E018,E006
+REN-MER-P00109,MER-P00109,MER-C0035,PL,CNA,2026-08-24,146,34462,120-day: Renewal identified,Renew as-is (rate < 5%),N,N,,E020,E008
+REN-MER-P00111,MER-P00111,MER-C0035,PROP,CNA,2026-04-19,19,50265,30-day: Proposal / bind,Renew with incumbent,N,Y,48757,E020,E008
+REN-MER-P00112,MER-P00112,MER-C0035,CYB,CHB,2026-04-11,11,24857,30-day: Proposal / bind,Renew as-is (rate < 5%),Y,Y,26100,E020,E008
+REN-MER-P00114,MER-P00114,MER-C0036,PL,MKL,2026-05-25,55,24041,60-day: Marketing,Market to 3 carriers,Y,Y,,E012,E008
+REN-MER-P00115,MER-P00115,MER-C0036,GL,HIG,2026-05-13,43,59299,60-day: Marketing,Remarket - incumbent non-renewing,N,Y,65229,E012,E008
+REN-MER-P00116,MER-P00116,MER-C0036,PROP,CNA,2026-06-07,68,53880,90-day: Exposure update requested,Renew as-is (rate < 5%),Y,Y,,E012,E008
+REN-MER-P00117,MER-P00117,MER-C0036,CYB,CHB,2026-04-17,17,13258,30-day: Proposal / bind,Renew as-is (rate < 5%),Y,Y,14053,E012,E008
+REN-MER-P00119,MER-P00119,MER-C0037,AUTO,LIB,2026-06-14,75,42827,90-day: Exposure update requested,Renew as-is (rate < 5%),N,Y,,E010,E002
+REN-MER-P00122,MER-P00122,MER-C0038,WC,HIG,2026-08-04,126,99756,120-day: Renewal identified,Remarket - incumbent non-renewing,N,N,,E014,E007

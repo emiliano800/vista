@@ -1,0 +1,70 @@
+maint_wo_id,asset_id,type,opened_date,description,priority,assigned_to,labor_hours,parts_cost,external_vendor,downtime_hours,closed_date,status
+MWO-0001,A-006,PM,2025-11-09,Spindle vibration,Normal,E087,2.5,978.61,Sunbelt Rentals,0,2025-11-11,Closed
+MWO-0002,A-001,Corrective,2025-08-21,Annual crane inspection,Normal,E086,7.0,1344.14,Haas Factory Outlet,0,2025-08-27,Closed
+MWO-0003,A-013,Corrective,2025-09-21,Annual crane inspection,Normal,E086,11.0,514.28,Sunbelt Rentals,0,2025-09-23,Closed
+MWO-0004,A-003,PM,2025-05-24,Forklift brake inspection,Normal,E085,5.5,1782.89,Toyota Material Handling,0,2025-06-01,Closed
+MWO-0005,A-007,Corrective,2026-02-20,Dock leveler not lifting,Normal,E084,9.0,736.88,Haas Factory Outlet,0,2026-03-02,Closed
+MWO-0006,A-004,PM,2025-11-05,Forklift brake inspection,Normal,E085,1.5,279.88,Haas Factory Outlet,0,2025-11-17,Closed
+MWO-0007,A-002,Corrective,2025-12-20,Dock leveler not lifting,Low,E085,1.5,2004.89,Haas Factory Outlet,0,2025-12-27,Closed
+MWO-0008,A-001,PM,2025-07-15,Annual crane inspection,Normal,E087,8.5,301.57,Sunbelt Rentals,0,2025-07-23,Closed
+MWO-0009,A-014,Breakdown,2025-06-29,Forklift brake inspection,Emergency,E086,14.0,1691.56,,30.5,2025-07-06,Closed
+MWO-0010,A-001,PM,2025-04-08,Replace worn belt,Normal,E086,6.5,1411.19,,0,2025-04-21,Closed
+MWO-0011,A-015,PM,2025-11-12,Replace worn belt,Normal,E084,11.0,1232.72,,0,2025-11-20,Closed
+MWO-0012,A-002,PM,2025-09-20,Dock leveler not lifting,Normal,E087,11.5,1083.88,,0,2025-09-26,Closed
+MWO-0013,A-011,Breakdown,2025-12-14,Coolant leak,Low,E087,12.5,2156.25,Haas Factory Outlet,24.5,2025-12-26,Closed
+MWO-0014,A-001,Corrective,2025-08-07,Coolant leak,Emergency,E085,14.0,1182.71,,0,2025-08-16,Closed
+MWO-0015,A-005,PM,2025-05-03,Spindle vibration,Normal,E084,2.5,1644.94,Toyota Material Handling,0,2025-05-12,Closed
+MWO-0016,A-007,PM,2025-08-22,Forklift brake inspection,Normal,E087,12.0,12.37,,0,2025-08-31,Closed
+MWO-0017,A-008,PM,2025-08-11,Scheduled PM,Normal,E087,10.0,978.34,,0,2025-08-18,Closed
+MWO-0018,A-010,Breakdown,2025-11-27,Annual crane inspection,Normal,E087,11.5,1253.53,,37.5,2025-12-04,Closed
+MWO-0019,A-009,Corrective,2025-04-16,Scheduled PM,High,E085,5.5,858.08,Sunbelt Rentals,0,2025-04-27,Closed
+MWO-0020,A-011,Corrective,2025-10-12,Dock leveler not lifting,Emergency,E087,10.5,2240.0,,0,2025-10-23,Closed
+MWO-0021,A-007,Breakdown,2025-08-19,Coolant leak,Emergency,E086,11.5,229.14,Haas Factory Outlet,0.5,2025-08-27,Closed
+MWO-0022,A-012,PM,2025-05-17,Coolant leak,Normal,E085,1.5,166.84,Haas Factory Outlet,0,2025-05-21,Closed
+MWO-0023,A-015,Corrective,2026-01-07,Forklift brake inspection,Normal,E087,10.5,2354.21,Haas Factory Outlet,0,2026-01-19,Closed
+MWO-0024,A-002,Corrective,2025-06-20,Scheduled PM,Low,E085,1.0,2327.6,,0,2025-06-23,Closed
+MWO-0025,A-009,Corrective,2025-07-12,Hydraulic hose burst,Normal,E087,4.5,2205.72,,0,2025-07-26,Closed
+MWO-0026,A-005,Corrective,2025-10-07,Hydraulic hose burst,High,E087,3.0,104.8,,0,2025-10-15,Closed
+MWO-0027,A-010,PM,2025-07-22,Scheduled PM,Normal,E086,14.5,1280.86,Haas Factory Outlet,0,2025-07-31,Closed
+MWO-0028,A-002,PM,2025-12-23,Coolant leak,Normal,E087,3.0,558.95,,0,2025-12-23,Closed
+MWO-0029,A-014,PM,2025-08-08,Forklift brake inspection,Normal,E084,13.5,1239.24,Toyota Material Handling,0,2025-08-10,Closed
+MWO-0030,A-014,Breakdown,2025-06-03,Forklift brake inspection,Low,E087,14.5,2292.55,Sunbelt Rentals,16.0,2025-06-11,Closed
+MWO-0031,A-005,PM,2026-02-07,Replace worn belt,Normal,E084,11.5,496.59,Toyota Material Handling,0,2026-02-15,Closed
+MWO-0032,A-009,PM,2025-12-02,Annual crane inspection,Normal,E084,13.5,795.75,,0,2025-12-08,Closed
+MWO-0033,A-004,PM,2025-11-04,Replace worn belt,Normal,E085,14.0,833.47,,0,2025-11-07,Closed
+MWO-0034,A-003,PM,2026-02-15,Spindle vibration,Normal,E086,10.0,2229.19,Haas Factory Outlet,0,2026-03-01,Closed
+MWO-0035,A-007,PM,2025-04-06,Forklift brake inspection,Normal,E086,3.5,1101.6,,0,2025-04-08,Closed
+MWO-0036,A-007,Corrective,2025-04-13,Replace worn belt,Low,E085,5.5,214.23,Haas Factory Outlet,0,2025-04-20,Closed
+MWO-0037,A-011,Breakdown,2026-02-17,Scheduled PM,Normal,E085,14.5,2252.36,,41.5,2026-02-19,Closed
+MWO-0038,A-013,PM,2025-08-31,Dock leveler not lifting,Normal,E085,4.0,228.48,Toyota Material Handling,0,2025-09-03,Closed
+MWO-0039,A-002,PM,2026-01-31,Scheduled PM,Normal,E085,10.0,1940.68,,0,2026-02-06,Closed
+MWO-0040,A-009,PM,2025-09-21,Scheduled PM,Normal,E087,16.0,2226.63,,0,2025-09-29,Closed
+MWO-0041,A-014,Breakdown,2026-02-17,Hydraulic hose burst,High,E084,9.5,1593.97,,14.5,2026-02-28,Closed
+MWO-0042,A-001,PM,2025-04-17,Hydraulic hose burst,Normal,E085,8.0,97.14,Haas Factory Outlet,0,2025-04-19,Closed
+MWO-0043,A-002,Breakdown,2025-11-20,Dock leveler not lifting,Low,E086,1.0,1182.66,,36.0,2025-11-30,Closed
+MWO-0044,A-001,Breakdown,2026-03-28,Annual crane inspection,Low,E084,15.5,28.17,,5.0,,Open
+MWO-0045,A-011,Breakdown,2025-07-04,Annual crane inspection,Emergency,E085,8.0,30.46,Sunbelt Rentals,28.5,2025-07-10,Closed
+MWO-0046,A-011,PM,2025-08-01,Forklift brake inspection,Normal,E087,14.0,1322.64,,0,2025-08-13,Closed
+MWO-0047,A-006,Breakdown,2025-10-12,Replace worn belt,Low,E086,1.0,1760.09,Toyota Material Handling,42.0,2025-10-26,Closed
+MWO-0048,A-009,PM,2025-08-02,Hydraulic hose burst,Normal,E087,12.5,1957.55,,0,2025-08-14,Closed
+MWO-0049,A-005,PM,2025-06-07,Hydraulic hose burst,Normal,E084,9.5,926.28,Sunbelt Rentals,0,2025-06-16,Closed
+MWO-0050,A-008,PM,2025-06-27,Hydraulic hose burst,Normal,E085,1.0,1174.9,Haas Factory Outlet,0,2025-07-04,Closed
+MWO-0051,A-010,PM,2026-01-25,Hydraulic hose burst,Normal,E087,8.0,1373.68,,0,2026-02-05,Closed
+MWO-0052,A-002,PM,2025-09-08,Replace worn belt,Normal,E087,3.5,1881.61,Sunbelt Rentals,0,2025-09-14,Closed
+MWO-0053,A-014,PM,2025-12-11,Replace worn belt,Normal,E085,7.5,484.65,,0,2025-12-25,Closed
+MWO-0054,A-007,PM,2025-11-23,Dock leveler not lifting,Normal,E087,14.0,2366.17,,0,2025-11-28,Closed
+MWO-0055,A-011,PM,2025-05-19,Replace worn belt,Normal,E087,4.5,1535.11,,0,2025-05-23,Closed
+MWO-0056,A-013,PM,2025-11-16,Annual crane inspection,Normal,E086,6.5,2216.87,,0,2025-11-30,Closed
+MWO-0057,A-013,PM,2025-11-29,Hydraulic hose burst,Normal,E085,3.0,168.32,Sunbelt Rentals,0,2025-12-04,Closed
+MWO-0058,A-012,PM,2025-06-23,Spindle vibration,Normal,E087,4.5,496.65,Sunbelt Rentals,0,2025-07-06,Closed
+MWO-0059,A-015,Corrective,2025-04-13,Spindle vibration,Low,E084,8.5,2370.99,,0,2025-04-15,Closed
+MWO-0060,A-012,Breakdown,2026-01-22,Hydraulic hose burst,Normal,E086,13.0,1310.86,,23.0,2026-01-29,Closed
+MWO-0061,A-005,Breakdown,2025-08-22,Dock leveler not lifting,Low,E084,14.0,1660.01,Haas Factory Outlet,4.0,2025-09-01,Closed
+MWO-0062,A-009,PM,2026-03-02,Replace worn belt,Normal,E086,14.0,1127.63,,0,2026-03-13,Closed
+MWO-0063,A-008,Breakdown,2025-08-19,Replace worn belt,Low,E084,3.0,1789.34,Sunbelt Rentals,28.0,2025-08-26,Closed
+MWO-0064,A-014,Corrective,2026-02-08,Dock leveler not lifting,High,E087,14.0,1551.99,,0,2026-02-16,Closed
+MWO-0065,A-005,Breakdown,2025-08-11,Hydraulic hose burst,Normal,E087,5.5,255.9,,22.5,2025-08-25,Closed
+MWO-0066,A-007,Breakdown,2026-02-10,Hydraulic hose burst,Emergency,E084,7.5,1257.91,Haas Factory Outlet,18.5,2026-02-21,Closed
+MWO-0067,A-011,Corrective,2025-09-16,Dock leveler not lifting,Normal,E085,1.0,2077.31,Toyota Material Handling,0,2025-09-26,Closed
+MWO-0068,A-001,Corrective,2025-09-05,Coolant leak,Normal,E085,13.5,1075.0,Haas Factory Outlet,0,2025-09-05,Closed
+MWO-0069,A-005,Corrective,2025-10-08,Coolant leak,Emergency,E086,11.5,493.77,Haas Factory Outlet,0,2025-10-13,Closed

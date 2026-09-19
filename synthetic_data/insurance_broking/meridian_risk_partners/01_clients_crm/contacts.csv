@@ -1,0 +1,76 @@
+contact_id,client_id,full_name,title,email,phone,is_primary,role
+MER-C0001-P1,MER-C0001,Grace Lewis,Owner,glewis@liberty.com,(949) 506-7697,Y,Decision Maker
+MER-C0001-P2,MER-C0001,Priya Kowalski,President,pkowalski@liberty.com,(629) 624-9929,N,Claims
+MER-C0001-P3,MER-C0001,Thomas Garcia,HR Director,tgarcia@liberty.com,(571) 925-1377,N,Billing
+MER-C0002-P1,MER-C0002,Grace Young,Owner,gyoung@evergreen.com,(255) 586-8691,Y,Decision Maker
+MER-C0002-P2,MER-C0002,Mark Garcia,Risk Manager,mgarcia@evergreen.com,(797) 385-5546,N,Billing
+MER-C0003-P1,MER-C0003,Susan Martin,Office Manager,smartin@sterling.com,(809) 990-7049,Y,Decision Maker
+MER-C0004-P1,MER-C0004,Sarah Nakamura,President,snakamura@pioneer.com,(588) 746-6396,Y,Decision Maker
+MER-C0004-P2,MER-C0004,Carlos Miller,Office Manager,cmiller@pioneer.com,(932) 719-5412,N,Billing
+MER-C0004-P3,MER-C0004,Ashley Johnson,Office Manager,ajohnson@pioneer.com,(313) 503-4211,N,Billing
+MER-C0005-P1,MER-C0005,Steven Brown,CFO,sbrown@blue.com,(734) 963-6162,Y,Decision Maker
+MER-C0005-P2,MER-C0005,Paul Robinson,President,probinson@blue.com,(698) 339-2922,N,HR
+MER-C0006-P1,MER-C0006,Ashley Jackson,Controller,ajackson@summit.com,(966) 693-6044,Y,Decision Maker
+MER-C0006-P2,MER-C0006,Carlos Garcia,HR Director,cgarcia@summit.com,(450) 654-8368,N,Billing
+MER-C0007-P1,MER-C0007,Brian Walker,Controller,bwalker@ironclad.com,(546) 789-8254,Y,Decision Maker
+MER-C0007-P2,MER-C0007,Ashley Moore,HR Director,amoore@ironclad.com,(676) 796-7009,N,Claims
+MER-C0008-P1,MER-C0008,Omar Robinson,President,orobinson@sterling.com,(269) 783-2496,Y,Decision Maker
+MER-C0008-P2,MER-C0008,Aisha Kowalski,Controller,akowalski@sterling.com,(655) 792-9438,N,Certificates
+MER-C0009-P1,MER-C0009,Robert Anderson,Controller,randerson@pioneer.com,(729) 869-6955,Y,Decision Maker
+MER-C0010-P1,MER-C0010,Joseph Okafor,Owner,jokafor@valley.com,(746) 379-2341,Y,Decision Maker
+MER-C0010-P2,MER-C0010,Richard Williams,Owner,rwilliams@valley.com,(282) 319-3498,N,Certificates
+MER-C0011-P1,MER-C0011,Omar Garcia,Risk Manager,ogarcia@metro.com,(421) 462-5794,Y,Decision Maker
+MER-C0012-P1,MER-C0012,Hiro Young,CFO,hyoung@bayside.com,(706) 385-7470,Y,Decision Maker
+MER-C0012-P2,MER-C0012,Carlos Wilson,Office Manager,cwilson@bayside.com,(787) 794-4540,N,Claims
+MER-C0012-P3,MER-C0012,James Robinson,CFO,jrobinson@bayside.com,(882) 746-9663,N,Claims
+MER-C0013-P1,MER-C0013,Nancy Davis,Risk Manager,ndavis@coastal.com,(875) 243-2733,Y,Decision Maker
+MER-C0014-P1,MER-C0014,Fatima O'Brien,Controller,fobrien@summit.com,(404) 686-4917,Y,Decision Maker
+MER-C0014-P2,MER-C0014,Fatima Brown,Risk Manager,fbrown@summit.com,(771) 246-8750,N,Claims
+MER-C0015-P1,MER-C0015,Linda O'Brien,President,lobrien@ironclad.com,(953) 865-3512,Y,Decision Maker
+MER-C0015-P2,MER-C0015,James Martin,VP Operations,jmartin@ironclad.com,(479) 690-8013,N,Certificates
+MER-C0015-P3,MER-C0015,Linda Moore,VP Operations,lmoore@ironclad.com,(617) 747-8504,N,Certificates
+MER-C0016-P1,MER-C0016,Matthew King,President,mking@summit.com,(891) 912-2360,Y,Decision Maker
+MER-C0016-P2,MER-C0016,Daniel Walker,HR Director,dwalker@summit.com,(336) 278-8504,N,Claims
+MER-C0016-P3,MER-C0016,Jessica Wright,CFO,jwright@summit.com,(910) 203-9389,N,HR
+MER-C0017-P1,MER-C0017,Linda Schneider,Controller,lschneider@evergreen.com,(578) 241-4663,Y,Decision Maker
+MER-C0017-P2,MER-C0017,Carlos Kowalski,Controller,ckowalski@evergreen.com,(309) 850-2848,N,HR
+MER-C0018-P1,MER-C0018,William Okafor,President,wokafor@blue.com,(625) 990-8717,Y,Decision Maker
+MER-C0019-P1,MER-C0019,Priya Miller,HR Director,pmiller@metro.com,(835) 677-4681,Y,Decision Maker
+MER-C0020-P1,MER-C0020,Nancy Moore,Risk Manager,nmoore@keystone.com,(584) 391-2374,Y,Decision Maker
+MER-C0021-P1,MER-C0021,Lisa Young,Office Manager,lyoung@keystone.com,(961) 732-7425,Y,Decision Maker
+MER-C0021-P2,MER-C0021,Omar White,Controller,owhite@keystone.com,(359) 935-4134,N,Certificates
+MER-C0022-P1,MER-C0022,Joseph O'Brien,CFO,jobrien@summit.com,(722) 609-1042,Y,Decision Maker
+MER-C0022-P2,MER-C0022,Michelle Brown,Owner,mbrown@summit.com,(618) 592-3263,N,Billing
+MER-C0023-P1,MER-C0023,Kevin Walker,CFO,kwalker@ironclad.com,(308) 330-8595,Y,Decision Maker
+MER-C0023-P2,MER-C0023,Daniel Garcia,President,dgarcia@ironclad.com,(318) 718-8361,N,Certificates
+MER-C0023-P3,MER-C0023,Kevin Martinez,President,kmartinez@ironclad.com,(904) 736-8833,N,Billing
+MER-C0024-P1,MER-C0024,Ashley Walker,Controller,awalker@northgate.com,(209) 750-3384,Y,Decision Maker
+MER-C0025-P1,MER-C0025,Maria Martin,HR Director,mmartin@riverside.com,(786) 779-9369,Y,Decision Maker
+MER-C0025-P2,MER-C0025,Susan Smith,Risk Manager,ssmith@riverside.com,(829) 275-9077,N,Certificates
+MER-C0025-P3,MER-C0025,Sarah Lee,Controller,slee@riverside.com,(963) 824-7756,N,HR
+MER-C0026-P1,MER-C0026,Luis Nguyen,VP Operations,lnguyen@summit.com,(945) 370-9482,Y,Decision Maker
+MER-C0026-P2,MER-C0026,Nancy Thompson,President,nthompson@summit.com,(513) 920-2795,N,Billing
+MER-C0027-P1,MER-C0027,Priya Williams,Risk Manager,pwilliams@valley.com,(428) 920-7587,Y,Decision Maker
+MER-C0027-P2,MER-C0027,Paul Robinson,Owner,probinson@valley.com,(889) 322-2376,N,Billing
+MER-C0028-P1,MER-C0028,Elena Hernandez,Office Manager,ehernandez@cornerstone.com,(519) 324-7590,Y,Decision Maker
+MER-C0028-P2,MER-C0028,Michael Thomas,VP Operations,mthomas@cornerstone.com,(976) 255-5880,N,Certificates
+MER-C0028-P3,MER-C0028,Hiro Hernandez,Risk Manager,hhernandez@cornerstone.com,(498) 649-5305,N,HR
+MER-C0029-P1,MER-C0029,Betty Rodriguez,Office Manager,brodriguez@beacon.com,(572) 260-6335,Y,Decision Maker
+MER-C0030-P1,MER-C0030,Andrew Allen,Owner,aallen@lakeshore.com,(856) 669-7365,Y,Decision Maker
+MER-C0030-P2,MER-C0030,Lisa O'Brien,Office Manager,lobrien@lakeshore.com,(217) 597-8765,N,Certificates
+MER-C0030-P3,MER-C0030,Maria Patel,CFO,mpatel@lakeshore.com,(957) 990-8523,N,Certificates
+MER-C0031-P1,MER-C0031,Luis Brown,CFO,lbrown@keystone.com,(553) 292-9275,Y,Decision Maker
+MER-C0032-P1,MER-C0032,James Jones,Owner,jjones@patriot.com,(621) 835-2718,Y,Decision Maker
+MER-C0032-P2,MER-C0032,Elizabeth Moore,Risk Manager,emoore@patriot.com,(302) 381-4415,N,Certificates
+MER-C0033-P1,MER-C0033,Michael Okafor,Office Manager,mokafor@bayside.com,(829) 415-7113,Y,Decision Maker
+MER-C0033-P2,MER-C0033,Jennifer Delgado,Office Manager,jdelgado@bayside.com,(670) 677-4920,N,HR
+MER-C0034-P1,MER-C0034,Maria O'Brien,Office Manager,mobrien@patriot.com,(577) 202-2788,Y,Decision Maker
+MER-C0034-P2,MER-C0034,Jennifer Robinson,CFO,jrobinson@patriot.com,(679) 715-4427,N,HR
+MER-C0034-P3,MER-C0034,Matthew Miller,Office Manager,mmiller@patriot.com,(937) 418-5071,N,HR
+MER-C0035-P1,MER-C0035,Grace Lewis,CFO,glewis@patriot.com,(453) 724-1219,Y,Decision Maker
+MER-C0035-P2,MER-C0035,Aisha Young,HR Director,ayoung@patriot.com,(828) 846-9883,N,Billing
+MER-C0035-P3,MER-C0035,Elizabeth White,VP Operations,ewhite@patriot.com,(423) 420-1706,N,Certificates
+MER-C0036-P1,MER-C0036,Steven Fitzgerald,Office Manager,sfitzgerald@highland.com,(511) 638-8787,Y,Decision Maker
+MER-C0036-P2,MER-C0036,Elizabeth Okafor,VP Operations,eokafor@highland.com,(836) 226-4231,N,Claims
+MER-C0037-P1,MER-C0037,Hiro Smith,President,hsmith@sterling.com,(418) 636-4140,Y,Decision Maker
+MER-C0038-P1,MER-C0038,Joseph Davis,CFO,jdavis@pioneer.com,(608) 235-4296,Y,Decision Maker

@@ -1,0 +1,6 @@
+Contract Id,Supplier Id,Supplier Name,Type,Start Date,End Date,Annual Commitment,Rebate Pct,Auto Renew,Document
+KBD-SC001,KBD-V013,Motion Industries,Blanket PO,2025-01-01,2025-12-31,50000,0,Y ,motion_agreement_2025.pdf
+KBD-SC002,KBD-V002 ,Apex Fastener Corp,Consignment,"Jan 01, 2025",2025-12-31,100000,0,Y,apex_agreement_2025.pdf
+KBD-SC003,KBD-V010,Kaman Industrial Technologies,Blanket PO,2025-01-01,12/31/25,250000,2.0,Y,kaman_agreement_2025.pdf
+KBD-SC004,KBD-V003,Applied Industrial Technologies,Consignment,2025-01-01,2025-12-31,250000,3.0,N,applied_agreement_2025.pdf
+KBD-SC005,KBD-V001,Alro Steel,Consignment,2025-01-01,2026-12-31,250000,1.0,Y,alro_agreement_2025.pdf

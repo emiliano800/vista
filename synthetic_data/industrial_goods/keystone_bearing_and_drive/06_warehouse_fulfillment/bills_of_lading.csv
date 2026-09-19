@@ -1,0 +1,386 @@
+Bol Number,Shipment Id,Carrier,Ship Date,Shipper,Consignee,Nmfc Class,Pallets,Weight Lb,Freight Terms,Hazmat,Signed
+BOL-SH-50001,SH-50001,FedEx Ground,2025-07-03,Keystone Bearing & Drive Co.,Tri-County Conveyor Inc. - Plant 7,55,1,169.8,Prepaid & Add,N,Y
+BOL-SH-50003,SH-50003,Company Truck,2026-03-19,Keystone Bearing & Drive Co.,Cardinal Poultry Co. - Plant 2,70,2,1162.2,Collect,N,Y
+BOL-SH-50004,SH-50004,Company Truck,2026-03-15,Keystone Bearing & Drive Co.,Pioneer Plastics LLC - Plant 4,55,1,245.8,Collect,N ,Y
+BOL-SH-50005,SH-50005,LTL - Estes,2025-09-04,Keystone Bearing & Drive Co.,Tennessee Valley Lumber LLC - Plant 1,50,1,414.8,Collect,N,Y
+BOL-SH-50006,SH-50006,Company Truck,2025-09-12,Keystone Bearing & Drive Co.,Pioneer Plastics LLC - Plant 4,50,1,258.2,Prepaid & Add,N,Y
+BOL-SH-50007,SH-50007,Company Truck,"Jan 03, 2026",Keystone Bearing & Drive Co.,Hickory Water Authority Inc. - Plant 5,60,4,2558.8,Prepaid & Add,N,Y
+BOL-SH-50009,SH-50009,Company Truck,29-Nov-2025,Keystone Bearing & Drive Co.,Hickory Water Authority Inc. - Plant 5,60,10,7386.2,Collect,N,Y
+BOL-SH-50011,SH-50011,UPS Ground,2025-07-16,Keystone Bearing & Drive Co.,Keystone Steel LP - Plant 8,55,1,356.1,Prepaid & Add,N,Y
+BOL-SH-50012,SH-50012,LTL - Estes,2025-10-07,Keystone Bearing & Drive Co.,Allegheny Paper Inc. - Plant 2,85,1,666.6,Prepaid & Add,N,Y
+BOL-SH-50014,SH-50014,Company Truck,2025-10-26,Keystone Bearing & Drive Co.,Hickory Water Authority Inc. - Plant 5,70,2,953.6,Prepaid,N,Y
+BOL-SH-50015,SH-50015,FedEx Ground,2025-12-29,Keystone Bearing & Drive Co.,Lehigh Valley Ag Equipment LP - Plant 4,50,4,3083.7,Collect,N ,Y
+BOL-SH-50016,SH-50016,Customer Pickup,2025-07-27,Keystone Bearing & Drive Co.,Appalachian Conveyor LP - Plant 4,50,23,18082.5,Collect,N,Y
+BOL-SH-50017,SH-50017,FedEx Ground,02/06/2026,Keystone Bearing & Drive Co.,Appalachian Packaging Systems Co. - Plant 8,55,1,283.5,Prepaid,N,Y
+BOL-SH-50018,SH-50018,Customer Pickup,2026-03-18,Keystone Bearing & Drive Co.,Fox River Climate Inc. - Plant 6,85,1,519.4,Prepaid & Add,N,Y
+BOL-SH-50019,SH-50019,Customer Pickup ,2025-11-07,Keystone Bearing & Drive Co.,Great Lakes Climate Inc. - Plant 6,85,1,278.1,Prepaid,N,Y
+BOL-SH-50020,SH-50020,Company Truck,2025-08-27,Keystone Bearing & Drive Co.,Pioneer Plastics LLC - Plant 4,55,3,1999.0,Prepaid,N,Y
+BOL-SH-50021 ,SH-50021,LTL - XPO,2025-10-14,Keystone Bearing & Drive Co.,Tri-County Materials LLC - Plant 12,60,1,717.4,Prepaid & Add,N,Y
+BOL-SH-50022,SH-50022,FedEx Ground,2025-06-30,Keystone Bearing & Drive Co.,Prairie Foods Co. - Plant 8,55,16,12670.6,Collect,N,Y
+BOL-SH-50023,SH-50023,Customer Pickup,2025-06-07,Keystone Bearing & Drive Co.,"Cardinal Foods Group - Plant 12 - Hazleton, PA",50,1,304.9,Prepaid & Add,N,Y
+BOL-SH-50024,SH-50024,UPS Ground,2025-12-09,Keystone Bearing & Drive Co.,Keystone Plastics Inc. - Plant 4,50,18,14286.2,Collect,N,Y
+BOL-SH-50026,SH-50026,LTL - XPO,2025-12-12,Keystone Bearing & Drive Co.,Tri-County Materials LLC - Plant 12,50,1,578.5,Collect,N,Y
+BOL-SH-50027,SH-50027,Company Truck,2026-02-01,Keystone Bearing & Drive Co.,Northstar Plastics LP - Plant 1,60,2,1134.3,Prepaid,N ,Y
+BOL-SH-50029,SH-50029,Company Truck,2025-12-03,Keystone Bearing & Drive Co.,Cardinal Poultry Co. - Plant 2,50,19,15170.1,Prepaid & Add,N,Y
+BOL-SH-50031,SH-50031,Customer Pickup,2025-08-20,Keystone Bearing & Drive Co.,Great Lakes Climate Inc. - Plant 6,60,1,212.2,Collect,N,Y
+BOL-SH-50032,SH-50032,Company Truck,2026-02-06,Keystone Bearing & Drive Co.,Cardinal Poultry Co. - Plant 2,60,2,894.3,Prepaid,N,Y
+BOL-SH-50034,SH-50034,Company Truck,2025-10-04,Keystone Bearing & Drive Co.,Hickory Water Authority Inc. - Plant 5,70,1,498.0,Prepaid & Add,N,Y
+BOL-SH-50035,SH-50035,LTL - XPO,2026-01-27,Keystone Bearing & Drive Co.,Iron City Materials Co. - Plant 11,50,1,337.6,Collect,N,Y
+BOL-SH-50036,SH-50036,LTL - Estes,2026-01-27,Keystone Bearing & Drive Co.,Piedmont Ag Equipment LLC - Plant 2,60,9,6644.4,Prepaid & Add,N,Y
+BOL-SH-50037,SH-50037,LTL - XPO,2026-03-23,Keystone Bearing & Drive Co.,Tri-County Materials LLC - Plant 12,60,3,1657.5,Prepaid & Add,N,Y
+BOL-SH-50038,SH-50038,Company Truck,2026-01-13,Keystone Bearing & Drive Co.,Cardinal Poultry Co. - Plant 2,50,1,231.1,Collect,N,Y
+BOL-SH-50039,SH-50039,UPS Ground,2025-12-06,Keystone Bearing & Drive Co.,Fox River Paper Co. - Plant 11,60,6,4491.4,Prepaid & Add,N,Y
+BOL-SH-50040,SH-50040,Company Truck,2025-10-09,Keystone Bearing & Drive Co.,Pioneer Plastics LLC - Plant 4,60,6,4073.7,Prepaid & Add,N,Y
+BOL-SH-50041,SH-50041,UPS Ground,2026-03-11,Keystone Bearing & Drive Co.,Fox River Paper Co. - Plant 11,70,1,314.4,Prepaid & Add,N,Y
+BOL-SH-50043,SH-50043,Customer Pickup,19-Mar-2026,Keystone Bearing & Drive Co.,Great Lakes Climate Inc. - Plant 6,55 ,20,15310.0,Prepaid,N,Y
+BOL-SH-50044,SH-50044,Customer Pickup,2025-12-03,Keystone Bearing & Drive Co.,Fox River Climate Inc. - Plant 6,50,1,716.1,Prepaid,N,Y
+BOL-SH-50045,SH-50045,Customer Pickup,2025-10-03,Keystone Bearing & Drive Co.,Fox River Climate Inc. - Plant 6,55,1,498.2,Prepaid,N,Y
+BOL-SH-50046,SH-50046,Customer Pickup,2025-05-09,Keystone Bearing & Drive Co.,"Cardinal Foods Group - Plant 12 - Hazleton, PA",55,2,1116.2,Prepaid,N,Y
+BOL-SH-50047,SH-50047,Customer Pickup,2025-06-20,Keystone Bearing & Drive Co.,Riverbend Plastics Inc. - Plant 4,85,3,2331.9,Prepaid & Add ,N,Y
+BOL-SH-50049,SH-50049,UPS Ground,2025-05-06,Keystone Bearing & Drive Co.,Keystone Steel LP - Plant 8,50,5,3811.9,Prepaid & Add,N,Y
+BOL-SH-50050,SH-50050,LTL - XPO,04/26/2025,Keystone Bearing & Drive Co.,Tri-County Materials LLC - Plant 12,85,5,3946.5,Prepaid & Add,N,Y
+BOL-SH-50051,SH-50051,UPS Ground,2025-11-29,Keystone Bearing & Drive Co.,Cardinal Foods Corp. - Plant 4,85,1,586.8,Collect,N,Y
+BOL-SH-50052,SH-50052 ,LTL - XPO,2025-11-11,Keystone Bearing & Drive Co.,Iron City Materials Co. - Plant 11,60,1,210.0,Prepaid & Add,N,Y
+BOL-SH-50053,SH-50053,Company Truck,2025-08-27,Keystone Bearing & Drive Co.,Northstar Plastics LP - Plant 1,50,12,8801.4,Prepaid & Add,N,Y
+BOL-SH-50054,SH-50054,Company Truck,2025-06-22,Keystone Bearing & Drive Co.,Pioneer Plastics LLC - Plant 4,70,1,542.8,Prepaid & Add,N,Y
+BOL-SH-50055,SH-50055,FedEx Ground,2025-12-18,Keystone Bearing & Drive Co.,Appalachian Packaging Systems Co. - Plant 8,85,5,3565.2,Collect,N,Y
+BOL-SH-50057,SH-50057,Company Truck,2025-10-13,Keystone Bearing & Drive Co.,Northstar Plastics LP - Plant 1,50,1,166.0,Prepaid & Add,N,Y
+BOL-SH-50058,SH-50058,LTL - XPO,2025-05-05,Keystone Bearing & Drive Co.,Iron City Materials Co. - Plant 11,50,1,685.8,Prepaid & Add,N,Y
+BOL-SH-50061,SH-50061,FedEx Ground,2026-01-02,Keystone Bearing & Drive Co.,Lehigh Valley Ag Equipment LP - Plant 4,50,1,157.2,Prepaid & Add,N,Y 
+BOL-SH-50062,SH-50062,FedEx Ground,2026-02-22,Keystone Bearing & Drive Co.,Tri-County Conveyor Inc. - Plant 7,85,1,171.3,Prepaid & Add,N,Y
+BOL-SH-50063,SH-50063,Customer Pickup,2025-10-24,Keystone Bearing & Drive Co.,Hickory Lumber LLC - Plant 4,60,4,2857.8,Prepaid & Add,N,Y
+BOL-SH-50064,SH-50064,UPS Ground,2026-03-12,Keystone Bearing & Drive Co.,Fox River Paper Co. - Plant 11,60,2,1550.2,Collect,N,Y
+BOL-SH-50065,SH-50065,Customer Pickup,2025-12-23,Keystone Bearing & Drive Co.,Fox River Climate Inc. - Plant 6,60,11,8722.5,Prepaid,N,Y
+BOL-SH-50066,SH-50066,FedEx Ground,2025-06-12,Keystone Bearing & Drive Co.,Tri-County Conveyor Inc. - Plant 7,60,2,833.7,Prepaid,N,Y
+BOL-SH-50067,SH-50067,LTL - XPO,2025-09-10,Keystone Bearing & Drive Co.,Iron City Materials Co. - Plant 11,50,2,1134.2,Collect,N,Y
+BOL-SH-50069,SH-50069,LTL - Estes,2025-07-29,Keystone Bearing & Drive Co.,Allegheny Paper Inc. - Plant 2,50,1,641.2,Prepaid & Add ,N,Y
+BOL-SH-50070,SH-50070,LTL - XPO,2025-08-18,Keystone Bearing & Drive Co.,Tri-County Materials LLC - Plant 12,55,1,401.9,Prepaid & Add,N,Y
+BOL-SH-50071 ,SH-50071,FedEx Ground,2025-09-12,Keystone Bearing & Drive Co.,Lehigh Valley Ag Equipment LP - Plant 4,85,3,1858.1,Collect,N,Y
+BOL-SH-50072,SH-50072,Company Truck,07/22/25,Keystone Bearing & Drive Co.,Northstar Plastics LP - Plant 1,55,2,871.4,Prepaid & Add,N,Y
+BOL-SH-50074,SH-50074,Company Truck,10/29/2025,Keystone Bearing & Drive Co.,Hickory Water Authority Inc. - Plant 5,85,4,3194.2,Collect,N,Y
+BOL-SH-50075,SH-50075,LTL - Estes,2025-10-16,Keystone Bearing & Drive Co.,Allegheny Paper Inc. - Plant 2,50,23,18044.6,Prepaid,N,Y
+BOL-SH-50076,SH-50076,Customer Pickup,2025-12-27,Keystone Bearing & Drive Co.,Hickory Lumber LLC - Plant 4,70,1,167.7,Collect,N,Y
+BOL-SH-50077,SH-50077,Customer Pickup,2026-01-13,Keystone Bearing & Drive Co.,Hickory Lumber LLC - Plant 4,55,1,353.9,Collect,N,Y
+BOL-SH-50078,SH-50078,FedEx Ground,2025-09-16,Keystone Bearing & Drive Co.,Lehigh Valley Ag Equipment LP - Plant 4,50,6,4302.6,Collect,N,Y
+BOL-SH-50079,SH-50079,Company Truck,2025-12-28,Keystone Bearing & Drive Co.,Hickory Water Authority Inc. - Plant 5,70,2,1102.5,Collect,N,Y
+BOL-SH-50080,SH-50080,Customer Pickup,2025-12-06,Keystone Bearing & Drive Co.,Appalachian Conveyor LP - Plant 4,60,3,1936.0,Prepaid & Add,N,Y
+BOL-SH-50081,SH-50081,Customer Pickup,2025-04-25,Keystone Bearing & Drive Co.,Riverbend Plastics Inc. - Plant 4,50,2,1435.3,Prepaid & Add,N,Y
+BOL-SH-50082,SH-50082,FedEx Ground,2025-07-10,Keystone Bearing & Drive Co.,Hickory Steel Co. - Plant 4,60,1,428.7,Prepaid & Add,N,Y
+BOL-SH-50083,SH-50083,UPS Ground,2025-12-04,Keystone Bearing & Drive Co.,Keystone Plastics Inc. - Plant 4,70,5,3722.4,Prepaid & Add,N,Y
+BOL-SH-50084,SH-50084,Company Truck,22-Dec-2025,Keystone Bearing & Drive Co.,Hickory Water Authority Inc. - Plant 5,85,1,548.3,Prepaid,N,Y
+BOL-SH-50086,SH-50086,UPS Ground,2025-06-28,Keystone Bearing & Drive Co.,Piedmont Poultry Inc. - Plant 9,60,1,701.8,Prepaid & Add,N,Y
+BOL-SH-50088,SH-50088,FedEx Ground,2025-08-07,Keystone Bearing & Drive Co.,Prairie Foods Co. - Plant 8,50,2,943.3,Prepaid,N,Y
+BOL-SH-50089,SH-50089,Customer Pickup,2025-11-02,Keystone Bearing & Drive Co.,Riverbend Plastics Inc. - Plant 4,50,2,1104.5,Prepaid,N,Y
+BOL-SH-50090 ,SH-50090,UPS Ground,2026-03-27,Keystone Bearing & Drive Co.,Piedmont Poultry Inc. - Plant 9,85,1,788.6,Collect,N,Y
+BOL-SH-50094,SH-50094,UPS Ground,04-Jan-2026,Keystone Bearing & Drive Co.,Keystone Steel LP - Plant 8,50,20,15787.5,Prepaid & Add,N,Y
+BOL-SH-50095,SH-50095,FedEx Ground,2026-01-12,Keystone Bearing & Drive Co.,Lehigh Valley Ag Equipment LP - Plant 4,55,16,12677.7,Prepaid & Add,N,Y
+BOL-SH-50096,SH-50096,FedEx Ground,2026-01-11,Keystone Bearing & Drive Co.,Riverbend Packaging Systems Inc. - Plant 12,55,8,6177.5,Prepaid & Add,N,Y
+BOL-SH-50097,SH-50097,UPS Ground,2025-08-05,Keystone Bearing & Drive Co.,Susquehanna Packaging Systems Co. - Plant 10,50,33,26059.1,Prepaid & Add,N,Y
+BOL-SH-50099,SH-50099,UPS Ground,2025-07-28,Keystone Bearing & Drive Co.,Keystone Plastics Inc. - Plant 4,85,1,298.1,Prepaid & Add,N,Y
+BOL-SH-50100,SH-50100,LTL - XPO,2025-07-07,Keystone Bearing & Drive Co.,Tri-County Materials LLC - Plant 12,60,2,1214.5,Prepaid & Add,N,Y
+BOL-SH-50101,SH-50101,Customer Pickup,"Oct 15, 2025",Keystone Bearing & Drive Co.,Fox River Climate Inc. - Plant 6,55,1,301.8,Prepaid,N,Y
+BOL-SH-50102,SH-50102,Customer Pickup,2025-08-18,Keystone Bearing & Drive Co.,Hickory Lumber LLC - Plant 4,60,1,190.5,Collect,N,Y
+BOL-SH-50103,SH-50103,FedEx Ground,2025-08-23,Keystone Bearing & Drive Co.,Cardinal Plastics Corp. - Plant 3,85,7,4889.5,Prepaid & Add,N,Y
+BOL-SH-50104,SH-50104,FedEx Ground,2025-06-21,Keystone Bearing & Drive Co.,Hickory Steel Co. - Plant 4,85,4,3052.3,Collect,N,Y 
+BOL-SH-50105,SH-50105,FedEx Ground,2025-12-19,Keystone Bearing & Drive Co.,Prairie Foods Co. - Plant 8,70,1,625.0,Collect ,N,Y
+BOL-SH-50106,SH-50106,Customer Pickup,2025-07-26,Keystone Bearing & Drive Co.,Hickory Lumber LLC - Plant 4,85,25,19242.7,Prepaid & Add,N,Y
+BOL-SH-50110,SH-50110,UPS Ground,2025-04-23,Keystone Bearing & Drive Co.,Cardinal Foods Corp. - Plant 4,55,2,1154.4,Prepaid & Add,N,Y
+BOL-SH-50111,SH-50111,Company Truck,2025-10-12,Keystone Bearing & Drive Co.,Northstar Plastics LP - Plant 1,70,1,239.4,Collect,N,Y
+BOL-SH-50112,SH-50112,Company Truck,2026-01-18,Keystone Bearing & Drive Co.,Cardinal Poultry Co. - Plant 2,55,16,12349.2,Collect,N,Y
+BOL-SH-50115,SH-50115,FedEx Ground,2026-03-25,Keystone Bearing & Drive Co.,Cardinal Plastics Corp. - Plant 3,60,1,399.0,Prepaid,N,Y
+BOL-SH-50116,SH-50116,FedEx Ground ,2025-12-11,Keystone Bearing & Drive Co.,Prairie Foods Co. - Plant 8,55,1,168.1,Collect ,N,Y
+BOL-SH-50117,SH-50117,UPS Ground,2025-07-28,Keystone Bearing & Drive Co.,Susquehanna Packaging Systems Co. - Plant 10,50,3,1995.8,Prepaid & Add,N,Y
+BOL-SH-50118,SH-50118,FedEx Ground,2025-09-11,Keystone Bearing & Drive Co.,Lehigh Valley Ag Equipment LP - Plant 4,50,3,2004.0,Prepaid & Add,N,Y
+BOL-SH-50119,SH-50119,LTL - Estes,2026-03-27,Keystone Bearing & Drive Co.,Allegheny Paper Inc. - Plant 2,70,6,4078.8,Prepaid & Add,N,Y
+BOL-SH-50120,SH-50120,Customer Pickup,2025-12-31,Keystone Bearing & Drive Co.,Great Lakes Climate Inc. - Plant 6,55,14,10937.8,Prepaid & Add,N,Y
+BOL-SH-50121,SH-50121,Company Truck,2026-03-07,Keystone Bearing & Drive Co.,Hickory Water Authority Inc. - Plant 5,55,1,154.2,Prepaid & Add,N,Y
+BOL-SH-50122,SH-50122,UPS Ground,2025-10-20,Keystone Bearing & Drive Co.,Fox River Paper Co. - Plant 11,50,1,559.1,Prepaid & Add,N,Y
+BOL-SH-50123,SH-50123,Customer Pickup,2026-03-21,Keystone Bearing & Drive Co.,Hickory Lumber LLC - Plant 4,50,21,16323.9,Prepaid & Add,N,Y
+BOL-SH-50124,SH-50124,Company Truck,2026-02-01,Keystone Bearing & Drive Co.,Pioneer Plastics LLC - Plant 4,50,21,16025.4,Prepaid & Add,N,Y
+BOL-SH-50125,SH-50125,LTL - Estes,2025-05-17,Keystone Bearing & Drive Co.,Tennessee Valley Lumber LLC - Plant 1,50,2,1327.7,Prepaid & Add,N,Y
+BOL-SH-50126,SH-50126,Customer Pickup,2026-01-23,Keystone Bearing & Drive Co.,Fox River Climate Inc. - Plant 6,50,3,2125.0,Prepaid,N,Y
+BOL-SH-50127,SH-50127,UPS Ground,2026-01-03,Keystone Bearing & Drive Co. ,Susquehanna Packaging Systems Co. - Plant 10,85,2,1335.6,Prepaid,N,Y
+BOL-SH-50129,SH-50129,UPS Ground,03/23/26,Keystone Bearing & Drive Co.,Keystone Plastics Inc. - Plant 4,60,6,4163.5,Prepaid & Add,N,Y
+BOL-SH-50130,SH-50130,UPS Ground,2025-10-02,Keystone Bearing & Drive Co.,Keystone Steel LP - Plant 8,60,2,1386.3,Prepaid,N,Y
+BOL-SH-50131,SH-50131,UPS Ground,2025-12-19,Keystone Bearing & Drive Co.,Susquehanna Packaging Systems Co. - Plant 10,70,1,559.5,Prepaid,N,Y
+BOL-SH-50132,SH-50132,Customer Pickup,2026-03-17,Keystone Bearing & Drive Co.,Riverbend Plastics Inc. - Plant 4,70,1,263.2,Collect,N,Y
+BOL-SH-50133,SH-50133,FedEx Ground,2025-10-29,Keystone Bearing & Drive Co.,Hickory Steel Co. - Plant 4,55,18,14247.0,Prepaid & Add ,N,Y
+BOL-SH-50134,SH-50134,LTL - XPO,01/30/26,Keystone Bearing & Drive Co.,Tri-County Materials LLC - Plant 12,85,1,335.4,Prepaid & Add,N,Y
+BOL-SH-50135,SH-50135,Customer Pickup,2026-03-01,Keystone Bearing & Drive Co.,"Cardinal Foods Group - Plant 12 - Hazleton, PA",55 ,1,595.2,Prepaid & Add,N,Y
+BOL-SH-50136,SH-50136,LTL - Estes,2025-05-04,Keystone Bearing & Drive Co.,Tennessee Valley Lumber LLC - Plant 1,70,1,183.2,Collect,N,Y 
+BOL-SH-50137,SH-50137,FedEx Ground,2025-11-03,Keystone Bearing & Drive Co.,Hickory Steel Co. - Plant 4,60,1,448.0,Prepaid & Add,N,Y
+BOL-SH-50138,SH-50138,LTL - XPO,2025-08-11,Keystone Bearing & Drive Co.,Iron City Materials Co. - Plant 11,50,23,17651.9,Prepaid & Add,N,Y
+BOL-SH-50139,SH-50139,FedEx Ground,2025-09-25,Keystone Bearing & Drive Co.,Lehigh Valley Ag Equipment LP - Plant 4,55,2,1140.8,Prepaid,N,Y
+BOL-SH-50140,SH-50140,LTL - XPO,06/01/25,Keystone Bearing & Drive Co.,Iron City Materials Co. - Plant 11,55,2,1336.1,Collect,N,Y
+BOL-SH-50141 ,SH-50141,Company Truck,2025-07-10,Keystone Bearing & Drive Co.,Cardinal Poultry Co. - Plant 2,50,1,182.5,Prepaid,N,Y
+BOL-SH-50142,SH-50142,Customer Pickup,2026-01-24,Keystone Bearing & Drive Co.,Riverbend Plastics Inc. - Plant 4,85,1,183.2,Prepaid & Add,N,Y
+BOL-SH-50143,SH-50143,LTL - XPO,2025-06-21,Keystone Bearing & Drive Co.,Iron City Materials Co. - Plant 11,70,1,452.8,Prepaid,N,Y
+BOL-SH-50144,SH-50144,FedEx Ground,2025-06-30,Keystone Bearing & Drive Co.,Cardinal Plastics Corp. - Plant 3,85,12,9485.2,Prepaid & Add,N,Y
+BOL-SH-50145,SH-50145,FedEx Ground,2025-08-15,Keystone Bearing & Drive Co.,Iron City Plastics Corp. - Plant 4,85,1,328.0,Prepaid,N,Y
+BOL-SH-50147,SH-50147,FedEx Ground,08/18/25,Keystone Bearing & Drive Co.,Riverbend Packaging Systems Inc. - Plant 12,70,3,1622.6,Prepaid & Add,N,Y 
+BOL-SH-50148,SH-50148,Customer Pickup,2025-10-22,Keystone Bearing & Drive Co.,Fox River Climate Inc. - Plant 6,85,20,15766.1,Prepaid & Add,N,Y
+BOL-SH-50149,SH-50149,UPS Ground,2025-12-31,Keystone Bearing & Drive Co.,Keystone Steel LP - Plant 8,85,1,433.8,Prepaid & Add,N,Y
+BOL-SH-50150,SH-50150,FedEx Ground,2025-08-07,Keystone Bearing & Drive Co.,Iron City Plastics Corp. - Plant 4,60,1,203.3,Prepaid,N,Y
+BOL-SH-50151,SH-50151,Customer Pickup,07/18/25,Keystone Bearing & Drive Co.,Riverbend Plastics Inc. - Plant 4,70,15,11327.5,Prepaid & Add,N,Y
+BOL-SH-50153,SH-50153,LTL - XPO,2025-12-17,Keystone Bearing & Drive Co.,Iron City Materials Co. - Plant 11,50,2,1034.5,Prepaid,N,Y
+BOL-SH-50155,SH-50155,FedEx Ground,2025-12-31,Keystone Bearing & Drive Co.,Riverbend Packaging Systems Inc. - Plant 12,70,3,2247.1,Prepaid & Add,N,Y
+BOL-SH-50156,SH-50156,UPS Ground,2025-06-28,Keystone Bearing & Drive Co.,Cardinal Foods Corp. - Plant 4,85,11,8467.0,Prepaid & Add,N,Y
+BOL-SH-50159,SH-50159,UPS Ground,2026-03-25,Keystone Bearing & Drive Co.,Fox River Paper Co. - Plant 11,50,3,1601.5,Collect,N,Y
+BOL-SH-50161,SH-50161,Customer Pickup,11/26/2025,Keystone Bearing & Drive Co.,"Cardinal Foods Group - Plant 12 - Hazleton, PA",55,3,1960.8,Prepaid,N,Y
+BOL-SH-50162,SH-50162,Company Truck,2025-11-22,Keystone Bearing & Drive Co.,Northstar Plastics LP - Plant 1,85,1,399.0,Prepaid & Add,N,Y
+BOL-SH-50163,SH-50163,Company Truck,05/20/2025,Keystone Bearing & Drive Co.,Tennessee Valley Plastics Inc. - Plant 5,60,7,5482.4,Prepaid & Add,N,Y
+BOL-SH-50165,SH-50165,Customer Pickup,"Dec 07, 2025",Keystone Bearing & Drive Co.,Fox River Climate Inc. - Plant 6,60,21,16567.0,Prepaid & Add,N,Y
+BOL-SH-50166,SH-50166,LTL - Estes ,2026-01-16,Keystone Bearing & Drive Co.,Tennessee Valley Lumber LLC - Plant 1,70,1,247.6,Prepaid,N,Y
+BOL-SH-50169,SH-50169,Customer Pickup,2025-12-23,Keystone Bearing & Drive Co.,Hickory Lumber LLC - Plant 4,50,3,2129.2,Collect,N,Y
+BOL-SH-50170,SH-50170,LTL - Estes,2025-04-15,Keystone Bearing & Drive Co.,Piedmont Ag Equipment LLC - Plant 2,60,2,1450.0,Prepaid,N,Y
+BOL-SH-50171,SH-50171,LTL - Estes,2025-11-21,Keystone Bearing & Drive Co.,Piedmont Ag Equipment LLC - Plant 2,55,1,300.2,Prepaid,N,Y
+BOL-SH-50172,SH-50172,UPS Ground,2026-02-03,Keystone Bearing & Drive Co.,Fox River Paper Co. - Plant 11,55,10,7325.1,Collect,N,Y
+BOL-SH-50173,SH-50173,UPS Ground,2025-12-13,Keystone Bearing & Drive Co.,Keystone Plastics Inc. - Plant 4,55,1,361.0,Prepaid & Add,N,Y
+BOL-SH-50174,SH-50174,Company Truck,2025-11-29,Keystone Bearing & Drive Co.,Tennessee Valley Plastics Inc. - Plant 5,85,3,1760.0,Prepaid & Add,N,Y
+BOL-SH-50177,SH-50177,Customer Pickup,2025-10-16,Keystone Bearing & Drive Co.,Great Lakes Climate Inc. - Plant 6,55,5,3434.4,Prepaid,N,Y
+BOL-SH-50179,SH-50179,FedEx Ground,2025-05-25,Keystone Bearing & Drive Co.,Hickory Steel Co. - Plant 4,50,1,237.1,Prepaid & Add,N,Y
+BOL-SH-50181,SH-50181,Company Truck,2026-03-07,Keystone Bearing & Drive Co.,Northstar Plastics LP - Plant 1,50,2,1286.8,Prepaid & Add,N,Y
+BOL-SH-50182,SH-50182,LTL - Estes,2025-05-23,Keystone Bearing & Drive Co.,Tennessee Valley Lumber LLC - Plant 1,55,8,5645.8,Prepaid & Add,N,Y
+BOL-SH-50183,SH-50183,Customer Pickup,2025-11-15,Keystone Bearing & Drive Co.,Riverbend Plastics Inc. - Plant 4,85,2,1506.1,Prepaid,N,Y
+BOL-SH-50184,SH-50184,UPS Ground,2025-04-23,Keystone Bearing & Drive Co.,Susquehanna Packaging Systems Co. - Plant 10,60,1,468.4,Prepaid & Add,N,Y
+BOL-SH-50186,SH-50186,Customer Pickup,2026-02-27,Keystone Bearing & Drive Co.,Great Lakes Climate Inc. - Plant 6,55,2,800.9,Prepaid & Add,N,Y
+BOL-SH-50187,SH-50187,FedEx Ground,2026-01-22,Keystone Bearing & Drive Co.,Hickory Steel Co. - Plant 4,70,15,11398.5,Prepaid,N,Y
+BOL-SH-50190,SH-50190,UPS Ground,2025-12-24,Keystone Bearing & Drive Co.,Piedmont Poultry Inc. - Plant 9,60,1,761.4,Prepaid & Add,N,Y
+BOL-SH-50191,SH-50191,Customer Pickup,2025-10-29,Keystone Bearing & Drive Co.,Great Lakes Climate Inc. - Plant 6,55,3,2343.2,Collect,N,Y
+BOL-SH-50192,SH-50192,FedEx Ground,2026-02-21,Keystone Bearing & Drive Co.,Iron City Plastics Corp. - Plant 4,70,1,635.3,Prepaid & Add,N,Y
+BOL-SH-50193,SH-50193,FedEx Ground,2025-09-23,Keystone Bearing & Drive Co.,Cardinal Plastics Corp. - Plant 3,70,2,976.2,Prepaid & Add,N,Y
+BOL-SH-50195,SH-50195,Company Truck,2025-08-27,Keystone Bearing & Drive Co.,Hickory Water Authority Inc. - Plant 5,70,3,2015.2,Prepaid & Add,N,Y
+BOL-SH-50196,SH-50196,FedEx Ground,2026-03-22,Keystone Bearing & Drive Co.,Lehigh Valley Ag Equipment LP - Plant 4,60,1,757.3,Prepaid & Add,N,Y
+BOL-SH-50197,SH-50197,FedEx Ground,2025-07-07,Keystone Bearing & Drive Co.,Appalachian Packaging Systems Co. - Plant 8,50,4,2680.6,Collect,N,Y
+BOL-SH-50199,SH-50199,LTL - XPO,2025-08-28,Keystone Bearing & Drive Co.,Tri-County Materials LLC - Plant 12,70,14,11105.7,Collect,N ,Y
+BOL-SH-50200,SH-50200,FedEx Ground,2025-05-21,Keystone Bearing & Drive Co.,Tri-County Conveyor Inc. - Plant 7,50,2,1208.0,Collect,N,Y
+BOL-SH-50201,SH-50201,UPS Ground,2025-11-27,Keystone Bearing & Drive Co.,Susquehanna Packaging Systems Co. - Plant 10,55,4,2915.4,Prepaid,N,Y
+BOL-SH-50202,SH-50202,UPS Ground,2025-05-27,Keystone Bearing & Drive Co.,Fox River Paper Co. - Plant 11,70,1,237.3,Collect,N,Y
+BOL-SH-50205,SH-50205,FedEx Ground,2025-11-25,Keystone Bearing & Drive Co.,Iron City Plastics Corp. - Plant 4,60,1,220.3,Prepaid & Add,N,Y
+BOL-SH-50206 ,SH-50206,FedEx Ground,2025-07-08,Keystone Bearing & Drive Co.,Iron City Plastics Corp. - Plant 4,50,10,7973.8,Collect,N,Y
+BOL-SH-50207,SH-50207,FedEx Ground,2026-01-02,Keystone Bearing & Drive Co.,Lehigh Valley Ag Equipment LP - Plant 4,60,6,4776.0,Prepaid & Add,N,Y
+BOL-SH-50208,SH-50208,LTL - Estes,2026-03-01,Keystone Bearing & Drive Co.,Tennessee Valley Lumber LLC - Plant 1,55,9,6847.0,Prepaid,N,Y
+BOL-SH-50209,SH-50209,UPS Ground,2025-10-27,Keystone Bearing & Drive Co.,Susquehanna Packaging Systems Co. - Plant 10,85,7,5260.0,Prepaid & Add,N,Y
+BOL-SH-50210,SH-50210,FedEx Ground,2026-03-18,Keystone Bearing & Drive Co.,Prairie Foods Co. - Plant 8,85,2,976.8,Prepaid,N,Y
+BOL-SH-50211,SH-50211,Company Truck,2026-03-07,Keystone Bearing & Drive Co.,Hickory Water Authority Inc. - Plant 5,50,8,5809.2,Prepaid & Add,N,Y
+BOL-SH-50215,SH-50215,Customer Pickup,08/02/25,Keystone Bearing & Drive Co.,Appalachian Conveyor LP - Plant 4,70,1,231.5,Prepaid,N,Y
+BOL-SH-50216,SH-50216,Customer Pickup,2026-03-14,Keystone Bearing & Drive Co. ,"Cardinal Foods Group - Plant 12 - Hazleton, PA",60,18,13800.8,Prepaid & Add,N,Y
+BOL-SH-50218,SH-50218,Customer Pickup,2025-05-10,Keystone Bearing & Drive Co.,Appalachian Conveyor LP - Plant 4,70,2,1584.7,Collect,N,Y
+BOL-SH-50219,SH-50219,UPS Ground,2026-03-10,Keystone Bearing & Drive Co.,Piedmont Poultry Inc. - Plant 9,60,2,955.1,Prepaid,N,Y
+BOL-SH-50220,SH-50220,Company Truck,2025-12-14,Keystone Bearing & Drive Co.,Tennessee Valley Plastics Inc. - Plant 5 ,60,15,11500.0,Prepaid & Add,N,Y
+BOL-SH-50221,SH-50221,FedEx Ground,2025-08-15,Keystone Bearing & Drive Co.,Tri-County Conveyor Inc. - Plant 7,50,1,546.7,Collect,N,Y
+BOL-SH-50222,SH-50222,Company Truck,2025-05-14,Keystone Bearing & Drive Co.,Pioneer Plastics LLC - Plant 4,85,7,4861.5,Prepaid & Add,N,Y
+BOL-SH-50224,SH-50224,FedEx Ground,2026-01-16,Keystone Bearing & Drive Co.,Cardinal Plastics Corp. - Plant 3,60,1,165.6,Prepaid & Add,N,Y
+BOL-SH-50225,SH-50225,LTL - XPO,2025-06-11,Keystone Bearing & Drive Co.,Tri-County Materials LLC - Plant 12,60,2,894.0,Collect,N,Y
+BOL-SH-50226,SH-50226,LTL - Estes,2026-02-01,Keystone Bearing & Drive Co.,Piedmont Ag Equipment LLC - Plant 2,85,1,343.9,Prepaid & Add,N,Y
+BOL-SH-50227,SH-50227,Company Truck,08/26/2025,Keystone Bearing & Drive Co.,Cardinal Poultry Co. - Plant 2,55,2,878.2,Collect,N,Y
+BOL-SH-50228,SH-50228,LTL - Estes,2026-01-06,Keystone Bearing & Drive Co.,Allegheny Paper Inc. - Plant 2,85,2,807.1,Prepaid & Add,N,Y
+BOL-SH-50229,SH-50229,LTL - Estes,2026-01-16,Keystone Bearing & Drive Co.,Piedmont Ag Equipment LLC - Plant 2,50,1,200.7,Prepaid & Add,N,Y
+BOL-SH-50230,SH-50230,FedEx Ground,2025-12-25,Keystone Bearing & Drive Co.,Cardinal Plastics Corp. - Plant 3,70,1,365.8,Prepaid & Add,N,Y
+BOL-SH-50231,SH-50231,UPS Ground,2025-11-18,Keystone Bearing & Drive Co.,Piedmont Poultry Inc. - Plant 9,50,1,371.7,Prepaid & Add,N,Y
+BOL-SH-50232,SH-50232,UPS Ground,2025-09-15,Keystone Bearing & Drive Co.,Keystone Plastics Inc. - Plant 4,60,1,612.5,Collect,N,Y
+BOL-SH-50233,SH-50233,FedEx Ground ,2025-08-01,Keystone Bearing & Drive Co.,Hickory Steel Co. - Plant 4,50,1,198.1,Prepaid,N,Y
+BOL-SH-50234,SH-50234,UPS Ground,2025-05-28,Keystone Bearing & Drive Co.,Piedmont Poultry Inc. - Plant 9,60,2,829.8,Prepaid & Add,N,Y
+BOL-SH-50237,SH-50237,Customer Pickup,2026-03-09,Keystone Bearing & Drive Co.,Riverbend Plastics Inc. - Plant 4,70,3,2354.8,Collect,N,Y
+BOL-SH-50238,SH-50238,Company Truck,2025-09-19,Keystone Bearing & Drive Co.,Pioneer Plastics LLC - Plant 4,85,2,1109.8,Prepaid,N,Y
+BOL-SH-50239,SH-50239,Customer Pickup,2025-05-12,Keystone Bearing & Drive Co.,Great Lakes Climate Inc. - Plant 6,70,10,7951.4,Prepaid & Add,N,Y 
+BOL-SH-50240,SH-50240,UPS Ground,2025-06-18,Keystone Bearing & Drive Co.,Keystone Plastics Inc. - Plant 4,85,1,595.8,Prepaid & Add,N,Y
+BOL-SH-50244,SH-50244,LTL - Estes,2025-10-10,Keystone Bearing & Drive Co.,Piedmont Ag Equipment LLC - Plant 2,60,19,15011.6,Collect,N,Y
+BOL-SH-50245,SH-50245,Customer Pickup,2025-09-05,Keystone Bearing & Drive Co.,"Cardinal Foods Group - Plant 12 - Hazleton, PA",70,3,2218.9,Prepaid & Add,N,Y
+BOL-SH-50247,SH-50247,Customer Pickup,01/20/2026,Keystone Bearing & Drive Co.,Appalachian Conveyor LP - Plant 4,85,1,765.1,Prepaid & Add,N,Y
+BOL-SH-50249,SH-50249,UPS Ground,2026-01-10,Keystone Bearing & Drive Co.,Fox River Paper Co. - Plant 11,55,7,4867.5,Prepaid & Add,N,Y
+BOL-SH-50250,SH-50250,Company Truck,2025-12-07,Keystone Bearing & Drive Co.,Cardinal Poultry Co. - Plant 2,55,1,604.1,Prepaid & Add,N,Y
+BOL-SH-50251,SH-50251,Company Truck,2025-12-10,Keystone Bearing & Drive Co.,Tennessee Valley Plastics Inc. - Plant 5,85,2,1505.3,Prepaid,N,Y
+BOL-SH-50252,SH-50252,FedEx Ground,2025-10-19,Keystone Bearing & Drive Co. ,Prairie Foods Co. - Plant 8,50,2,1346.8,Prepaid,N,Y
+BOL-SH-50253,SH-50253,UPS Ground,2025-10-20,Keystone Bearing & Drive Co.,Piedmont Poultry Inc. - Plant 9,85,5,3601.4,Prepaid & Add,N,Y
+BOL-SH-50255,SH-50255,FedEx Ground,2026-03-06,Keystone Bearing & Drive Co. ,Lehigh Valley Ag Equipment LP - Plant 4,60,2,932.5,Prepaid,N,Y
+BOL-SH-50257,SH-50257,Customer Pickup,08/17/25,Keystone Bearing & Drive Co.,Riverbend Plastics Inc. - Plant 4,70,2,963.9,Prepaid & Add,N,Y
+BOL-SH-50258,SH-50258,UPS Ground,2026-03-27,Keystone Bearing & Drive Co.,Susquehanna Packaging Systems Co. - Plant 10,60,2,1377.5,Prepaid & Add,N,Y
+BOL-SH-50260,SH-50260,FedEx Ground,2025-10-31,Keystone Bearing & Drive Co.,Prairie Foods Co. - Plant 8,55,6,4652.9,Collect,N,Y
+BOL-SH-50261,SH-50261,FedEx Ground,2025-10-26,Keystone Bearing & Drive Co.,Appalachian Packaging Systems Co. - Plant 8,60,23,17818.8,Prepaid,N,Y
+BOL-SH-50262 ,SH-50262,Customer Pickup,2025-06-24,Keystone Bearing & Drive Co.,Great Lakes Climate Inc. - Plant 6,70,19,14452.0,Prepaid & Add,N ,Y
+BOL-SH-50263,SH-50263 ,Customer Pickup,2025-08-21,Keystone Bearing & Drive Co.,Hickory Lumber LLC - Plant 4,55,21,16690.0,Prepaid & Add,N,Y
+BOL-SH-50264,SH-50264,Company Truck,2026-01-09,Keystone Bearing & Drive Co.,Northstar Plastics LP - Plant 1,70,3,1945.1,Prepaid & Add,N,Y
+BOL-SH-50265,SH-50265,Customer Pickup,2026-01-26,Keystone Bearing & Drive Co.,Fox River Climate Inc. - Plant 6,50,2,873.5,Prepaid & Add,N,Y
+BOL-SH-50266,SH-50266,Customer Pickup,2025-12-28,Keystone Bearing & Drive Co.,Riverbend Plastics Inc. - Plant 4,60,12,9046.2,Collect,N,Y
+BOL-SH-50267,SH-50267,FedEx Ground,2025-07-24,Keystone Bearing & Drive Co.,Appalachian Packaging Systems Co. - Plant 8,60,2,833.5,Prepaid & Add,N,Y
+BOL-SH-50269 ,SH-50269,LTL - Estes,2025-09-24,Keystone Bearing & Drive Co.,Piedmont Ag Equipment LLC - Plant 2,50,1,540.5,Collect,N,Y
+BOL-SH-50271,SH-50271,Company Truck,2026-03-14,Keystone Bearing & Drive Co.,Tennessee Valley Plastics Inc. - Plant 5,70,1,309.4,Prepaid & Add,N,Y
+BOL-SH-50272,SH-50272,UPS Ground,2025-10-03,Keystone Bearing & Drive Co.,Cardinal Foods Corp. - Plant 4,60,2,1106.8,Prepaid & Add,N,Y
+BOL-SH-50273,SH-50273,FedEx Ground,2026-03-13,Keystone Bearing & Drive Co.,Iron City Plastics Corp. - Plant 4,70,1,343.8,Prepaid & Add,N,Y
+BOL-SH-50275,SH-50275,FedEx Ground,2026-03-17,Keystone Bearing & Drive Co.,Hickory Steel Co. - Plant 4,50,1,334.3,Prepaid,N,Y
+BOL-SH-50277,SH-50277,Company Truck,2026-01-02,Keystone Bearing & Drive Co.,Cardinal Poultry Co. - Plant 2,50,3,1652.5,Prepaid,N,Y
+BOL-SH-50278,SH-50278,UPS Ground,2026-01-21,Keystone Bearing & Drive Co.,Cardinal Foods Corp. - Plant 4,60,2,1246.9,Prepaid,N,Y
+BOL-SH-50279,SH-50279,LTL - Estes,2026-02-14,Keystone Bearing & Drive Co.,Allegheny Paper Inc. - Plant 2,85,1,256.1,Collect,N,Y
+BOL-SH-50280,SH-50280,Company Truck,29-Dec-2025,Keystone Bearing & Drive Co.,Tennessee Valley Plastics Inc. - Plant 5,60,3,1773.2,Prepaid & Add,N,Y
+BOL-SH-50281,SH-50281,LTL - XPO,2025-09-16,Keystone Bearing & Drive Co.,Iron City Materials Co. - Plant 11,85,3,2094.3,Prepaid & Add,N,Y
+BOL-SH-50282,SH-50282,FedEx Ground,2025-09-18,Keystone Bearing & Drive Co.,Tri-County Conveyor Inc. - Plant 7,60,2,903.2,Prepaid,N,Y
+BOL-SH-50283,SH-50283,Customer Pickup,2025-06-23,Keystone Bearing & Drive Co.,Great Lakes Climate Inc. - Plant 6,60,9,6786.0,Prepaid & Add,N,Y
+BOL-SH-50285,SH-50285,UPS Ground,2025-05-12,Keystone Bearing & Drive Co.,Piedmont Poultry Inc. - Plant 9,50,1,343.5,Prepaid & Add,N,Y
+BOL-SH-50286,SH-50286,FedEx Ground,2025-06-23,Keystone Bearing & Drive Co.,Prairie Foods Co. - Plant 8,50,16,12764.4,Prepaid & Add,N,Y
+BOL-SH-50287,SH-50287,Company Truck,2025-12-05,Keystone Bearing & Drive Co.,Hickory Water Authority Inc. - Plant 5,85,1,753.5,Prepaid,N,Y
+BOL-SH-50288,SH-50288,UPS Ground,2025-09-04,Keystone Bearing & Drive Co.,Keystone Plastics Inc. - Plant 4,60,4,2559.2,Prepaid & Add,N,Y
+BOL-SH-50289,SH-50289,Customer Pickup,2026-02-21,Keystone Bearing & Drive Co.,Appalachian Conveyor LP - Plant 4,85,5,3457.5,Prepaid,N,Y
+BOL-SH-50290,SH-50290,UPS Ground,2025-07-12,Keystone Bearing & Drive Co.,Piedmont Poultry Inc. - Plant 9,85,2,1047.7,Collect,N,Y
+BOL-SH-50291,SH-50291,Customer Pickup,2025-07-21,Keystone Bearing & Drive Co.,Hickory Lumber LLC - Plant 4 ,60,2,1125.9,Prepaid & Add,N,Y
+BOL-SH-50293,SH-50293,LTL - XPO,2026-03-26,Keystone Bearing & Drive Co.,Iron City Materials Co. - Plant 11,50,21,16321.6,Collect,N,Y
+BOL-SH-50294,SH-50294,UPS Ground,2025-10-03,Keystone Bearing & Drive Co.,Keystone Plastics Inc. - Plant 4,60,21,16766.1,Prepaid & Add,N,Y 
+BOL-SH-50295,SH-50295,UPS Ground,2026-03-23,Keystone Bearing & Drive Co.,Piedmont Poultry Inc. - Plant 9,60,10,7662.5,Prepaid & Add ,N,Y
+BOL-SH-50296,SH-50296,UPS Ground,2025-05-19,Keystone Bearing & Drive Co.,Susquehanna Packaging Systems Co. - Plant 10,50,2,822.1,Prepaid & Add,N,Y
+BOL-SH-50297,SH-50297,Company Truck,2025-06-25,Keystone Bearing & Drive Co.,Hickory Water Authority Inc. - Plant 5,85,1,432.4,Prepaid & Add,N,Y
+BOL-SH-50298,SH-50298,UPS Ground ,2025-08-12,Keystone Bearing & Drive Co.,Cardinal Foods Corp. - Plant 4,50,1,437.8,Collect,N,Y
+BOL-SH-50299,SH-50299,Customer Pickup,02/12/2026,Keystone Bearing & Drive Co.,Great Lakes Climate Inc. - Plant 6,60,1,709.5,Prepaid & Add,N,Y
+BOL-SH-50300,SH-50300,LTL - XPO,2025-07-17,Keystone Bearing & Drive Co.,Iron City Materials Co. - Plant 11,50,9,6718.6,Prepaid & Add,N,Y
+BOL-SH-50302,SH-50302,FedEx Ground,2026-01-31,Keystone Bearing & Drive Co.,Lehigh Valley Ag Equipment LP - Plant 4,50,2,861.8,Prepaid & Add,N,Y
+BOL-SH-50303,SH-50303,FedEx Ground,2025-11-14,Keystone Bearing & Drive Co. ,Prairie Foods Co. - Plant 8,55,1,173.1,Prepaid,N,Y
+BOL-SH-50304,SH-50304,FedEx Ground,2025-11-05,Keystone Bearing & Drive Co.,Lehigh Valley Ag Equipment LP - Plant 4,70,1,761.0,Prepaid & Add,N,Y
+BOL-SH-50306,SH-50306,FedEx Ground,2025-06-13,Keystone Bearing & Drive Co.,Lehigh Valley Ag Equipment LP - Plant 4,55,3,2103.5,Prepaid & Add,N,Y
+BOL-SH-50307,SH-50307,Company Truck ,2025-10-20,Keystone Bearing & Drive Co.,Hickory Water Authority Inc. - Plant 5,50,12,9116.0,Prepaid & Add,N,Y
+BOL-SH-50308,SH-50308,FedEx Ground,2025-10-12,Keystone Bearing & Drive Co.,Hickory Steel Co. - Plant 4,50,1,196.8,Prepaid & Add,N,Y
+BOL-SH-50309,SH-50309,FedEx Ground,2025-08-12,Keystone Bearing & Drive Co.,Tri-County Conveyor Inc. - Plant 7,60,4,2588.2,Prepaid & Add,N,Y
+BOL-SH-50310,SH-50310,UPS Ground,2025-07-22,Keystone Bearing & Drive Co.,Cardinal Foods Corp. - Plant 4,50,4,2705.0,Prepaid,N ,Y
+BOL-SH-50311,SH-50311,UPS Ground,"Jan 21, 2026",Keystone Bearing & Drive Co.,Piedmont Poultry Inc. - Plant 9,55,5,3389.1,Collect,N,Y
+BOL-SH-50313,SH-50313,LTL - Estes,2026-02-24,Keystone Bearing & Drive Co.,Piedmont Ag Equipment LLC - Plant 2,70,15,11677.8,Prepaid & Add,N,Y
+BOL-SH-50314,SH-50314,FedEx Ground,2025-08-03,Keystone Bearing & Drive Co.,Prairie Foods Co. - Plant 8,50,1,402.9,Prepaid & Add,N,Y
+BOL-SH-50317,SH-50317,Customer Pickup,2025-06-25,Keystone Bearing & Drive Co. ,Fox River Climate Inc. - Plant 6,60,1,209.0,Prepaid & Add,N,Y
+BOL-SH-50318,SH-50318,LTL - Estes,2026-01-07,Keystone Bearing & Drive Co.,Piedmont Ag Equipment LLC - Plant 2,85,6,4688.3,Prepaid,N,Y
+BOL-SH-50319,SH-50319,LTL - Estes,2025-06-30,Keystone Bearing & Drive Co.,Piedmont Ag Equipment LLC - Plant 2,50,2,1077.2,Prepaid & Add,N,Y
+BOL-SH-50320,SH-50320,LTL - Estes,2025-06-25 ,Keystone Bearing & Drive Co.,Piedmont Ag Equipment LLC - Plant 2,55,2,915.0,Prepaid & Add,N,Y
+BOL-SH-50322,SH-50322,FedEx Ground,"Jan 07, 2026",Keystone Bearing & Drive Co.,Iron City Plastics Corp. - Plant 4,85,1,406.0,Collect,N,Y
+BOL-SH-50324,SH-50324,LTL - XPO,2026-03-08,Keystone Bearing & Drive Co.,Iron City Materials Co. - Plant 11,85,1,167.1,Prepaid & Add,N,Y
+BOL-SH-50325,SH-50325,UPS Ground,2025-05-19,Keystone Bearing & Drive Co.,Keystone Plastics Inc. - Plant 4,55,2,1135.7,Prepaid & Add,N,Y
+BOL-SH-50326 ,SH-50326,LTL - XPO,2025-06-26,Keystone Bearing & Drive Co.,Iron City Materials Co. - Plant 11,55,3,1621.5,Prepaid,N,Y
+BOL-SH-50327,SH-50327,FedEx Ground,"Jun 30, 2025",Keystone Bearing & Drive Co.,Tri-County Conveyor Inc. - Plant 7,50,1,736.3,Prepaid & Add,N,Y
+BOL-SH-50328,SH-50328,Customer Pickup,2025-06-11,Keystone Bearing & Drive Co.,Fox River Climate Inc. - Plant 6,60,1,788.6,Prepaid,N,Y
+BOL-SH-50330,SH-50330,FedEx Ground,2025-12-14,Keystone Bearing & Drive Co.,Iron City Plastics Corp. - Plant 4,60,1,582.1,Prepaid ,N,Y
+BOL-SH-50331,SH-50331,Company Truck,2026-02-26,Keystone Bearing & Drive Co.,Pioneer Plastics LLC - Plant 4,70,6,4654.4,Collect,N,Y
+BOL-SH-50332,SH-50332,LTL - Estes,2025-12-17,Keystone Bearing & Drive Co.,Piedmont Ag Equipment LLC - Plant 2,70,2,875.6,Prepaid & Add,N,Y
+BOL-SH-50333,SH-50333,Customer Pickup ,2025-07-11 ,Keystone Bearing & Drive Co.,Riverbend Plastics Inc. - Plant 4 ,70 ,6,4323.1,Prepaid & Add,N,Y
+BOL-SH-50334,SH-50334,FedEx Ground,2025-12-25,Keystone Bearing & Drive Co.,Prairie Foods Co. - Plant 8,85,21,16112.0,Prepaid & Add,N,Y
+BOL-SH-50335,SH-50335,Customer Pickup,2026-03-10,Keystone Bearing & Drive Co.,"Cardinal Foods Group - Plant 12 - Hazleton, PA",50,2,888.9,Prepaid,N,Y
+BOL-SH-50336,SH-50336,Customer Pickup,2025-05-07,Keystone Bearing & Drive Co.,Hickory Lumber LLC - Plant 4,70,1,270.7,Prepaid & Add,N,Y
+BOL-SH-50337,SH-50337,FedEx Ground,2026-01-04,Keystone Bearing & Drive Co.,Tri-County Conveyor Inc. - Plant 7,50,15,11344.6,Collect,N,Y
+BOL-SH-50338,SH-50338,Customer Pickup,2025-11-02,Keystone Bearing & Drive Co.,Hickory Lumber LLC - Plant 4,50,1,462.9,Prepaid & Add,N,Y
+BOL-SH-50339,SH-50339,FedEx Ground,2025-07-28,Keystone Bearing & Drive Co.,Lehigh Valley Ag Equipment LP - Plant 4,55,1,351.0,Prepaid,N ,Y
+BOL-SH-50340,SH-50340,Customer Pickup,2025-11-12,Keystone Bearing & Drive Co.,Appalachian Conveyor LP - Plant 4,55,12,8855.6,Prepaid & Add,N,Y
+BOL-SH-50341,SH-50341,Company Truck,2026-03-12,Keystone Bearing & Drive Co.,Tennessee Valley Plastics Inc. - Plant 5,50,1,563.5,Collect,N,Y
+BOL-SH-50342,SH-50342,FedEx Ground,2025-08-15,Keystone Bearing & Drive Co.,Hickory Steel Co. - Plant 4,50,14,10573.0,Prepaid & Add,N,Y
+BOL-SH-50343,SH-50343,UPS Ground,2025-06-08,Keystone Bearing & Drive Co.,Keystone Plastics Inc. - Plant 4,85,1,668.8,Prepaid & Add,N,Y
+BOL-SH-50344,SH-50344,Customer Pickup,2025-06-01,Keystone Bearing & Drive Co.,Riverbend Plastics Inc. - Plant 4,55,4,2543.1,Prepaid & Add,N,Y
+BOL-SH-50346,SH-50346,FedEx Ground,07/22/2025,Keystone Bearing & Drive Co.,Cardinal Plastics Corp. - Plant 3,60,2,1374.0,Prepaid & Add,N,Y
+BOL-SH-50347,SH-50347,Customer Pickup,2026-02-11,Keystone Bearing & Drive Co.,Fox River Climate Inc. - Plant 6,55,2,830.7,Prepaid & Add,N,Y
+BOL-SH-50350,SH-50350,FedEx Ground,2025-10-23,Keystone Bearing & Drive Co.,Iron City Plastics Corp. - Plant 4,55,21,16084.6,Collect,N,Y
+BOL-SH-50351,SH-50351 ,FedEx Ground,2026-01-09,Keystone Bearing & Drive Co.,Appalachian Packaging Systems Co. - Plant 8,50,2,1016.4,Prepaid & Add,N,Y
+BOL-SH-50352,SH-50352,Customer Pickup,2026-02-13,Keystone Bearing & Drive Co.,Great Lakes Climate Inc. - Plant 6,50,2,1441.6,Prepaid & Add,N,Y
+BOL-SH-50353,SH-50353,FedEx Ground,2025-06-12,Keystone Bearing & Drive Co.,Iron City Plastics Corp. - Plant 4,85,5,3463.1,Prepaid & Add,N,Y
+BOL-SH-50355,SH-50355,UPS Ground ,2026-02-01,Keystone Bearing & Drive Co.,Fox River Paper Co. - Plant 11,50,6,4366.9,Collect,N,Y
+BOL-SH-50356,SH-50356,LTL - XPO,07/20/25,Keystone Bearing & Drive Co.,Iron City Materials Co. - Plant 11,85,3,2222.8,Prepaid,N,Y
+BOL-SH-50357,SH-50357,LTL - Estes,2026-02-07,Keystone Bearing & Drive Co.,Allegheny Paper Inc. - Plant 2,50,24,18925.1,Prepaid & Add,N,Y 
+BOL-SH-50358,SH-50358,UPS Ground,2025-08-03,Keystone Bearing & Drive Co.,Piedmont Poultry Inc. - Plant 9,60,5,3315.0,Collect,N,Y
+BOL-SH-50360,SH-50360,FedEx Ground,2025-07-07,Keystone Bearing & Drive Co.,Lehigh Valley Ag Equipment LP - Plant 4,85,11,8363.2,Prepaid,N,Y
+BOL-SH-50361,SH-50361,UPS Ground,2025-07-20,Keystone Bearing & Drive Co.,Keystone Steel LP - Plant 8,60,1,672.5,Prepaid & Add,N,Y
+BOL-SH-50362,SH-50362,Company Truck,2025-11-28,Keystone Bearing & Drive Co.,Pioneer Plastics LLC - Plant 4,60,12,9055.5,Prepaid & Add,N,Y
+BOL-SH-50363,SH-50363,Company Truck,2026-02-23,Keystone Bearing & Drive Co.,Tennessee Valley Plastics Inc. - Plant 5,55,1,578.8,Prepaid & Add,N ,Y
+BOL-SH-50365,SH-50365,LTL - Estes,2025-12-23,Keystone Bearing & Drive Co.,Tennessee Valley Lumber LLC - Plant 1,50,6,4294.1,Prepaid & Add,N,Y
+BOL-SH-50366,SH-50366,Customer Pickup,2025-06-21,Keystone Bearing & Drive Co.,"Cardinal Foods Group - Plant 12 - Hazleton, PA",60,3,1721.9,Collect,N,Y
+BOL-SH-50367,SH-50367,UPS Ground,12/22/2025,Keystone Bearing & Drive Co.,Cardinal Foods Corp. - Plant 4,50,3,1916.8,Prepaid,N,Y 
+BOL-SH-50368,SH-50368,FedEx Ground,2026-03-08,Keystone Bearing & Drive Co.,Tri-County Conveyor Inc. - Plant 7,55,12,8917.2,Prepaid & Add,N,Y
+BOL-SH-50371,SH-50371,UPS Ground,2026-03-19,Keystone Bearing & Drive Co.,Keystone Steel LP - Plant 8,50,1,746.0,Prepaid & Add,N,Y
+BOL-SH-50373,SH-50373,Customer Pickup,2026-01-16,Keystone Bearing & Drive Co.,Fox River Climate Inc. - Plant 6,85,3,1861.0,Prepaid,N,Y
+BOL-SH-50374,SH-50374,Customer Pickup,2025-06-05,Keystone Bearing & Drive Co.,Great Lakes Climate Inc. - Plant 6,55,2,1589.6,Prepaid & Add,N,Y
+BOL-SH-50377,SH-50377,Customer Pickup,2025-10-30,Keystone Bearing & Drive Co.,Hickory Lumber LLC - Plant 4,50,1,236.6,Prepaid,N,Y
+BOL-SH-50378,SH-50378,FedEx Ground,10/27/2025,Keystone Bearing & Drive Co.,Lehigh Valley Ag Equipment LP - Plant 4 ,70,1,231.5,Collect,N,Y
+BOL-SH-50379,SH-50379,LTL - XPO,07/06/2025,Keystone Bearing & Drive Co.,Tri-County Materials LLC - Plant 12,50,11,8022.1,Collect,N,Y
+BOL-SH-50380,SH-50380,FedEx Ground,2025-11-16,Keystone Bearing & Drive Co.,Cardinal Plastics Corp. - Plant 3,70,6,4212.1,Prepaid & Add,N,Y
+BOL-SH-50381,SH-50381,FedEx Ground,2025-12-12,Keystone Bearing & Drive Co.,Lehigh Valley Ag Equipment LP - Plant 4,60,3,1683.1,Collect,N,Y
+BOL-SH-50382,SH-50382,UPS Ground,2025-10-27,Keystone Bearing & Drive Co. ,Fox River Paper Co. - Plant 11,85,1,444.6,Prepaid & Add,N,Y
+BOL-SH-50383,SH-50383,FedEx Ground,2026-03-26,Keystone Bearing & Drive Co.,Cardinal Plastics Corp. - Plant 3,55,1,303.5,Prepaid & Add,N,Y
+BOL-SH-50384,SH-50384,LTL - XPO,2025-05-20,Keystone Bearing & Drive Co.,Tri-County Materials LLC - Plant 12,55,5,3976.3,Prepaid,N,Y
+BOL-SH-50385,SH-50385,UPS Ground,2025-09-04,Keystone Bearing & Drive Co.,Keystone Steel LP - Plant 8,85,6,4389.8,Prepaid & Add,N,Y
+BOL-SH-50388,SH-50388,Company Truck,2026-01-31,Keystone Bearing & Drive Co.,Hickory Water Authority Inc. - Plant 5,50,2,1318.0,Prepaid,N,Y
+BOL-SH-50389,SH-50389,FedEx Ground,2025-05-28,Keystone Bearing & Drive Co.,Prairie Foods Co. - Plant 8,85,3,2015.0,Prepaid & Add,N,Y
+BOL-SH-50390,SH-50390,Customer Pickup,2025-12-31,Keystone Bearing & Drive Co.,Fox River Climate Inc. - Plant 6,70,1,159.0,Prepaid & Add,N,Y
+BOL-SH-50391,SH-50391,FedEx Ground,01/24/2026,Keystone Bearing & Drive Co.,Riverbend Packaging Systems Inc. - Plant 12,60,1,222.6,Prepaid,N,Y
+BOL-SH-50392,SH-50392,Company Truck,2025-05-26,Keystone Bearing & Drive Co.,Tennessee Valley Plastics Inc. - Plant 5,50,1,250.0,Prepaid,N,Y
+BOL-SH-50393,SH-50393 ,Company Truck,2025-09-26,Keystone Bearing & Drive Co.,Cardinal Poultry Co. - Plant 2,85,1,322.2,Prepaid & Add,N,Y
+BOL-SH-50394,SH-50394,LTL - Estes,2025-09-15,Keystone Bearing & Drive Co.,Tennessee Valley Lumber LLC - Plant 1,50,1,675.4,Collect,N,Y
+BOL-SH-50397,SH-50397,Customer Pickup,2025-05-22,Keystone Bearing & Drive Co.,Appalachian Conveyor LP - Plant 4,55,2,1232.4,Prepaid & Add,N,Y
+BOL-SH-50398,SH-50398,Customer Pickup ,2025-04-26,Keystone Bearing & Drive Co. ,Riverbend Plastics Inc. - Plant 4,60,2,884.5,Prepaid & Add,N,Y
+BOL-SH-50399,SH-50399,UPS Ground,2025-09-21,Keystone Bearing & Drive Co.,Cardinal Foods Corp. - Plant 4,55,1,501.8,Prepaid & Add,N,Y
+BOL-SH-50400,SH-50400,UPS Ground,2025-07-21,Keystone Bearing & Drive Co.,Cardinal Foods Corp. - Plant 4,70,1,283.8,Collect,N ,Y
+BOL-SH-50401,SH-50401,UPS Ground,2025-08-25,Keystone Bearing & Drive Co.,Piedmont Poultry Inc. - Plant 9,85,3,2118.2,Prepaid,N,Y
+BOL-SH-50402,SH-50402,LTL - Estes,2025-07-29,Keystone Bearing & Drive Co.,Tennessee Valley Lumber LLC - Plant 1,60,1,181.2,Prepaid & Add,N,Y
+BOL-SH-50403,SH-50403,FedEx Ground,2025-08-23,Keystone Bearing & Drive Co.,Hickory Steel Co. - Plant 4,55,21,16109.2,Collect,N,Y
+BOL-SH-50404,SH-50404,FedEx Ground,2026-01-20,Keystone Bearing & Drive Co.,Hickory Steel Co. - Plant 4,85,2,813.0,Prepaid & Add,N,Y
+BOL-SH-50405,SH-50405,Customer Pickup,2026-02-02,Keystone Bearing & Drive Co.,Fox River Climate Inc. - Plant 6,50,10,7475.0,Collect ,N,Y
+BOL-SH-50406,SH-50406,FedEx Ground,05/04/25,Keystone Bearing & Drive Co.,Appalachian Packaging Systems Co. - Plant 8,85,1,520.6,Collect,N,Y
+BOL-SH-50407,SH-50407,Company Truck,08/26/25,Keystone Bearing & Drive Co.,Northstar Plastics LP - Plant 1,55,1,306.1,Collect,N,Y
+BOL-SH-50408 ,SH-50408,Company Truck,2026-03-26,Keystone Bearing & Drive Co.,Pioneer Plastics LLC - Plant 4,50,6,4468.1,Prepaid & Add,N,Y
+BOL-SH-50409,SH-50409,LTL - Estes,2025-11-18,Keystone Bearing & Drive Co.,Allegheny Paper Inc. - Plant 2,85,2,970.8,Prepaid & Add,N,Y
+BOL-SH-50410,SH-50410,Customer Pickup,2025-11-25,Keystone Bearing & Drive Co.,Hickory Lumber LLC - Plant 4,55,1,216.6,Prepaid,N,Y
+BOL-SH-50411,SH-50411,LTL - Estes,2025-08-07,Keystone Bearing & Drive Co.,Allegheny Paper Inc. - Plant 2,50,7,5340.9,Prepaid & Add,N,Y
+BOL-SH-50412,SH-50412,UPS Ground,2025-10-05,Keystone Bearing & Drive Co.,Cardinal Foods Corp. - Plant 4,60,22,17507.8,Collect,N,Y
+BOL-SH-50413,SH-50413,FedEx Ground,2025-12-08,Keystone Bearing & Drive Co.,Prairie Foods Co. - Plant 8,55,7,4916.1,Prepaid,N,Y
+BOL-SH-50414,SH-50414,LTL - Estes,2025-05-21,Keystone Bearing & Drive Co.,Piedmont Ag Equipment LLC - Plant 2,70,1,365.2,Prepaid,N,Y
+BOL-SH-50415,SH-50415,UPS Ground,2025-07-06,Keystone Bearing & Drive Co.,Keystone Steel LP - Plant 8,70,1,220.0,Prepaid,N,Y
+BOL-SH-50416,SH-50416,UPS Ground,2025-10-17,Keystone Bearing & Drive Co.,Keystone Plastics Inc. - Plant 4,85,1,342.4,Prepaid,N,Y
+BOL-SH-50417,SH-50417,FedEx Ground,2025-07-15,Keystone Bearing & Drive Co.,Lehigh Valley Ag Equipment LP - Plant 4,70,3,1710.8,Prepaid,N,Y
+BOL-SH-50418,SH-50418,UPS Ground,2026-03-10,Keystone Bearing & Drive Co.,Cardinal Foods Corp. - Plant 4,70,1,346.3,Prepaid,N,Y
+BOL-SH-50419,SH-50419 ,Company Truck,2025-10-23,Keystone Bearing & Drive Co.,Northstar Plastics LP - Plant 1,85,6,4639.6,Prepaid & Add,N,Y
+BOL-SH-50420 ,SH-50420,UPS Ground,2026-01-20,Keystone Bearing & Drive Co.,Keystone Steel LP - Plant 8,70,8,6311.2,Prepaid & Add,N,Y
+BOL-SH-50422,SH-50422,Customer Pickup,2025-06-24,Keystone Bearing & Drive Co.,Fox River Climate Inc. - Plant 6,85,1,324.6,Prepaid & Add,N,Y
+BOL-SH-50423,SH-50423,UPS Ground,2025-08-06,Keystone Bearing & Drive Co.,Piedmont Poultry Inc. - Plant 9,70,1,487.2,Prepaid,N,Y
+BOL-SH-50424,SH-50424,FedEx Ground,2025-09-17,Keystone Bearing & Drive Co.,Hickory Steel Co. - Plant 4,70,1,206.0,Prepaid & Add,N,Y
+BOL-SH-50425,SH-50425,UPS Ground,2025-12-26,Keystone Bearing & Drive Co.,Keystone Steel LP - Plant 8,55,1,302.5,Prepaid & Add,N,Y
+BOL-SH-50426,SH-50426,Company Truck,2025-11-30,Keystone Bearing & Drive Co.,Northstar Plastics LP - Plant 1,85,2,980.9,Prepaid & Add,N,Y
+BOL-SH-50427,SH-50427,Customer Pickup,09-Oct-2025,Keystone Bearing & Drive Co.,Fox River Climate Inc. - Plant 6,50,3,2038.2,Prepaid & Add,N,Y
+BOL-SH-50429,SH-50429,LTL - Estes,2025-07-28,Keystone Bearing & Drive Co.,Allegheny Paper Inc. - Plant 2,55,1,468.4,Prepaid,N,Y
+BOL-SH-50430,SH-50430,FedEx Ground,2026-03-26,Keystone Bearing & Drive Co.,Riverbend Packaging Systems Inc. - Plant 12,60,3,1700.0,Prepaid,N,Y
+BOL-SH-50431,SH-50431,Customer Pickup,2026-02-21,Keystone Bearing & Drive Co.,Hickory Lumber LLC - Plant 4,55,5,3693.4,Prepaid & Add,N,Y
+BOL-SH-50432,SH-50432,FedEx Ground,2026-02-15,Keystone Bearing & Drive Co. ,Hickory Steel Co. - Plant 4,85,1,217.0,Collect,N,Y
+BOL-SH-50433,SH-50433,UPS Ground,2026-02-27,Keystone Bearing & Drive Co.,Cardinal Foods Corp. - Plant 4,50,10,7834.9,Prepaid & Add,N,Y
+BOL-SH-50434,SH-50434,UPS Ground,2026-03-21,Keystone Bearing & Drive Co.,Keystone Steel LP - Plant 8,85,2,921.7,Prepaid,N,Y
+BOL-SH-50435,SH-50435,LTL - Estes,2025-06-19,Keystone Bearing & Drive Co.,Allegheny Paper Inc. - Plant 2,60,1,157.8,Prepaid & Add,N,Y
+BOL-SH-50436,SH-50436,FedEx Ground,2025-06-19,Keystone Bearing & Drive Co.,Appalachian Packaging Systems Co. - Plant 8,85,3,1985.9,Prepaid & Add,N,Y
+BOL-SH-50437,SH-50437,UPS Ground,2025-05-17,Keystone Bearing & Drive Co.,Keystone Steel LP - Plant 8,50,3,2026.5,Collect,N,Y
+BOL-SH-50438,SH-50438,UPS Ground,28-Sep-2025,Keystone Bearing & Drive Co.,Keystone Plastics Inc. - Plant 4,85,1,273.6,Prepaid & Add,N,Y
+BOL-SH-50439,SH-50439,Company Truck,2025-06-09,Keystone Bearing & Drive Co.,Tennessee Valley Plastics Inc. - Plant 5,85,1,475.8,Prepaid,N,Y
+BOL-SH-50440,SH-50440,UPS Ground,2025-11-23,Keystone Bearing & Drive Co.,Keystone Plastics Inc. - Plant 4,55,1,280.7,Collect,N,Y 
+BOL-SH-50441,SH-50441 ,FedEx Ground,2026-01-03,Keystone Bearing & Drive Co.,Riverbend Packaging Systems Inc. - Plant 12,50,9,6491.6,Collect,N,Y
+BOL-SH-50442,SH-50442,FedEx Ground,2025-09-15,Keystone Bearing & Drive Co.,Cardinal Plastics Corp. - Plant 3,60,1,240.3,Prepaid & Add,N,Y
+BOL-SH-50443,SH-50443,UPS Ground,2025-12-30,Keystone Bearing & Drive Co.,Keystone Plastics Inc. - Plant 4,50,1,350.7,Prepaid & Add,N,Y
+BOL-SH-50444,SH-50444,FedEx Ground,2025-07-18,Keystone Bearing & Drive Co.,Iron City Plastics Corp. - Plant 4,50,6,4227.6,Prepaid,N,Y
+BOL-SH-50445,SH-50445,LTL - Estes,2026-01-11,Keystone Bearing & Drive Co.,Piedmont Ag Equipment LLC - Plant 2,60,2,830.5,Collect,N,Y
+BOL-SH-50446,SH-50446,Company Truck,2025-05-28,Keystone Bearing & Drive Co.,Pioneer Plastics LLC - Plant 4,55,7,5533.5,Collect,N,Y
+BOL-SH-50447,SH-50447,UPS Ground,2025-06-20,Keystone Bearing & Drive Co.,Keystone Plastics Inc. - Plant 4,70,1,506.8,Prepaid & Add,N,Y
+BOL-SH-50449,SH-50449,Customer Pickup,2025-12-14,Keystone Bearing & Drive Co.,"Cardinal Foods Group - Plant 12 - Hazleton, PA",85,1,178.6,Prepaid,N,Y
+BOL-SH-50451,SH-50451,Company Truck,2026-03-25,Keystone Bearing & Drive Co.,Northstar Plastics LP - Plant 1,85,1,554.5,Prepaid & Add,N,Y
+BOL-SH-50452,SH-50452,LTL - Estes,2025-11-15,Keystone Bearing & Drive Co.,Tennessee Valley Lumber LLC - Plant 1,60,15,11870.1,Prepaid & Add,N,Y
+BOL-SH-50453,SH-50453,Customer Pickup,2025-05-22,Keystone Bearing & Drive Co.,Appalachian Conveyor LP - Plant 4,85,1,313.5,Collect,N,Y
+BOL-SH-50456,SH-50456,UPS Ground,2025-10-22,Keystone Bearing & Drive Co.,Cardinal Foods Corp. - Plant 4,85,3,2075.0,Prepaid & Add,N,Y
+BOL-SH-50458,SH-50458,FedEx Ground,2026-02-19,Keystone Bearing & Drive Co.,Tri-County Conveyor Inc. - Plant 7,60,4,3160.8,Collect,N,Y
+BOL-SH-50459,SH-50459,Customer Pickup,"Jun 14, 2025",Keystone Bearing & Drive Co.,Fox River Climate Inc. - Plant 6,55,14,10822.5,Collect,N,Y
+BOL-SH-50460,SH-50460,Customer Pickup,2025-07-31,Keystone Bearing & Drive Co.,Hickory Lumber LLC - Plant 4,55,11,8035.1,Prepaid & Add,N,Y
+BOL-SH-50461,SH-50461,LTL - XPO,2025-08-21,Keystone Bearing & Drive Co.,Tri-County Materials LLC - Plant 12,85,20,15635.6,Prepaid,N,Y
+BOL-SH-50463,SH-50463,UPS Ground,2025-10-29,Keystone Bearing & Drive Co.,Cardinal Foods Corp. - Plant 4,70,1,439.5,Prepaid & Add,N,Y
+BOL-SH-50464,SH-50464,FedEx Ground,2025-05-30,Keystone Bearing & Drive Co.,Iron City Plastics Corp. - Plant 4,85,1,328.0,Prepaid & Add,N,Y
+BOL-SH-50465,SH-50465,FedEx Ground,2025-09-04,Keystone Bearing & Drive Co.,Iron City Plastics Corp. - Plant 4,55,1,589.0,Prepaid & Add,N,Y
+BOL-SH-50467,SH-50467,Customer Pickup,2025-10-14,Keystone Bearing & Drive Co.,Hickory Lumber LLC - Plant 4 ,70,5,3326.2,Prepaid & Add,N,Y
+BOL-SH-50468,SH-50468,UPS Ground,2025-12-01,Keystone Bearing & Drive Co.,Keystone Plastics Inc. - Plant 4,85,1,518.6,Prepaid & Add,N,Y
+BOL-SH-50469,SH-50469,Customer Pickup,04-Oct-2025,Keystone Bearing & Drive Co.,"Cardinal Foods Group - Plant 12 - Hazleton, PA",85,17,13332.2,Prepaid & Add,N,Y
+BOL-SH-50470,SH-50470,Company Truck,"Feb 09, 2026",Keystone Bearing & Drive Co.,Cardinal Poultry Co. - Plant 2,60,2,1389.4,Prepaid,N,Y
+BOL-SH-50472,SH-50472,LTL - XPO,2026-03-11,Keystone Bearing & Drive Co.,Tri-County Materials LLC - Plant 12,55,4,2817.0,Collect,N,Y
+BOL-SH-50473,SH-50473,LTL - Estes,2026-01-21,Keystone Bearing & Drive Co.,Tennessee Valley Lumber LLC - Plant 1,60,3,1765.7,Prepaid,N,Y
+BOL-SH-50474,SH-50474,LTL - Estes,2025-10-28,Keystone Bearing & Drive Co.,Piedmont Ag Equipment LLC - Plant 2,55,1,404.9,Prepaid,N,Y
+BOL-SH-50475,SH-50475,LTL - Estes,2026-01-20,Keystone Bearing & Drive Co.,Tennessee Valley Lumber LLC - Plant 1,55,1,594.9,Prepaid & Add,N,Y
+BOL-SH-50476,SH-50476,UPS Ground,2025-09-07,Keystone Bearing & Drive Co.,Piedmont Poultry Inc. - Plant 9,85,3,1969.4,Collect,N,Y
+BOL-SH-50477,SH-50477,Company Truck,"Nov 02, 2025",Keystone Bearing & Drive Co.,Northstar Plastics LP - Plant 1,55,1,245.7,Prepaid,N,Y 
+BOL-SH-50478,SH-50478,LTL - XPO,2025-07-20,Keystone Bearing & Drive Co.,Iron City Materials Co. - Plant 11,55,1,432.9,Prepaid,N,Y
+BOL-SH-50479,SH-50479,LTL - Estes,2026-02-27,Keystone Bearing & Drive Co.,Allegheny Paper Inc. - Plant 2,85,5,3811.8,Prepaid & Add,N,Y
+BOL-SH-50480,SH-50480,LTL - XPO,2026-03-14,Keystone Bearing & Drive Co.,Iron City Materials Co. - Plant 11,85,1,550.5,Collect,N,Y
+BOL-SH-50481,SH-50481,FedEx Ground,2025-10-03,Keystone Bearing & Drive Co.,Appalachian Packaging Systems Co. - Plant 8,55,11,8305.3,Collect,N,Y
+BOL-SH-50482,SH-50482,LTL - XPO,2025-09-24,Keystone Bearing & Drive Co.,Iron City Materials Co. - Plant 11,60,11,8061.1,Prepaid,N,Y
+BOL-SH-50485,SH-50485,Company Truck,15-Dec-2025,Keystone Bearing & Drive Co.,Tennessee Valley Plastics Inc. - Plant 5,85,3,2061.4,Collect,N,Y
+BOL-SH-50486,SH-50486,LTL - Estes,2025-06-09,Keystone Bearing & Drive Co.,Allegheny Paper Inc. - Plant 2,70,6,4538.1,Prepaid & Add,N,Y
+BOL-SH-50487,SH-50487,UPS Ground,2025-08-19,Keystone Bearing & Drive Co.,Keystone Plastics Inc. - Plant 4,85,1,180.8,Prepaid & Add,N,Y
+BOL-SH-50488,SH-50488,FedEx Ground,2025-10-12,Keystone Bearing & Drive Co.,Riverbend Packaging Systems Inc. - Plant 12,55,1,336.1,Prepaid & Add,N,Y

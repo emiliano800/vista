@@ -1,0 +1,17 @@
+subscription_id,product,vendor,function,seats_licensed,seats_active,billing_frequency,annual_cost,contract_start,renewal_date,auto_renew,owner,notes
+SW001,Applied Epic,Applied Systems,Agency Management System,46,45,Monthly,119232.0,2025-04-20,2026-10-30,Y,Karen Delgado,
+SW002,IVANS Exchange,IVANS (Applied),Carrier Download / Connectivity,1,1,Annual,1620.0,2023-04-12,2026-09-03,Y,Michael Delgado,
+SW003,Zywave Miedge,Zywave,Carrier Appetite / Market Intelligence,1,1,Annual,6500.0,2025-05-27,2027-01-23,Y,Sarah Hernandez,
+SW004,Indio,Applied Systems,Application / Renewal Intake Forms,1,1,Monthly,3492.0,2024-12-25,2026-09-27,N,Emily Scott,Includes 2 sandbox seats
+SW005,DocuSign eSignature,DocuSign,e-Signature,7,6,Annual,3460.8,2024-11-13,2026-07-29,Y,Elena Lee,Month-to-month
+SW006,Microsoft 365 Business Standard,Microsoft,Productivity Suite / Email,48,39,Annual,6480.0,2025-02-04,2027-01-08,Y,Michael Delgado,
+SW007,Salesforce Sales Cloud,Salesforce,CRM,10,10,Annual,20160.0,2024-11-01,2026-11-28,Y,James Hernandez,
+SW008,Zoom Workplace,Zoom,Video Conferencing,26,25,Annual,4680.0,2025-02-03,2026-08-25,Y,Daniel Anderson,
+SW009,RingCentral MVP,RingCentral,VoIP Phone System,46,43,Monthly,14572.8,2023-04-24,2026-11-26,Y,Mark Anderson,3-year term; 60-day notice
+SW010,Sage Intacct,Sage,Accounting / GL,1,1,Annual,16800.0,2023-06-17,2026-09-08,Y,Robert Miller,Month-to-month
+SW011,ADP Workforce Now,ADP,Payroll / HRIS,46,42,Annual,36763.2,2024-03-14,2026-05-16,Y,Carlos Nakamura,
+SW012,Bill.com,BILL,AP Automation,1,1,Monthly,1248.0,2023-12-15,2026-08-15,Y,Donna Robinson,Month-to-month
+SW013,Expensify,Expensify,Expense Management,8,7,Annual,760.32,2023-05-22,2026-06-22,Y,Mark Walker,
+SW014,Box Business,Box,File Storage,46,39,Annual,13386.0,2024-02-11,2026-12-24,Y,Daniel Anderson,Month-to-month
+SW015,Slack Business+,Salesforce,Team Messaging,46,42,Annual,6969.0,2024-09-15,2026-09-15,N,Carlos Smith,3-year term; 60-day notice
+SW016,KnowBe4,KnowBe4,Security Awareness Training,46,41,Monthly,1476.6,2025-04-29,2027-01-13,Y,Jennifer Kowalski,
