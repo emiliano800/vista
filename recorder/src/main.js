@@ -103,11 +103,11 @@ function postProcess(manifest) {
     if (code !== 0) return write({ processing: 'failed', processing_note: err.trim().split('\n').pop() });
     let summary = null;
     try {
-      summary = JSON.parse(fs.readFileSync(path.join(dir, 'processed', 'summary.json'), 'utf8'));
-    } catch {
-      /* summary optional */
+      summary = pickSummary(JSON.parse(fs.readFileSync(path.join(dir, 'processed', 'summary.json'), 'utf8')));
+    } catch (e) {
+      return write({ processing: 'failed', processing_note: `summary unreadable: ${e.message}` });
     }
-    write({ processing: 'done', summary: summary && pickSummary(summary) });
+    write({ processing: 'done', summary });
   });
 }
 
@@ -121,6 +121,12 @@ function pickSummary(s) {
     open_questions: s.n_open_questions,
     off_screen_hours: s.off_screen_hours,
     top_activities: (s.activities ?? []).slice(0, 6),
+    automation: (s.automation_potential ?? []).slice(0, 3),
+    top_variant: s.variants?.[0] ?? null,
+    rework: Object.entries(s.rework ?? {})
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 3)
+      .map(([activity, count]) => ({ activity, count })),
   };
 }
 
@@ -183,15 +189,27 @@ function addAnnotation(recordingId, { label, note = '', start, end, case_id = ''
 
 // ---- windows -----------------------------------------------------------------
 
-const PILL = { w: 380, h: 64 };
-const PANEL = { w: 380, h: 332 };
+// Overlay sizes: `orb` is the idle blue circle, `pill` the recording bar, `panel` the expanded details.
+const SIZES = { orb: { w: 64, h: 64 }, pill: { w: 380, h: 64 }, panel: { w: 380, h: 332 } };
+let overlayMode = 'orb';
+
+function setOverlayMode(mode) {
+  if (!overlay || overlay.isDestroyed()) return;
+  const from = SIZES[overlayMode], to = SIZES[mode];
+  if (!to) return;
+  const [x, y] = overlay.getPosition();
+  // keep the pill centred on where the orb was
+  const nx = Math.round(x + (from.w - to.w) / 2);
+  overlay.setBounds({ x: Math.max(0, nx), y, width: to.w, height: to.h });
+  overlayMode = mode;
+}
 
 function createOverlay() {
   const { workArea } = screen.getPrimaryDisplay();
   overlay = new BrowserWindow({
-    width: PILL.w,
-    height: PILL.h,
-    x: Math.round(workArea.x + (workArea.width - PILL.w) / 2),
+    width: SIZES.orb.w,
+    height: SIZES.orb.h,
+    x: Math.round(workArea.x + (workArea.width - SIZES.orb.w) / 2),
     y: workArea.y + 12,
     frame: false,
     transparent: true,
@@ -210,11 +228,20 @@ function createOverlay() {
   overlay.once('ready-to-show', () => overlay.show());
 }
 
+// After Stop: bring the dashboard back on the review screen for this recording,
+// even if the window has to be created (and finish loading) first.
+function openReview(recordingId) {
+  const fresh = createDashboard();
+  const send = () => dashboard.webContents.send('dashboard:review', recordingId);
+  if (fresh) dashboard.webContents.once('did-finish-load', send);
+  else send();
+}
+
 function createDashboard() {
   if (dashboard && !dashboard.isDestroyed()) {
     dashboard.show();
     dashboard.focus();
-    return;
+    return false;
   }
   dashboard = new BrowserWindow({
     width: 1080,
@@ -227,6 +254,7 @@ function createDashboard() {
     webPreferences: { preload: PRELOAD, contextIsolation: true, sandbox: false },
   });
   dashboard.loadFile(path.join(UI, 'dashboard.html'));
+  return true;
 }
 
 function createCaptureWindow() {
@@ -282,6 +310,8 @@ function toggle() {
 
 function startRecording() {
   const status = recorder.start();
+  if (dashboard && !dashboard.isDestroyed()) dashboard.hide();
+  setOverlayMode('pill');
   if (recorder.settings.video && captureWin) {
     fs.writeFileSync(path.join(recorder.dir, 'screen.webm'), '');
     captureWin.webContents.send('video:start', { dir: recorder.dir, fps: 2 });
@@ -298,6 +328,8 @@ async function stopRecording() {
   }
   const status = await recorder.stop();
   broadcastRecordings();
+  setOverlayMode('orb');
+  openReview(status.recordingId);
   return status;
 }
 
@@ -313,12 +345,7 @@ ipcMain.handle('recordings:list', () => listRecordings());
 ipcMain.handle('recordings:open', (_e, id) => shell.openPath(id ? path.join(RECORDINGS, id) : RECORDINGS));
 ipcMain.handle('recordings:annotate', (_e, id, ann) => addAnnotation(id, ann));
 ipcMain.handle('dashboard:open', () => createDashboard());
-ipcMain.handle('overlay:resize', (_e, expanded) => {
-  if (!overlay) return;
-  const [x, y] = overlay.getPosition();
-  const s = expanded ? PANEL : PILL;
-  overlay.setBounds({ x, y, width: s.w, height: s.h });
-});
+ipcMain.handle('overlay:resize', (_e, mode) => setOverlayMode(mode));
 ipcMain.handle('settings:get', () => recorder.settings);
 ipcMain.handle('settings:set', (_e, patch) => {
   recorder.settings = { ...recorder.settings, ...patch };

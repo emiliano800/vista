@@ -102,6 +102,32 @@
       .chip { border: 1px solid var(--line); border-radius: 999px; padding: 4px 10px; font-size: 12.5px; cursor: pointer; background: #fff; }
       .chip:hover, .chip.on { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); }
       .empty { color: var(--muted); text-align: center; padding: 30px 0; }
+      /* review / agent */
+      .agent { display: grid; grid-template-columns: 1fr 1.3fr; gap: 14px; }
+      .stages { display: grid; gap: 0; }
+      .stage { display: grid; grid-template-columns: 22px 1fr auto; gap: 12px; align-items: center; padding: 11px 0; border-bottom: 1px solid var(--line); color: var(--muted); }
+      .stage:last-child { border-bottom: 0; }
+      .stage i { width: 18px; height: 18px; border-radius: 50%; border: 2px solid #d9d8d1; display: inline-block; position: relative; }
+      .stage.active { color: var(--fg); }
+      .stage.active i { border-color: var(--accent); border-top-color: transparent; animation: spin 0.8s linear infinite; }
+      .stage.done { color: var(--fg); }
+      .stage.done i { border-color: var(--ok); background: var(--ok); }
+      .stage.done i::after { content: ''; position: absolute; left: 5px; top: 1px; width: 4px; height: 8px; border: solid #fff; border-width: 0 2px 2px 0; transform: rotate(45deg); }
+      .stage.failed i { border-color: var(--rec); background: var(--rec); }
+      .stage small { color: var(--muted); font-size: 12px; display: block; }
+      .stage .out { font-size: 12.5px; color: var(--muted); font-variant-numeric: tabular-nums; }
+      @keyframes spin { to { transform: rotate(360deg); } }
+      .rank { display: grid; gap: 10px; }
+      .rank .row { display: grid; grid-template-columns: 26px 1fr auto; gap: 10px; align-items: center; }
+      .rank .n { width: 26px; height: 26px; border-radius: 8px; background: var(--accent-soft); color: var(--accent); font-weight: 700; display: grid; place-items: center; font-size: 12.5px; }
+      .rank .bar { grid-column: 2 / -1; height: 6px; border-radius: 3px; background: #eeede8; overflow: hidden; }
+      .rank .bar i { display: block; height: 100%; background: var(--accent); }
+      .path { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; font-size: 13px; }
+      .path span { background: #f1f0eb; border-radius: 6px; padding: 4px 9px; }
+      .path em { color: var(--muted); font-style: normal; }
+      .banner { display: flex; align-items: center; gap: 14px; padding: 14px 18px; border-radius: 12px; background: var(--accent-soft); color: #22397f; margin-bottom: 16px; }
+      .banner b { font-size: 15px; }
+      .banner .sp { flex: 1; }
     </style>
   </head>
   <body>
@@ -109,6 +135,7 @@
       <nav>
         <div class="brand"><i></i> Vista</div>
         <button data-view="today" class="active">Today</button>
+        <button data-view="review" id="nav-review" class="hidden">Last session</button>
         <button data-view="recordings">My recordings <span id="n-rec" class="pill">0</span></button>
         <button data-view="privacy">What is recorded</button>
         <button data-view="settings">Settings</button>
@@ -157,6 +184,46 @@
             <p class="muted" style="margin:0 0 10px">Phone calls, paper invoices, a chat at someone's desk — tell us in one line so the picture of your day is complete. Never required.</p>
             <div class="chips" id="quick-chips"></div>
           </section>
+        </div>
+
+        <!-- ============ REVIEW (after Stop) ============ -->
+        <div id="view-review" class="hidden">
+          <h1 id="rv-title">Session saved</h1>
+          <p class="lede" id="rv-lede">Your recording is on this computer. The analysis agent is turning clicks into steps.</p>
+
+          <div class="banner" id="rv-banner">
+            <div class="dot" style="width:10px;height:10px;border-radius:50%;background:var(--accent)"></div>
+            <div><b id="rv-banner-t">Analyzing your session…</b><div id="rv-banner-s" style="font-size:12.5px">Runs entirely on this computer. Nothing is uploaded.</div></div>
+            <div class="sp"></div>
+            <button class="btn sm" id="rv-note">Add what the screen didn't see</button>
+            <button class="btn sm primary" id="rv-done">Back to today</button>
+          </div>
+
+          <div class="agent">
+            <div class="card">
+              <h2>Analysis agent</h2>
+              <div class="stages" id="rv-stages"></div>
+            </div>
+            <div style="display:grid;gap:14px">
+              <section class="grid cols-3" style="margin:0">
+                <div class="card kpi"><b id="rv-steps">—</b><span>work steps</span><small id="rv-steps-sub">from interactions</small></div>
+                <div class="card kpi"><b id="rv-cases">—</b><span>cases followed</span><small id="rv-cases-sub">start to finish</small></div>
+                <div class="card kpi"><b id="rv-q">—</b><span>open questions</span><small>things only you can answer</small></div>
+              </section>
+              <div class="card">
+                <h2>Where the time went</h2>
+                <div class="rank" id="rv-acts"><div class="empty">Waiting for the agent…</div></div>
+              </div>
+              <div class="card">
+                <h2>Most common path</h2>
+                <div class="path" id="rv-path"><span class="muted">—</span></div>
+              </div>
+              <div class="card">
+                <h2>Automation candidates</h2>
+                <div class="rank" id="rv-auto"><div class="empty">—</div></div>
+              </div>
+            </div>
+          </div>
         </div>
 
         <!-- ============ RECORDINGS ============ -->
@@ -257,8 +324,93 @@
       document.querySelectorAll('nav button').forEach((b) => (b.onclick = () => show(b.dataset.view)));
       function show(v) {
         document.querySelectorAll('nav button').forEach((b) => b.classList.toggle('active', b.dataset.view === v));
-        for (const x of ['today', 'recordings', 'privacy', 'settings']) $('view-' + x).classList.toggle('hidden', x !== v);
+        for (const x of ['today', 'review', 'recordings', 'privacy', 'settings']) $('view-' + x).classList.toggle('hidden', x !== v);
       }
+
+      // ---- review: the analysis agent, shown when the dashboard comes back after Stop ----
+      const STAGES = [
+        ['save', 'Saving screen capture and events', 'events.jsonl, shots/, screen.webm'],
+        ['redact', 'Redacting and pseudonymising', 'emails, phones, cards → tokens; your name → a code'],
+        ['steps', 'Grouping clicks into work steps', 'window + activity rules'],
+        ['cases', 'Linking steps into cases', 'invoice / ticket ids, or time episodes'],
+        ['discover', 'Mapping the process', 'paths, variants, rework'],
+        ['score', 'Ranking automation potential', 'frequency × regularity × re-keying'],
+      ];
+      let reviewing = null, stageIdx = -1, stageTimer = null;
+
+      function openReview(id) {
+        reviewing = id;
+        stageIdx = 0;
+        clearInterval(stageTimer);
+        $('nav-review').classList.remove('hidden');
+        show('review');
+        // pace the stage list so the employee can follow it even when taskmining finishes in <1s
+        stageTimer = setInterval(() => {
+          const r = recordings.find((x) => x.recording_id === reviewing);
+          const finished = r && r.processing && r.processing !== 'running' && r.processing !== 'pending';
+          if (stageIdx < STAGES.length - 1) stageIdx++;
+          else if (finished) clearInterval(stageTimer);
+          renderReview();
+        }, 650);
+        renderReview();
+      }
+
+      function renderReview() {
+        if (!reviewing) return;
+        const r = recordings.find((x) => x.recording_id === reviewing);
+        if (!r) return;
+        const p = r.processing ?? 'pending';
+        const finished = p !== 'running' && p !== 'pending';
+        const allShown = stageIdx >= STAGES.length - 1;
+        const done = finished && allShown && p === 'done';
+        const s = r.summary;
+        const when = `${clock(r.started_at)}–${r.ended_at ? clock(r.ended_at) : '…'}`;
+        $('rv-title').textContent = done ? 'Session analyzed' : 'Session saved';
+        $('rv-lede').textContent = `${when} · ${hm(r.active_seconds ?? 0)} · ${(r.counts?.total ?? 0).toLocaleString()} interactions · ${(r.counts?.redactions ?? 0)} redacted on this device`;
+        $('rv-banner-t').textContent = done ? 'Analysis complete' : p === 'failed' ? 'Analysis could not finish' : p === 'skipped' ? 'Analysis skipped' : 'Analyzing your session…';
+        $('rv-banner-s').textContent = done
+          ? 'Add a note for anything the screen could not see — calls, paper, a chat at a desk — and the agent re-runs.'
+          : p === 'failed' || p === 'skipped' ? (r.processing_note ?? '') : 'Runs entirely on this computer. Nothing is uploaded.';
+
+        const out = (k) => {
+          if (!s) return '';
+          return { save: `${(r.counts?.total ?? 0).toLocaleString()} events`, redact: `${s.raw_events} → ${s.clean_events} clean`, steps: `${s.steps} steps`, cases: `${s.cases} case${s.cases === 1 ? '' : 's'}`, discover: s.top_variant ? `${s.top_variant.activities.length}-step path` : '', score: s.automation?.length ? `top ${s.automation.length}` : '' }[k] ?? '';
+        };
+        $('rv-stages').innerHTML = STAGES.map(([k, t, sub], i) => {
+          let cls = '';
+          if (i < stageIdx) cls = 'done';
+          else if (i === stageIdx) cls = finished ? (p === 'done' ? 'done' : 'failed') : 'active';
+          return `<div class="stage ${cls}"><i></i><div>${t}<small>${sub}</small></div><span class="out">${cls === 'done' ? esc(out(k)) : ''}</span></div>`;
+        }).join('');
+
+        if (!(done && s)) {
+          $('rv-steps').textContent = $('rv-cases').textContent = $('rv-q').textContent = '—';
+          $('rv-acts').innerHTML = `<div class="empty">${finished && p !== 'done' ? 'No analysis available' : 'Waiting for the agent…'}</div>`;
+          $('rv-path').innerHTML = '<span class="muted">—</span>';
+          $('rv-auto').innerHTML = '<div class="empty">—</div>';
+          return;
+        }
+        $('rv-steps').textContent = s.steps;
+        $('rv-steps-sub').textContent = `from ${s.raw_events.toLocaleString()} interactions`;
+        $('rv-cases').textContent = s.cases;
+        $('rv-cases-sub').textContent = s.annotations ? `${s.annotations} note${s.annotations === 1 ? '' : 's'} from you` : 'start to finish';
+        $('rv-q').textContent = s.open_questions;
+        const acts = s.top_activities ?? [];
+        const tot = acts.reduce((a, b) => a + b.total_s, 0) || 1;
+        $('rv-acts').innerHTML = acts.length
+          ? acts.map((a) => `<div class="row" style="grid-template-columns:1fr auto"><span>${esc(a.activity)}</span><span class="muted">${hm(a.total_s)} · ×${a.count}</span><div class="bar" style="grid-column:1/-1"><i style="width:${(a.total_s / tot) * 100}%"></i></div></div>`).join('')
+          : '<div class="empty">No steps found</div>';
+        const v = s.top_variant;
+        $('rv-path').innerHTML = v
+          ? v.activities.map((a) => `<span>${esc(a)}</span>`).join('<em>→</em>') + `<em style="margin-left:6px">· ${v.count}×, ${hm(v.mean_throughput_s)} each</em>`
+          : '<span class="muted">Not enough steps yet</span>';
+        const au = s.automation ?? [];
+        $('rv-auto').innerHTML = au.length
+          ? au.map((a, i) => `<div class="row"><span class="n">${i + 1}</span><span>${esc(a.activity)}</span><span class="muted">${Math.round(a.score * 100)} / 100</span><div class="bar"><i style="width:${a.score * 100}%"></i></div></div>`).join('')
+          : '<div class="empty">Nothing repetitive enough yet</div>';
+      }
+      $('rv-done').onclick = () => show('today');
+      $('rv-note').onclick = () => openAnnotate(reviewing);
 
       // ---- today ----
       function renderHero(st) {
@@ -389,6 +541,7 @@
         $('modal').classList.add('hidden');
         recordings = await window.vista.recordings();
         renderRecordings();
+        renderReview();
       };
 
       // ---- settings ----
@@ -420,7 +573,8 @@
       $('open-folder').onclick = () => window.vista.openRecording(null);
 
       window.vista.onStatus((st) => { status = st; renderHero(st); renderToday(); });
-      window.vista.onRecordings((rs) => { recordings = rs; renderRecordings(); renderToday(); });
+      window.vista.onRecordings((rs) => { recordings = rs; renderRecordings(); renderToday(); renderReview(); });
+      window.vista.onReview(async (id) => { recordings = await window.vista.recordings(); renderRecordings(); openReview(id); });
 
       (async () => {
         [status, recordings, settings, info] = await Promise.all([window.vista.status(), window.vista.recordings(), window.vista.getSettings(), window.vista.info()]);
