@@ -246,7 +246,7 @@ class Emitter:
                 self.dropped.append(ds.name)
                 continue
             folder = os.path.join(base, ds.folder)
-            if ds.fmt in ("txt", "eml", "md"):
+            if ds.text is not None or ds.fmt in ("txt", "eml", "md"):
                 os.makedirs(folder, exist_ok=True)
                 path = os.path.join(folder, f"{ds.name}.{ds.fmt}")
                 with open(path, "w", encoding="utf-8") as f:

@@ -1,1 +1,32 @@
-[]
+{
+  "slug": "keystone_bearing_and_drive",
+  "name": "Keystone Bearing & Drive Co.",
+  "short": "Keystone",
+  "tier": "medium",
+  "hq": {
+    "city": "Allentown",
+    "state": "PA"
+  },
+  "domain": "keystonebd.com",
+  "erp": "NetSuite",
+  "employees": 63,
+  "n_customers": 32,
+  "founded": 1994,
+  "description": "Power-transmission distributor (bearings, belts, gear reducers, motors) with a small light-assembly cell for custom conveyor drive packages.",
+  "as_of_date": "2026-03-31",
+  "business_model": "Distributor with light assembly",
+  "systems": {
+    "erp": "NetSuite",
+    "cad": "Autodesk Inventor",
+    "qms": "uniPoint",
+    "shipping": "ShipStation",
+    "payroll": "Paycom"
+  },
+  "employee_count": 45,
+  "active_customers": 30,
+  "active_items": 97,
+  "fiscal_year_end": "12-31",
+  "costing_method": "Average",
+  "data_quality_tier": "medium",
+  "data_quality_notes": "Most datasets present; some Excel exports; Title Case headers; some mixed date formats; a few duplicate supplier/pricing issues."
+}

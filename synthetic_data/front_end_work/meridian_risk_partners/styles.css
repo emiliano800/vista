@@ -1,0 +1,49 @@
+/* Meridian Risk Partners — classic enterprise agency-management look: navy sidebar, cool greys, dense tables. */
+:root {
+  --navy: #0f2440; --navy-2: #163258; --blue: #2f6fdb; --ink: #1c2530; --muted: #66748a;
+  --bg: #f3f5f9; --card: #fff; --line: #dfe4ec; --good: #1e7f4f; --warn: #b26b00; --bad: #b42323;
+}
+body { font-family: "Segoe UI", Inter, Roboto, Helvetica, Arial, sans-serif; color: var(--ink); background: var(--bg); font-size: 14px; }
+.shell { display: grid; grid-template-columns: 250px 1fr; min-height: 100vh; }
+.sidebar { background: var(--navy); color: #d7e0ee; display: flex; flex-direction: column; padding: 18px 12px; position: sticky; top: 0; height: 100vh; }
+.brand { display: flex; gap: 10px; align-items: center; padding: 4px 8px 18px; border-bottom: 1px solid rgba(255,255,255,.12); margin-bottom: 14px; }
+.brand-mark { width: 36px; height: 36px; border-radius: 6px; background: var(--blue); color: #fff; font-weight: 700; display: grid; place-items: center; font-size: 18px; }
+.brand-name { font-weight: 600; color: #fff; font-size: 14px; }
+.brand-sub { font-size: 11px; opacity: .6; }
+#nav { flex: 1; overflow-y: auto; }
+.vt-nav-group-label { color: #8ea2c2; }
+.vt-nav-item { color: #c5d1e3; font-size: 13px; }
+.vt-nav-item:hover { background: rgba(255,255,255,.07); color: #fff; }
+.vt-nav-item.vt-active { background: var(--blue); color: #fff; }
+.sidebar-foot { border-top: 1px solid rgba(255,255,255,.12); padding-top: 12px; font-size: 12px; }
+.user { display: flex; gap: 8px; align-items: center; margin-bottom: 8px; }
+.avatar { width: 30px; height: 30px; border-radius: 50%; background: #2b4a78; display: grid; place-items: center; font-size: 11px; font-weight: 600; color: #fff; }
+.user-name { color: #fff; }
+.user-role, .asof { opacity: .6; font-size: 11px; }
+.main { min-width: 0; }
+.topbar { background: #fff; border-bottom: 1px solid var(--line); padding: 10px 26px; display: flex; justify-content: space-between; align-items: center; font-size: 13px; color: var(--muted); position: sticky; top: 0; z-index: 5; }
+.crumbs span { color: var(--ink); font-weight: 600; }
+.tier { background: #e8f1ff; color: var(--blue); padding: 3px 10px; border-radius: 4px; font-size: 12px; font-weight: 600; }
+.content { padding: 22px 26px 40px; }
+.vt-module-title { font-size: 20px; font-weight: 600; }
+.vt-kpi { background: var(--card); border: 1px solid var(--line); border-radius: 6px; border-top: 3px solid var(--blue); }
+.vt-kpi-value { color: var(--navy); }
+.vt-card { background: var(--card); border: 1px solid var(--line); border-radius: 6px; }
+.vt-card-head { border-bottom: 1px solid var(--line); }
+.vt-search { border: 1px solid var(--line); border-radius: 4px; background: #fbfcfe; }
+.vt-search:focus { outline: 2px solid #bcd3ff; border-color: var(--blue); }
+.vt-table th { background: #f7f9fc; color: var(--muted); border-bottom: 1px solid var(--line); text-transform: uppercase; letter-spacing: .03em; font-size: 11px; }
+.vt-table td { border-bottom: 1px solid #eef1f6; }
+.vt-row:hover td { background: #f3f7ff; }
+.vt-pill.vt-good { background: #e3f4ea; color: var(--good); }
+.vt-pill.vt-warn { background: #fff2dc; color: var(--warn); }
+.vt-pill.vt-bad { background: #fde5e5; color: var(--bad); }
+.vt-btn { border: 1px solid var(--line); background: #fff; border-radius: 4px; color: var(--ink); }
+.vt-pager { color: var(--muted); border-top: 1px solid var(--line); }
+.vt-detail { background: #fff; border-left: 1px solid var(--line); }
+.vt-detail-title { color: var(--navy); }
+.vt-related h4 { color: var(--navy); }
+.vt-doc-list { border-right: 1px solid var(--line); }
+.vt-doc-item:hover { background: #f3f7ff; }
+.vt-doc-item.vt-active { background: #e8f1ff; color: var(--blue); font-weight: 600; }
+.vt-doc-ext { background: #e9edf3; color: var(--muted); }

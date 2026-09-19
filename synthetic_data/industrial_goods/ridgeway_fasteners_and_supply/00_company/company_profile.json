@@ -1,1 +1,32 @@
-[]
+{
+  "slug": "ridgeway_fasteners_and_supply",
+  "name": "Ridgeway Fasteners & Supply",
+  "short": "Ridgeway",
+  "tier": "low",
+  "hq": {
+    "city": "Chattanooga",
+    "state": "TN"
+  },
+  "domain": "ridgewayfast.com",
+  "erp": "QuickBooks Desktop + Excel",
+  "employees": 27,
+  "n_customers": 24,
+  "founded": 2001,
+  "description": "Industrial fastener and MRO supply house serving plants in the Tennessee Valley; runs vendor-managed inventory bins at several customer sites.",
+  "as_of_date": "2026-03-31",
+  "business_model": "Distributor / VMI supply house",
+  "systems": {
+    "erp": "QuickBooks Desktop + Excel",
+    "cad": "none",
+    "qms": "none (paper)",
+    "shipping": "UPS WorldShip",
+    "payroll": "Gusto"
+  },
+  "employee_count": 25,
+  "active_customers": 24,
+  "active_items": 140,
+  "fiscal_year_end": "12-31",
+  "costing_method": "FIFO",
+  "data_quality_tier": "low",
+  "data_quality_notes": "QuickBooks + Excel shop. Master data lives in one multi-sheet workbook; no perpetual inventory transactions, quality, maintenance, MRP or workflow logs. Mislabeled columns, mixed date/currency formats, duplicate rows, free-text notes."
+}

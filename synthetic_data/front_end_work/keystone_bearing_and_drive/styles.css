@@ -1,0 +1,47 @@
+/* Keystone Bearing & Drive — NetSuite-inspired: black top bar, horizontal green-accented menu, portlet-style boxes on a light grey canvas. */
+:root { --black: #1e1e1e; --green: #4a8f3a; --green-2: #5e9d4c; --canvas: #eef0f2; --white: #fff; --line: #cfd4d9; --ink: #222; --muted: #6a737d; --link: #1a5fa8; }
+body { background: var(--canvas); color: var(--ink); font-family: "Open Sans", Arial, Helvetica, sans-serif; font-size: 13px; }
+.ns-top { background: var(--black); color: #fff; display: flex; align-items: center; gap: 24px; padding: 0 20px; height: 44px; }
+.ns-brand { font-weight: 700; font-size: 15px; display: flex; align-items: center; gap: 8px; }
+.ns-k { background: var(--green); width: 26px; height: 26px; display: grid; place-items: center; border-radius: 3px; font-weight: 800; }
+.ns-search { flex: 1; background: #333; border-radius: 3px; padding: 6px 12px; color: #aaa; font-size: 12px; max-width: 520px; }
+.ns-user { margin-left: auto; font-size: 12px; color: #ccc; }
+.ns-tier { background: #f4c542; color: #3a2b00; padding: 2px 8px; border-radius: 3px; font-weight: 700; }
+.ns-menu { background: var(--white); border-bottom: 3px solid var(--green); display: flex; padding: 0 12px; overflow-x: auto; }
+.ns-menu .vt-nav-group { display: flex; margin: 0; }
+.ns-menu .vt-nav-group-label { display: none; }
+.ns-menu .vt-nav-item { padding: 10px 14px; color: var(--ink); font-weight: 600; font-size: 12.5px; text-transform: uppercase; letter-spacing: .02em; border-radius: 0; border-bottom: 3px solid transparent; margin-bottom: -3px; white-space: nowrap; }
+.ns-menu .vt-nav-item:hover { background: #f4f6f8; }
+.ns-menu .vt-nav-item.vt-active { color: var(--green); border-bottom-color: #2f6b22; background: #f4f9f2; }
+.ns-menu .vt-nav-icon { display: none; }
+.ns-band { display: flex; justify-content: space-between; align-items: baseline; padding: 14px 24px 0; font-size: 22px; font-weight: 300; color: var(--ink); }
+.ns-sub { font-size: 12px; color: var(--muted); font-weight: 400; }
+.ns-body { padding: 14px 24px 40px; }
+.vt-module-head { display: none; }
+.vt-kpis { grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; }
+.vt-kpi { background: var(--white); border: 1px solid var(--line); border-radius: 2px; padding: 12px 14px; box-shadow: 0 1px 2px rgba(0,0,0,.05); position: relative; }
+.vt-kpi::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 4px; background: var(--green); }
+.vt-kpi-value { color: var(--ink); font-size: 22px; font-weight: 400; }
+.vt-kpi-label { color: var(--muted); font-size: 11px; text-transform: uppercase; }
+.vt-card { background: var(--white); border: 1px solid var(--line); border-radius: 2px; box-shadow: 0 1px 2px rgba(0,0,0,.05); }
+.vt-card-head { background: #f7f8fa; border-bottom: 1px solid var(--line); padding: 8px 12px; border-left: 4px solid var(--green); }
+.vt-card-title { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: .02em; }
+.vt-source { color: var(--muted); }
+.vt-search { border: 1px solid var(--line); border-radius: 2px; padding: 4px 8px; font-size: 12px; }
+.vt-table th { background: #e6e9ec; color: #333; border-bottom: 1px solid var(--line); border-right: 1px solid #d8dce0; font-size: 11px; text-transform: none; font-weight: 700; }
+.vt-table td { border-bottom: 1px solid #e8ebee; border-right: 1px solid #f0f2f4; font-size: 12px; }
+.vt-table tbody tr:nth-child(even) td { background: #f9fafb; }
+.vt-row:hover td { background: #eaf3e6 !important; }
+.vt-table td:first-child { color: var(--link); }
+.vt-pill { border-radius: 2px; font-weight: 600; }
+.vt-pill.vt-good { background: #e3f1dd; color: #2f6b22; }
+.vt-pill.vt-warn { background: #fff1c9; color: #7a5a00; }
+.vt-pill.vt-bad { background: #fbe0e0; color: #a12020; }
+.vt-btn { background: linear-gradient(#fff, #e9ecef); border: 1px solid #b9c0c7; color: var(--ink); border-radius: 2px; }
+.vt-missing { background: #fffbe6; border: 1px solid #f1d98a; border-radius: 2px; }
+.vt-detail { background: var(--white); border-left: 1px solid var(--line); }
+.vt-detail-kicker { color: var(--green); }
+.vt-related h4 { color: var(--ink); border-bottom: 2px solid var(--green); display: inline-block; }
+.vt-close { background: var(--black); }
+.vt-doc-item.vt-active { background: #f4f9f2; color: var(--green); font-weight: 700; }
+.vt-doc-ext { background: #e6e9ec; color: #333; }

@@ -1,1 +1,35 @@
-[]
+{
+  "company": "Meridian Risk Partners, LLC",
+  "short_name": "Meridian",
+  "industry": "Insurance Brokerage (Commercial P&C)",
+  "headquarters": "Hartford, CT",
+  "founded": 1998,
+  "employees": 46,
+  "agency_management_system": "Applied Epic",
+  "data_quality_tier": "high",
+  "as_of_date": "2026-03-31",
+  "description": "Commercial P&C brokerage focused on contractors, real estate and manufacturing accounts in New England.",
+  "annual_revenue_estimate": 801382.82,
+  "total_written_premium": 5625033,
+  "client_count": 38,
+  "policy_count": 122,
+  "carriers": [
+    "TRV",
+    "HIG",
+    "LIB",
+    "CNA",
+    "CHB",
+    "AMT",
+    "MKL",
+    "BEZ"
+  ],
+  "agency_eo": {
+    "policy_type": "Agency E&O",
+    "carrier": "Swiss Re Corporate Solutions",
+    "limit": 2000000,
+    "deductible": 10000,
+    "annual_premium": 55000,
+    "expiration_date": "2026-09-16"
+  },
+  "synthetic": true
+}
