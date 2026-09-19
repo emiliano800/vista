@@ -1,7 +1,7 @@
 [project]
 name = "vista"
 version = "0.1.0"
-description = "Backend for an AI-agent platform serving lower-middle-market PE firms"
+description = "Process intelligence for lower-middle-market companies: desktop recorder, task-mining engine, backend"
 requires-python = ">=3.12"
 dependencies = [
     "fastapi>=0.115",
@@ -19,6 +19,7 @@ dependencies = [
 dev = [
     "pytest>=8.0",
     "httpx>=0.27",
+    "ruff>=0.6",
 ]
 
 [project.scripts]
@@ -29,7 +30,7 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/vista", "taskmining"]
+packages = ["src/vista", "src/taskmining"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
@@ -37,7 +38,7 @@ testpaths = ["tests"]
 [tool.ruff]
 line-length = 140
 target-version = "py312"
-include = ["taskmining/**/*.py", "tests/test_pipeline.py"]
+include = ["src/taskmining/**/*.py", "tests/test_pipeline.py"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B"]

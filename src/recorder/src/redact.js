@@ -1,4 +1,4 @@
-// On-device redaction. Mirrors taskmining/preprocess.py so nothing sensitive is
+// On-device redaction. Mirrors src/taskmining/preprocess.py so nothing sensitive is
 // ever written to disk; the Python pipeline re-applies the same rules server-side.
 const PATTERNS = [
   [/[A-Z]{2}\d{2}(?:\s?[A-Z0-9]{4}){3,7}/g, '[IBAN]'],

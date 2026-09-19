@@ -109,7 +109,7 @@ function postProcess(manifest) {
   const args = ['-m', 'taskmining', 'run', '--input', path.join(dir, 'events.jsonl'), '--out', path.join(dir, 'processed')];
   if (fs.existsSync(path.join(dir, 'annotations.jsonl'))) args.push('--annotations', path.join(dir, 'annotations.jsonl'));
   write({ processing: 'running' });
-  const py = spawn(process.env.VISTA_PYTHON ?? 'python3', args, { cwd: repo });
+  const py = spawn(pythonFor(repo), args, { cwd: repo });
   let err = '';
   py.stderr.on('data', (d) => (err += d));
   py.on('error', (e) => write({ processing: 'failed', processing_note: e.message }));
@@ -149,10 +149,18 @@ function findRepoRoot() {
   if (process.env.VISTA_REPO) return process.env.VISTA_REPO;
   let d = __dirname;
   for (let i = 0; i < 5; i++) {
-    if (fs.existsSync(path.join(d, 'taskmining', '__main__.py'))) return d;
+    if (fs.existsSync(path.join(d, 'src', 'taskmining', '__main__.py'))) return d;
     d = path.dirname(d);
   }
   return null;
+}
+
+// VISTA_PYTHON wins; otherwise the repo's uv/venv interpreter; otherwise whatever python3 is on PATH.
+function pythonFor(repo) {
+  if (process.env.VISTA_PYTHON) return process.env.VISTA_PYTHON;
+  const venv = process.platform === 'win32' ? ['.venv', 'Scripts', 'python.exe'] : ['.venv', 'bin', 'python'];
+  const p = path.join(repo, ...venv);
+  return fs.existsSync(p) ? p : 'python3';
 }
 
 // ---- macOS permissions --------------------------------------------------------
