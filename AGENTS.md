@@ -70,5 +70,9 @@ Key product principles (from the business plan):
 - Tenant Alembic env (`migrations/tenant/env.py`): do not execute statements after
   `connection.commit()` before `context.configure` — Alembic will assume an external
   transaction and silently roll back migrations.
-- API tokens are plaintext in `platform.users` and `POST /tenants` is unauthenticated —
-  both must be hardened before deployment.
+- Access keys are SHA-256 digests in `platform.users`; browser sessions use HttpOnly
+  cookies. Public `POST /tenants` is disabled unless an operator key is configured.
+  Provision users with `python -m vista.manage`; keep `VISTA_COOKIE_SECURE=true` on HTTPS.
+- Web dashboard: `src/web/public`, Cloudflare proxy: `src/web/worker.mjs`. Recording
+  reports require the Python/Postgres/S3 backend; follow `deploy/README.md`.
+  Only completed summaries and cleaned activity CSVs upload; raw capture stays local.

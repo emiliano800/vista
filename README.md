@@ -1,6 +1,19 @@
 # Vista
 
-Backend for an AI-agent platform serving lower-middle-market private-equity firms.
+Desktop task mining and company workspaces for lower-middle-market private-equity firms.
+
+## First web workspace
+
+The browser dashboard in `src/web/public` displays completed recording reports uploaded
+from Electron. It includes personal access-key sign-in, company selection, source evidence
+for automation recommendations, and report downloads. Reports are isolated by tenant and
+company membership; raw desktop events, screenshots, and video stay local.
+
+See [deploy/README.md](deploy/README.md) for local startup, Docker hosting, user
+provisioning, and the Cloudflare configuration for `bumpsolutions.org`. Cloudflare serves
+the frontend and proxies to a separately hosted FastAPI/Postgres/S3 backend.
+
+
 
 Docs:
 - [IMPLEMENTATION_SO_FAR.md](IMPLEMENTATION_SO_FAR.md) — everything built, how it works, agent primer
@@ -24,12 +37,13 @@ Prerequisites: [uv](https://docs.astral.sh/uv/), Docker (or OrbStack).
 docker compose up -d          # Postgres + MinIO
 uv sync
 cp .env.example .env
-uv run alembic -n platform upgrade head           # shared schema
-uv run uvicorn vista.main:app --reload            # API on :8000
+uv run python -m vista.manage migrate             # shared + tenant schemas and bucket
+VISTA_COOKIE_SECURE=false uv run uvicorn vista.main:app --reload  # local HTTP on :8000
 uv run python -m vista.jobs.worker                # job worker (separate terminal)
 ```
 
-Tenant schemas are created and migrated automatically by `POST /tenants`. After adding a
+Tenant schemas are created and migrated by `python -m vista.manage create-workspace`.
+Public `POST /tenants` is disabled unless an operator provisioning key is configured. After adding a
 tenant migration, apply it to all tenants with:
 
 ```sh
@@ -51,7 +65,7 @@ idempotency + cost tracking (`test_jobs.py`).
 
 | Endpoint | Purpose |
 | --- | --- |
-| `POST /tenants` | Provision firm: schema + owner user + API token (unauthenticated in M1 — gate before deploying) |
+| `POST /tenants` | Operator-only provisioning, disabled by default; prefer `vista.manage create-workspace` |
 | `POST /deals`, `GET /deals` | Deals scoped to the caller's memberships |
 | `POST /deals/{id}/documents` | Register doc, returns presigned S3 upload URL (member+) |
 | `GET /documents/{id}` | Metadata + presigned download URL (viewer+) |

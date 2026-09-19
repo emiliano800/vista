@@ -3,6 +3,24 @@
 What exists in the backend today, how it works, and why it was built this way.
 (Roadmap: `FURTHER_STEPS.md`. Business context: `BUSINESS_COURSE_OF_ACTION.md`.)
 
+## Recording web workspace (September 2026)
+
+A small working browser UI now lives in `src/web/public`, backed by the FastAPI report
+endpoints and private S3 bundles. Electron's Cloud workspace settings connect with an
+OS-encrypted personal key; manual Upload report sends only a completed manifest,
+summary and cleaned event log. Upload retries are idempotent, and reuploading updates
+the visible snapshot. Browser users sign in through an expiring HttpOnly session,
+select an assigned company, inspect recommendations against individual source rows and
+export reports. The UI labels on-device analysis and distinguishes candidate activity
+hours from realized savings.
+
+Platform migration 0002 hashes existing bearer keys and adds browser sessions; tenant
+migration 0003 adds recording metadata. Public tenant provisioning is disabled by
+default. `vista.manage` supplies operator provisioning and key rotation; rotations
+invalidate browser sessions. Deployment and operating instructions are in
+[deploy/README.md](deploy/README.md). This implementation requires a hosted API,
+Postgres and private object storage behind the Cloudflare Worker before going live.
+
 ## Stack
 
 | Layer | Choice |
