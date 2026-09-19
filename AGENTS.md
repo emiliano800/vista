@@ -87,3 +87,10 @@ Key product principles (from the business plan):
   `https://vi-6526b1efec4446e48c627173e9e805ce.ecs.us-east-1.on.aws`, bucket
   `vista-reports-630396228214`, RDS `vista-postgres`. Local config in `deploy/aws/.env`
   (gitignored). Redeploy with `deploy/aws/deploy.sh`.
+- Live web workspace configured 2026-09-19: Cloudflare `vista` uses the AWS API origin;
+  build command `npx wrangler deploy`, previews `npx wrangler versions upload`.
+  First firm/company: Vista Solutions / Vista Demo; owner help@bumpsolutions.org.
+  AWS CLI default is the scoped `emiliano-vista-operator` IAM user, with credentials
+  in macOS Keychain. It can run workspace-management tasks but not infrastructure
+  deployments. Prefer `deploy/aws/manage.sh --output-file PATH COMMAND ...` for
+  private credential delivery and log cleanup. See DEPLOYMENT_REVIEW.md for validation.
