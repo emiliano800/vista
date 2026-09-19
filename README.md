@@ -98,3 +98,34 @@ annotations and run again.
 
 Plug in a real recorder by implementing `EventSource.events()` and yielding
 `RawEvent`s, and add `ActivityRule`s / case-id patterns for your applications.
+
+## Desktop recorder (`recorder/`)
+
+The employee-facing recorder: one Start button, an always-on-top overlay pill
+that stays visible over Excel/Outlook/anything, and a small dashboard (today,
+my recordings, what is recorded, settings). Electron shell, `uiohook-napi` for
+global mouse/keyboard/shortcut hooks, `get-windows` for the foreground app and
+window title, `desktopCapturer` for screenshots on window switch and a
+low-frame-rate `screen.webm`.
+
+Everything is written locally to `~/Vista/recordings/<id>/`:
+
+```
+events.jsonl      one RawEvent per line - the same wire format taskmining reads
+manifest.json     user, platform, start/end, counts, app time, processing state
+shots/NNNNNN.jpg  screenshots referenced by `screen` events (payload.image)
+screen.webm       optional screen video
+annotations.jsonl notes the employee adds (phone, paper, meetings)
+processed/        output of `taskmining run`, executed automatically on Stop
+```
+
+Redaction (emails, phones, IBAN/card/SSN) runs on the device before a line is
+written; typed characters are not stored by default (only key counts and
+shortcut combos); private apps/title keywords mute capture entirely.
+
+```bash
+cd recorder && npm install
+npm start                # real hooks; needs accessibility/screen-recording permission on macOS
+npm run start:demo       # simulated Outlook/Acrobat/QuickBooks/Excel activity, no hooks
+VISTA_PYTHON=/path/to/python npm start   # interpreter that has taskmining installed
+```

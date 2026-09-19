@@ -1,0 +1,34 @@
+<!doctype html>
+<html>
+  <head><meta charset="utf-8" /><title>Vista capture</title></head>
+  <body>
+    <script>
+      // Hidden window: records the screen as low-fps webm next to events.jsonl.
+      let rec = null;
+      let stream = null;
+      window.vista.onVideoStart(async ({ dir, fps }) => {
+        try {
+          stream = await navigator.mediaDevices.getDisplayMedia({ audio: false, video: { frameRate: { ideal: fps, max: fps } } });
+          rec = new MediaRecorder(stream, { mimeType: 'video/webm;codecs=vp8', videoBitsPerSecond: 350_000 });
+          rec.ondataavailable = async (e) => {
+            if (e.data && e.data.size) window.vista.videoChunk(dir, await e.data.arrayBuffer());
+          };
+          rec.onstop = () => {
+            stream.getTracks().forEach((t) => t.stop());
+            stream = null;
+            rec = null;
+            window.vista.videoDone();
+          };
+          rec.start(10_000); // one chunk every 10 s so a crash loses at most 10 s
+        } catch (err) {
+          console.error('screen video unavailable', err);
+          window.vista.videoDone();
+        }
+      });
+      window.vista.onVideoStop(() => {
+        if (rec && rec.state !== 'inactive') rec.stop();
+        else window.vista.videoDone();
+      });
+    </script>
+  </body>
+</html>
