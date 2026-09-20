@@ -1,5 +1,5 @@
 import uuid
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 from sqlalchemy import select, text
 from sqlalchemy.orm import Session
@@ -78,4 +78,4 @@ def mark_failed(session: Session, job: Job, error: str) -> None:
     else:
         backoff = RETRY_BACKOFF_SECONDS[min(job.attempts - 1, len(RETRY_BACKOFF_SECONDS) - 1)]
         job.status = "queued"
-        job.run_at = datetime.now(timezone.utc) + timedelta(seconds=backoff)
+        job.run_at = datetime.now(UTC) + timedelta(seconds=backoff)

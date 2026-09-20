@@ -1,16 +1,15 @@
 import secrets
 import uuid
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 from sqlalchemy import select
 
+from tests.conftest import requires_db
 from vista.db import platform_session, tenant_session
 from vista.jobs.scheduler import enqueue_due
 from vista.jobs.worker import process_one
 from vista.models.platform import Tenant, User
 from vista.models.tenant import EmployeeAgent
-
-from tests.conftest import requires_db
 
 pytestmark = requires_db
 
@@ -64,13 +63,9 @@ def test_finding_status_update(client, tenant_factory):
     _drain()
 
     finding = client.get("/findings", headers=headers).json()[0]
-    updated = client.patch(
-        f"/findings/{finding['id']}", json={"status": "reviewed"}, headers=headers
-    ).json()
+    updated = client.patch(f"/findings/{finding['id']}", json={"status": "reviewed"}, headers=headers).json()
     assert updated["status"] == "reviewed"
-    assert client.patch(
-        f"/findings/{finding['id']}", json={"status": "bogus"}, headers=headers
-    ).status_code == 422
+    assert client.patch(f"/findings/{finding['id']}", json={"status": "bogus"}, headers=headers).status_code == 422
 
 
 def test_company_summary_aggregates_findings(client, tenant_factory):
@@ -104,9 +99,7 @@ def test_non_admin_cannot_manage_employees(client, tenant_factory):
         session.commit()
     member = {"Authorization": f"Bearer {token}"}
 
-    assert client.post(
-        "/employees", json={"name": "X", "role_title": "Clerk"}, headers=member
-    ).status_code == 403
+    assert client.post("/employees", json={"name": "X", "role_title": "Clerk"}, headers=member).status_code == 403
     assert client.post("/summaries", headers=member).status_code == 403
     # But members can view.
     assert client.get("/employees", headers=member).status_code == 200
@@ -130,9 +123,7 @@ def test_scheduler_enqueues_due_agents_once(client, tenant_factory):
     _, agent = _setup_agent(client, headers)
 
     with platform_session() as session:
-        schema = session.scalar(
-            select(Tenant.schema_name).where(Tenant.id == uuid.UUID(tenant_id))
-        )
+        schema = session.scalar(select(Tenant.schema_name).where(Tenant.id == uuid.UUID(tenant_id)))
 
     before = len(client.get("/findings", headers=headers).json())
     assert enqueue_due() >= 1  # our agent has never run -> due now
@@ -146,8 +137,8 @@ def test_scheduler_enqueues_due_agents_once(client, tenant_factory):
     # Simulate the interval elapsing: agent becomes due again.
     with tenant_session(schema) as session:
         a = session.get(EmployeeAgent, uuid.UUID(agent["id"]))
-        a.last_run_at = datetime.now(timezone.utc) - timedelta(days=2)
+        a.last_run_at = datetime.now(UTC) - timedelta(days=2)
         session.commit()
     # A fresh window key is needed for idempotency; use tomorrow to guarantee it.
-    assert enqueue_due(datetime.now(timezone.utc) + timedelta(days=1)) >= 1
+    assert enqueue_due(datetime.now(UTC) + timedelta(days=1)) >= 1
     _drain()
