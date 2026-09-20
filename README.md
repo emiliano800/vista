@@ -13,6 +13,7 @@ Docs:
 - [CURRENT_IMPLEMENTATION.md](CURRENT_IMPLEMENTATION.md) — what exists and how it works
 - [NEXT_STEPS.md](NEXT_STEPS.md) — roadmap and open work
 - [BUSINESS_COURSE_OF_ACTION.md](BUSINESS_COURSE_OF_ACTION.md) — business plan + go-to-market
+- [INFRASTRUCTURE.md](INFRASTRUCTURE.md) — infra primer: request path, AWS stack, deploys, runbook
 - [DESIGN.md](DESIGN.md) — the "Field Notes" design system every surface uses
 - [deploy/README.md](deploy/README.md) · [deploy/aws/README.md](deploy/aws/README.md) — hosting and AWS operations
 
