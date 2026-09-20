@@ -33,8 +33,18 @@ command center (`/portfolio/`) instead of a single company's workspace.
 The analyst access key is a **tenant API token**, not a demo string: signing in
 posts it to `/api/auth/session`, which returns an httpOnly session cookie, the
 same path the company workspace uses. Nothing about the key is checked or
-stored in the browser, so the key is not in this file — it is printed once by
-the provisioning script and belongs in a password manager.
+stored in the browser.
+
+- Analyst access key:
+
+```
+062f895a98b207bc8537e3712018c3dbd492d1fbe04f121cd20b5eb727118cd1
+```
+
+This key reaches synthetic demo data only, and this repository is private. It
+is a real credential to the Northstar tenant, so it does not belong in the
+public upstream repository — keep this file out of any upstream pull request.
+Rotate it with `manage.sh rotate-key --user 70e9c035-0c81-4abf-a3b0-ac99f7096585`.
 
 The firm is a tenant and each portfolio company is a deal inside it. Provision
 one with:
