@@ -810,6 +810,18 @@ ipcMain.handle('cloud:upload', async (event, id) => {
 // metadata stub to submitted/ → delete the recording folder. A failure at any
 // step leaves the folder in place with status 'failed' so Submit can be retried.
 const STUB_FILES = ['manifest.json', REVIEW_FILE, SECTIONS_FILE, 'annotations.jsonl'];
+// Resolved section metadata (time span, video offsets, name, employee note,
+// AI explanation + decision, annotations) written as a sidecar next to the
+// video so the labels travel with screen.webm wherever the media goes.
+const VIDEO_SECTIONS_FILE = 'screen.sections.json';
+function writeVideoSidecar(dir, id, m) {
+  const sections = sectionsFor(id).sections.map((s) => ({ ...s, annotations: s.annotations ?? [], review: s.review ?? null }));
+  fs.writeFileSync(
+    path.join(dir, VIDEO_SECTIONS_FILE),
+    JSON.stringify({ recording_id: id, video: m.files?.video ?? null, started_at: m.started_at, ended_at: m.ended_at, pauses: m.pauses ?? [], sections }, null, 2),
+  );
+  return sections;
+}
 async function submitRecording(id) {
   const config = cloudConfig();
   if (!ID_RE.test(String(id))) throw new Error('Invalid recording ID.');
@@ -832,8 +844,8 @@ async function submitRecording(id) {
     saveState({ status: 'uploading', progress: { done: 0, total: 0 } });
     const cloudId = (await uploadReport(config, RECORDINGS, id)).id;
     saveState({ status: 'uploading', recordingId: cloudId, progress: { done: 0, total: 0 } }, { sections: false });
+    const sections = writeVideoSidecar(dir, id, m);
     const files = await uploadMedia(config, RECORDINGS, id, cloudId, { onProgress: (p) => saveState({ status: 'uploading', progress: p }, { sections: false }) });
-    const sections = sectionsFor(id).sections.map((s) => ({ ...s, annotations: s.annotations ?? [], review: s.review ?? null }));
     const stub = path.join(SUBMITTED, id);
     fs.mkdirSync(stub, { recursive: true });
     for (const f of STUB_FILES) if (fs.existsSync(path.join(dir, f))) fs.copyFileSync(path.join(dir, f), path.join(stub, f));
