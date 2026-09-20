@@ -11,6 +11,7 @@ useful smoke test of the pipeline. Prints JSON; exits 1 if trap_hits > 0."""
 import argparse
 import json
 import sys
+import uuid
 
 from vista.agents import analyze, discover, execute, synthetic
 from vista.agents.eval import Prediction, score
@@ -79,6 +80,7 @@ def main() -> int:
     ap.add_argument("--sector", choices=synthetic.SECTORS, help="analyze")
     ap.add_argument("--scopes", default="findings:write,tasks:write")
     ap.add_argument("--kinds", help="comma-separated opportunity kinds for analyze (default: all for the sector)")
+    ap.add_argument("--tenant", help="tenant schema to record the result in (eval_runs); needs VISTA_DATABASE_URL")
     args = ap.parse_args()
 
     items = synthetic.answer_key()
@@ -104,19 +106,40 @@ def main() -> int:
             kinds = execute.FINDING_KINDS
 
     result = score(preds, items, companies=companies, kinds=kinds)
-    print(
-        json.dumps(
-            {
-                "phase": args.phase,
-                "companies": sorted(companies),
-                "predictions": len(preds),
-                "score": result.as_dict(),
-                "usage": _usage(runs),
-            },
-            indent=1,
+    report = {
+        "phase": args.phase,
+        "companies": sorted(companies),
+        "predictions": len(preds),
+        "score": result.as_dict(),
+        "usage": _usage(runs),
+    }
+    if args.tenant:
+        report["eval_run_id"] = str(record(args, report, runs))
+    print(json.dumps(report, indent=1))
+    return 1 if result.trap_hits else 0
+
+
+def record(args, report: dict, runs: list[PhaseRun]) -> uuid.UUID:
+    from vista.api.evals import EvalCreate, build_eval_run
+    from vista.db import tenant_session
+
+    row = build_eval_run(
+        EvalCreate(
+            phase=args.phase,
+            sector=args.sector,
+            company=None if args.phase == "analyze" else synthetic.company(args.company).short,
+            division=args.division,
+            model=next((r.result.model for r in runs), None),
+            predictions=report["predictions"],
+            calls=len(runs),
+            cost_usd=report["usage"]["cost_usd"],
+            score=report["score"],
         )
     )
-    return 1 if result.trap_hits else 0
+    with tenant_session(args.tenant) as session:
+        session.add(row)
+        session.commit()
+        return row.id
 
 
 if __name__ == "__main__":

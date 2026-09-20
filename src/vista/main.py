@@ -9,6 +9,7 @@ from vista.api import (
     analytics,
     deals,
     employees,
+    evals,
     findings,
     imports,
     portfolio,
@@ -68,6 +69,7 @@ for router in (
     imports.router,
     portfolio.router,
     synthetic.router,
+    evals.router,
 ):
     app.include_router(router)
     app.include_router(router, prefix="/api", include_in_schema=False)

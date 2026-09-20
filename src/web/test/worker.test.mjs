@@ -159,6 +159,8 @@ test("agent proxy allows run traces, usage and starting agent runs only", async 
   assert.equal(await status(`/synthetic/companies`, "GET"), 503);
   assert.equal(await status(`/agents/analytics`, "GET"), 503);
   assert.equal(await status(`/agents/analytics`, "POST"), 405);
+  assert.equal(await status(`/evals?latest=true`, "GET"), 503);
+  assert.equal(await status(`/evals`, "POST"), 405);
   assert.equal(await status(`/synthetic/discovery`, "POST"), 503);
   assert.equal(await status(`/synthetic/analyze`, "POST"), 503);
   assert.equal(await status(`/summaries`, "POST"), 503);

@@ -12,9 +12,10 @@ from pydantic import BaseModel
 from sqlalchemy import select
 
 from vista.agents.keys import AGENT_KEYS, AGENT_NAMES
+from vista.api.evals import EvalOut
 from vista.auth import Principal, current_principal
 from vista.db import tenant_session
-from vista.models.tenant import AgentRun, Finding, UsageEvent
+from vista.models.tenant import AgentRun, EvalRun, Finding, UsageEvent
 from vista.permissions import visible_deal_clause
 
 router = APIRouter(tags=["agents"])
@@ -65,6 +66,18 @@ class FleetAnalyticsOut(BaseModel):
     total_cost_month_usd: Decimal
     runs_total: int
     runs_month: int
+    quality: list[EvalOut]  # latest eval per (phase, sector, company, division)
+
+
+def _latest_evals(session) -> list[EvalOut]:
+    seen: set[tuple] = set()
+    out = []
+    for r in session.scalars(select(EvalRun).order_by(EvalRun.created_at.desc())):
+        scope = (r.phase, r.sector, r.company, r.division)
+        if scope not in seen:
+            seen.add(scope)
+            out.append(EvalOut.model_validate(r))
+    return out
 
 
 def _month_start(now: datetime) -> datetime:
@@ -106,6 +119,7 @@ def agents_analytics(principal: Principal = Depends(current_principal)) -> Fleet
             if run_ids
             else []
         )
+        quality = _latest_evals(session)
 
     per: dict[str, dict] = {
         k: {
@@ -202,4 +216,5 @@ def agents_analytics(principal: Principal = Depends(current_principal)) -> Fleet
         total_cost_month_usd=total_month,
         runs_total=len(runs),
         runs_month=runs_month,
+        quality=quality,
     )

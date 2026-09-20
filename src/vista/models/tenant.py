@@ -164,6 +164,31 @@ class UsageEvent(TenantBase):
     company: Mapped[str | None] = mapped_column(String(64), nullable=True, index=True)
 
 
+class EvalRun(TenantBase):
+    """One scoring of a phase against synthetic_data/answer_key.json (tier 3)."""
+
+    __tablename__ = "eval_runs"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    phase: Mapped[str] = mapped_column(String(16))  # discover|execute|analyze
+    agent_key: Mapped[str] = mapped_column(String(32), index=True)
+    sector: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    company: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    division: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    model: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    predictions: Mapped[int] = mapped_column(Integer, default=0)
+    tp: Mapped[int] = mapped_column(Integer, default=0)
+    fp: Mapped[int] = mapped_column(Integer, default=0)
+    fn: Mapped[int] = mapped_column(Integer, default=0)
+    trap_hits: Mapped[int] = mapped_column(Integer, default=0)
+    precision: Mapped[float] = mapped_column(Float, default=0.0)
+    recall: Mapped[float] = mapped_column(Float, default=0.0)
+    calls: Mapped[int] = mapped_column(Integer, default=0)
+    cost_usd: Mapped[Decimal] = mapped_column(Numeric(12, 6), default=0)
+    detail: Mapped[dict] = mapped_column(JSONB, default=dict)  # matched / missed / unmatched ids
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
 class Recording(TenantBase):
     __tablename__ = "recordings"
     __table_args__ = (UniqueConstraint("deal_id", "uploaded_by", "source_id"),)

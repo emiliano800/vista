@@ -71,6 +71,8 @@ const SUITE_TRIGGER = {
 };
 const RUN_LABEL = { queued: "Queued", running: "Running", succeeded: "Complete", failed: "Failed" };
 const KIND_LABEL = { observed_fact: "Observed facts", inefficiency: "Inefficiencies", proposed_automation: "Proposed automations" };
+const PHASE_LABEL = { discover: "Discover", execute: "Execute", analyze: "Analyze" };
+const pct = (v) => `${Math.round(Number(v) * 100)}%`;
 const seconds = (s) => (s == null ? "—" : s < 90 ? `${Math.round(s)} s` : `${(s / 60).toFixed(1)} min`);
 
 function fleetHtml(fleet) {
@@ -96,6 +98,23 @@ function fleetHtml(fleet) {
   const kinds = Object.entries(KIND_LABEL)
     .map(([k, l]) => `<div class="kpi"><span>${esc(l)}</span><b>${esc(integer(fleet.findings_by_kind[k] ?? 0))}</b></div>`)
     .join("");
+  const quality = fleet.quality ?? [];
+  const scope = (q) => (q.sector ? q.sector.replace("_", " ") : [q.company, q.division].filter(Boolean).join(" · "));
+  const qualityHtml = quality.length
+    ? table(
+        [
+          { label: "Phase", render: (q) => esc(PHASE_LABEL[q.phase] ?? q.phase) },
+          { label: "Scope", render: (q) => esc(scope(q)) },
+          { label: "Precision", num: true, render: (q) => `<b>${esc(pct(q.precision))}</b>` },
+          { label: "Recall", num: true, render: (q) => `<b>${esc(pct(q.recall))}</b>` },
+          { label: "Traps", render: (q) => (q.trap_hits ? badge(`${q.trap_hits} trap${q.trap_hits === 1 ? "" : "s"}`, "danger") : badge("0 traps", "success")) },
+          { label: "Matched", num: true, render: (q) => esc(`${q.tp} / ${q.tp + q.fn}`) },
+          { label: "Model", render: (q) => esc(q.model ?? "—") },
+          { label: "Scored", render: (q) => esc(date(q.created_at)) },
+        ],
+        quality,
+      )
+    : `<p class="empty">No answer-key evaluations recorded yet. Run <code>make eval PHASE=analyze SECTOR=industrial_goods TENANT=&lt;schema&gt;</code>.</p>`;
   return `
     ${section(
       "Agent suite",
@@ -111,6 +130,7 @@ function fleetHtml(fleet) {
       <section><h2>Throughput · last ${esc(fleet.window_days)} days</h2>${runsChart(fleet.by_day)}<p class="muted small">Runs per day; failed runs in rust. Hover a bar for spend.</p></section>
       <section><h2>Spend by company</h2>${spendBars(fleet.by_company)}<h2 class="block">Spend by model</h2>${spendBars(fleet.by_model, (r) => r.key ?? "unknown")}</section>
     </div>
+    ${section("Quality · latest answer-key evaluation per scope", qualityHtml, { eyebrow: "Measures the agent against synthetic_data/answer_key.json — not business outcomes" })}
     <p class="muted small">Findings, tokens and spend are separate measures: a finding is an evidence-backed observation or proposal, not a realized saving.</p>`;
 }
 

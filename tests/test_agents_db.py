@@ -2,6 +2,7 @@
 Model is stubbed (conftest clears the API key). Skips without Postgres."""
 
 import json
+import os
 import uuid
 from decimal import Decimal
 
@@ -192,6 +193,7 @@ def test_non_member_sees_only_portfolio_wide_runs(client, tenant_factory):
     outsider, _ = _add_user(tenant_id, "analyst@firm.example.com")
     assert {r["id"] for r in client.get("/runs", headers=outsider).json()} == {ana["id"]}
     assert client.get(f"/runs?deal_id={disc['deal_id']}", headers=outsider).status_code == 403
+    assert client.get("/agents/analytics", headers=outsider).json()["runs_total"] == 1
     assert {f["run_id"] for f in client.get("/findings", headers=outsider).json()} <= {ana["id"]}
     assert client.get("/usage", headers=outsider).json()["runs"] == 1
     finding = client.get(f"/findings?run_id={disc['id']}", headers=headers).json()[0]
@@ -238,3 +240,66 @@ def test_agent_runs_need_owner_role_unless_admin(client, tenant_factory):
     assert (
         client.post("/synthetic/discovery", json={"company": "keystone", "division": "11_billing_ar"}, headers=outsider).status_code == 403
     )
+
+
+@requires_db
+def test_eval_runs_recorded_and_latest_per_scope(client, tenant_factory, tmp_path, monkeypatch):
+    import subprocess
+    import sys
+
+    from tests.test_permissions import _add_user, _tenant_schema
+
+    headers, tenant_id, _ = tenant_factory()
+    body = {
+        "phase": "analyze",
+        "sector": "industrial_goods",
+        "model": "gpt-4o-mini",
+        "predictions": 8,
+        "calls": 5,
+        "cost_usd": "0.0021",
+        "score": {"tp": 8, "fp": 0, "fn": 25, "trap_hits": 0, "matched": [["IND-01", "x"]], "missed": ["IND-02"]},
+    }
+    first = client.post("/evals", json=body, headers=headers)
+    assert first.status_code == 201, first.text
+    assert first.json()["agent_key"] == "sector_merger"
+    assert first.json()["precision"] == 1.0 and round(first.json()["recall"], 3) == 0.242
+    second = client.post("/evals", json={**body, "score": {**body["score"], "tp": 10, "fn": 23}}, headers=headers).json()
+    client.post("/evals", json={"phase": "discover", "company": "Ridgeway", "score": {"tp": 1, "fp": 1, "fn": 0}}, headers=headers)
+    assert client.post("/evals", json={"phase": "analyze", "score": {}}, headers=headers).status_code == 422
+    assert client.post("/evals", json={"phase": "nope", "company": "x", "score": {}}, headers=headers).status_code == 422
+
+    assert len(client.get("/evals", headers=headers).json()) == 3
+    latest = client.get("/evals?latest=true", headers=headers).json()
+    assert [(e["phase"], e["id"] == second["id"]) for e in latest] == [("discover", False), ("analyze", True)]
+    assert [e["agent_key"] for e in client.get("/evals?phase=discover", headers=headers).json()] == ["file_reviewer"]
+
+    quality = client.get("/agents/analytics", headers=headers).json()["quality"]
+    assert {q["id"] for q in quality} == {e["id"] for e in latest}
+
+    outsider, _ = _add_user(tenant_id, "analyst@firm.example.com")
+    assert client.post("/evals", json=body, headers=outsider).status_code == 403
+    assert len(client.get("/evals", headers=outsider).json()) == 3  # evals carry no deal data
+
+    # The CLI records into eval_runs when --tenant is given (stub model, so ~0 score).
+    out = subprocess.run(
+        [
+            sys.executable,
+            "scripts/eval_agents.py",
+            "--phase",
+            "analyze",
+            "--sector",
+            "industrial_goods",
+            "--kinds",
+            "software_overlap",
+            "--tenant",
+            _tenant_schema(tenant_id),
+        ],
+        capture_output=True,
+        text=True,
+        check=True,
+        env={**os.environ, "VISTA_OPENAI_API_KEY": ""},  # never spend tokens from the test suite
+    )
+    report = json.loads(out.stdout)
+    assert report["eval_run_id"]
+    rows = client.get("/evals?phase=analyze", headers=headers).json()
+    assert rows[0]["id"] == report["eval_run_id"] and rows[0]["calls"] == 1 and rows[0]["model"] == "stub-model-v0"
