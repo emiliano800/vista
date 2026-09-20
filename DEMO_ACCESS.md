@@ -40,7 +40,12 @@ The firm is a tenant and each portfolio company is a deal inside it. Provision
 one with:
 
 ```
-uv run python scripts/provision_portfolio_firm.py \
+# locally
+uv run python -m vista.manage provision-firm \
+    --name "Northstar HVAC Holdings" --analyst sarah@northstarhvac.com
+
+# in AWS (writes the key to a file instead of CloudWatch)
+deploy/aws/manage.sh --output-file ./analyst-key.json provision-firm \
     --name "Northstar HVAC Holdings" --analyst sarah@northstarhvac.com
 ```
 
