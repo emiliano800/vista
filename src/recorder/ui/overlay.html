@@ -141,53 +141,11 @@
       #orb svg { width: 20px; height: 20px; fill: var(--on-brand); transition: transform 0.28s cubic-bezier(0.2, 0.8, 0.2, 1); position: relative; z-index: 1; }
       #orb:hover svg { transform: scale(1.15); }
 
-      /* Idle animations. The orb cycles through these (one class at a time,
-         see ORB_ANIMS below) so it reads as alive without being distracting.
-         ::before / ::after are the extra shapes (rings, orbiting dot, arc). */
-      #orb::before, #orb::after { content: ''; position: absolute; inset: 0; border-radius: 50%; pointer-events: none; opacity: 0; }
-
-      #orb.a-breathe { animation: breathe 3.2s ease-in-out infinite; }
+      /* The only idle motion: a slow, faint breath of the glow, so the orb reads as ready. */
+      body.orb #orb { animation: breathe 5s ease-in-out infinite; }
       @keyframes breathe {
         0%, 100% { box-shadow: 0 6px 22px var(--glow); }
-        50% { box-shadow: 0 6px 30px var(--glow-strong); transform: scale(1.04); }
-      }
-
-      #orb.a-ripple::before, #orb.a-ripple::after { border: 2px solid var(--brand); animation: ripple 2.4s cubic-bezier(0.2, 0.7, 0.3, 1) infinite; }
-      #orb.a-ripple::after { animation-delay: 1.2s; }
-      @keyframes ripple {
-        0% { transform: scale(0.9); opacity: 0.8; }
-        100% { transform: scale(1.35); opacity: 0; }
-      }
-
-      #orb.a-orbit::before { inset: -6px; border: 1.5px solid var(--glow); opacity: 1; }
-      #orb.a-orbit::after {
-        /* rust satellite riding the ring: orbit radius = 26 (orb) + 6 (ring) = 32px from centre */
-        opacity: 1; inset: auto; width: 8px; height: 8px; left: 22px; top: -10px;
-        transform-origin: 4px 36px; background: var(--rust);
-        animation: orbit 2.6s linear infinite;
-      }
-      @keyframes orbit { to { transform: rotate(360deg); } }
-
-      /* "shimmer": a rust arc sweeping around the rim */
-      #orb.a-shimmer::before {
-        opacity: 1; inset: -3px;
-        border: 3px solid transparent; border-top-color: var(--rust); border-right-color: var(--rust);
-        animation: sweep 1.8s cubic-bezier(0.4, 0, 0.2, 1) infinite;
-      }
-      @keyframes sweep { to { transform: rotate(360deg); } }
-
-      #orb.a-float { animation: floaty 3.6s ease-in-out infinite; }
-      @keyframes floaty {
-        0%, 100% { transform: translateY(0) rotate(0deg); }
-        30% { transform: translateY(-4px) rotate(-3deg); }
-        70% { transform: translateY(2px) rotate(3deg); }
-      }
-
-      /* "hue": ink leans toward rust and back */
-      #orb.a-hue { animation: hue 4s ease-in-out infinite; }
-      @keyframes hue {
-        0%, 100% { background: var(--ink); box-shadow: 0 6px 22px var(--glow); }
-        50% { background: var(--rust); box-shadow: 0 6px 28px color-mix(in srgb, var(--rust) 50%, transparent); }
+        50% { box-shadow: 0 6px 28px var(--glow-strong); }
       }
 
       body.orb #shell { opacity: 0; transform: scaleX(0.16) scaleY(0.8); pointer-events: none; }
@@ -196,7 +154,7 @@
       body.orb #orb:hover { transform: scale(1.08); }
       body:not(.orb) #shell { opacity: 1; transform: none; }
       body.settling #shell, body.settling #orb { transition-duration: 0.18s; }
-      @media (prefers-reduced-motion: reduce) { #shell, #orb, #orb svg, button { transition: none !important; } #orb, #orb::before, #orb::after, #orb svg { animation: none !important; } }
+      @media (prefers-reduced-motion: reduce) { #shell, #orb, #orb svg, button { transition: none !important; } #orb { animation: none !important; } }
     </style>
   </head>
   <body class="orb">
@@ -276,7 +234,6 @@
         clearTimeout(shrinkTimer);
         const growing = MODE_SIZE[next] > MODE_SIZE[mode];
         mode = next;
-        applyOrbAnim();
         if (growing) {
           window.vista.resizeOverlay(next).then(() => requestAnimationFrame(() => document.body.classList.toggle('orb', next === 'orb')));
         } else {
@@ -284,17 +241,6 @@
           shrinkTimer = setTimeout(() => window.vista.resizeOverlay(next), next === 'orb' ? 230 : 0);
         }
       }
-      // Idle orb cycles through its animations, one at a time, a few loops each.
-      const ORB_ANIMS = ['breathe', 'ripple', 'orbit', 'shimmer', 'float', 'hue'];
-      const ORB_ANIM_MS = 7000;
-      let animIdx = 0;
-      function applyOrbAnim() {
-        const orb = $('orb');
-        orb.classList.remove(...ORB_ANIMS.map((a) => `a-${a}`));
-        if (mode === 'orb') orb.classList.add(`a-${ORB_ANIMS[animIdx]}`);
-      }
-      applyOrbAnim();
-      setInterval(() => { animIdx = (animIdx + 1) % ORB_ANIMS.length; applyOrbAnim(); }, ORB_ANIM_MS);
 
       // mousemove too: mouseenter doesn't fire when the cursor is already over the orb as the window appears
       $('orb').onmouseenter = $('orb').onmousemove = () => { clearTimeout(hoverTimer); setMode('pill'); };
