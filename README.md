@@ -10,6 +10,7 @@ Docs:
 - [BUSINESS_COURSE_OF_ACTION.md](BUSINESS_COURSE_OF_ACTION.md) — business plan + go-to-market sequence
 
 Live: https://bumpsolutions.org (Cloudflare Worker → AWS ECS/RDS/S3 backend).
+Demo portfolio sign-ins (synthetic companies, public demo keys): [DEMO_ACCESS.md](DEMO_ACCESS.md).
 
 ## Quickstart
 

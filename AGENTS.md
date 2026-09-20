@@ -67,8 +67,8 @@ Key product principles (from the business plan):
   `upstream` = github.com/ylemiesa57/vista (code only).
 - Always pull/fetch both remotes before pushing.
 - Push code changes to BOTH remotes. Root-level doc .md files (README.md,
-  CURRENT_IMPLEMENTATION.md, NEXT_STEPS.md, BUSINESS_COURSE_OF_ACTION.md, AGENTS.md)
-  must NEVER be committed/pushed to `upstream` — they go to `origin` only.
+  CURRENT_IMPLEMENTATION.md, NEXT_STEPS.md, BUSINESS_COURSE_OF_ACTION.md, AGENTS.md,
+  DEMO_ACCESS.md) must NEVER be committed/pushed to `upstream` — they go to `origin` only.
 - Workflow: `main` tracks origin and carries everything. The `upstream-main` branch
   mirrors the code without those doc files and is pushed to `upstream`'s main.
 - Never commit `.env` (holds the OpenAI API key; gitignored).
@@ -97,7 +97,15 @@ Key product principles (from the business plan):
   (gitignored). Redeploy with `deploy/aws/deploy.sh`.
 - Live web workspace configured 2026-09-19: Cloudflare `vista` uses the AWS API origin;
   build command `npx wrangler deploy`, previews `npx wrangler versions upload`.
-  First firm/company: Vista Solutions / Vista Demo; owner help@bumpsolutions.org.
+  First firm/company: Vista Solutions / Vista Demo; owner help@bumpsolutions.org —
+  its access key was REVOKED 2026-09-19 (rotated; replacement destroyed unread) because
+  its only report was placeholder data. The Keychain copy is now invalid.
+- Live demo portfolio (2026-09-19): six "Vista Capital Demo" workspaces, one per
+  synthetic company (Meridian, Harborline, Castlebrook, Northfield, Keystone, Ridgeway),
+  each with two recording reports generated from its synthetic_data/ files by
+  `scripts/seed_demo_workspaces.py` and uploaded through the production API. Access keys
+  are deliberately public in DEMO_ACCESS.md (synthetic data only — never do this for
+  real customers).
   AWS CLI default is the scoped `emiliano-vista-operator` IAM user, with credentials
   in macOS Keychain. It can run workspace-management tasks but not infrastructure
   deployments. Prefer `deploy/aws/manage.sh --output-file PATH COMMAND ...` for
