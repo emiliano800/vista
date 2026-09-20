@@ -122,7 +122,7 @@ app.whenReady().then(async () => {
         flagRows: document.querySelectorAll('#flags .flag').length, flagOpen: document.querySelectorAll('#flags .flag:not(.dismissed)').length,
         flagBtns: !!document.querySelector('#flags [data-flag][data-decision="confirmed"]'), timelineFlag: !!document.querySelector('.strip i.flagged'),
         secChip: !!document.querySelector('#secs .fchip'), excludeBtn: !!document.querySelector('#flags [data-excl]'),
-        inputBody: t('clicks / min'), trendRow: t('Clicks per minute'), appTable: !!document.querySelector('#input-body .apps-tbl'), aiSummary: t('typing-heavy session'),
+        inputBody: t('clicks / min'), trendRow: t('Clicks per minute'), appTable: !!document.querySelector('#input-body .apps-tbl'), aiSummary: t('typing-heavy session'), sumMarks: document.querySelectorAll('.ins-sum mark.hl').length,
         approveBtn: !!document.querySelector('#input-act [data-approve-ins="1"]') && !!document.querySelector('#input-act [data-rerun]'), fileAi: t('Quarterly budget by cost centre'),
         wfCard: document.querySelector('#wf-card h2').textContent.includes('Suggested workflows'), wfRows: document.querySelectorAll('#wf-body .wf').length, wfSub: document.getElementById('wf-sub').textContent, wfEnv: t('Inferred environment'),
         wfTrend: t('Steps per case'), wfRecurring: t('Seen before'),
@@ -131,7 +131,7 @@ app.whenReady().then(async () => {
     console.log(JSON.stringify({ errors, ...out }, null, 1));
     const docsOk = out.docRows === 2 && out.docBars === 1 && out.docTicks === 1 && out.fileRows === 2 && out.fileOff === 1 && out.filesSub.startsWith('1 of 2') && out.secFiles;
     const appsOk = out.appRows === 3 && out.appBars === 4 && out.appFirst === 'Outlook' && out.secsScroll === 'auto' && out.secCards === 2;
-    const insightsOk = out.thumbs === 1 && out.dayRows === 3 && out.closedDays === 2 && out.hiddenRecs === 3 && out.foldToggle === 4 && out.demoReveal && out.flagRows === 2 && out.flagOpen === 1 && out.flagBtns && out.timelineFlag && out.secChip && out.excludeBtn && out.inputBody && out.trendRow && out.appTable && out.aiSummary && out.approveBtn && out.fileAi;
+    const insightsOk = out.thumbs === 1 && out.dayRows === 3 && out.closedDays === 2 && out.hiddenRecs === 3 && out.foldToggle === 4 && out.demoReveal && out.flagRows === 2 && out.flagOpen === 1 && out.flagBtns && out.timelineFlag && out.secChip && out.excludeBtn && out.inputBody && out.trendRow && out.appTable && out.aiSummary && out.sumMarks >= 2 && out.approveBtn && out.fileAi;
     const wfOk = out.noFolder && out.progRing === '30' && out.submittingLabel && out.doneBtn && out.wfBtn === 1 && out.wfModal === 2 && out.wfCard && out.wfRows === 2 && out.wfSub.startsWith('2 suggested') && out.wfEnv && out.wfTrend && out.wfRecurring;
     app.exit(errors.length || !insightsOk || !wfOk || !out.wsPill || !out.wsBanner || !out.hasWeek || out.days < 3 || !out.adminHidden || !out.editForm || out.electron || out.other || out.whatRecorded || !docsOk || !appsOk ? 1 : 0);
   });
