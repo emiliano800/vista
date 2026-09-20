@@ -717,6 +717,16 @@ function openPermissionPane(kind) {
 
 // ---- recordings store -------------------------------------------------------
 
+// Earliest screenshot of a recording, as a file URL for the list thumbnail.
+function firstShot(dir) {
+  try {
+    const shot = fs.readdirSync(path.join(dir, 'shots')).filter((f) => f.endsWith('.jpg')).sort()[0];
+    return shot ? `file://${path.join(dir, 'shots', shot)}` : null;
+  } catch {
+    return null;
+  }
+}
+
 function listRecordings() {
   const out = [];
   const uploads = uploadStates();
@@ -736,6 +746,7 @@ function listRecordings() {
           ...m,
           apps: (m.apps ?? []).filter((a) => !isOwnApp(a.app)),
           dir: path.join(root, id),
+          thumb: firstShot(path.join(root, id)),
           annotations,
           name: m.name ?? recordingName(m, { summary: m.summary_text ?? '' }),
           upload: uploads[id] ?? null,

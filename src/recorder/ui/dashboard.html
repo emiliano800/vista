@@ -161,6 +161,8 @@
       .ins-sum { font-size: 13px; line-height: 19px; margin: 0 0 var(--space-3); }
       .file .st .fchip { margin-left: 4px; }
       .file .ai { font-size: 12px; line-height: 16px; color: var(--ink-muted); margin-top: 2px; }
+      .file .ai svg, .ins-sum svg { width: 12px; height: 12px; fill: var(--lime-ink); vertical-align: -2px; margin-right: 2px; }
+      .rec-thumb { width: 72px; height: 40px; object-fit: cover; border-radius: 4px; border: 1px solid var(--line); background: var(--surface); display: block; }
       .rank { display: grid; gap: var(--space-2); }
       .rank .row { display: grid; grid-template-columns: 26px 1fr auto; gap: var(--space-2); align-items: center; font-size: 13px; line-height: 18px; }
       .rank .row .muted { font-family: var(--font-mono); font-size: 12px; font-variant-numeric: tabular-nums; }
@@ -1237,8 +1239,9 @@
           const sum = r.summary ? `<div class="muted" style="font-size:12px;margin-top:3px">${r.summary.steps} steps · ${r.summary.cases} case${r.summary.cases === 1 ? '' : 's'}</div>` : (r.processing_note ? `<div class="muted" style="font-size:12px;margin-top:3px">${esc(r.processing_note)}</div>` : '');
           const notes = (r.annotations ?? 0) + (r.edits ?? 0);
           const submitBtn = up.key === 'submitted' ? '' : `<button class="btn sm ${up.key === 'failed' ? 'warn' : ''}" data-submit="${esc(r.recording_id)}" ${p !== 'done' || up.key === 'uploading' ? 'disabled' : ''}>${icon('upload')}${up.key === 'failed' ? 'Retry' : 'Submit'}</button>`;
+          const thumb = r.thumb ? `<img class="rec-thumb" src="${esc(r.thumb)}" alt="" loading="lazy">` : `<div class="rec-thumb"></div>`;
           return `<tr>
-            <td>${title}<div class="muted" style="font-size:12px">${esc(when)}</div></td>
+            <td style="min-width:280px"><div style="display:flex;gap:10px;align-items:center">${thumb}<div>${title}<div class="muted" style="font-size:12px">${esc(when)}</div></div></div></td>
             <td>${r.active_seconds != null ? hm(r.active_seconds) : '<span class="muted">live</span>'}</td>
             <td>${(r.counts?.total ?? 0).toLocaleString()}</td>
             <td><span class="pill ${p}">${p}</span>${sum}</td>
