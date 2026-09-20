@@ -23,7 +23,9 @@ import { FLAG_DECISIONS, INSIGHTS_FILE, buildInsights, insightsSummary, summariz
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const UI = path.join(__dirname, '..', 'ui');
 const PRELOAD = path.join(__dirname, 'preload.cjs');
-const DEMO = process.argv.includes('--demo');
+// `--demo` or the hidden Settings toggle (settings.demoMode); fixed for the
+// life of the process because the input hooks are built once.
+let DEMO = process.argv.includes('--demo');
 const MAC = process.platform === 'darwin';
 const HOME = process.env.VISTA_HOME ?? path.join(os.homedir(), 'Vista');
 const RECORDINGS = path.join(HOME, 'recordings'); // pending: everything still on this computer
@@ -65,6 +67,7 @@ let videoDone = null;
 
 async function buildRecorder() {
   const settings = loadSettings(SETTINGS_FILE);
+  if (settings.demoMode) DEMO = true;
   let hook = null;
   let activeWindow = null;
   let keyNames = new Map();
@@ -1180,6 +1183,12 @@ ipcMain.handle('settings:set', (_e, patch) => {
   return recorder.settings;
 });
 ipcMain.handle('settings:defaults', () => DEFAULT_SETTINGS);
+// Demo mode swaps the input hooks, so it only takes effect on restart.
+ipcMain.handle('app:relaunch', async () => {
+  if (recorder.state === 'recording' || recorder.state === 'paused') await recorder.stop();
+  app.relaunch({ args: process.argv.slice(1).filter((a) => a !== '--demo').concat('--dashboard') });
+  app.exit(0);
+});
 ipcMain.handle('app:info', () => ({ demo: DEMO, admin: ADMIN, home: HOME, platform: process.platform, user: os.userInfo().username, openai: !!openaiConfig(process.env, recorder.settings), ai: aiStatus(), cloud: !!cloudSettings(), ownApps: recorder.settings.ownApps ?? DEFAULT_SETTINGS.ownApps }));
 ipcMain.handle('permissions:get', () => permissions(false));
 ipcMain.handle('permissions:open', (_e, kind) => openPermissionPane(kind));

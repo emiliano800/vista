@@ -115,6 +115,9 @@
       details.card[open] summary { margin-bottom: var(--space-3); color: var(--ink); }
       tr.day td { background: var(--surface); color: var(--ink); font-weight: 600; font-size: 12px; line-height: 16px; text-transform: uppercase; letter-spacing: 0.04em; padding-top: var(--space-3); }
       tr.day td .muted { font-weight: 500; text-transform: none; letter-spacing: 0; margin-left: var(--space-2); }
+      tr.day td { cursor: pointer; user-select: none; }
+      tr.day td .caret { display: inline-block; width: 14px; color: var(--ink-muted); transition: transform 0.15s; }
+      tr.day.closed td .caret { transform: rotate(-90deg); }
       .btn.attn { position: relative; border-color: var(--human); color: var(--human-ink); background: var(--human-soft); font-weight: 600; }
       .btn.attn::after { content: ''; position: absolute; inset: -3px; border-radius: inherit; border: 2px solid var(--human); animation: attn 1.6s ease-out infinite; pointer-events: none; }
       @keyframes attn { 0% { opacity: 0.9; transform: scale(1); } 100% { opacity: 0; transform: scale(1.12); } }
@@ -462,9 +465,14 @@
 
         <!-- ============ SETTINGS ============ -->
         <div id="view-settings" class="hidden">
-          <h1>Settings</h1>
+          <h1 id="settings-title">Settings</h1>
           <p class="lede">Defaults are set by your company; you can always make recording stricter.</p>
           <div class="card set" id="settings"></div>
+          <section class="card set hidden" id="demo-settings">
+            <h2>Demo mode <span class="pill">hidden</span></h2>
+            <label><div>Simulated apps and input<span>Plays a scripted AP-clerk session (Outlook, Acrobat, QuickBooks, Excel) instead of recording this computer. Takes effect after the app restarts.</span></div><input type="checkbox" id="demo-mode"></label>
+            <div class="muted" id="demo-state" style="font-size:12px"></div>
+          </section>
           <div id="admin-settings" class="hidden">
           <section class="card">
             <h2>Cloud workspace <span class="pill">admin</span></h2>
@@ -1216,7 +1224,10 @@
       window.vista.cloudStatus().then(value => { cloud = value; renderCloud(); }).catch(e => { $('cloud-state').textContent = e.message; });
 
       // ---- recordings ----
+      // Days folded shut in My recordings; today starts open, older days closed.
+      let closedDays = null;
       function renderRecordings() {
+        if (!closedDays && recordings.length) closedDays = new Set(recordings.filter((r) => !isToday(r.started_at)).map((r) => new Date(r.started_at).toDateString()));
         $('n-rec').textContent = recordings.length;
         $('rec-empty').classList.toggle('hidden', recordings.length > 0);
         const days = new Map();
@@ -1229,9 +1240,10 @@
           const d = new Date(k);
           const label = isToday(rs[0].started_at) ? 'Today' : d.toLocaleDateString([], { weekday: 'long', month: 'short', day: 'numeric' });
           const sec = rs.reduce((a, r) => a + (r.active_seconds ?? 0), 0);
-          return `<tr class="day"><td colspan="7">${esc(label)}<span class="muted">${rs.length} session${rs.length === 1 ? '' : 's'} · ${hm(sec)}</span></td></tr>`;
+          return `<tr class="day ${closedDays?.has(k) ? 'closed' : ''}" data-day="${esc(k)}"><td colspan="7"><span class="caret">▾</span>${esc(label)}<span class="muted">${rs.length} session${rs.length === 1 ? '' : 's'} · ${hm(sec)}</span></td></tr>`;
         };
         $('rec-rows').innerHTML = [...days.entries()].map(([k, rs]) => dayRow(k, rs) + rs.map((r) => {
+          const hide = closedDays?.has(k) ? ' class="hidden"' : '';
           const when = `${clock(r.started_at)}${r.ended_at ? '–' + clock(r.ended_at) : ''}`;
           const p = r.processing ?? 'pending';
           const up = uploadState(r);
@@ -1240,7 +1252,7 @@
           const notes = (r.annotations ?? 0) + (r.edits ?? 0);
           const submitBtn = up.key === 'submitted' ? '' : `<button class="btn sm ${up.key === 'failed' ? 'warn' : ''}" data-submit="${esc(r.recording_id)}" ${p !== 'done' || up.key === 'uploading' ? 'disabled' : ''}>${icon('upload')}${up.key === 'failed' ? 'Retry' : 'Submit'}</button>`;
           const thumb = r.thumb ? `<img class="rec-thumb" src="${esc(r.thumb)}" alt="" loading="lazy">` : `<div class="rec-thumb"></div>`;
-          return `<tr>
+          return `<tr${hide}>
             <td style="min-width:280px"><div style="display:flex;gap:10px;align-items:center">${thumb}<div>${title}<div class="muted" style="font-size:12px">${esc(when)}</div></div></div></td>
             <td>${r.active_seconds != null ? hm(r.active_seconds) : '<span class="muted">live</span>'}</td>
             <td>${(r.counts?.total ?? 0).toLocaleString()}</td>
@@ -1262,6 +1274,12 @@
         $('rec-rows').querySelectorAll('[data-ann]').forEach((b) => (b.onclick = () => openAnnotate(b.dataset.ann)));
         $('rec-rows').querySelectorAll('[data-review]').forEach((b) => (b.onclick = () => openReview(b.dataset.review, true)));
         $('rec-rows').querySelectorAll('[data-open]').forEach((b) => (b.onclick = () => window.vista.openRecording(b.dataset.open)));
+        $('rec-rows').querySelectorAll('tr.day').forEach((row) => (row.onclick = () => {
+          const k = row.dataset.day;
+          closedDays ??= new Set();
+          if (closedDays.has(k)) closedDays.delete(k); else closedDays.add(k);
+          renderRecordings();
+        }));
       }
 
       // ---- annotate / fix / explain ----
@@ -1376,6 +1394,9 @@
         $('settings').innerHTML = SETTINGS_UI.map(([k, t, s]) => `<label><div>${t}<span>${s}</span></div><input type="checkbox" data-k="${k}" ${settings[k] ? 'checked' : ''}></label>`).join('');
         $('settings').querySelectorAll('input').forEach((i) => (i.onchange = async () => { settings = await window.vista.setSettings({ [i.dataset.k]: i.checked }); }));
         $('admin-settings').classList.toggle('hidden', !info?.admin);
+        $('demo-mode').checked = !!settings.demoMode;
+        $('demo-state').textContent = !!settings.demoMode === !!info?.demo ? (info?.demo ? 'Demo mode is on.' : '') : settings.demoMode ? 'Restart the app to enter demo mode.' : 'Restart the app to leave demo mode.';
+        if (info?.demo) $('demo-settings').classList.remove('hidden');
         $('private-apps').value = settings.privateApps.join(', ');
         $('private-titles').value = settings.privateTitles.join(', ');
         $('openai-key').value = settings.openaiApiKey ?? '';
@@ -1391,6 +1412,14 @@
           : ai.key_source === 'settings' ? `AI explanations on · key from Settings · model ${ai.model}`
           : 'AI explanations off — no key found.';
       }
+      // Hidden: five clicks on the Settings heading reveal the demo-mode card.
+      let titleClicks = 0;
+      $('settings-title').onclick = () => { if (++titleClicks >= 5) $('demo-settings').classList.remove('hidden'); };
+      $('demo-mode').onchange = async () => {
+        settings = await window.vista.setSettings({ demoMode: $('demo-mode').checked });
+        renderSettings();
+        if (confirm(`Restart Vista now to turn demo mode ${settings.demoMode ? 'on' : 'off'}?`)) window.vista.relaunch();
+      };
       $('save-openai').onclick = async () => {
         settings = await window.vista.setSettings({ openaiApiKey: $('openai-key').value.trim(), openaiModel: $('openai-model').value.trim(), clarifyScreenshots: $('openai-shots').checked });
         info = await window.vista.info();
