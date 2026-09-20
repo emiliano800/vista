@@ -1,4 +1,6 @@
 const $ = (id) => document.getElementById(id);
+const navigate = (url) =>
+  (window.VISTA_NAVIGATE ?? ((u) => location.assign(u)))(url);
 const esc = (value) =>
   String(value ?? "").replace(
     /[&<>"']/g,
@@ -32,7 +34,7 @@ function message(text = "") {
   $("message").textContent = text;
 }
 function view(name) {
-  for (const id of ["login", "workspace", "detail"]) $(id).hidden = id !== name;
+  for (const id of ["workspace", "detail"]) $(id).hidden = id !== name;
 }
 async function api(path, options = {}) {
   const response = await fetch(`/api${path}`, {
@@ -54,8 +56,7 @@ async function api(path, options = {}) {
     }
     if (response.status === 401) {
       ++requestGeneration;
-      $("signout").hidden = true;
-      view("login");
+      navigate("/signin/");
     }
     throw new Error(
       typeof body?.detail === "string"
@@ -238,22 +239,6 @@ async function evidence() {
   $("prev-evidence").disabled = evidenceOffset === 0;
   $("next-evidence").disabled = evidenceOffset + 50 >= result.total;
 }
-$("login-form").onsubmit = handle(async (event) => {
-  event.preventDefault();
-  const button = event.submitter;
-  button.disabled = true;
-  const token = $("key").value.trim();
-  $("key").value = "";
-  try {
-    await api("/auth/session", {
-      method: "POST",
-      body: JSON.stringify({ token }),
-    });
-    await enter();
-  } finally {
-    button.disabled = false;
-  }
-});
 $("signout").onclick = handle(async () => {
   await api("/auth/session", { method: "DELETE" });
   ++requestGeneration;
@@ -261,7 +246,7 @@ $("signout").onclick = handle(async () => {
   $("reports").replaceChildren();
   $("evidence").replaceChildren();
   $("signout").hidden = true;
-  view("login");
+  navigate("/signin/");
 });
 $("company").onchange = handle(async () => {
   reportOffset = 0;
@@ -298,6 +283,5 @@ $("next-evidence").onclick = handle(async () => {
 try {
   await enter();
 } catch (error) {
-  view("login");
   if (error.message !== "Sign in to continue") message(error.message);
 }
