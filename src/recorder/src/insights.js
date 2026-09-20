@@ -151,13 +151,12 @@ export function trends(current, previous = []) {
   };
 }
 
-const SUMMARY_SYSTEM = `You are Vista, a process analyst. You get keyboard/mouse statistics for one recorded work session, a comparison with the employee's earlier sessions, and any sensitive-content flags.
-Write for the employee, in plain language, 2 to 4 sentences: what the input pattern says about how the work was done (typing-heavy vs clicking, re-keying between apps, idle stretches), how it compares with earlier sessions (only if trends.baseline is above 0; when it is 0 never mention earlier sessions or trends), and — if there are flags — a neutral one-sentence reminder to check them before submitting. Use only the numbers given; do not estimate durations. Never speculate about what was typed.
+const SUMMARY_SYSTEM = `You are Vista, a process analyst. You get keyboard/mouse statistics for one recorded work session, sometimes a "trends" comparison with the employee's earlier sessions, and any sensitive-content flags.
+Write for the employee, in plain language, 2 to 4 sentences: what the input pattern says about how the work was done (typing-heavy vs clicking, re-keying between apps, idle stretches), how it compares with earlier sessions only when a "trends" field is present (if there is none, write nothing at all about earlier sessions, trends, baselines or this being a first session), and — if there are flags — a neutral one-sentence reminder to check them before submitting. Use only the numbers given; do not estimate durations. Never speculate about what was typed.
 Respond as JSON: {"summary": "...", "highlights": ["...", "..."]}`;
 
 export async function summarizeInsights({ input, trends: tr, flags }, api, { fetchFn = globalThis.fetch } = {}) {
-  const comparison = tr?.baseline ? tr : { baseline: 0, note: 'first recording on this computer: there are no earlier sessions, so make no comparison with the past' };
-  const user = JSON.stringify({ input, trends: comparison, flags: flags.map((f) => ({ kind: f.kind, scope: f.scope, reason: f.reason })) });
+  const user = JSON.stringify({ input, ...(tr?.baseline ? { trends: tr } : {}), flags: flags.map((f) => ({ kind: f.kind, scope: f.scope, reason: f.reason })) });
   const res = await fetchFn(api.url ?? OPENAI_URL, {
     method: 'POST',
     headers: { Authorization: `Bearer ${api.key}`, 'Content-Type': 'application/json' },

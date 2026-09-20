@@ -134,4 +134,5 @@ test('summarizeInsights sends only kinds/reasons of flags and parses the reply',
   assert.equal(out.text, 'Mostly clicking.');
   assert.deepEqual(out.highlights, ['a']);
   assert.deepEqual(JSON.parse(sent.messages[1].content).flags, [{ kind: 'private_window', scope: 'section', reason: 'r' }]);
+  assert.equal('trends' in JSON.parse(sent.messages[1].content), false, 'no baseline → no trends sent to the model');
 });
