@@ -7,6 +7,7 @@ processes it with the worker, and prints the run's event log and tenant usage.
 If VISTA_OPENAI_API_KEY is set in .env, the model_call step hits OpenAI for real
 (one small gpt-4o-mini call); otherwise it uses the built-in stub.
 """
+
 import uuid
 
 from sqlalchemy import select
@@ -24,9 +25,7 @@ def main() -> None:
     print(f"Mode: {mode}\n")
 
     migrate_platform()
-    tenant, owner, _token = provision_tenant(
-        f"demo-firm-{uuid.uuid4().hex[:6]}", "owner@demo.example.com"
-    )
+    tenant, owner, _token = provision_tenant(f"demo-firm-{uuid.uuid4().hex[:6]}", "owner@demo.example.com")
     print(f"Provisioned tenant {tenant.name!r} (schema {tenant.schema_name})")
 
     with tenant_session(tenant.schema_name) as session:
@@ -58,15 +57,11 @@ def main() -> None:
     with tenant_session(tenant.schema_name) as session:
         run = session.get(AgentRun, run_id)
         print(f"Run status: {run.status}\n\nEvent log:")
-        for e in session.scalars(
-            select(AgentRunEvent).where(AgentRunEvent.run_id == run_id).order_by(AgentRunEvent.seq)
-        ):
+        for e in session.scalars(select(AgentRunEvent).where(AgentRunEvent.run_id == run_id).order_by(AgentRunEvent.seq)):
             print(f"  [{e.seq}] {e.event_type}: {e.data}")
         print("\nUsage:")
         for u in session.scalars(select(UsageEvent).where(UsageEvent.run_id == run_id)):
-            print(
-                f"  model={u.model} in={u.input_tokens} out={u.output_tokens} cost=${u.cost_usd:.6f}"
-            )
+            print(f"  model={u.model} in={u.input_tokens} out={u.output_tokens} cost=${u.cost_usd:.6f}")
 
 
 if __name__ == "__main__":

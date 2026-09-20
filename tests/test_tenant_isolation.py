@@ -1,4 +1,5 @@
 """The most important tests in the repo: one firm must never see another firm's data."""
+
 from tests.conftest import requires_db
 
 pytestmark = requires_db

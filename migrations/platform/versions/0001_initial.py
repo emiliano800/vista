@@ -3,6 +3,7 @@
 Revision ID: 0001
 Revises:
 """
+
 import sqlalchemy as sa
 from alembic import op
 from sqlalchemy.dialects.postgresql import JSONB, UUID
@@ -50,9 +51,7 @@ def upgrade() -> None:
         sa.UniqueConstraint("tenant_id", "kind", "idempotency_key"),
         schema="platform",
     )
-    op.create_index(
-        "ix_jobs_claim", "jobs", ["status", "run_at"], schema="platform"
-    )
+    op.create_index("ix_jobs_claim", "jobs", ["status", "run_at"], schema="platform")
 
 
 def downgrade() -> None:

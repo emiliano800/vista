@@ -23,23 +23,25 @@ AGENT_STATUSES = {"active", "paused"}
 
 
 def _employee_out(e: Employee) -> EmployeeOut:
-    return EmployeeOut(
-        id=e.id, name=e.name, role_title=e.role_title, email=e.email, created_at=e.created_at
-    )
+    return EmployeeOut(id=e.id, name=e.name, role_title=e.role_title, email=e.email, created_at=e.created_at)
 
 
 def _agent_out(a: EmployeeAgent, e: Employee) -> AgentOut:
     return AgentOut(
-        id=a.id, employee_id=e.id, employee_name=e.name, role_title=e.role_title,
-        status=a.status, scopes=a.scopes, schedule=a.schedule,
-        last_run_at=a.last_run_at, created_at=a.created_at,
+        id=a.id,
+        employee_id=e.id,
+        employee_name=e.name,
+        role_title=e.role_title,
+        status=a.status,
+        scopes=a.scopes,
+        schedule=a.schedule,
+        last_run_at=a.last_run_at,
+        created_at=a.created_at,
     )
 
 
 @router.post("/employees", response_model=EmployeeOut, status_code=201)
-def create_employee(
-    body: EmployeeCreate, principal: Principal = Depends(admin_principal)
-) -> EmployeeOut:
+def create_employee(body: EmployeeCreate, principal: Principal = Depends(admin_principal)) -> EmployeeOut:
     with tenant_session(principal.tenant_schema) as session:
         employee = Employee(name=body.name, role_title=body.role_title, email=body.email)
         session.add(employee)
@@ -61,14 +63,10 @@ def create_agent(body: AgentCreate, principal: Principal = Depends(admin_princip
         employee = session.get(Employee, body.employee_id)
         if employee is None:
             raise HTTPException(status_code=404, detail="employee not found")
-        existing = session.scalar(
-            select(EmployeeAgent).where(EmployeeAgent.employee_id == body.employee_id)
-        )
+        existing = session.scalar(select(EmployeeAgent).where(EmployeeAgent.employee_id == body.employee_id))
         if existing is not None:
             raise HTTPException(status_code=409, detail="employee already has an agent")
-        agent = EmployeeAgent(
-            employee_id=body.employee_id, scopes=body.scopes, schedule=body.schedule
-        )
+        agent = EmployeeAgent(employee_id=body.employee_id, scopes=body.scopes, schedule=body.schedule)
         session.add(agent)
         session.commit()
         return _agent_out(agent, employee)
@@ -77,16 +75,12 @@ def create_agent(body: AgentCreate, principal: Principal = Depends(admin_princip
 @router.get("/agents", response_model=list[AgentOut])
 def list_agents(principal: Principal = Depends(current_principal)) -> list[AgentOut]:
     with tenant_session(principal.tenant_schema) as session:
-        rows = session.execute(
-            select(EmployeeAgent, Employee).join(Employee, Employee.id == EmployeeAgent.employee_id)
-        ).all()
+        rows = session.execute(select(EmployeeAgent, Employee).join(Employee, Employee.id == EmployeeAgent.employee_id)).all()
         return [_agent_out(a, e) for a, e in rows]
 
 
 @router.patch("/agents/{agent_id}", response_model=AgentOut)
-def update_agent(
-    agent_id: uuid.UUID, body: AgentPatch, principal: Principal = Depends(admin_principal)
-) -> AgentOut:
+def update_agent(agent_id: uuid.UUID, body: AgentPatch, principal: Principal = Depends(admin_principal)) -> AgentOut:
     with tenant_session(principal.tenant_schema) as session:
         agent = session.get(EmployeeAgent, agent_id)
         if agent is None:
@@ -107,9 +101,7 @@ def update_agent(
 
 
 @router.post("/agents/{agent_id}/runs", response_model=RunOut, status_code=201)
-def trigger_discovery_run(
-    agent_id: uuid.UUID, principal: Principal = Depends(admin_principal)
-) -> RunOut:
+def trigger_discovery_run(agent_id: uuid.UUID, principal: Principal = Depends(admin_principal)) -> RunOut:
     """Trigger an on-demand discovery run for one employee agent."""
     with tenant_session(principal.tenant_schema) as session:
         agent = session.get(EmployeeAgent, agent_id)
@@ -134,6 +126,12 @@ def trigger_discovery_run(
         run.job_id = job.id
         session.commit()
         return RunOut(
-            id=run.id, run_type=run.run_type, deal_id=None, employee_agent_id=agent.id,
-            document_id=None, status=run.status, created_at=run.created_at, finished_at=None,
+            id=run.id,
+            run_type=run.run_type,
+            deal_id=None,
+            employee_agent_id=agent.id,
+            document_id=None,
+            status=run.status,
+            created_at=run.created_at,
+            finished_at=None,
         )

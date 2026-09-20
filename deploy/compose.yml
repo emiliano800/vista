@@ -11,6 +11,7 @@ x-backend: &backend
     VISTA_S3_BUCKET: vista-reports
     VISTA_COOKIE_SECURE: "true"
     VISTA_ALLOWED_ORIGINS: '["https://bumpsolutions.org","https://vista.emilianocamachoalmanza.workers.dev"]'
+    VISTA_OPENAI_API_KEY: ${OPENAI_API_KEY:-}
   depends_on:
     postgres:
       condition: service_healthy
@@ -51,6 +52,17 @@ services:
       migrate:
         condition: service_completed_successfully
     expose: ["8000"]
+    restart: unless-stopped
+  worker:
+    # Runs explain_recording (AI review) and agent-run jobs. Set OPENAI_API_KEY in deploy/.env;
+    # without it every review stretch is marked as needing the employee's own explanation.
+    <<: *backend
+    environment:
+      <<: *environment
+      VISTA_ROLE: worker
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
     restart: unless-stopped
   caddy:
     image: caddy:2

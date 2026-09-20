@@ -23,7 +23,7 @@ class Settings(BaseSettings):
     s3_access_key: str | None = "vista"
     s3_secret_key: str | None = "vista-secret"
     s3_region: str | None = None
-    s3_bucket: str = "vista-documents"
+    s3_bucket: str = "vista-reports"
     openai_api_key: str | None = None
     openai_model: str = "gpt-4o-mini"
     provisioning_key: str | None = None  # /tenants disabled unless configured
