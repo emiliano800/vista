@@ -55,20 +55,22 @@ You are shown what a desktop recorder observed during one stretch of an employee
 Explain, in plain language, what the employee was most likely doing and why. Then rate how sure you are.
 Rules:
 - "label": 3 to 8 words naming the task, as an analyst would write it on a process map (e.g. "Enter vendor bills in QuickBooks").
-- "explanation": 1 to 3 sentences, plain language, no jargon, only what the evidence supports. Say what was done, from what to what, and how it fits the day.
+- "explanation": 1 to 3 sentences, plain language, no jargon, only what the evidence supports. Say what was done, from what to what, and how it fits the day. Quote durations only as given (e.g. "17 seconds"); never round them up or estimate time.
+- Sensitive-content flags, when listed, are context only: mention them neutrally in "explanation" if relevant, never guess at what was typed or shown.
 - "confidence": a number from 0 to 1. Be honest: 0.9+ only when the window titles, interaction pattern and copy/paste flows leave little doubt about the task; 0.5-0.8 when the app is clear but the purpose is not; below 0.5 when you are guessing.
 - "unclear": short list of what the screen cannot tell you (why, what triggered it, what happened off-screen, what decision was made).
 - "questions": 2 to 4 short questions the employee could answer in one sentence each to resolve "unclear". Never ask for passwords, personal data or named customers.
 Respond as JSON: {"label": "...", "explanation": "...", "confidence": 0.0, "unclear": ["..."], "questions": ["..."]}`;
 
 const hm = (sec) => {
+  if (sec < 90) return `${Math.max(0, Math.round(sec))} seconds`;
   const m = Math.round(sec / 60);
   return m >= 60 ? `${Math.floor(m / 60)}h ${String(m % 60).padStart(2, '0')}m` : `${m || 1} min`;
 };
 
 // Build the user message for one section (or the whole session when
 // section.whole is true) from the recording's manifest, sections and events.
-export function describeSection(section, { manifest = {}, sections = [], events = [], answers = [] } = {}) {
+export function describeSection(section, { manifest = {}, sections = [], events = [], answers = [], flags = [] } = {}) {
   const lines = [];
   if (section.whole) {
     lines.push(`WHOLE SESSION: ${manifest.started_at} → ${manifest.ended_at}, ${hm(manifest.active_seconds ?? 0)} of active work.`);
@@ -85,6 +87,8 @@ export function describeSection(section, { manifest = {}, sections = [], events 
     const shortcuts = topShortcuts(events, section);
     if (shortcuts.length) lines.push(`Most used shortcuts: ${shortcuts.join(', ')}.`);
   }
+  const mine = flags.filter((f) => (section.whole ? true : f.scope === 'section' && f.section_id === section.id));
+  if (mine.length) lines.push('Sensitive-content flags: ' + mine.map((f) => `${f.kind.replace(/_/g, ' ')} (${f.reason})`).join('; ') + '.');
   const notes = (manifest.annotations_preview ?? []).filter(Boolean);
   if (notes.length) lines.push('Employee notes on this session so far: ' + notes.join(' | '));
   if (answers.length) {

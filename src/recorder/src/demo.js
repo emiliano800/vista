@@ -2,6 +2,8 @@
 // between Outlook, Acrobat, QuickBooks and Excel so the overlay and dashboard
 // can be exercised on any machine (CI, VMs, design reviews).
 import { EventEmitter } from 'node:events';
+import fs from 'node:fs';
+import path from 'node:path';
 
 // `copies`: what the clerk copies here; `pastes`: true = re-keys the last copy into this app
 const SCENES = [
@@ -10,7 +12,8 @@ const SCENES = [
   { app: 'QuickBooks', title: 'Enter Bills - Northwind HVAC - QuickBooks Desktop', keys: 46, clicks: 9, secs: 14, pastes: true },
   { app: 'Microsoft Excel', title: 'AP tracker 2026.xlsx - Excel', keys: 30, clicks: 6, secs: 11, pastes: true },
   { app: 'Microsoft Outlook', title: 'RE: INV-48213 approval - Message (HTML) - Outlook', keys: 40, clicks: 3, secs: 8 },
-  { app: 'Google Chrome', title: 'Vendor portal - Carrier Enterprise - Google Chrome', keys: 8, clicks: 5, secs: 6 },
+  // `login`: one short burst ending in Enter — what a password entry looks like to the recorder
+  { app: 'Google Chrome', title: 'Sign in - Vendor portal - Carrier Enterprise - Google Chrome', keys: 8, clicks: 5, secs: 6, login: true },
   { app: '1Password', title: '1Password - Vault', keys: 10, clicks: 2, secs: 4 },
 ];
 
@@ -36,10 +39,43 @@ export class DemoHook extends EventEmitter {
       this.emit('keydown', { keycode: CTRL });
       this.emit('keydown', { keycode: KEY_S });
       this.emit('keyup', { keycode: CTRL });
+    } else if (scene.login && !scene._typed) {
+      scene._typed = sceneIdx;
+      for (let i = 0; i < 10; i++) this.emit('keydown', { keycode: KEY_A + (i % 3) });
+      this.emit('keydown', { keycode: ENTER });
     } else if (scene.keys) {
       for (let i = 0; i < 3; i++) this.emit('keydown', { keycode: KEY_A + i });
     }
   }
+}
+
+// Documents the demo clerk "had open": written once under `home`, so the file
+// agent has something to parse (one carries sensitive-looking content).
+export function demoDocuments(home) {
+  const dir = path.join(home, 'demo-docs');
+  fs.mkdirSync(dir, { recursive: true });
+  const docs = [
+    {
+      name: 'AP tracker 2026.csv',
+      app: 'Microsoft Excel',
+      body: [
+        'Vendor,Invoice,Amount,Due,Contact,Bank account',
+        'Carrier Enterprise LLC,INV-48213,1284.50,2026-10-05,ap@carrierenterprise.example,GB82 WEST 1234 5698 7654 32',
+        'Trane Supply,TS-99120,3410.00,2026-10-12,billing@tranesupply.example,',
+        'Ferguson HVAC,FG-20031,689.99,2026-09-28,,',
+      ].join('\n'),
+    },
+    {
+      name: 'INV-48213 Carrier Parts.txt',
+      app: 'Adobe Acrobat',
+      body: 'INVOICE INV-48213\nCarrier Enterprise LLC\nBill to: Northwind HVAC\n\n2x Compressor 38MAR 1,100.00\nFreight 184.50\nTotal due 1,284.50\nTerms net 30',
+    },
+  ];
+  return docs.map((d) => {
+    const file = path.join(dir, d.name);
+    if (!fs.existsSync(file)) fs.writeFileSync(file, d.body);
+    return { path: file, app: d.app };
+  });
 }
 
 let clipboardText = '';
@@ -48,6 +84,7 @@ export function demoClipboard() {
 }
 
 const CTRL = 29;
+const ENTER = 28;
 const KEY_A = 30;
 const KEY_S = 31;
 const KEY_C = 46;
@@ -58,6 +95,7 @@ let sceneIdx = 0;
 function currentScene() {
   const scene = SCENES[sceneIdx];
   if (Date.now() - sceneStart > scene.secs * 1000) {
+    delete scene._typed;
     sceneIdx = (sceneIdx + 1) % SCENES.length;
     sceneStart = Date.now();
   }
@@ -74,6 +112,7 @@ export function demoActiveWindow() {
 // keycode table for the demo hook, matching uiohook's UiohookKey values
 export const DEMO_KEYS = new Map([
   [CTRL, 'Ctrl'],
+  [ENTER, 'Enter'],
   [KEY_A, 'A'],
   [KEY_A + 1, 'S'],
   [KEY_A + 2, 'D'],

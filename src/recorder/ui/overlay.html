@@ -402,6 +402,16 @@
       $('open-dash').onclick = () => window.vista.openDashboard();
 
       window.vista.onStatus(render);
+      // Stop folds the window to the orb from the main process; drop the expanded
+      // panel with it so the next open is not clipped.
+      window.vista.onOverlayCollapse?.(() => {
+        if (intentOpen) closeIntent(false, { resize: false });
+        expanded = false;
+        $('panel').classList.add('hidden');
+        $('expand').style.transform = '';
+        mode = 'orb';
+        document.body.classList.add('orb');
+      });
       window.vista.status().then(render);
       setInterval(() => { if (status && status.state !== 'idle') window.vista.status().then(render); }, 1000);
     </script>
