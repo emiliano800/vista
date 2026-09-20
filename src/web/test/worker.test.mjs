@@ -112,3 +112,26 @@ test("proxy forwards sessions, preserves cookies, never caches data, rejects cro
     globalThis.fetch = original;
   }
 });
+
+test("ingestion proxy allows only scoped import operations", async () => {
+  const status = async (path, method) =>
+    (
+      await worker.fetch(
+        new Request(`https://vista.test/api${path}`, { method }),
+        {},
+      )
+    ).status;
+  const id = "00000000-0000-0000-0000-000000000001";
+  assert.equal(await status(`/deals/${id}/imports`, "GET"), 503);
+  assert.equal(await status(`/deals/${id}/imports`, "POST"), 503);
+  assert.equal(await status(`/imports/${id}`, "GET"), 503);
+  assert.equal(await status(`/imports/${id}/commit`, "POST"), 503);
+  assert.equal(
+    await status(`/imports/${id}/findings/123456789abcdef0`, "POST"),
+    503,
+  );
+  assert.equal(await status(`/imports/${id}/export`, "GET"), 503);
+  assert.equal(await status(`/imports/${id}/export`, "POST"), 405);
+  assert.equal(await status(`/imports/${id}`, "DELETE"), 405);
+  assert.equal(await status(`/imports/${id}/commit`, "PUT"), 405);
+});

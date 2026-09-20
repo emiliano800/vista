@@ -4,8 +4,8 @@ import fs from "node:fs";
 import { JSDOM } from "jsdom";
 const read = (path) =>
   fs.readFileSync(new URL(`../public/${path}`, import.meta.url), "utf8");
-const accountHtml = read("account/index.html");
-const accountSource = read("account/app.js");
+const accountHtml = read("account/recordings/index.html");
+const accountSource = read("account/recordings/app.js");
 const signinHtml = read("signin/index.html");
 const signinSource = read("signin/signin.js");
 const navSource = read("nav.js");
