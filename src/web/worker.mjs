@@ -11,11 +11,13 @@ const importWrite =
 const portfolioRead =
   /^\/api\/(?:portfolio\/(?:companies(?:\/[0-9a-f-]+)?|tasks|opportunities|activity|analysis)|agents|runs|findings)$/i;
 const portfolioCreate = /^\/api\/portfolio\/(?:tasks|analysis)$/i;
-const syntheticRead = /^\/api\/synthetic\/companies$/i;
 const syntheticWrite = /^\/api\/synthetic\/(?:discovery|analyze)$/i;
-const runRead = /^\/api\/runs\/[0-9a-f-]+$/i;
 const portfolioPatch =
   /^\/api\/(?:portfolio\/(?:tasks|opportunities)|agents|findings)\/[0-9a-f-]+$/i;
+// Agent suite: run traces, spend, synthetic companies, and starting agent runs.
+const agentRead = /^\/api\/(?:runs\/[0-9a-f-]+|usage|agents\/analytics|evals|summaries(?:\/latest)?|synthetic\/companies)$/i;
+const agentStart =
+  /^\/api\/(?:synthetic\/(?:discovery|analyze)|summaries|agents\/[0-9a-f-]+\/runs)$/i;
 const securityHeaders = {
   "X-Content-Type-Options": "nosniff",
   "Referrer-Policy": "no-referrer",
@@ -33,9 +35,8 @@ async function handle(request, env) {
       !importWrite.test(url.pathname) &&
       !portfolioRead.test(url.pathname) &&
       !portfolioPatch.test(url.pathname) &&
-      !syntheticRead.test(url.pathname) &&
-      !syntheticWrite.test(url.pathname) &&
-      !runRead.test(url.pathname)
+      !agentRead.test(url.pathname) &&
+      !agentStart.test(url.pathname)
     )
       return new Response("Not found", { status: 404 });
     // Only explicitly allowed workspace operations reach the backend.
@@ -50,7 +51,7 @@ async function handle(request, env) {
         !reviewDecision.test(url.pathname) &&
         !importWrite.test(url.pathname) &&
         !portfolioCreate.test(url.pathname) &&
-        !syntheticWrite.test(url.pathname) &&
+        !agentStart.test(url.pathname) &&
         url.pathname !== "/api/auth/session") ||
       (request.method === "PUT" && !reviewSections.test(url.pathname)) ||
       (request.method === "PATCH" && !portfolioPatch.test(url.pathname)) ||

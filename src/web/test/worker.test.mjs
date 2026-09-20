@@ -142,6 +142,38 @@ test("ingestion proxy allows only scoped import operations", async () => {
   assert.equal(await status(`/imports/${id}/commit`, "PUT"), 405);
 });
 
+test("agent proxy allows run traces, usage and starting agent runs only", async () => {
+  const status = async (path, method) =>
+    (
+      await worker.fetch(
+        new Request(`https://vista.test/api${path}`, { method }),
+        {},
+      )
+    ).status;
+  const id = "00000000-0000-0000-0000-000000000001";
+  assert.equal(await status(`/runs/${id}`, "GET"), 503);
+  assert.equal(await status(`/runs?agent_key=file_reviewer&company=Ridgeway`, "GET"), 503);
+  assert.equal(await status(`/findings?kind=inefficiency`, "GET"), 503);
+  assert.equal(await status(`/usage?group_by=company&group_by=model`, "GET"), 503);
+  assert.equal(await status(`/summaries/latest`, "GET"), 503);
+  assert.equal(await status(`/synthetic/companies`, "GET"), 503);
+  assert.equal(await status(`/agents/analytics`, "GET"), 503);
+  assert.equal(await status(`/agents/analytics`, "POST"), 405);
+  assert.equal(await status(`/evals?latest=true`, "GET"), 503);
+  assert.equal(await status(`/evals`, "POST"), 405);
+  assert.equal(await status(`/synthetic/discovery`, "POST"), 503);
+  assert.equal(await status(`/synthetic/analyze`, "POST"), 503);
+  assert.equal(await status(`/summaries`, "POST"), 503);
+  assert.equal(await status(`/agents/${id}/runs`, "POST"), 503);
+  assert.equal(await status(`/runs/${id}`, "POST"), 405);
+  assert.equal(await status(`/runs/${id}`, "DELETE"), 405);
+  assert.equal(await status(`/usage`, "POST"), 405);
+  assert.equal(await status(`/synthetic/companies`, "POST"), 405);
+  assert.equal(await status(`/synthetic/discovery`, "GET"), 405);
+  assert.equal(await status(`/tenants`, "POST"), 404);
+  assert.equal(await status(`/synthetic/nope`, "GET"), 404);
+});
+
 test("synthetic agent proxy allows discovery, analysis, and run polling only", async () => {
   const status = async (path, method) =>
     (await worker.fetch(new Request(`https://vista.test/api${path}`, { method }), {})).status;

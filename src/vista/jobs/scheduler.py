@@ -43,6 +43,8 @@ def enqueue_due(now: datetime | None = None) -> int:
                     job_id=uuid.uuid4(),
                     run_type="employee_discovery",
                     employee_agent_id=agent.id,
+                    deal_id=agent.deal_id,
+                    agent_key="file_reviewer",
                     requested_by=employee.id,  # scheduled on the employee's behalf
                 )
                 session.add(run)

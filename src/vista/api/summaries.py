@@ -4,10 +4,11 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import select
 
 from vista.api.schemas import RunOut, SummaryOut
-from vista.auth import Principal, admin_principal, current_principal
+from vista.auth import Principal, current_principal
 from vista.db import platform_session, tenant_session
 from vista.jobs.queue import enqueue
 from vista.models.tenant import AgentRun, CompanySummary
+from vista.permissions import require_agent_role
 
 router = APIRouter(tags=["summaries"])
 
@@ -17,10 +18,11 @@ def _out(s: CompanySummary) -> SummaryOut:
 
 
 @router.post("/summaries", response_model=RunOut, status_code=201)
-def trigger_summary(principal: Principal = Depends(admin_principal)) -> RunOut:
+def trigger_summary(principal: Principal = Depends(current_principal)) -> RunOut:
     """Trigger a company-wide summary run over all open findings."""
     with tenant_session(principal.tenant_schema) as session:
-        run = AgentRun(job_id=uuid.uuid4(), run_type="company_summary", requested_by=principal.user_id)
+        require_agent_role(session, principal, None)
+        run = AgentRun(job_id=uuid.uuid4(), run_type="company_summary", requested_by=principal.user_id, agent_key="report_generator")
         session.add(run)
         session.flush()
         with platform_session() as psession:

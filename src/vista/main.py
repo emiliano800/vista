@@ -5,7 +5,22 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 
-from vista.api import deals, employees, findings, imports, portfolio, recordings, runs, sessions, summaries, synthetic, tenants, usage
+from vista.api import (
+    analytics,
+    deals,
+    employees,
+    evals,
+    findings,
+    imports,
+    portfolio,
+    recordings,
+    runs,
+    sessions,
+    summaries,
+    synthetic,
+    tenants,
+    usage,
+)
 
 app = FastAPI(title="Vista", version="0.2.0")
 
@@ -45,6 +60,7 @@ for router in (
     deals.router,
     runs.router,
     usage.router,
+    analytics.router,  # before employees: /agents/analytics must win over /agents/{agent_id}
     employees.router,
     findings.router,
     summaries.router,
@@ -53,6 +69,7 @@ for router in (
     imports.router,
     portfolio.router,
     synthetic.router,
+    evals.router,
 ):
     app.include_router(router)
     app.include_router(router, prefix="/api", include_in_schema=False)

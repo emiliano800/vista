@@ -20,7 +20,7 @@ const recordings = [
   rec('a', 0),
   rec('b', 1, { upload: { status: 'uploading', progress: { done: 3, total: 10 } } }),
   rec('c', 1, { upload: { status: 'failed', error: 'boom' } }),
-  rec('d', 3, { submitted: { at: day(3, 1) }, upload: { status: 'submitted', submittedAt: day(3, 1) } }),
+  rec('d', 3, { submitted: { at: day(3, 1) }, upload: { status: 'submitted', submittedAt: day(3, 1) }, review: { source: 'cloud', run: { status: 'running' }, summary: { open: 2 }, workspace: { key: 'running', label: 'Agent explaining', sub: 'The Recording Reviewer is explaining the sections in your workspace.' } } }),
 ];
 const sections = {
   recording_id: 'a', video: null, video_url: null, started_at: day(0, 3), ended_at: day(0, 2), pauses: [],
@@ -39,7 +39,8 @@ const sections = {
     { id: 's0', index: 0, name: 'Excel — Ledger', app: 'Excel', start: day(0, 3), end: day(0, 2.5), seconds: 1800, counts: { click: 40 }, annotations: [], review: { status: 'suggested', label: 'Entering invoices', explanation: 'x', confidence: 0.93 }, edited: true, note: 'my note', files: ['Q3 budget.xlsx'] },
     { id: 's1', index: 1, name: 'Outlook', app: 'Outlook', start: day(0, 2.5), end: day(0, 2), seconds: 1800, counts: { click: 40 }, annotations: [], review: { status: 'unsure', label: '', explanation: '', confidence: 0.4, unclear: ['a'] } },
   ],
-  review: { enabled: true, generating: false, generated_at: null, model: 'm', error: null, sync_error: null, session: null, summary: { open: 1, unsure: 1, approved: 0, total: 2 } },
+  review: { enabled: true, generating: false, generated_at: null, model: 'm', error: null, sync_error: null, session: null, summary: { open: 1, unsure: 1, approved: 0, total: 2 }, source: 'cloud', run: { status: 'succeeded', finished_at: day(0, 1) }, workspace: { key: 'succeeded', label: 'Reviewed by agent', sub: 'Recording Reviewer finished · 1 section still open.' } },
+  workspace_url: 'https://w/account/recordings/#11111111-1111-1111-1111-111111111111',
 };
 const stub = `window.vista = {
   info: async () => ({ demo: true, admin: ${JSON.stringify(process.env.VISTA_ADMIN === '1')}, home: '/x', platform: 'linux', user: 'me', openai: true, ai: { enabled: true }, cloud: true, ownApps: ['Vista','Electron'] }),
@@ -51,7 +52,7 @@ const stub = `window.vista = {
   cloudStatus: async () => ({ connected: true, url: 'https://w', companyId: 'c', email: 'e', companyName: 'Co', uploads: {} }),
   submit: async () => (${JSON.stringify(sections)}), editSection: async () => (${JSON.stringify(sections)}), toggleFile: async () => (${JSON.stringify(sections)}), openFile: async () => {},
   onStatus() {}, onRecordings() {}, onSections() {}, onReview() {}, onPermissions() {},
-  start() {}, stop() {}, pause() {}, resume() {}, openRecording() {}, annotate() {}, decide() {}, explain() {}, setSettings() {}, openPermission() {}, cloudConnect() {}, cloudDisconnect() {},
+  start() {}, stop() {}, pause() {}, resume() {}, openRecording() {}, openWorkspace: async () => {}, annotate() {}, decide() {}, explain() {}, setSettings() {}, openPermission() {}, cloudConnect() {}, cloudDisconnect() {},
 };`;
 
 app.whenReady().then(async () => {
@@ -69,7 +70,7 @@ app.whenReady().then(async () => {
       document.querySelector('[data-view="recordings"]').click();
       await new Promise(r => setTimeout(r, 50));
       const days = document.querySelectorAll('tr.day').length;
-      const list = { uploading: t('Uploading 3/10'), failed: t('Failed'), submitted: t('Submitted'), electron: t('Electron'), other: t('Other (') };
+      const list = { uploading: t('Uploading 3/10'), failed: t('Failed'), submitted: t('Submitted'), electron: t('Electron'), other: t('Other ('), wsPill: !!document.querySelector('#rec-rows .pill.ws-running') };
       // open review of recording a, expand edit form for section 0
       const rv = document.querySelector('[data-review="a"]'); rv && rv.click();
       await new Promise(r => setTimeout(r, 200));
@@ -86,12 +87,13 @@ app.whenReady().then(async () => {
         fileRows: document.querySelectorAll('#files .file').length, fileOff: document.querySelectorAll('#files .file.off').length, filesSub: document.getElementById('files-sub').textContent,
         docNow: document.getElementById('doc-now').textContent.trim(), secFiles: t('Q3 budget.xlsx'),
         ...list, whatRecorded: t('What is recorded'), edited: t('edited by you'),
+        wsBanner: !document.getElementById('rv-ws').classList.contains('hidden') && !!document.querySelector('#rv-ws .pill.ws-succeeded') && !!document.getElementById('rv-open-ws'),
       };
     })()`);
     console.log(JSON.stringify({ errors, ...out }, null, 1));
     const docsOk = out.docRows === 2 && out.docBars === 1 && out.docTicks === 1 && out.fileRows === 2 && out.fileOff === 1 && out.filesSub.startsWith('1 of 2') && out.secFiles;
     const appsOk = out.appRows === 3 && out.appBars === 4 && out.appFirst === 'Outlook' && out.secsScroll === 'auto' && out.secCards === 2;
-    app.exit(errors.length || !out.hasWeek || out.days < 3 || !out.adminHidden || !out.editForm || out.electron || out.other || out.whatRecorded || !docsOk || !appsOk ? 1 : 0);
+    app.exit(errors.length || !out.wsPill || !out.wsBanner || !out.hasWeek || out.days < 3 || !out.adminHidden || !out.editForm || out.electron || out.other || out.whatRecorded || !docsOk || !appsOk ? 1 : 0);
   });
   w.loadFile(path.join(here, '..', 'ui', 'dashboard.html'));
 });

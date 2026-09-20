@@ -42,6 +42,16 @@
             >0</span
           >
         </button>
+        <button data-view="agents" class="nav-item">
+          <span data-icon="bot"></span>Agents
+        </button>
+        <button data-view="runs" class="nav-item">
+          <span data-icon="clock"></span>Runs<span
+            id="run-count"
+            class="nav-count"
+            >0</span
+          >
+        </button>
       </nav>
       <div class="sidebar-note">
         <span class="eyebrow">From source to decision</span>
@@ -124,6 +134,15 @@
         </button>
       </div>
       <div id="evidence-body"></div>
+    </dialog>
+    <dialog id="run-dialog" class="source-dialog" aria-labelledby="run-title">
+      <div class="dialog-head">
+        <h2 id="run-title">Run trace</h2>
+        <button id="close-run" class="icon-button" aria-label="Close run">
+          <span data-icon="close"></span>
+        </button>
+      </div>
+      <div id="run-body"></div>
     </dialog>
     <dialog
       id="source-dialog"
