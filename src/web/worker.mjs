@@ -11,6 +11,7 @@ const importWrite =
 const portfolioRead =
   /^\/api\/(?:portfolio\/(?:companies(?:\/[0-9a-f-]+)?|tasks|opportunities|activity|analysis)|agents|runs|findings)$/i;
 const portfolioCreate = /^\/api\/portfolio\/(?:tasks|analysis)$/i;
+const syntheticWrite = /^\/api\/synthetic\/(?:discovery|analyze)$/i;
 const portfolioPatch =
   /^\/api\/(?:portfolio\/(?:tasks|opportunities)|agents|findings)\/[0-9a-f-]+$/i;
 // Agent suite: run traces, spend, synthetic companies, and starting agent runs.
@@ -43,6 +44,7 @@ async function handle(request, env) {
       !["GET", "HEAD", "POST", "PUT", "PATCH", "DELETE"].includes(
         request.method,
       ) ||
+      (syntheticWrite.test(url.pathname) && request.method !== "POST") ||
       (request.method === "POST" &&
         !url.pathname.endsWith("/recordings") &&
         !mediaUpload.test(url.pathname) &&

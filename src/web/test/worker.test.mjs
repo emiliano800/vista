@@ -169,7 +169,26 @@ test("agent proxy allows run traces, usage and starting agent runs only", async 
   assert.equal(await status(`/runs/${id}`, "DELETE"), 405);
   assert.equal(await status(`/usage`, "POST"), 405);
   assert.equal(await status(`/synthetic/companies`, "POST"), 405);
-  assert.equal(await status(`/synthetic/discovery`, "GET"), 503);
+  assert.equal(await status(`/synthetic/discovery`, "GET"), 405);
   assert.equal(await status(`/tenants`, "POST"), 404);
   assert.equal(await status(`/synthetic/nope`, "GET"), 404);
+});
+
+test("synthetic agent proxy allows discovery, analysis, and run polling only", async () => {
+  const status = async (path, method) =>
+    (await worker.fetch(new Request(`https://vista.test/api${path}`, { method }), {})).status;
+  const run = "/runs/00000000-0000-0000-0000-000000000001";
+  for (const path of ["/synthetic/companies", run]) {
+    assert.equal(await status(path, "GET"), 503);
+    assert.equal(await status(path, "HEAD"), 503);
+    for (const method of ["POST", "PUT", "PATCH", "DELETE"])
+      assert.equal(await status(path, method), 405);
+  }
+  for (const path of ["/synthetic/discovery", "/synthetic/analyze"]) {
+    assert.equal(await status(path, "POST"), 503);
+    for (const method of ["GET", "HEAD", "PUT", "PATCH", "DELETE"])
+      assert.equal(await status(path, method), 405);
+  }
+  for (const path of ["/synthetic/answer_key", "/synthetic/discovery/extra", `${run}/delete`])
+    assert.equal(await status(path, "GET"), 404);
 });
