@@ -1,37 +1,5 @@
-/* Vista web — "Field Notes" theme. See designs/DESIGN.md. */
-@font-face {
-  font-family: "Newsreader";
-  font-style: normal;
-  font-weight: 300 500;
-  font-display: swap;
-  src: url(/fonts/newsreader-latin.woff2) format("woff2");
-}
-@font-face {
-  font-family: "Newsreader";
-  font-style: italic;
-  font-weight: 300 400;
-  font-display: swap;
-  src: url(/fonts/newsreader-italic-latin.woff2) format("woff2");
-}
-@font-face {
-  font-family: "Inter";
-  font-style: normal;
-  font-weight: 400 600;
-  font-display: swap;
-  src: url(/fonts/inter-latin.woff2) format("woff2");
-}
+/* Vista web — "Field Notes" theme. Tokens come from tokens.css; see DESIGN.md. */
 :root {
-  --cream: #f4efe6;
-  --cream-2: #ebe4d6;
-  --paper: #fbf8f2;
-  --ink: #1f1c18;
-  --ink-2: #57514a;
-  --ink-3: #8b8377;
-  --rust: #b3471f;
-  --moss: #4d6b4a;
-  --line: #d9d1c2;
-  --serif: "Newsreader", Georgia, serif;
-  --sans: "Inter", system-ui, sans-serif;
   font-family: var(--sans);
   font-size: 17px;
   line-height: 1.6;
@@ -42,9 +10,6 @@
 }
 * {
   box-sizing: border-box;
-}
-::selection {
-  background: #f0d5c3;
 }
 body {
   margin: 0;
@@ -334,6 +299,21 @@ code {
 .report small {
   font-variant-numeric: tabular-nums;
 }
+.report .figures {
+  display: flex;
+  gap: 24px;
+  margin-left: auto;
+  margin-right: 24px;
+  color: var(--ink-2);
+}
+.report .mono-figure {
+  font-size: 14px;
+  text-align: left;
+}
+.candidate .mono-figure {
+  font-size: inherit;
+  color: var(--ink);
+}
 .pager {
   display: flex;
   justify-content: space-between;
@@ -406,7 +386,7 @@ code {
 }
 table {
   width: 100%;
-  min-width: 720px;
+  min-width: 900px;
   border-collapse: collapse;
   font-size: 14px;
 }
@@ -428,7 +408,22 @@ th:first-child,
 td:first-child {
   padding-left: 0;
   color: var(--ink-3);
+}
+th.num,
+td.num {
+  text-align: right;
   font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+td.mono {
+  font-size: 13px;
+  white-space: nowrap;
+}
+td .badge + .badge {
+  margin-left: 4px;
+}
+td:nth-child(5),
+td:last-child {
   white-space: nowrap;
 }
 th:last-child,
@@ -475,10 +470,6 @@ footer {
 }
 [hidden] {
   display: none !important;
-}
-:focus-visible {
-  outline: 2px solid var(--rust);
-  outline-offset: 3px;
 }
 @media (prefers-reduced-motion: reduce) {
   * {

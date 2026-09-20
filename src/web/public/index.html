@@ -4,6 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
     <title>Vista · Company workspace</title>
+    <link rel="stylesheet" href="/tokens.css" />
     <link rel="stylesheet" href="/style.css" />
     <script type="module" src="/app.js"></script>
   </head>
@@ -139,7 +140,7 @@
           <h2>Activity evidence</h2>
           <p class="muted">
             Each row is a source step from the uploaded event log. Labels and
-            case groupings may be inferred; provenance shows how each was
+            case groupings may be inferred; the source column shows how each was
             assigned.
           </p>
           <label
@@ -151,9 +152,10 @@
             <table>
               <thead>
                 <tr>
-                  <th>Row</th>
+                  <th class="num">Row</th>
                   <th>Activity / note</th>
                   <th>Time</th>
+                  <th class="num">Duration</th>
                   <th>App</th>
                   <th>Case</th>
                   <th>Label / case source</th>
