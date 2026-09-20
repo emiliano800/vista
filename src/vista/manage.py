@@ -4,6 +4,7 @@ import argparse
 import json
 import secrets
 import uuid
+from pathlib import Path
 
 from sqlalchemy import delete, text
 
@@ -48,9 +49,29 @@ def main():
     add.add_argument("--role", choices=["member", "viewer"], default="member")
     rotate = commands.add_parser("rotate-key")
     rotate.add_argument("--user", required=True, type=uuid.UUID)
+    seed = commands.add_parser("seed-portfolio", help="seed the analyst demo firm and its companies")
+    seed.add_argument("--skip-cedar", action="store_true")
+    seed.add_argument("--analyst-key", default=None)
     args = parser.parse_args()
     if args.command == "migrate":
         migrate()
+        return
+    if args.command == "seed-portfolio":
+        # scripts/ ships in the image; run it in-process so manage.sh, which can
+        # only invoke `python -m vista.manage`, can reach it inside AWS.
+        import runpy
+        import sys
+
+        argv = ["seed_portfolio_demo.py"]
+        if args.skip_cedar:
+            argv.append("--skip-cedar")
+        if args.analyst_key:
+            argv += ["--analyst-key", args.analyst_key]
+        script = Path(__file__).resolve().parents[2] / "scripts" / "seed_portfolio_demo.py"
+        if not script.exists():
+            parser.error(f"seeder not found at {script}; is scripts/ in the image?")
+        sys.argv = argv
+        runpy.run_path(str(script), run_name="__main__")
         return
     if args.command == "create-workspace":
         tenant, user, token = provision_tenant(args.firm, args.email)

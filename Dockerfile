@@ -7,6 +7,7 @@ RUN uv sync --frozen --no-dev --no-install-project
 COPY src ./src
 COPY synthetic_data ./synthetic_data
 COPY migrations ./migrations
+COPY scripts ./scripts
 COPY alembic.ini docker-entrypoint.sh ./
 RUN uv sync --frozen --no-dev && useradd --create-home vista && chown -R vista:vista /app \
     && chmod +x docker-entrypoint.sh
