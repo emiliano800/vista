@@ -7,14 +7,14 @@
 // Everything is written to insights.json; the employee confirms or dismisses
 // each flag and approves the analysis before Submit.
 import { OPENAI_URL } from './explain.js';
+import { SENSITIVE_TITLE, SENSITIVE_URL, typedFlags, typingSummary } from './keylog.js';
 import { shortApp } from './sections.js';
 import { workflowTrends } from './workflows.js';
 
 export const INSIGHTS_FILE = 'insights.json';
 export const FLAG_DECISIONS = new Set(['confirmed', 'dismissed']);
 
-export const SENSITIVE_TITLE = /\b(?:sign[ -]?in|log[ -]?in|login|password|passcode|authenticat|verify your identity|two[ -]factor|2fa|one[ -]time code|checkout|payment|billing|credit card|bank|banking|payroll|salary|tax return|medical|patient)\b/i;
-export const SENSITIVE_URL = /(?:\/login|\/signin|\/auth|\/sso|\/oauth|\/checkout|\/payment|\/billing|accounts\.google|login\.microsoft|okta\.com|auth0\.com)/i;
+export { SENSITIVE_TITLE, SENSITIVE_URL };
 export const REDACTION_TOKEN = /\[(?:IBAN|CARD|EMAIL|SSN|PHONE)\]/;
 
 const ts = (e) => Date.parse(e.timestamp);
@@ -74,6 +74,7 @@ export function sectionFlags(section, events) {
   const clip = inside.filter((e) => (e.event_type === 'copy' || e.event_type === 'paste') && /\b(?:\d[ -]?){13,19}\b|\b\d{3}-\d{2}-\d{4}\b|\b[A-Z]{2}\d{2}(?:\s?[A-Z0-9]{4}){3,7}\b/.test(e.text ?? ''));
   if (clip.length) flags.push(mkFlag('section', section.id, 'card_number', `card, account or ID number copied to the clipboard (${clip.length}×)`, clip[0].timestamp));
   for (const p of passwordCandidates(inside)) flags.push(mkFlag('section', section.id, 'password_entry', `a ${p.keys}-key entry ending in Enter in "${String(p.title).slice(0, 60)}" looks like a password being typed`, p.at));
+  for (const t of typedFlags(inside)) flags.push(mkFlag('section', section.id, t.kind, t.reason, t.at));
   return flags;
 }
 
@@ -194,6 +195,7 @@ export function buildInsights({ manifest, events, sections, files, previous = []
     generated_at: new Date().toISOString(),
     flags,
     input,
+    typing: typingSummary(events),
     trends: { ...trends(input, previous), workflow: workflowTrends({ summary: manifest.summary ?? null, workflows }, previous) },
     workflows: (workflows?.workflows ?? []).map((w) => ({ id: w.id, title: w.title, apps: w.apps, automation: w.automation, kind: w.kind })),
     summary: prior?.summary ?? null,
