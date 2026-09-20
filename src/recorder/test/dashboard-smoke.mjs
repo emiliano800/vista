@@ -20,7 +20,7 @@ const recordings = [
   rec('a', 0, { thumb: 'file:///x/shots/000001.jpg' }),
   rec('b', 1, { upload: { status: 'uploading', progress: { done: 3, total: 10 } } }),
   rec('c', 1, { upload: { status: 'failed', error: 'boom' } }),
-  rec('d', 3, { submitted: { at: day(3, 1) }, upload: { status: 'submitted', submittedAt: day(3, 1) }, review: { source: 'cloud', run: { status: 'running' }, summary: { open: 2 }, workspace: { key: 'running', label: 'Agent explaining', sub: 'The Recording Reviewer is explaining the sections in your workspace.' } } }),
+  rec('d', 3, { submitted: { at: day(3, 1) }, upload: { status: 'submitted', submittedAt: day(3, 1) }, workflows: { count: 2, ids: ['rekey-a-b', 'inbox-triage'], kinds: ['data_transfer', 'communication'] }, review: { source: 'cloud', run: { status: 'running' }, summary: { open: 2 }, workspace: { key: 'running', label: 'Agent explaining', sub: 'The Recording Reviewer is explaining the sections in your workspace.' } } }),
 ];
 const sections = {
   recording_id: 'a', video: null, video_url: null, started_at: day(0, 3), ended_at: day(0, 2), pauses: [],
@@ -47,11 +47,15 @@ const sections = {
     ],
     summary_counts: { flags: 2, open_flags: 1, confirmed: 0, high: 1, approved: false },
     input: { active_seconds: 3600, totals: { click: 80, key: 900, shortcut: 12, copy: 4, paste: 4, scroll: 9, focus: 6 }, clicks_per_min: 1.3, keys_per_min: 15, typing_bursts: 40, longest_burst_keys: 60, mouse_to_key_ratio: 0.09, rekeyed_between_apps: 3, idle_seconds: 120, idle_gaps: 1, longest_idle_seconds: 120, top_shortcuts: [{ combo: 'Ctrl+C', n: 6 }, { combo: 'Ctrl+V', n: 6 }], per_app: [{ app: 'Microsoft Excel', short: 'Excel', clicks: 60, keys: 800, shortcuts: 12, copies: 4, pastes: 0, scrolls: 5, minutes: 30, clicks_per_min: 2, keys_per_min: 26.7 }, { app: 'Microsoft Outlook', short: 'Outlook', clicks: 20, keys: 100, shortcuts: 0, copies: 0, pastes: 4, scrolls: 4, minutes: 30, clicks_per_min: 0.7, keys_per_min: 3.3 }] },
-    trends: { baseline: 3, metrics: [{ key: 'clicks_per_min', label: 'Clicks per minute', now: 1.3, baseline: 2.1, delta_pct: -38 }, { key: 'keys_per_min', label: 'Keystrokes per minute', now: 15, baseline: 12, delta_pct: 25 }] },
+    trends: { baseline: 3, metrics: [{ key: 'clicks_per_min', label: 'Clicks per minute', now: 1.3, baseline: 2.1, delta_pct: -38 }, { key: 'keys_per_min', label: 'Keystrokes per minute', now: 15, baseline: 12, delta_pct: 25 }], workflow: { baseline: 3, metrics: [{ key: 'steps_per_case', label: 'Steps per case', now: 8, baseline: 11, delta_pct: -27 }], recurring: [{ id: 'rekey-outlook-excel', title: 'Re-key Outlook data into Excel', seen_before: 2 }] } },
     summary: { text: 'A typing-heavy session in Excel with some re-keying from Outlook.', highlights: ['Re-keyed 3 times'], model: 'm', usage: null, at: day(0, 1.9) },
   },
   review: { enabled: true, generating: false, generated_at: null, model: 'm', error: null, sync_error: null, session: null, summary: { open: 1, unsure: 1, approved: 0, total: 2 }, source: 'cloud', run: { status: 'succeeded', finished_at: day(0, 1) }, workspace: { key: 'succeeded', label: 'Reviewed by agent', sub: 'Recording Reviewer finished · 1 section still open.' } },
   workspace_url: 'https://w/account/?view=runs&recording=11111111-1111-1111-1111-111111111111',
+  workflows: { version: 1, generated_at: day(0, 1.9), environment: { apps: [{ app: 'Microsoft Excel', short: 'Excel', role: 'spreadsheet', seconds: 1800 }, { app: 'Microsoft Outlook', short: 'Outlook', role: 'email', seconds: 1800 }], roles: ['spreadsheet', 'email'], documents: [{ name: 'Q3 budget.xlsx', ext: '.xlsx', app: 'Microsoft Excel', edited: true, parsed: true, flags: 1 }], sites: [] }, workflows: [
+    { id: 'rekey-outlook-excel', title: 'Re-key Outlook data into Excel', kind: 'data_transfer', apps: ['Microsoft Outlook', 'Microsoft Excel'], steps: ['Open the source in Outlook', 'Copy one field at a time', 'Switch to Excel and paste it'], evidence: { pastes: 3 }, automation: 0.85, sources: ['events'], why: '3 values were copied from email and pasted into the spreadsheet.' },
+    { id: 'tracker-q3-budget-xlsx', title: 'Update the “Q3 budget.xlsx” tracker', kind: 'reporting', apps: ['Microsoft Excel'], steps: ['Open the tracker', 'Update the row', 'Save'], evidence: {}, automation: 0.7, sources: ['documents'], why: 'Q3 budget.xlsx was edited during the session.' },
+  ] },
 };
 const stub = `window.vista = {
   info: async () => ({ demo: true, admin: ${JSON.stringify(process.env.VISTA_ADMIN === '1')}, home: '/x', platform: 'linux', user: 'me', openai: true, ai: { enabled: true }, cloud: true, ownApps: ['Vista','Electron'] }),
@@ -62,6 +66,7 @@ const stub = `window.vista = {
   getSettings: async () => ({ ownApps: ['Vista','Electron'], privateApps: [], privateTitles: [] }),
   cloudStatus: async () => ({ connected: true, url: 'https://w', companyId: 'c', email: 'e', companyName: 'Co', uploads: {} }),
   submit: async () => (${JSON.stringify(sections)}), editSection: async () => (${JSON.stringify(sections)}), toggleFile: async () => (${JSON.stringify(sections)}), openFile: async () => {},
+  workflows: async () => (${JSON.stringify(sections.workflows)}),
   decideFlag: async () => (${JSON.stringify(sections)}), excludeSection: async () => (${JSON.stringify(sections)}), approveInsights: async () => (${JSON.stringify(sections)}), rerunAgents: async () => (${JSON.stringify(sections)}),
   onStatus() {}, onRecordings() {}, onSections() {}, onReview() {}, onPermissions() {},
   start() {}, stop() {}, pause() {}, resume() {}, openRecording() {}, openWorkspace: async () => {}, annotate() {}, decide() {}, explain() {}, setSettings() {}, openPermission() {}, cloudConnect() {}, cloudDisconnect() {},
@@ -82,7 +87,14 @@ app.whenReady().then(async () => {
       document.querySelector('[data-view="recordings"]').click();
       await new Promise(r => setTimeout(r, 50));
       const days = document.querySelectorAll('tr.day').length;
-      const list = { uploading: t('Uploading 3/10'), failed: t('Failed'), submitted: t('Submitted'), electron: t('Electron'), other: t('Other ('), wsPill: !!document.querySelector('#rec-rows .pill.ws-running') };
+      const list = { uploading: t('Uploading 3/10'), failed: t('Failed'), submitted: t('Submitted'), electron: t('Electron'), other: t('Other ('), wsPill: !!document.querySelector('#rec-rows .pill.ws-running'),
+        noFolder: !document.querySelector('#rec-rows [data-open]') && !document.querySelector('#rec-rows [data-ann]'),
+        progRing: document.querySelector('#rec-rows .prog')?.style.getPropertyValue('--p'), submittingLabel: document.querySelector('#rec-rows [data-submit="b"]')?.textContent.includes('Submitting'),
+        doneBtn: !!document.querySelector('#rec-rows .btn.done'), wfBtn: document.querySelectorAll('#rec-rows [data-wf]').length };
+      document.querySelector('#rec-rows [data-wf]').click();
+      await new Promise(r => setTimeout(r, 100));
+      list.wfModal = !document.getElementById('wf-modal').classList.contains('hidden') && document.querySelectorAll('#wf-modal-body .wf').length;
+      document.getElementById('wf-close').click();
       // open review of recording a, expand edit form for section 0
       const rv = document.querySelector('[data-review="a"]'); rv && rv.click();
       await new Promise(r => setTimeout(r, 200));
@@ -112,13 +124,16 @@ app.whenReady().then(async () => {
         secChip: !!document.querySelector('#secs .fchip'), excludeBtn: !!document.querySelector('#flags [data-excl]'),
         inputBody: t('clicks / min'), trendRow: t('Clicks per minute'), appTable: !!document.querySelector('#input-body .apps-tbl'), aiSummary: t('typing-heavy session'),
         approveBtn: !!document.querySelector('#input-act [data-approve-ins="1"]') && !!document.querySelector('#input-act [data-rerun]'), fileAi: t('Quarterly budget by cost centre'),
+        wfCard: document.querySelector('#wf-card h2').textContent.includes('Suggested workflows'), wfRows: document.querySelectorAll('#wf-body .wf').length, wfSub: document.getElementById('wf-sub').textContent, wfEnv: t('Inferred environment'),
+        wfTrend: t('Steps per case'), wfRecurring: t('Seen before'),
       };
     })()`);
     console.log(JSON.stringify({ errors, ...out }, null, 1));
     const docsOk = out.docRows === 2 && out.docBars === 1 && out.docTicks === 1 && out.fileRows === 2 && out.fileOff === 1 && out.filesSub.startsWith('1 of 2') && out.secFiles;
     const appsOk = out.appRows === 3 && out.appBars === 4 && out.appFirst === 'Outlook' && out.secsScroll === 'auto' && out.secCards === 2;
     const insightsOk = out.thumbs === 1 && out.dayRows === 3 && out.closedDays === 2 && out.hiddenRecs === 3 && out.foldToggle === 4 && out.demoReveal && out.flagRows === 2 && out.flagOpen === 1 && out.flagBtns && out.timelineFlag && out.secChip && out.excludeBtn && out.inputBody && out.trendRow && out.appTable && out.aiSummary && out.approveBtn && out.fileAi;
-    app.exit(errors.length || !insightsOk || !out.wsPill || !out.wsBanner || !out.hasWeek || out.days < 3 || !out.adminHidden || !out.editForm || out.electron || out.other || out.whatRecorded || !docsOk || !appsOk ? 1 : 0);
+    const wfOk = out.noFolder && out.progRing === '30' && out.submittingLabel && out.doneBtn && out.wfBtn === 1 && out.wfModal === 2 && out.wfCard && out.wfRows === 2 && out.wfSub.startsWith('2 suggested') && out.wfEnv && out.wfTrend && out.wfRecurring;
+    app.exit(errors.length || !insightsOk || !wfOk || !out.wsPill || !out.wsBanner || !out.hasWeek || out.days < 3 || !out.adminHidden || !out.editForm || out.electron || out.other || out.whatRecorded || !docsOk || !appsOk ? 1 : 0);
   });
   w.loadFile(path.join(here, '..', 'ui', 'dashboard.html'));
 });

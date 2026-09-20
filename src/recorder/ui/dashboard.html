@@ -277,6 +277,23 @@
       /* Lucide icons (DESIGN.md): 16px, 1.75 stroke, currentColor */
       .ic { width: 14px; height: 14px; stroke: currentColor; stroke-width: 1.75; stroke-linecap: round; stroke-linejoin: round; fill: none; flex: none; vertical-align: -2px; }
       .pill.submitted { background: var(--success-soft); color: var(--success); }
+      /* submit progress ring + workflow button, right of the row's actions */
+      .prog { --p: 0; width: 22px; height: 22px; border-radius: 50%; display: inline-grid; place-items: center; vertical-align: middle; background: conic-gradient(var(--lime-ink) calc(var(--p) * 1%), var(--line) 0); position: relative; margin-left: 4px; }
+      .prog::after { content: ''; width: 14px; height: 14px; border-radius: 50%; background: var(--surface); position: absolute; }
+      .prog span { position: relative; font-size: 8px; line-height: 1; font-family: var(--font-mono); color: var(--ink-secondary); z-index: 1; }
+      .btn.sm.done { background: var(--success); border-color: var(--success); color: var(--on-brand); }
+      .btn.wf { animation: pop 0.35s ease-out; border-color: var(--agent); color: var(--agent-ink); }
+      @keyframes pop { from { opacity: 0; transform: scale(0.6); } to { opacity: 1; transform: scale(1); } }
+      .wf-list { display: grid; gap: 10px; }
+      .wf { border: 1px solid var(--line); border-radius: var(--radius-md, 8px); padding: 10px 12px; display: grid; gap: 6px; }
+      .wf h3 { margin: 0; font-size: 13px; line-height: 18px; display: flex; justify-content: space-between; gap: 8px; align-items: baseline; }
+      .wf h3 .auto { font-family: var(--font-mono); font-size: 11px; font-weight: 500; color: var(--agent-ink); white-space: nowrap; }
+      .wf .why { font-size: 12px; line-height: 16px; color: var(--ink-secondary); margin: 0; }
+      .wf ol { margin: 0; padding-left: 18px; font-size: 12px; line-height: 17px; color: var(--ink-secondary); }
+      .wf .src { display: flex; gap: 4px; flex-wrap: wrap; }
+      .wf .src span { font-size: 10px; line-height: 14px; padding: 1px 6px; border-radius: var(--radius-pill); background: var(--surface-sunken); color: var(--ink-muted); }
+      .wf .src span.kind { background: var(--agent-soft, var(--surface-sunken)); color: var(--agent-ink); }
+      .wf-env { font-size: 12px; line-height: 16px; color: var(--ink-secondary); margin: 0 0 10px; }
       .pill.uploading { background: var(--lime-soft); color: var(--lime-ink); }
       .pill.local { background: var(--surface-sunken); color: var(--ink-muted); }
       .pill.ws-queued, .pill.ws-running { border-color: var(--agent); color: var(--agent-ink); }
@@ -403,6 +420,12 @@
             </div>
           </section>
 
+          <section class="card" id="wf-card" style="margin:0 0 14px">
+            <h2 style="display:flex;justify-content:space-between;align-items:baseline"><span>Suggested workflows</span><span class="muted" style="text-transform:none;letter-spacing:0;font-weight:500" id="wf-sub"></span></h2>
+            <p class="muted" style="margin:-4px 0 10px;font-size:12px;line-height:16px">Repeatable pieces of work inferred on this computer from the apps and documents on screen, the copy/paste between them, and the task-mining steps. Suggestions, not confirmed processes.</p>
+            <div id="wf-body"><div class="empty">Waiting for the analysis…</div></div>
+          </section>
+
           <section class="card hidden" id="files-card" style="margin:0 0 14px">
             <h2 style="display:flex;justify-content:space-between;align-items:baseline"><span>Documents</span><span class="muted" style="text-transform:none;letter-spacing:0;font-weight:500" id="files-sub"></span></h2>
             <div class="files" id="files"></div>
@@ -521,6 +544,16 @@
       </div>
     </div>
 
+    <!-- suggested workflows for one submitted session -->
+    <div id="wf-modal" class="modal hidden">
+      <div class="card wide" style="max-height:80vh;overflow:auto">
+        <h2 style="margin:0">Suggested workflows</h2>
+        <div class="muted" id="wf-modal-sub" style="margin-bottom:10px"></div>
+        <div id="wf-modal-body"></div>
+        <div class="actions"><span style="flex:1"></span><button class="btn" id="wf-close">Close</button></div>
+      </div>
+    </div>
+
     <script>
       const $ = (id) => document.getElementById(id);
       const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
@@ -544,6 +577,7 @@
       const LUCIDE = {
         pencil: '<path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"/><path d="m15 5 4 4"/>',
         check: '<path d="M20 6 9 17l-5-5"/>',
+        workflow: '<rect width="8" height="8" x="3" y="3" rx="2"/><path d="M7 11v4a2 2 0 0 0 2 2h4"/><rect width="8" height="8" x="13" y="13" rx="2"/>',
         upload: '<path d="M12 13v8"/><path d="M4 14.899A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.242"/><path d="m8 17 4-4 4 4"/>',
         cloudCheck: '<path d="m17 15-5.5 5.5L9 18"/><path d="M5 17.743A7 7 0 1 1 15.71 10h1.79a4.5 4.5 0 0 1 1.5 8.742"/>',
         shield: '<path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/>',
@@ -773,6 +807,7 @@
         renderSections();
         renderFiles();
         renderInsights();
+        renderWorkflows();
         const rec = recordings.find((x) => x.recording_id === id);
         if (rec) renderWorkspaceState(rec, uploadState(rec));
         // key added after the session ended, or the app was closed mid-way: pick the explanations up now
@@ -785,6 +820,7 @@
         renderSections();
         renderFiles();
         renderInsights();
+        renderWorkflows();
         renderReview();
       });
 
@@ -827,6 +863,7 @@
         body.innerHTML = summary
           + `<div class="kv"><div><b>${inp.clicks_per_min}</b><span>clicks / min</span></div><div><b>${inp.keys_per_min}</b><span>keys / min</span></div><div><b>${inp.rekeyed_between_apps}</b><span>pastes from another app</span></div><div><b>${inp.typing_bursts}</b><span>typing bursts · longest ${inp.longest_burst_keys} keys</span></div><div><b>${t.shortcut}</b><span>shortcuts${inp.top_shortcuts.length ? ` · ${esc(inp.top_shortcuts.slice(0, 2).map((s) => s.combo).join(', '))}` : ''}</span></div><div><b>${hm(inp.idle_seconds)}</b><span>idle · ${inp.idle_gaps} gap${inp.idle_gaps === 1 ? '' : 's'}${inp.longest_idle_seconds ? `, longest ${hm(inp.longest_idle_seconds)}` : ''}</span></div></div>`
           + (tr?.metrics?.length ? `<div class="muted" style="font-size:11px;margin-bottom:4px">Versus your last ${tr.baseline} recording${tr.baseline === 1 ? '' : 's'}</div>${tr.metrics.map((m) => `<div class="trend"><span>${esc(m.label)}</span><span class="d muted">${m.now} vs ${m.baseline}</span>${delta(m)}</div>`).join('')}` : '<div class="muted" style="font-size:12px">Trends appear once you have more than one recording.</div>')
+          + (tr?.workflow?.baseline ? `<div class="muted" style="font-size:11px;margin:8px 0 4px">Workflows, versus your last ${tr.workflow.baseline} recording${tr.workflow.baseline === 1 ? '' : 's'}</div>${tr.workflow.metrics.map((m) => `<div class="trend"><span>${esc(m.label)}</span><span class="d muted">${m.now} vs ${m.baseline}</span>${delta(m)}</div>`).join('')}${tr.workflow.recurring?.some((r) => r.seen_before) ? `<div class="muted" style="font-size:12px;margin-top:4px">Seen before: ${tr.workflow.recurring.filter((r) => r.seen_before).map((r) => `${esc(r.title)} (${r.seen_before}×)`).join(' · ')}</div>` : ''}` : '')
           + (inp.per_app.length ? `<table class="apps-tbl"><tr><th>App</th><th>min</th><th>clicks</th><th>keys</th><th>copy/paste</th></tr>${inp.per_app.slice(0, 6).map((a) => `<tr><td>${esc(a.short)}</td><td>${a.minutes}</td><td>${a.clicks}</td><td>${a.keys}</td><td>${a.copies}/${a.pastes}</td></tr>`).join('')}</table>` : '');
         isub.textContent = ins.approved_at ? `approved ${clock(ins.approved_at)}` : `${(t.click + t.key + t.shortcut + t.copy + t.paste).toLocaleString()} interactions`;
         act.innerHTML = vs.submitted ? '' : ins.approved_at
@@ -1044,6 +1081,7 @@
         renderRecordings();
         renderSections();
         renderInsights();
+        renderWorkflows();
         renderReview();
       }
 
@@ -1250,7 +1288,10 @@
           const title = r.name ? `<div style="font-weight:600;color:var(--ink)">${esc(r.name)}</div>` : '';
           const sum = r.summary ? `<div class="muted" style="font-size:12px;margin-top:3px">${r.summary.steps} steps · ${r.summary.cases} case${r.summary.cases === 1 ? '' : 's'}</div>` : (r.processing_note ? `<div class="muted" style="font-size:12px;margin-top:3px">${esc(r.processing_note)}</div>` : '');
           const notes = (r.annotations ?? 0) + (r.edits ?? 0);
-          const submitBtn = up.key === 'submitted' ? '' : `<button class="btn sm ${up.key === 'failed' ? 'warn' : ''}" data-submit="${esc(r.recording_id)}" ${p !== 'done' || up.key === 'uploading' ? 'disabled' : ''}>${icon('upload')}${up.key === 'failed' ? 'Retry' : 'Submit'}</button>`;
+          const pct = up.key === 'uploading' && r.upload?.progress?.total ? Math.round((r.upload.progress.done / r.upload.progress.total) * 100) : null;
+          const submitBtn = up.key === 'submitted'
+            ? `<button class="btn sm done" disabled>${icon('check')}Submitted</button> ${r.workflows?.count ? `<button class="btn sm icon wf" title="${r.workflows.count} suggested workflow${r.workflows.count === 1 ? '' : 's'}" data-wf="${esc(r.recording_id)}">${icon('workflow')}</button>` : `<span class="thinking" title="Working out the workflows"><i></i></span>`}`
+            : `<button class="btn sm ${up.key === 'failed' ? 'warn' : ''}" data-submit="${esc(r.recording_id)}" ${p !== 'done' || up.key === 'uploading' ? 'disabled' : ''}>${up.key === 'uploading' ? '<span class="thinking"><i></i></span>' : icon('upload')}${up.key === 'failed' ? 'Retry' : up.key === 'uploading' ? 'Submitting' : 'Submit'}</button>${up.key === 'uploading' ? `<span class="prog" style="--p:${pct ?? 0}" title="${pct == null ? 'Preparing…' : `${pct}% uploaded`}"><span>${pct == null ? '…' : pct}</span></span>` : ''}`;
           const thumb = r.thumb ? `<img class="rec-thumb" src="${esc(r.thumb)}" alt="" loading="lazy">` : `<div class="rec-thumb"></div>`;
           return `<tr${hide}>
             <td style="min-width:280px"><div style="display:flex;gap:10px;align-items:center">${thumb}<div>${title}<div class="muted" style="font-size:12px">${esc(when)}</div></div></div></td>
@@ -1259,7 +1300,7 @@
             <td><span class="pill ${p}">${p}</span>${sum}</td>
             <td><span class="pill ${up.key}" title="${esc(up.sub)}">${up.icon ? icon(up.icon) : ''}${esc(up.label)}</span> ${wsPill(r.review?.workspace)}${up.key === 'failed' ? `<div class="muted" style="font-size:11px;white-space:normal;max-width:220px">${esc(up.sub)}</div>` : ''}</td>
             <td>${notes ? `${notes} note${notes === 1 ? '' : 's'}` : '<span class="muted">—</span>'}</td>
-            <td style="white-space:nowrap"><button class="btn sm primary" data-review="${esc(r.recording_id)}">Review</button> ${up.key === 'submitted' ? '' : `<button class="btn sm" data-ann="${esc(r.recording_id)}">Add note</button> <button class="btn sm icon" title="Open folder" data-open="${esc(r.recording_id)}">${icon('folder')}</button> `}${submitBtn}</td>
+            <td style="white-space:nowrap"><button class="btn sm primary" data-review="${esc(r.recording_id)}">Review</button> ${submitBtn}</td>
           </tr>`;
         }).join('')).join('');
         $('rec-rows').querySelectorAll('[data-submit]').forEach((b) => (b.onclick = async () => {
@@ -1271,9 +1312,8 @@
           recordings = await window.vista.recordings();
           renderRecordings(); renderToday(); renderReview();
         }));
-        $('rec-rows').querySelectorAll('[data-ann]').forEach((b) => (b.onclick = () => openAnnotate(b.dataset.ann)));
         $('rec-rows').querySelectorAll('[data-review]').forEach((b) => (b.onclick = () => openReview(b.dataset.review, true)));
-        $('rec-rows').querySelectorAll('[data-open]').forEach((b) => (b.onclick = () => window.vista.openRecording(b.dataset.open)));
+        $('rec-rows').querySelectorAll('[data-wf]').forEach((b) => (b.onclick = () => openWorkflows(b.dataset.wf)));
         $('rec-rows').querySelectorAll('tr.day').forEach((row) => (row.onclick = () => {
           const k = row.dataset.day;
           closedDays ??= new Set();
@@ -1281,6 +1321,42 @@
           renderRecordings();
         }));
       }
+
+      // ---- suggested workflows ----
+      const SOURCE_LABEL = { events: 'app switches & clipboard', documents: 'documents', taskmining: 'task mining' };
+      const KIND_LABEL_WF = { data_transfer: 're-keying', document_processing: 'document intake', reporting: 'tracker', communication: 'inbox', lookup: 'lookup', access: 'sign-in', activity: 'activity' };
+      function workflowsHtml(wf) {
+        if (!wf) return '<div class="empty">No workflow suggestions yet — they appear once the analysis has run.</div>';
+        if (!wf.workflows?.length) return '<div class="empty">Nothing repeatable stood out in this session.</div>';
+        const env = wf.environment ?? {};
+        const envLine = [
+          env.apps?.length ? `Apps: ${env.apps.slice(0, 6).map((a) => esc(a.short)).join(', ')}` : '',
+          env.documents?.length ? `Documents: ${env.documents.slice(0, 4).map((d) => esc(d.name)).join(', ')}` : '',
+          env.sites?.length ? `Sites: ${env.sites.slice(0, 3).map((s) => esc(s.host)).join(', ')}` : '',
+        ].filter(Boolean).join(' · ');
+        return (envLine ? `<p class="wf-env">Inferred environment — ${envLine}</p>` : '')
+          + `<div class="wf-list">${wf.workflows.map((w) => `<div class="wf" data-kind="${esc(w.kind)}">
+            <h3><span>${icon('workflow')} ${esc(w.title)}</span><span class="auto" title="How much of this could run without a person">${Math.round(w.automation * 100)}% automatable</span></h3>
+            <p class="why">${esc(w.why)}</p>
+            ${w.steps?.length ? `<ol>${w.steps.map((s) => `<li>${esc(s)}</li>`).join('')}</ol>` : ''}
+            <div class="src"><span class="kind">${esc(KIND_LABEL_WF[w.kind] ?? w.kind)}</span>${(w.apps ?? []).map((a) => `<span>${esc(short(a))}</span>`).join('')}${(w.sources ?? []).map((s) => `<span>from ${esc(SOURCE_LABEL[s] ?? s)}</span>`).join('')}</div>
+          </div>`).join('')}</div>`;
+      }
+      function renderWorkflows() {
+        const wf = vs?.workflows;
+        $('wf-body').innerHTML = wf ? workflowsHtml(wf) : `<div class="empty">${vs?.insights?.running ? 'Working out the workflows…' : 'No workflow suggestions for this session yet.'}</div>`;
+        $('wf-sub').textContent = wf?.workflows?.length ? `${wf.workflows.length} suggested · ${wf.environment?.roles?.length ?? 0} kinds of app` : '';
+      }
+      async function openWorkflows(id) {
+        const r = recordings.find((x) => x.recording_id === id);
+        $('wf-modal-sub').textContent = r ? `${r.name ?? id} · ${new Date(r.started_at).toLocaleString()}` : id;
+        $('wf-modal-body').innerHTML = '<div class="empty">Loading…</div>';
+        $('wf-modal').classList.remove('hidden');
+        try { $('wf-modal-body').innerHTML = workflowsHtml(await window.vista.workflows(id)); }
+        catch (e) { $('wf-modal-body').innerHTML = `<div class="empty">${esc(e.message)}</div>`; }
+      }
+      $('wf-close').onclick = () => $('wf-modal').classList.add('hidden');
+      $('wf-modal').onclick = (e) => { if (e.target === $('wf-modal')) $('wf-modal').classList.add('hidden'); };
 
       // ---- annotate / fix / explain ----
       // `section` is a video section ({index, name, start, end, review, ...}) or {whole:true}; omitted = free note.
