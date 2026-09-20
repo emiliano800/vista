@@ -8,6 +8,7 @@ from sqlalchemy import select
 
 from vista import documents
 from vista.agents import analyze, discover, synthetic
+from vista.agents.keys import agent_key_for
 from vista.agents.llm import chat
 from vista.agents.runtime import pricing as _pricing
 from vista.agents.runtime import run_phase
@@ -18,6 +19,7 @@ from vista.models.tenant import (
     AgentRun,
     AgentRunEvent,
     CompanySummary,
+    Deal,
     Document,
     Employee,
     EmployeeAgent,
@@ -137,17 +139,34 @@ def _next_seq(session, run_id: uuid.UUID) -> int:
     )
 
 
-def _record_usage(session, run_id, model, input_tokens, output_tokens) -> None:
+def _record_usage(session, run: AgentRun, model, input_tokens, output_tokens) -> None:
     in_price, out_price = _pricing(model)
     session.add(
         UsageEvent(
-            run_id=run_id,
+            run_id=run.id,
             model=model,
             input_tokens=input_tokens,
             output_tokens=output_tokens,
             cost_usd=Decimal(input_tokens) * in_price + Decimal(output_tokens) * out_price,
+            agent_key=run.agent_key,
+            company=run.company,
         )
     )
+
+
+def _start_run(session, run_id: uuid.UUID, tenant_schema: str) -> AgentRun:
+    run = session.get(AgentRun, run_id)
+    if run is None:
+        raise RuntimeError(f"agent run {run_id} not found in {tenant_schema}")
+    run.status = "running"
+    run.started_at = run.started_at or datetime.now(UTC)
+    run.agent_key = run.agent_key or agent_key_for(run.run_type)
+    run.error = None
+    return run
+
+
+def _finding(run: AgentRun, **fields) -> Finding:
+    return Finding(run_id=run.id, agent_key=run.agent_key, company=fields.pop("company", run.company), **fields)
 
 
 def handle_employee_discovery(job: Job, tenant_schema: str) -> None:
@@ -158,12 +177,12 @@ def handle_employee_discovery(job: Job, tenant_schema: str) -> None:
     labeled as such in `evidence` — the frontend should render them as unverified."""
     run_id = uuid.UUID(job.payload["run_id"])
     with tenant_session(tenant_schema) as session:
-        run = session.get(AgentRun, run_id)
-        if run is None:
-            raise RuntimeError(f"agent run {run_id} not found in {tenant_schema}")
-        run.status = "running"
+        run = _start_run(session, run_id, tenant_schema)
         agent = session.get(EmployeeAgent, run.employee_agent_id)
         employee = session.get(Employee, agent.employee_id)
+        if agent.deal_id is not None and run.company is None:
+            run.deal_id = agent.deal_id
+            run.company = session.scalar(select(Deal.name).where(Deal.id == agent.deal_id))
         seq = _emit(
             session,
             run_id,
@@ -191,12 +210,12 @@ def handle_employee_discovery(job: Job, tenant_schema: str) -> None:
             "model_call",
             {"model": model, "input_tokens": itok, "output_tokens": otok},
         )
-        _record_usage(session, run_id, model, itok, otok)
+        _record_usage(session, run, model, itok, otok)
 
         findings_data = _parse_findings(text) if text else STUB_FINDINGS
         for f in findings_data:
-            finding = Finding(
-                run_id=run_id,
+            finding = _finding(
+                run,
                 employee_id=employee.id,
                 agent_id=agent.id,
                 kind=f["kind"],
@@ -227,10 +246,7 @@ def handle_company_summary(job: Job, tenant_schema: str) -> None:
     operational summary."""
     run_id = uuid.UUID(job.payload["run_id"])
     with tenant_session(tenant_schema) as session:
-        run = session.get(AgentRun, run_id)
-        if run is None:
-            raise RuntimeError(f"agent run {run_id} not found in {tenant_schema}")
-        run.status = "running"
+        run = _start_run(session, run_id, tenant_schema)
         seq = _emit(session, run_id, _next_seq(session, run_id), "step", {"message": "company summary started"})
 
         rows = session.execute(
@@ -275,7 +291,7 @@ def handle_company_summary(job: Job, tenant_schema: str) -> None:
                 "model_call",
                 {"model": model, "input_tokens": itok, "output_tokens": otok},
             )
-            _record_usage(session, run_id, model, itok, otok)
+            _record_usage(session, run, model, itok, otok)
         else:
             text = "No open findings to summarize. Run employee-agent discovery first."
 
@@ -298,14 +314,8 @@ def handle_agent_run(job: Job, tenant_schema: str) -> None:
     Replace the model_call section with a real LLM call later."""
     run_id = uuid.UUID(job.payload["run_id"])
     with tenant_session(tenant_schema) as session:
-        run = session.get(AgentRun, run_id)
-        if run is None:
-            raise RuntimeError(f"agent run {run_id} not found in {tenant_schema}")
-        run.status = "running"
-        seq = 1 + (
-            session.scalar(select(AgentRunEvent.seq).where(AgentRunEvent.run_id == run_id).order_by(AgentRunEvent.seq.desc()).limit(1)) or 0
-        )
-        seq = _emit(session, run_id, seq, "step", {"message": "run started"})
+        run = _start_run(session, run_id, tenant_schema)
+        seq = _emit(session, run_id, _next_seq(session, run_id), "step", {"message": "run started"})
 
         document = session.get(Document, run.document_id) if run.document_id else None
         if document is not None:
@@ -318,8 +328,6 @@ def handle_agent_run(job: Job, tenant_schema: str) -> None:
             )
 
         model, output_text, input_tokens, output_tokens = _call_model(document)
-        in_price, out_price = _pricing(model)
-        cost = Decimal(input_tokens) * in_price + Decimal(output_tokens) * out_price
         seq = _emit(
             session,
             run_id,
@@ -327,15 +335,7 @@ def handle_agent_run(job: Job, tenant_schema: str) -> None:
             "model_call",
             {"model": model, "input_tokens": input_tokens, "output_tokens": output_tokens},
         )
-        session.add(
-            UsageEvent(
-                run_id=run_id,
-                model=model,
-                input_tokens=input_tokens,
-                output_tokens=output_tokens,
-                cost_usd=cost,
-            )
-        )
+        _record_usage(session, run, model, input_tokens, output_tokens)
 
         seq = _emit(session, run_id, seq, "result", {"summary": output_text})
         run.status = "succeeded"
@@ -383,10 +383,8 @@ def handle_synthetic_discovery(job: Job, tenant_schema: str) -> None:
     company = synthetic.company(job.payload["company"])
     division = job.payload["division"]
     with tenant_session(tenant_schema) as session:
-        run = session.get(AgentRun, run_id)
-        if run is None:
-            raise RuntimeError(f"agent run {run_id} not found in {tenant_schema}")
-        run.status = "running"
+        run = _start_run(session, run_id, tenant_schema)
+        run.company, run.division, run.sector = company.short, division, company.sector
         seq = _emit(
             session,
             run_id,
@@ -413,10 +411,10 @@ def handle_synthetic_discovery(job: Job, tenant_schema: str) -> None:
                 "model_call",
                 {"model": r.model, "input_tokens": r.input_tokens, "output_tokens": r.output_tokens, "source": r.source},
             )
-            _record_usage(session, run_id, r.model, r.input_tokens, r.output_tokens)
+            _record_usage(session, run, r.model, r.input_tokens, r.output_tokens)
             for fact in phase.rows:
-                finding = Finding(
-                    run_id=run_id,
+                finding = _finding(
+                    run,
                     kind="observed_fact",
                     title=f"{fact['subject']}: {fact['predicate']}"[:512],
                     detail=fact["value"],
@@ -443,10 +441,8 @@ def handle_synthetic_analyze(job: Job, tenant_schema: str) -> None:
     by_company = {c: synthetic.tables_for(c) for c in synthetic.companies() if c.sector == sector}
     shorts = {c.short for c in by_company}
     with tenant_session(tenant_schema) as session:
-        run = session.get(AgentRun, run_id)
-        if run is None:
-            raise RuntimeError(f"agent run {run_id} not found in {tenant_schema}")
-        run.status = "running"
+        run = _start_run(session, run_id, tenant_schema)
+        run.sector = sector
         seq = _emit(
             session,
             run_id,
@@ -472,10 +468,11 @@ def handle_synthetic_analyze(job: Job, tenant_schema: str) -> None:
                 "model_call",
                 {"model": r.model, "input_tokens": r.input_tokens, "output_tokens": r.output_tokens, "source": r.source},
             )
-            _record_usage(session, run_id, r.model, r.input_tokens, r.output_tokens)
+            _record_usage(session, run, r.model, r.input_tokens, r.output_tokens)
             for row in phase.rows:
-                finding = Finding(
-                    run_id=run_id,
+                finding = _finding(
+                    run,
+                    company=", ".join(row["companies"])[:64],
                     kind="proposed_automation",
                     title=f"{row['kind']}: {row['title']}"[:512],
                     detail=row["detail"],
@@ -563,6 +560,7 @@ def mark_run_failed(job: Job, tenant_schema: str, error: str, permanent: bool) -
             session.scalar(select(AgentRunEvent.seq).where(AgentRunEvent.run_id == run_id).order_by(AgentRunEvent.seq.desc()).limit(1)) or 0
         )
         _emit(session, run_id, seq, "error", {"error": error[:2000], "permanent": permanent})
+        run.error = error[:2000]
         if permanent:
             run.status = "failed"
             run.finished_at = datetime.now(UTC)

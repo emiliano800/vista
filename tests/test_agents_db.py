@@ -29,11 +29,18 @@ def test_synthetic_discovery_run_writes_ledger_and_findings(client, tenant_facto
 
     run = client.post("/synthetic/discovery", json={"company": "ridgeway", "division": "11_billing_ar"}, headers=headers).json()
     assert run["status"] == "queued" and run["run_type"] == "synthetic_discovery"
+    assert (run["company"], run["division"], run["sector"], run["agent_key"]) == (
+        "Ridgeway",
+        "11_billing_ar",
+        "industrial_goods",
+        "file_reviewer",
+    )
 
     _drain()
 
     result = client.get(f"/runs/{run['id']}", headers=headers).json()
     assert result["status"] == "succeeded"
+    assert result["started_at"] and result["finished_at"] >= result["started_at"] and result["error"] is None
     types = [e["event_type"] for e in result["events"]]
     assert types[0] == "step" and types[-1] == "result"
     assert types.count("tool_call") == types.count("model_call") >= 1
@@ -44,6 +51,7 @@ def test_synthetic_discovery_run_writes_ledger_and_findings(client, tenant_facto
     ours = [f for f in findings if f["run_id"] == run["id"]]
     assert ours and all(f["kind"] == "observed_fact" for f in ours)
     assert all(f["evidence"]["file"].startswith("11_billing_ar/") and f["evidence"]["company"] == "Ridgeway" for f in ours)
+    assert all((f["company"], f["agent_key"]) == ("Ridgeway", "file_reviewer") for f in ours)
     assert any("mixed_date_formats" in f["title"] for f in ours)
 
     usage = client.get("/usage", headers=headers).json()
@@ -109,9 +117,19 @@ def test_synthetic_analyze_run_writes_cross_company_findings(client, tenant_fact
 
     ours = [f for f in client.get("/findings", headers=headers).json() if f["run_id"] == run["id"]]
     assert len(ours) == 1 and ours[0]["kind"] == "proposed_automation"
+    assert (ours[0]["company"], ours[0]["agent_key"]) == ("Keystone, Northfield", "sector_merger")
+    assert (result["sector"], result["agent_key"]) == ("industrial_goods", "sector_merger")
     assert ours[0]["title"] == "software_overlap: Zoom Workplace at two companies"
     assert ours[0]["evidence"]["companies"] == ["Keystone", "Northfield"]
     assert ours[0]["evidence"]["refs"] == [ref]
 
     usage = client.get("/usage", headers=headers).json()
     assert usage["runs"] == 1 and usage["total_input_tokens"] == 900
+
+
+def test_synthetic_run_links_to_deal_of_same_name(client, tenant_factory):
+    headers, _, _ = tenant_factory()
+    deal = client.post("/deals", json={"name": "Ridgeway Fasteners & Supply"}, headers=headers).json()
+    run = client.post("/synthetic/discovery", json={"company": "ridgeway", "division": "11_billing_ar"}, headers=headers).json()
+    assert run["deal_id"] == deal["id"]
+    assert [r["id"] for r in client.get(f"/runs?deal_id={deal['id']}", headers=headers).json()] == [run["id"]]

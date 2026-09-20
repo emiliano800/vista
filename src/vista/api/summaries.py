@@ -20,7 +20,7 @@ def _out(s: CompanySummary) -> SummaryOut:
 def trigger_summary(principal: Principal = Depends(admin_principal)) -> RunOut:
     """Trigger a company-wide summary run over all open findings."""
     with tenant_session(principal.tenant_schema) as session:
-        run = AgentRun(job_id=uuid.uuid4(), run_type="company_summary", requested_by=principal.user_id)
+        run = AgentRun(job_id=uuid.uuid4(), run_type="company_summary", requested_by=principal.user_id, agent_key="report_generator")
         session.add(run)
         session.flush()
         with platform_session() as psession:

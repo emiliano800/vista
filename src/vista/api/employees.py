@@ -119,7 +119,9 @@ def trigger_discovery_run(agent_id: uuid.UUID, principal: Principal = Depends(ad
             job_id=uuid.uuid4(),
             run_type="employee_discovery",
             employee_agent_id=agent.id,
+            deal_id=agent.deal_id,
             requested_by=principal.user_id,
+            agent_key="file_reviewer",
         )
         session.add(run)
         session.flush()

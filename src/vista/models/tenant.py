@@ -100,6 +100,14 @@ class AgentRun(TenantBase):
     status: Mapped[str] = mapped_column(String(16), default="queued")  # queued|running|succeeded|failed
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     finished_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    # Dimensions the CFO views group by. company is the synthetic short name or the Deal name.
+    company: Mapped[str | None] = mapped_column(String(64), nullable=True, index=True)
+    division: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    sector: Mapped[str | None] = mapped_column(String(64), nullable=True, index=True)
+    recording_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("recordings.id"), nullable=True)
+    agent_key: Mapped[str | None] = mapped_column(String(32), nullable=True, index=True)  # vista.agents.keys.AGENT_KEYS
+    started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    error: Mapped[str | None] = mapped_column(Text, nullable=True)
 
 
 class AgentRunEvent(TenantBase):
@@ -127,6 +135,8 @@ class Finding(TenantBase):
     evidence: Mapped[dict] = mapped_column(JSONB, default=dict)  # source refs / assumptions
     status: Mapped[str] = mapped_column(String(16), default="open")  # open|reviewed|dismissed|actioned
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    company: Mapped[str | None] = mapped_column(String(64), nullable=True, index=True)
+    agent_key: Mapped[str | None] = mapped_column(String(32), nullable=True, index=True)
 
 
 class CompanySummary(TenantBase):
@@ -149,6 +159,9 @@ class UsageEvent(TenantBase):
     output_tokens: Mapped[int] = mapped_column(Integer, default=0)
     cost_usd: Mapped[Decimal] = mapped_column(Numeric(12, 6), default=0)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    # Denormalised from the run so spend groups without a join.
+    agent_key: Mapped[str | None] = mapped_column(String(32), nullable=True, index=True)
+    company: Mapped[str | None] = mapped_column(String(64), nullable=True, index=True)
 
 
 class Recording(TenantBase):

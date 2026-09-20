@@ -3,11 +3,12 @@ import uuid
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import select
 
+from vista.agents.keys import agent_key_for
 from vista.api.schemas import RunCreate, RunEventOut, RunOut
 from vista.auth import Principal, current_principal
 from vista.db import platform_session, tenant_session
 from vista.jobs.queue import enqueue
-from vista.models.tenant import AgentRun, AgentRunEvent, Document
+from vista.models.tenant import AgentRun, AgentRunEvent, Deal, Document
 from vista.permissions import require_deal_role
 
 router = APIRouter(tags=["runs"])
@@ -26,6 +27,8 @@ def create_run(body: RunCreate, principal: Principal = Depends(current_principal
             deal_id=body.deal_id,
             document_id=body.document_id,
             requested_by=principal.user_id,
+            agent_key=agent_key_for("deal_analysis"),
+            company=session.scalar(select(Deal.name).where(Deal.id == body.deal_id)),
         )
         session.add(run)
         session.flush()
@@ -82,5 +85,12 @@ def _run_out(run: AgentRun, events: list[AgentRunEvent]) -> RunOut:
         status=run.status,
         created_at=run.created_at,
         finished_at=run.finished_at,
+        started_at=run.started_at,
+        company=run.company,
+        division=run.division,
+        sector=run.sector,
+        agent_key=run.agent_key,
+        recording_id=run.recording_id,
+        error=run.error,
         events=[RunEventOut(seq=e.seq, event_type=e.event_type, data=e.data, created_at=e.created_at) for e in events],
     )

@@ -107,6 +107,8 @@ class FindingOut(BaseModel):
     evidence: dict
     status: str
     created_at: datetime
+    company: str | None = None
+    agent_key: str | None = None
 
 
 class FindingPatch(BaseModel):
@@ -137,6 +139,13 @@ class RunOut(BaseModel):
     status: str
     created_at: datetime
     finished_at: datetime | None
+    started_at: datetime | None = None
+    company: str | None = None
+    division: str | None = None
+    sector: str | None = None
+    agent_key: str | None = None
+    recording_id: uuid.UUID | None = None
+    error: str | None = None
     events: list[RunEventOut] = []
 
 

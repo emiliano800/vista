@@ -25,6 +25,8 @@ def _out(f: Finding) -> FindingOut:
         evidence=f.evidence,
         status=f.status,
         created_at=f.created_at,
+        company=f.company,
+        agent_key=f.agent_key,
     )
 
 
