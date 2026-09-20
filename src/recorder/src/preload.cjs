@@ -41,6 +41,7 @@ contextBridge.exposeInMainWorld('vista', {
   defaultSettings: () => ipcRenderer.invoke('settings:defaults'),
   info: () => ipcRenderer.invoke('app:info'),
   relaunch: () => ipcRenderer.invoke('app:relaunch'),
+  workflows: (id) => ipcRenderer.invoke('recordings:workflows', id),
   permissions: () => ipcRenderer.invoke('permissions:get'),
   openPermission: (kind) => ipcRenderer.invoke('permissions:open', kind),
   onPermissions: on('permissions:changed'),

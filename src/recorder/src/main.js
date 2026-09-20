@@ -19,6 +19,7 @@ import { apiConfig, startApi } from './api.js';
 import { JobStore } from './jobs.js';
 import { reviewFiles } from './filereview.js';
 import { FLAG_DECISIONS, INSIGHTS_FILE, buildInsights, insightsSummary, summarizeInsights } from './insights.js';
+import { WORKFLOWS_FILE, suggestWorkflows, workflowsStub } from './workflows.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const UI = path.join(__dirname, '..', 'ui');
@@ -228,7 +229,49 @@ async function postProcess(manifest) {
     });
   });
   await agents;
+  // Taskmining activities are in now: redo the suggestions and the deterministic
+  // part of the insights (the model paragraph is kept).
+  try {
+    buildWorkflows(manifest.recording_id);
+    refreshInsights(manifest.recording_id);
+  } catch (e) {
+    console.error('workflow suggestions failed:', e.message);
+  }
   return result;
+}
+
+// ---- suggested workflows ---------------------------------------------------------
+
+function readWorkflows(dir) {
+  try {
+    return JSON.parse(fs.readFileSync(path.join(dir, WORKFLOWS_FILE), 'utf8'));
+  } catch {
+    return null;
+  }
+}
+
+// Deterministic suggestions from the environment + actions; stub on the manifest
+// so later sessions can see which ones recur.
+function buildWorkflows(recordingId) {
+  const dir = recDir(recordingId);
+  const m = readManifest(dir);
+  if (!m.ended_at || m.submitted) return readWorkflows(dir);
+  const wf = suggestWorkflows({ manifest: m, events: readEvents(dir), files: readFiles(dir), summary: m.summary ?? null });
+  fs.writeFileSync(path.join(dir, WORKFLOWS_FILE), JSON.stringify(wf, null, 2));
+  fs.writeFileSync(path.join(dir, 'manifest.json'), JSON.stringify({ ...readManifest(dir), workflows: workflowsStub(wf) }, null, 2));
+  broadcastRecordings();
+  broadcastSections(recordingId);
+  return wf;
+}
+
+function refreshInsights(recordingId) {
+  const dir = recDir(recordingId);
+  const m = readManifest(dir);
+  const prior = readInsights(dir);
+  if (!prior || m.submitted) return;
+  const events = readEvents(dir);
+  writeInsights(dir, buildInsights({ manifest: m, events, sections: buildSections(events, m), files: readFiles(dir), previous: previousManifests(recordingId), workflows: readWorkflows(dir) }, prior));
+  broadcastSections(recordingId);
 }
 
 // ---- file agent + insights ------------------------------------------------------
@@ -288,7 +331,8 @@ async function computeInsights(recordingId, { force = false } = {}) {
   const events = readEvents(dir);
   const sections = buildSections(events, m);
   const prior = readInsights(dir);
-  const insights = buildInsights({ manifest: m, events, sections, files: readFiles(dir), previous: previousManifests(recordingId) }, force ? { ...prior, summary: null } : prior);
+  const workflows = readWorkflows(dir) ?? buildWorkflows(recordingId);
+  const insights = buildInsights({ manifest: m, events, sections, files: readFiles(dir), previous: previousManifests(recordingId), workflows }, force ? { ...prior, summary: null } : prior);
   writeInsights(dir, insights);
   broadcastSections(recordingId);
   const api = openaiConfig(process.env, recorder.settings);
@@ -492,6 +536,7 @@ function sectionsFor(recordingId) {
     upload: uploadStates()[recordingId] ?? null,
     shots_dir: `file://${path.join(dir, 'shots')}`,
     insights: insights ? { ...insights, summary_counts: insightsSummary(insights), running: agentsRunning.has(recordingId) } : { flags: [], input: null, trends: null, summary: null, approved_at: null, summary_counts: insightsSummary(null), running: agentsRunning.has(recordingId) },
+    workflows: readWorkflows(dir),
     review: {
       ...aiStatus(),
       sync_error: review.sync_error ?? null,
@@ -1070,7 +1115,7 @@ ipcMain.handle('cloud:upload', async (event, id) => {
 // Order: report (idempotent) → every media file via signed URLs → move the
 // metadata stub to submitted/ → delete the recording folder. A failure at any
 // step leaves the folder in place with status 'failed' so Submit can be retried.
-const STUB_FILES = ['manifest.json', REVIEW_FILE, SECTIONS_FILE, 'annotations.jsonl'];
+const STUB_FILES = ['manifest.json', REVIEW_FILE, SECTIONS_FILE, 'annotations.jsonl', WORKFLOWS_FILE];
 // files.json travels too, without the absolute paths.
 function writeFilesStub(dir, stub) {
   const files = readFiles(dir).map(publicFile);
@@ -1091,7 +1136,52 @@ function writeVideoSidecar(dir, id, m) {
   );
   return sections;
 }
+// Demo mode without a workspace: the same local bookkeeping as a real submit
+// (stub in submitted/, upload state), with a short simulated upload.
+async function demoSubmit(id, dir, m) {
+  const saveState = (state) => {
+    const states = uploadStates();
+    states[id] = { ...(states[id] ?? {}), ...state, url: 'demo', companyId: 'demo' };
+    writePrivate(UPLOADS_FILE, states);
+    broadcastRecordings();
+  };
+  activeUploads.add(id);
+  try {
+    const total = 5;
+    for (let done = 0; done <= total; done++) {
+      saveState({ status: 'uploading', progress: { done, total } });
+      await new Promise((r) => setTimeout(r, 180));
+    }
+    const sections = writeVideoSidecar(dir, id, m);
+    const stub = path.join(SUBMITTED, id);
+    fs.mkdirSync(stub, { recursive: true });
+    for (const f of STUB_FILES) if (fs.existsSync(path.join(dir, f))) fs.copyFileSync(path.join(dir, f), path.join(stub, f));
+    const files_list = writeFilesStub(dir, stub);
+    const cloudId = `demo-${id}`;
+    fs.writeFileSync(path.join(stub, 'manifest.json'), JSON.stringify({ ...readManifest(dir), files: {}, submitted: { at: new Date().toISOString(), recording_id: cloudId, files: files_list.length, sections, files_list, apps: appSpans(readEvents(dir), m, { ownApps: recorder.settings.ownApps ?? [] }), demo: true } }, null, 2));
+    fs.rmSync(dir, { recursive: true, force: true });
+    saveState({ status: 'submitted', submittedAt: new Date().toISOString(), recordingId: cloudId, files: files_list.length, progress: null });
+  } catch (error) {
+    saveState({ status: 'failed', error: error.message, progress: null });
+    throw error;
+  } finally {
+    activeUploads.delete(id);
+  }
+  broadcastSections(id);
+  return sectionsFor(id);
+}
+
 async function submitRecording(id) {
+  if (DEMO && !cloudSettings()) {
+    if (!ID_RE.test(String(id))) throw new Error('Invalid recording ID.');
+    const dir = path.join(RECORDINGS, id);
+    if (!fs.existsSync(path.join(dir, 'manifest.json'))) throw new Error(fs.existsSync(path.join(SUBMITTED, id)) ? 'Already submitted.' : 'Recording not found.');
+    if (recorder.status().recordingId === id && recorder.state !== 'idle') throw new Error('Stop the recording first.');
+    const m = readManifest(dir);
+    if (m.processing !== 'done') throw new Error('Wait until this session has finished analysis.');
+    if (activeUploads.has(id)) throw new Error('This session is already uploading.');
+    return demoSubmit(id, dir, m);
+  }
   const config = cloudConfig();
   if (!ID_RE.test(String(id))) throw new Error('Invalid recording ID.');
   const dir = path.join(RECORDINGS, id);
@@ -1146,6 +1236,7 @@ ipcMain.handle('recordings:rerun-agents', async (_e, id) => {
   return sectionsFor(id);
 });
 ipcMain.handle('recordings:toggle-file', (_e, id, fileId, include) => toggleFile(id, fileId, include));
+ipcMain.handle('recordings:workflows', (_e, id) => readWorkflows(recDir(id)) ?? buildWorkflows(id));
 ipcMain.handle('recordings:open-file', (_e, id, fileId) => {
   const dir = recDir(id);
   const f = readFiles(dir).find((x) => x.id === fileId && x.snapshot);

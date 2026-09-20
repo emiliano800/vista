@@ -8,6 +8,7 @@
 // each flag and approves the analysis before Submit.
 import { OPENAI_URL } from './explain.js';
 import { shortApp } from './sections.js';
+import { workflowTrends } from './workflows.js';
 
 export const INSIGHTS_FILE = 'insights.json';
 export const FLAG_DECISIONS = new Set(['confirmed', 'dismissed']);
@@ -151,12 +152,14 @@ export function trends(current, previous = []) {
   };
 }
 
-const SUMMARY_SYSTEM = `You are Vista, a process analyst. You get keyboard/mouse statistics for one recorded work session, sometimes a "trends" comparison with the employee's earlier sessions, and any sensitive-content flags.
-Write for the employee, in plain language, 2 to 4 sentences: what the input pattern says about how the work was done (typing-heavy vs clicking, re-keying between apps, idle stretches), how it compares with earlier sessions only when a "trends" field is present (if there is none, write nothing at all about earlier sessions, trends, baselines or this being a first session), and — if there are flags — a neutral one-sentence reminder to check them before submitting. Use only the numbers given; do not estimate durations. Never speculate about what was typed.
+const SUMMARY_SYSTEM = `You are Vista, a process analyst. You get keyboard/mouse statistics for one recorded work session, the workflows suggested from it ("workflows": title, apps, automation score), sometimes a "trends" comparison with the employee's earlier sessions (input rates under "metrics", and under "workflow" the steps per case, cases, and which suggested workflows recurred in earlier sessions), and any sensitive-content flags.
+Write for the employee, in plain language, 2 to 5 sentences: what the input pattern says about how the work was done (typing-heavy vs clicking, re-keying between apps, idle stretches), the one or two suggested workflows most worth automating and why, how it compares with earlier sessions only when a "trends" field is present (if there is none, write nothing at all about earlier sessions, trends, baselines, recurrence or this being a first session), and — if there are flags — a neutral one-sentence reminder to check them before submitting. Use only the numbers given; do not estimate durations. Never speculate about what was typed.
 Respond as JSON: {"summary": "...", "highlights": ["...", "..."]}`;
 
-export async function summarizeInsights({ input, trends: tr, flags }, api, { fetchFn = globalThis.fetch } = {}) {
-  const user = JSON.stringify({ input, ...(tr?.baseline ? { trends: tr } : {}), flags: flags.map((f) => ({ kind: f.kind, scope: f.scope, reason: f.reason })) });
+export async function summarizeInsights({ input, trends: tr, flags, workflows }, api, { fetchFn = globalThis.fetch } = {}) {
+  const hasBaseline = tr?.baseline || tr?.workflow?.baseline;
+  const trendsOut = hasBaseline ? { ...tr, workflow: tr.workflow ? { ...tr.workflow, recurring: (tr.workflow.recurring ?? []).filter((r) => r.seen_before) } : undefined } : null;
+  const user = JSON.stringify({ input, workflows: (workflows ?? []).slice(0, 5).map((w) => ({ title: w.title, apps: w.apps.map(shortApp), automation: w.automation })), ...(trendsOut ? { trends: trendsOut } : {}), flags: flags.map((f) => ({ kind: f.kind, scope: f.scope, reason: f.reason })) });
   const res = await fetchFn(api.url ?? OPENAI_URL, {
     method: 'POST',
     headers: { Authorization: `Bearer ${api.key}`, 'Content-Type': 'application/json' },
@@ -177,7 +180,7 @@ export async function summarizeInsights({ input, trends: tr, flags }, api, { fet
 }
 
 // Deterministic part; keeps earlier flag decisions and the approval when re-run.
-export function buildInsights({ manifest, events, sections, files, previous = [] }, prior = null) {
+export function buildInsights({ manifest, events, sections, files, previous = [], workflows = null }, prior = null) {
   const flags = [...sections.flatMap((s) => sectionFlags(s, events)), ...fileFlags(files)];
   const decided = new Map((prior?.flags ?? []).map((f) => [f.id, f]));
   for (const f of flags) {
@@ -191,7 +194,8 @@ export function buildInsights({ manifest, events, sections, files, previous = []
     generated_at: new Date().toISOString(),
     flags,
     input,
-    trends: trends(input, previous),
+    trends: { ...trends(input, previous), workflow: workflowTrends({ summary: manifest.summary ?? null, workflows }, previous) },
+    workflows: (workflows?.workflows ?? []).map((w) => ({ id: w.id, title: w.title, apps: w.apps, automation: w.automation, kind: w.kind })),
     summary: prior?.summary ?? null,
     approved_at: prior?.approved_at ?? null,
     approved_by: prior?.approved_by ?? null,
