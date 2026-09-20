@@ -72,7 +72,7 @@ def _cassette() -> Cassette | None:
 
 def live_chat(prompt: Prompt, model: str | None = None) -> ChatResult:
     model = model or settings.openai_model
-    kwargs: dict = {}
+    kwargs: dict = {"temperature": 0}
     if prompt.json_mode:
         kwargs["response_format"] = {"type": "json_object"}
     resp = settings.openai_client().chat.completions.create(

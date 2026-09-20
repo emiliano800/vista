@@ -241,6 +241,17 @@ def handle_employee_discovery(job: Job, tenant_schema: str) -> None:
         session.commit()
 
 
+def _provenance(evidence: dict | None) -> str:
+    """'observed: <file>' when a finding cites data; otherwise a hypothesis, however confident it sounds."""
+    ev = evidence or {}
+    refs = ev.get("evidence_refs") or ev.get("refs") or ([ev["source_ref"]] if ev.get("source_ref") else [])
+    files = [r.get("file") if isinstance(r, dict) else str(r) for r in refs]
+    if ev.get("file"):
+        files.append(str(ev["file"]))
+    files = [f for f in files if f]
+    return f"observed: {', '.join(sorted(set(files))[:3])}" if files else "hypothesis"
+
+
 def handle_company_summary(job: Job, tenant_schema: str) -> None:
     """Aggregate all open findings across the company's employee agents into one
     operational summary."""
@@ -262,7 +273,7 @@ def handle_company_summary(job: Job, tenant_schema: str) -> None:
             by_kind[finding.kind] = by_kind.get(finding.kind, 0) + 1
             if finding.employee_id:
                 employee_ids.add(finding.employee_id)
-            lines.append(f"- [{finding.kind}] ({role or 'company'}) {finding.title}: {finding.detail}")
+            lines.append(f"- [{finding.kind}] [{_provenance(finding.evidence)}] ({role or 'company'}) {finding.title}: {finding.detail}")
         stats = {
             "open_findings": len(rows),
             "by_kind": by_kind,
@@ -273,9 +284,12 @@ def handle_company_summary(job: Job, tenant_schema: str) -> None:
         if rows:
             system = (
                 "You are Vista, summarizing operational findings across one acquired "
-                "company for its private-equity owner. Group related findings, highlight "
-                "the highest-impact inefficiencies, and clearly separate verified facts "
-                "from unverified hypotheses. Be concise: a few short paragraphs or bullets."
+                "company for its private-equity owner. Each finding carries a provenance tag: "
+                "'observed' findings cite a file and may be reported as facts; 'hypothesis' "
+                "findings were inferred from a job title with no data behind them and must stay "
+                "under a heading such as 'Hypotheses (unverified)', worded as possibilities, never "
+                "as verified facts. Group related findings and highlight the highest-impact "
+                "inefficiencies. Be concise: a few short paragraphs or bullets."
             )
             model, text, itok, otok = _chat(system, "\n".join(lines), max_tokens=1000)
             if not text:
@@ -499,7 +513,7 @@ def handle_synthetic_analyze(job: Job, tenant_schema: str) -> None:
             seq = _emit(session, run_id, seq, "tool_call", {"tool": "read_tables", "kind": kind, "refs": refs})
             phase = run_phase(
                 analyze.prepare(sector, by_company, kind),
-                analyze.parse,
+                lambda text, k=kind: analyze.parse(text, k),
                 lambda out, r=set(refs): analyze.apply(out, shorts, r),
                 llm=chat,
             )
