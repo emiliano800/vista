@@ -55,6 +55,17 @@ class Settings(BaseSettings):
             body["provider"] = {"only": only, "allow_fallbacks": False}
         return body
 
+    # PE portfolio workspace. Synthetic mode pins "today" so the seeded reporting
+    # period stays stable; the import processor flag selects the ImportProcessor
+    # implementation behind the /import-jobs API (demo = deterministic parser).
+    use_synthetic_data: bool = True
+    demo_today: str = "2026-09-19"
+    import_processor: str = "demo"  # demo|agent
+    enable_agent_import: bool = False
+    enable_portfolio_agent: bool = False
+    # Optional fixed access key for the seeded demo analyst (scripts/seed_portfolio_demo.py).
+    demo_analyst_key: str | None = None
+
     provisioning_key: str | None = None  # /tenants disabled unless configured
     cookie_secure: bool = True
     allowed_origins: list[str] = []

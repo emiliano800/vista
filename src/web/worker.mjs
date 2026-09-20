@@ -9,13 +9,13 @@ const importRead =
 const importWrite =
   /^\/api\/(?:deals\/[0-9a-f-]+\/imports|imports\/[0-9a-f-]+\/(?:commit|findings\/[a-f0-9]{16}))$/i;
 const portfolioRead =
-  /^\/api\/(?:portfolio\/(?:companies(?:\/[0-9a-f-]+)?|tasks|opportunities|activity|analysis)|agents|runs|findings)$/i;
-const portfolioCreate = /^\/api\/portfolio\/(?:tasks|analysis)$/i;
+  /^\/api\/(?:portfolio(?:\/(?:me|companies|attention|activity))?|companies\/[a-z0-9-]{1,64}(?:\/(?:customers|invoices|vendors|purchases|subscriptions|tasks|imports))?|import-datasets|import-jobs\/[0-9a-f-]{36}(?:\/(?:mappings|preview|exceptions))?|opportunities|tasks)$/i;
+const portfolioWrite =
+  /^\/api\/(?:portfolio\/(?:analysis|companies)|companies\/[a-z0-9-]{1,64}\/(?:imports|exceptions\/[0-9a-f-]{36}\/resolve)|import-jobs\/[0-9a-f-]{36}\/(?:dataset|mappings\/approve|approve|exceptions\/X-\d{1,6})|opportunities\/OP-\d{1,6}\/status|tasks(?:\/T-\d{1,6})?|workspace-agents\/[a-z0-9-]{1,64}\/(?:status|run)|workspace-findings\/[a-z0-9-]{1,64}\/status)$/i;
 const syntheticWrite = /^\/api\/synthetic\/(?:discovery|analyze)$/i;
-const portfolioPatch =
-  /^\/api\/(?:portfolio\/(?:tasks|opportunities)|agents|findings)\/[0-9a-f-]+$/i;
 // Agent suite: run traces, spend, synthetic companies, and starting agent runs.
-const agentRead = /^\/api\/(?:runs\/[0-9a-f-]+|usage|agents\/analytics|evals|summaries(?:\/latest)?|synthetic\/companies)$/i;
+const agentRead =
+  /^\/api\/(?:runs(?:\/[0-9a-f-]+)?|findings|agents(?:\/analytics)?|usage|evals|summaries(?:\/latest)?|synthetic\/companies)$/i;
 const agentStart =
   /^\/api\/(?:synthetic\/(?:discovery|analyze)|summaries|agents\/[0-9a-f-]+\/runs)$/i;
 const securityHeaders = {
@@ -34,27 +34,24 @@ async function handle(request, env) {
       !importRead.test(url.pathname) &&
       !importWrite.test(url.pathname) &&
       !portfolioRead.test(url.pathname) &&
-      !portfolioPatch.test(url.pathname) &&
+      !portfolioWrite.test(url.pathname) &&
       !agentRead.test(url.pathname) &&
       !agentStart.test(url.pathname)
     )
       return new Response("Not found", { status: 404 });
     // Only explicitly allowed workspace operations reach the backend.
     if (
-      !["GET", "HEAD", "POST", "PUT", "PATCH", "DELETE"].includes(
-        request.method,
-      ) ||
+      !["GET", "HEAD", "POST", "PUT", "DELETE"].includes(request.method) ||
       (syntheticWrite.test(url.pathname) && request.method !== "POST") ||
       (request.method === "POST" &&
         !url.pathname.endsWith("/recordings") &&
         !mediaUpload.test(url.pathname) &&
         !reviewDecision.test(url.pathname) &&
         !importWrite.test(url.pathname) &&
-        !portfolioCreate.test(url.pathname) &&
+        !portfolioWrite.test(url.pathname) &&
         !agentStart.test(url.pathname) &&
         url.pathname !== "/api/auth/session") ||
       (request.method === "PUT" && !reviewSections.test(url.pathname)) ||
-      (request.method === "PATCH" && !portfolioPatch.test(url.pathname)) ||
       (request.method === "DELETE" && url.pathname !== "/api/auth/session")
     )
       return new Response("Method not allowed", { status: 405 });

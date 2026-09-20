@@ -50,3 +50,4 @@ select = ["E", "F", "I", "UP", "B"]
 # FastAPI dependency/query declarations are intentionally evaluated in signatures.
 "src/vista/api/*.py" = ["B008"]
 "src/vista/auth.py" = ["B008"]
+"src/vista/portfolio/access.py" = ["B008"]

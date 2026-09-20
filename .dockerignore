@@ -21,5 +21,9 @@ synthetic_data/**
 !synthetic_data/insurance_broking/**
 !synthetic_data/industrial_goods/
 !synthetic_data/industrial_goods/**
+!synthetic_data/portfolio_demo/
+!synthetic_data/portfolio_demo/**
+!scripts/
+!scripts/**
 **/__pycache__
 **/*.pyc

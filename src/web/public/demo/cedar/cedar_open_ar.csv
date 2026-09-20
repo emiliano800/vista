@@ -1,0 +1,392 @@
+Inv #,Client,Date,Pay By,Total,Amt Due,Status
+CED-10400,Laura Kim,8/28/26,9/27/26,"$5,354.61","$5,354.61",Open
+CED-10401,Kevin Malone,5/26/26,6/25/26,"$15,473.42",-,PD
+CED-10402,Lakeside Veterinary,7/14/26,8/13/26,"$1,958.78",-,PD
+CED-10403,David Fletcher,6/26/26,7/26/26,"$1,136.25","$1,136.25",Past due
+CED-10404,Northgate Church,2/16/26,3/18/26,"$1,193.11",-,PD
+CED-10405,Copper Kettle Bakery,12/10/25,1/9/26,$424.55,-,PD
+CED-10406,Bayside Dental,11/4/25,12/4/25,"$2,731.91",-,PD
+CED-10407,Mark Chen,6/29/26,7/29/26,"$3,099.53","$3,099.53",Past due
+CED-10408,David Nguyen,4/24/26,5/24/26,"$2,229.12",-,PD
+CED-10409,Northgate Church,4/24/26,5/24/26,"$16,979.02",-,PD
+CED-10410,David Lindqvist,8/13/26,9/12/26,"$2,313.81",-,PD
+CED-10411,Northgate Church,1/22/26,2/21/26,"$18,349.85","$18,349.85",Past due
+CED-10412,Chris Baptiste,10/5/25,11/4/25,"$1,515.77",-,PD
+CED-10413,"ACME Manufacturing, L.L.C.",4/1/26,5/1/26,"$11,076.78",-,PD
+CED-10414,James Dubois,1/4/26,2/3/26,"$1,273.84",-,PD
+CED-10415,Chris Baptiste,12/11/25,1/10/26,$341.90,-,PD
+CED-10416,Acme Manufacturing LLC,8/11/26,9/10/26,"$16,929.48",-,PD
+CED-10417,Maria Greer,3/7/26,4/6/26,"$3,401.45",-,PD
+CED-10418,Rachel Nguyen,3/25/26,4/24/26,"$9,652.26",-,PD
+CED-10419,Lakeside Veterinary,5/16/26,6/15/26,"$16,144.11",-,PD
+CED-10420,Granite Peak Brewing,3/20/26,4/19/26,"$2,446.60",-,PD
+CED-10421,Kevin Ortiz,11/24/25,12/24/25,"$4,165.20",-,PD
+CED-10422,Karen Chen,10/24/25,11/23/25,"$16,187.28",-,PD
+CED-10423,Meadow Ridge HOA,7/27/26,8/26/26,"$9,512.96",-,PD
+CED-10424,Pioneer Storage,6/18/26,7/18/26,"$2,266.04",-,PD
+CED-10425,David Fletcher,6/11/26,7/11/26,"$1,510.28",-,PD
+CED-10426,James Greer,5/31/26,6/30/26,"$1,482.55",-,PD
+CED-10427,Meadow Ridge HOA LLC,9/3/26,10/3/26,"$6,693.70",-,PD
+CED-10428,Kevin Sullivan,6/22/26,7/22/26,"$2,505.88",-,PD
+CED-10429,Linda Fletcher,9/3/26,10/3/26,"$16,567.75","$16,567.75",Open
+CED-10430,Patricia Chen,5/10/26,6/9/26,"$7,313.36",-,PD
+CED-10431,Karen Murphy,5/11/26,6/10/26,"$2,873.50",-,PD
+CED-10432,Chris Greer,11/30/25,12/30/25,"$2,920.45",-,PD
+CED-10433,Northgate Church,4/23/26,5/23/26,"$8,176.12",-,PD
+CED-10434,Maria Brooks,6/16/26,7/16/26,"$6,002.39",-,PD
+CED-10435,Copper Kettle Bakery,8/26/26,9/25/26,"$1,031.64",-,PD
+CED-10436,Susan Reyes,4/22/26,5/22/26,$892.27,-,PD
+CED-10437,"ACME Manufacturing, L.L.C.",8/8/26,9/7/26,"$11,012.30","$11,012.30",Past due
+CED-10438,David Brooks,4/3/26,5/3/26,"$3,237.96",-,PD
+CED-10439,Northgate Church,3/4/26,4/3/26,"$4,457.87",-,PD
+CED-10440,Northgate Church LLC,8/4/26,9/3/26,$768.58,-,PD
+CED-10441,Angela Nguyen,3/30/26,4/29/26,"$1,415.49",-,PD
+CED-10442,Angela Ortiz,8/19/26,9/18/26,"$4,002.93","$4,002.93",Past due
+CED-10443,Emily Kim,5/19/26,6/18/26,$990.87,-,PD
+CED-10444,Thomas Sullivan,10/23/25,11/22/25,"$1,867.08",-,PD
+CED-10445,Northgate Church,8/25/26,9/24/26,"$2,907.87",-,PD
+CED-10446,Patricia Brooks,10/25/25,11/24/25,"$3,355.48",-,PD
+CED-10447,Angela Baptiste,9/4/26,10/4/26,"$1,365.63","$1,365.63",Open
+CED-10448,Chris Costa,5/17/26,6/16/26,"$6,382.43",-,PD
+CED-10449,Thomas Hansen,12/26/25,1/25/26,"$1,801.98",-,PD
+CED-10450,Michael Reyes,12/6/25,1/5/26,"$1,636.08",-,PD
+CED-10451,Brian Brooks,8/5/26,9/4/26,"$2,821.26","$2,821.26",Past due
+CED-10452,Maria Dubois,7/13/26,8/12/26,"$1,567.92",-,PD
+CED-10453,Chris Costa,8/7/26,9/6/26,"$3,779.82",-,PD
+CED-10454,Maria Dubois,8/17/26,9/16/26,$769.72,$769.72,Past due
+CED-10455,Acme Manufacturing LLC,7/8/26,8/7/26,"$8,152.84",-,PD
+CED-10456,Maria Brooks,5/9/26,6/8/26,"$3,649.93",-,PD
+CED-10457,Chris Chen,9/8/26,10/8/26,"$11,618.17","$11,618.17",Open
+CED-10458,Lakeside Veterinary,2/26/26,3/28/26,"$11,619.92",-,PD
+CED-10459,Kevin Chen,10/9/25,11/8/25,"$3,262.60",-,PD
+CED-10460,Patricia Patel,10/21/25,11/20/25,"$11,854.93",-,PD
+CED-10461,Laura Kim,5/24/26,6/23/26,"$9,800.46",-,PD
+CED-10462,Chris Greer,9/14/26,10/14/26,"$1,210.01","$1,210.01",Open
+CED-10463,Chris Costa,8/27/26,9/26/26,"$2,227.12","$2,227.12",Open
+CED-10464,Angela Baptiste,5/6/26,6/5/26,"$3,986.13","$3,986.13",Past due
+CED-10465,Chris Greer,11/8/25,12/8/25,"$3,124.49","$3,124.49",Past due
+CED-10466,Northgate Church,5/24/26,6/23/26,"$2,834.73",-,PD
+CED-10467,Northgate Church,3/24/26,4/23/26,"$4,008.70",-,PD
+CED-10468,Emily Kim,8/29/26,9/28/26,"$3,688.04","$3,688.04",Open
+CED-10469,Mark Dubois,5/12/26,6/11/26,"$3,906.69",-,PD
+CED-10470,Mark Kim,5/26/26,6/25/26,$560.06,-,PD
+CED-10471,Angela Ortiz,11/28/25,12/28/25,"$1,281.11","$1,281.11",Past due
+CED-10472,Northgate Church,11/2/25,12/2/25,"$2,931.35",-,PD
+CED-10473,Patricia Fletcher,7/8/26,8/7/26,"$4,168.21",-,PD
+CED-10474,Linda Hansen,12/4/25,1/3/26,"$1,789.02",-,PD
+CED-10475,Granite Peak Brewing,9/11/26,10/11/26,"$1,481.87","$1,481.87",Open
+CED-10476,Lakeside Veterinary,12/24/25,1/23/26,"$3,544.77",-,PD
+CED-10477,Northgate Church,8/23/26,9/22/26,"$5,668.04","$5,668.04",Open
+CED-10478,James Dubois,10/1/25,10/31/25,$502.91,-,PD
+CED-10479,Michael Reyes,11/25/25,12/25/25,"$2,345.82",-,PD
+CED-10480,Mark Dubois,6/18/26,7/18/26,$726.20,-,PD
+CED-10481,Mark Walsh,3/27/26,4/26/26,"$2,866.84",-,PD
+CED-10482,Chris Costa,12/10/25,1/9/26,"$1,128.73",-,PD
+CED-10483,Michael Hansen,8/22/26,9/21/26,"$1,387.88",-,PD
+CED-10484,Susan Reyes,4/25/26,5/25/26,"$1,920.18",-,PD
+CED-10485,Linda Patel,11/30/25,12/30/25,"$10,885.56",-,PD
+CED-10486,Laura Kim,12/15/25,1/14/26,"$12,694.01","$12,694.01",Past due
+CED-10487,Susan Dubois,8/10/26,9/9/26,"$6,514.65",-,PD
+CED-10488,Susan Rivera,11/2/25,12/2/25,"$1,493.72",-,PD
+CED-10489,Thomas Baptiste,11/12/25,12/12/25,"$1,850.09",-,PD
+CED-10490,Mark Sullivan,8/11/26,9/10/26,"$4,192.36","$4,192.36",Past due
+CED-10491,Daniel Fletcher,12/1/25,12/31/25,"$4,119.92",-,PD
+CED-10492,Patricia Fletcher,9/11/26,10/11/26,"$2,463.71","$2,463.71",Open
+CED-10493,Kevin Chen,7/11/26,8/10/26,"$10,198.93",-,PD
+CED-10494,Riverbend Apartments LLC,1/18/26,2/17/26,"$3,836.29",-,PD
+CED-10495,Northgate Church,8/9/26,9/8/26,"$6,194.46","$6,194.46",Past due
+CED-10496,Pioneer Storage LLC,5/7/26,6/6/26,$658.50,-,PD
+CED-10497,Chris Chen,12/23/25,1/22/26,"$9,782.02",-,PD
+CED-10498,Angela Baptiste,9/13/26,10/13/26,"$4,184.64","$4,184.64",Open
+CED-10499,Copper Kettle Bakery,1/13/26,2/12/26,"$3,647.72",-,PD
+CED-10500,David Costa,7/1/26,7/31/26,"$10,300.31",-,PD
+CED-10501,Susan Lindqvist,3/25/26,4/24/26,"$1,150.78",-,PD
+CED-10502,Copper Kettle Bakery LLC,1/3/26,2/2/26,"$1,916.58",-,PD
+CED-10503,Mark Dubois,10/4/25,11/3/25,"$3,443.03",-,PD
+CED-10504,Angela Ortiz,10/7/25,11/6/25,$546.09,-,PD
+CED-10505,Copper Kettle Bakery,10/6/25,11/5/25,"$1,517.09",-,PD
+CED-10506,Susan Chen,8/22/26,9/21/26,"$3,252.58","$3,252.58",Open
+CED-10507,Daniel Malone,1/12/26,2/11/26,"$16,280.27",-,PD
+CED-10508,Emily Costa,2/3/26,3/5/26,"$15,403.57",-,PD
+CED-10509,Robert Rivera,8/29/26,9/28/26,"$2,360.45","$2,360.45",Open
+CED-10510,Angela Kim,4/20/26,5/20/26,"$4,199.34","$4,199.34",Past due
+CED-10511,Chris Sullivan,2/18/26,3/20/26,$583.34,-,PD
+CED-10512,Karen Reyes,5/30/26,6/29/26,"$1,459.59",-,PD
+CED-10513,Robert Reyes,10/30/25,11/29/25,"$1,331.42",-,PD
+CED-10514,Linda Hansen,7/14/26,8/13/26,"$3,779.13",-,PD
+CED-10515,Nancy Chen,1/30/26,3/1/26,"$7,308.73",-,PD
+CED-10516,Kevin Kowalski,3/22/26,4/21/26,"$2,978.66",-,PD
+CED-10517,Susan Rivera,6/8/26,7/8/26,"$1,749.49",-,PD
+CED-10518,Pioneer Storage,11/11/25,12/11/25,"$4,193.18",-,PD
+CED-10519,Acme Foods,4/17/26,5/17/26,"$5,163.55",-,PD
+CED-10520,James Sullivan,12/25/25,1/24/26,"$9,006.72",-,PD
+CED-10521,Robert Walsh,12/28/25,1/27/26,"$6,732.70",-,PD
+CED-10522,Thomas Fletcher,5/20/26,6/19/26,"$16,141.35",-,PD
+CED-10523,Karen Murphy,11/23/25,12/23/25,"$2,192.85",-,PD
+CED-10524,Rachel Chen,3/31/26,4/30/26,"$1,931.14",-,PD
+CED-10525,Riverbend Apartments,10/10/25,11/9/25,"$2,624.78",-,PD
+CED-10526,Acme Foods LLC,9/5/26,10/5/26,"$9,201.84","$9,201.84",Open
+CED-10527,Northgate Church LLC,10/17/25,11/16/25,$944.05,-,PD
+CED-10528,Nancy Baptiste,4/30/26,5/30/26,"$2,214.75",-,PD
+CED-10529,Patricia Brooks,1/24/26,2/23/26,"$4,063.85",-,PD
+CED-10530,Lakeside Veterinary,11/30/25,12/30/25,$286.25,-,PD
+CED-10531,Pioneer Storage,5/13/26,6/12/26,"$1,825.88",-,PD
+CED-10532,Karen Malone,6/4/26,7/4/26,"$1,492.43",-,PD
+CED-10533,Mark Patel,7/13/26,8/12/26,"$9,874.76","$9,874.76",Past due
+CED-10534,Daniel Malone,7/22/26,8/21/26,"$7,740.33",-,PD
+CED-10535,Laura Rivera,1/20/26,2/19/26,"$2,638.73",-,PD
+CED-10536,Emily Murphy,8/10/26,9/9/26,"$1,348.30",-,PD
+CED-10537,Linda Costa,2/27/26,3/29/26,"$3,880.66",-,PD
+CED-10538,Chris Sullivan,7/14/26,8/13/26,"$17,300.97",-,PD
+CED-10539,Nancy Patel,1/12/26,2/11/26,"$15,980.95",-,PD
+CED-10540,Susan Chen,12/14/25,1/13/26,"$3,585.05",-,PD
+CED-10541,Linda Costa,11/30/25,12/30/25,"$2,393.97",-,PD
+CED-10542,Pioneer Storage LLC,12/19/25,1/18/26,"$2,466.20",-,PD
+CED-10543,James Chen,1/14/26,2/13/26,"$3,380.09",-,PD
+CED-10544,David Greer,12/6/25,1/5/26,"$2,414.37",-,PD
+CED-10545,Laura Kim,5/11/26,6/10/26,"$5,449.10",-,PD
+CED-10546,Granite Peak Brewing,7/8/26,8/7/26,"$3,318.36",-,PD
+CED-10547,Kevin Malone,6/9/26,7/9/26,"$2,746.60",-,PD
+CED-10548,Brian Hansen,6/9/26,7/9/26,"$2,508.92",-,PD
+CED-10549,Riverbend Apartments LLC,11/28/25,12/28/25,"$1,654.20",-,PD
+CED-10550,Bayside Dental,2/19/26,3/21/26,$275.19,-,PD
+CED-10551,Northgate Church,5/10/26,6/9/26,"$1,523.48",-,PD
+CED-10552,Rachel Nguyen,11/10/25,12/10/25,"$9,987.32",-,PD
+CED-10553,Patricia Brooks,5/21/26,6/20/26,"$3,237.87",-,PD
+CED-10554,Copper Kettle Bakery,5/2/26,6/1/26,"$3,140.72",-,PD
+CED-10555,Maria Lindqvist,2/9/26,3/11/26,"$1,494.73",-,PD
+CED-10556,Linda Fletcher,12/13/25,1/12/26,"$12,477.63",-,PD
+CED-10557,Nancy Kowalski,3/6/26,4/5/26,"$2,117.25",-,PD
+CED-10558,Angela Nguyen,5/19/26,6/18/26,$717.31,-,PD
+CED-10559,Rachel Murphy,8/19/26,9/18/26,"$12,014.16",-,PD
+CED-10560,Emily Baptiste,3/16/26,4/15/26,"$2,314.62",-,PD
+CED-10561,Susan Dubois,8/28/26,9/27/26,"$7,724.61","$7,724.61",Open
+CED-10562,Nancy Kowalski,7/25/26,8/24/26,"$1,930.95","$1,930.95",Past due
+CED-10563,Emily Baptiste,2/8/26,3/10/26,$233.35,-,PD
+CED-10564,Thomas Chen,6/28/26,7/28/26,"$10,041.46",-,PD
+CED-10565,Rachel Chen,7/10/26,8/9/26,"$4,019.15",-,PD
+CED-10566,Laura Baptiste,9/10/26,10/10/26,"$2,348.02","$2,348.02",Open
+CED-10567,Robert Reyes,1/21/26,2/20/26,"$10,319.17","$10,319.17",Past due
+CED-10568,Thomas Fletcher,3/29/26,4/28/26,$741.65,-,PD
+CED-10569,Patricia Patel,3/13/26,4/12/26,"$17,394.15",-,PD
+CED-10570,Mark Brooks,7/16/26,8/15/26,"$2,494.24",-,PD
+CED-10571,Susan Greer,4/28/26,5/28/26,"$14,449.24",-,PD
+CED-10572,Michael Kowalski,3/14/26,4/13/26,"$2,869.10",-,PD
+CED-10573,Chris Malone,3/12/26,4/11/26,"$1,723.23",-,PD
+CED-10574,Karen Greer,1/28/26,2/27/26,"$4,031.51","$4,031.51",Past due
+CED-10575,Chris Ortiz,7/5/26,8/4/26,"$2,803.83",-,PD
+CED-10576,Rachel Baptiste,2/28/26,3/30/26,"$17,738.27",-,PD
+CED-10577,Angela Ortiz,8/12/26,9/11/26,"$3,480.35",-,PD
+CED-10578,Robert Brooks,5/29/26,6/28/26,"$16,084.47",-,PD
+CED-10579,David Greer,11/9/25,12/9/25,"$2,744.37",-,PD
+CED-10580,Nancy Chen,11/22/25,12/22/25,"$4,479.02",-,PD
+CED-10581,Maria Malone,4/26/26,5/26/26,"$2,150.47",-,PD
+CED-10582,Meadow Ridge HOA LLC,4/29/26,5/29/26,"$7,985.91",-,PD
+CED-10583,Daniel Murphy,3/11/26,4/10/26,"$1,981.06",-,PD
+CED-10584,Susan Patel,1/1/26,1/31/26,"$2,240.30",-,PD
+CED-10585,Maria Greer,7/3/26,8/2/26,"$1,978.31",-,PD
+CED-10586,Mark Sullivan,4/17/26,5/17/26,$376.96,-,PD
+CED-10587,Maria Greer,12/7/25,1/6/26,"$3,564.90",-,PD
+CED-10588,Rachel Brooks,9/13/26,10/13/26,$619.36,-,PD
+CED-10589,Kevin Malone,12/11/25,1/10/26,"$2,266.30",-,PD
+CED-10590,David Brooks,8/1/26,8/31/26,"$1,382.95","$1,382.95",Past due
+CED-10591,Emily Kowalski,7/28/26,8/27/26,"$10,995.92",-,PD
+CED-10592,Angela Ortiz,6/15/26,7/15/26,$632.53,-,PD
+CED-10593,Granite Peak Brewing,7/18/26,8/17/26,"$12,333.08",-,PD
+CED-10594,Copper Kettle Bakery LLC,7/10/26,8/9/26,"$3,961.86",-,PD
+CED-10595,Linda Costa,10/15/25,11/14/25,"$3,083.17",-,PD
+CED-10596,Chris Ortiz,3/24/26,4/23/26,"$3,065.43",-,PD
+CED-10597,Acme Foods,6/7/26,7/7/26,"$11,544.57",-,PD
+CED-10598,Pioneer Storage LLC,10/28/25,11/27/25,"$11,024.08",-,PD
+CED-10599,Rachel Walsh,3/22/26,4/21/26,"$3,096.65",-,PD
+CED-10600,Rachel Walsh,10/3/25,11/2/25,"$2,994.24",-,PD
+CED-10601,Susan Chen,4/27/26,5/27/26,"$3,613.73",-,PD
+CED-10602,Kevin Brooks,11/18/25,12/18/25,$364.45,-,PD
+CED-10603,Robert Fletcher,10/8/25,11/7/25,"$1,737.21",-,PD
+CED-10604,Karen Kowalski,7/30/26,8/29/26,"$1,519.49",-,PD
+CED-10605,Angela Ortiz,11/21/25,12/21/25,$220.15,$220.15,Past due
+CED-10606,Thomas Hansen,12/14/25,1/13/26,"$3,076.48",-,PD
+CED-10607,Michael Patel,4/19/26,5/19/26,"$13,737.41",-,PD
+CED-10608,Lakeside Veterinary,10/20/25,11/19/25,"$4,082.27",-,PD
+CED-10609,Mark Patel,12/26/25,1/25/26,"$4,185.09",-,PD
+CED-10610,Patricia Chen,2/2/26,3/4/26,"$1,289.98",-,PD
+CED-10611,Emily Brooks,2/6/26,3/8/26,"$5,706.89",-,PD
+CED-10612,Northgate Church,8/26/26,9/25/26,"$3,130.09",-,PD
+CED-10613,Daniel Murphy,6/19/26,7/19/26,"$3,924.83","$3,924.83",Past due
+CED-10614,Robert Fletcher,2/5/26,3/7/26,"$9,484.88",-,PD
+CED-10615,Patricia Patel,10/20/25,11/19/25,"$6,606.78",-,PD
+CED-10616,Mark Nguyen,1/21/26,2/20/26,"$9,568.58",-,PD
+CED-10617,Susan Lindqvist,6/17/26,7/17/26,"$1,864.51",-,PD
+CED-10618,Chris Chen,10/16/25,11/15/25,"$6,327.74",-,PD
+CED-10619,David Sullivan,9/3/26,10/3/26,"$3,218.66","$3,218.66",Open
+CED-10620,Susan Reyes,1/3/26,2/2/26,"$3,622.88",-,PD
+CED-10621,Mark Walsh,2/25/26,3/27/26,"$3,303.77","$3,303.77",Past due
+CED-10622,Kevin Murphy,5/13/26,6/12/26,"$11,476.13",-,PD
+CED-10623,Angela Greer,5/29/26,6/28/26,"$2,891.82",-,PD
+CED-10624,Patricia Costa,12/13/25,1/12/26,"$8,280.44",-,PD
+CED-10625,Copper Kettle Bakery,6/10/26,7/10/26,"$6,737.73",-,PD
+CED-10626,Mark Dubois,3/21/26,4/20/26,"$3,907.10",-,PD
+CED-10627,Linda Fletcher,7/26/26,8/25/26,"$11,308.99",-,PD
+CED-10628,Northgate Church LLC,2/26/26,3/28/26,"$2,720.98",-,PD
+CED-10629,Copper Kettle Bakery,4/1/26,5/1/26,"$18,068.46",-,PD
+CED-10630,Robert Chen,4/16/26,5/16/26,"$1,386.62",-,PD
+CED-10631,Maria Nguyen,2/20/26,3/22/26,"$4,823.17",-,PD
+CED-10632,James Nguyen,6/19/26,7/19/26,"$2,514.89",-,PD
+CED-10633,Angela Greer,5/22/26,6/21/26,$468.96,-,PD
+CED-10634,Rachel Murphy,9/9/26,10/9/26,"$16,229.69",-,PD
+CED-10635,Patricia Fletcher,11/17/25,12/17/25,"$2,965.51",-,PD
+CED-10636,Karen Baptiste,7/21/26,8/20/26,"$3,042.53","$3,042.53",Past due
+CED-10637,Mark Patel,11/14/25,12/14/25,"$12,282.43",-,PD
+CED-10638,Laura Murphy,5/23/26,6/22/26,"$8,648.26",-,PD
+CED-10639,Maria Lindqvist,7/7/26,8/6/26,"$2,006.96",-,PD
+CED-10640,Granite Peak Brewing,10/12/25,11/11/25,$191.58,$191.58,Past due
+CED-10641,Acme Foods,6/20/26,7/20/26,"$8,734.40",-,PD
+CED-10642,Kevin Greer,7/6/26,8/5/26,"$1,262.69",-,PD
+CED-10643,Lakeside Veterinary,12/13/25,1/12/26,$658.32,-,PD
+CED-10644,Rachel Baptiste,11/12/25,12/12/25,"$3,202.97",-,PD
+CED-10645,Meadow Ridge HOA,4/7/26,5/7/26,"$13,154.48",-,PD
+CED-10646,Robert Fletcher,9/12/26,10/12/26,"$13,851.79",-,PD
+CED-10647,Thomas Fletcher,3/21/26,4/20/26,"$7,561.18",-,PD
+CED-10648,Nancy Patel,5/5/26,6/4/26,"$16,488.70",-,PD
+CED-10649,Chris Costa,7/24/26,8/23/26,"$16,892.25",-,PD
+CED-10650,David Fletcher,5/30/26,6/29/26,"$3,811.95",-,PD
+CED-10651,Susan Dubois,12/16/25,1/15/26,"$2,218.41",-,PD
+CED-10652,Thomas Fletcher,5/18/26,6/17/26,"$16,967.28","$16,967.28",Past due
+CED-10653,Pioneer Storage,6/20/26,7/20/26,"$1,359.22",-,PD
+CED-10654,Angela Baptiste,3/3/26,4/2/26,"$2,800.70",-,PD
+CED-10655,Emily Kowalski,11/26/25,12/26/25,"$2,443.10",-,PD
+CED-10656,Kevin Lindqvist,6/13/26,7/13/26,"$2,251.37",-,PD
+CED-10657,Karen Nguyen,7/20/26,8/19/26,"$9,546.38",-,PD
+CED-10658,Brian Hansen,8/9/26,9/8/26,$558.03,$558.03,Past due
+CED-10659,Kevin Malone,3/12/26,4/11/26,"$3,951.98",-,PD
+CED-10660,Mark Patel,6/26/26,7/26/26,"$2,440.84",-,PD
+CED-10661,Karen Murphy,11/12/25,12/12/25,$425.81,-,PD
+CED-10662,Linda Sullivan,5/25/26,6/24/26,"$2,297.59",-,PD
+CED-10663,Brian Fletcher,7/2/26,8/1/26,"$1,612.51",-,PD
+CED-10664,Chris Costa,4/12/26,5/12/26,"$1,587.93",-,PD
+CED-10665,Susan Dubois,1/19/26,2/18/26,"$6,783.14",-,PD
+CED-10666,Kevin Murphy,2/23/26,3/25/26,"$1,251.72",-,PD
+CED-10667,Pioneer Storage LLC,2/7/26,3/9/26,"$1,526.31",-,PD
+CED-10668,Kevin Brooks,1/19/26,2/18/26,"$18,148.51",-,PD
+CED-10669,Pioneer Storage,5/12/26,6/11/26,"$2,800.09",-,PD
+CED-10670,Fairview Fitness LLC,10/3/25,11/2/25,"$1,024.60",-,PD
+CED-10671,Riverbend Apartments,6/16/26,7/16/26,"$6,291.05",-,PD
+CED-10672,Pioneer Storage LLC,6/9/26,7/9/26,"$4,489.34",-,PD
+CED-10673,Karen Murphy,2/3/26,3/5/26,"$1,794.47",-,PD
+CED-10674,Maria Greer,12/24/25,1/23/26,$433.14,-,PD
+CED-10675,Patricia Costa,12/15/25,1/14/26,"$8,946.84","$8,946.84",Past due
+CED-10676,Acme Foods LLC,1/3/26,2/2/26,"$17,623.29",-,PD
+CED-10677,Maria Brooks,4/8/26,5/8/26,"$11,684.69",-,PD
+CED-10678,Northgate Church,1/25/26,2/24/26,"$3,178.55",-,PD
+CED-10679,Laura Murphy,12/13/25,1/12/26,"$17,148.72",-,PD
+CED-10680,Robert Fletcher,4/21/26,5/21/26,"$10,774.69","$10,774.69",Past due
+CED-10681,Kevin Sullivan,5/2/26,6/1/26,"$3,145.83",-,PD
+CED-10682,Thomas Hansen,4/8/26,5/8/26,"$3,364.63","$3,364.63",Past due
+CED-10683,Chris Baptiste,5/29/26,6/28/26,"$1,090.44",-,PD
+CED-10684,Patricia Brooks,5/15/26,6/14/26,"$1,411.11",-,PD
+CED-10685,Susan Chen,8/6/26,9/5/26,"$1,583.56",-,PD
+CED-10686,Pioneer Storage LLC,2/5/26,3/7/26,$574.80,-,PD
+CED-10687,Robert Kowalski,12/11/25,1/10/26,"$13,930.99",-,PD
+CED-10688,Patricia Hansen,8/1/26,8/31/26,"$18,118.69",-,PD
+CED-10689,Nancy Kowalski,7/21/26,8/20/26,$504.54,$504.54,Past due
+CED-10690,Kevin Malone,5/28/26,6/27/26,"$3,232.18",-,PD
+CED-10691,Riverbend Apartments,1/21/26,2/20/26,$746.46,-,PD
+CED-10692,Mark Chen,5/3/26,6/2/26,"$1,634.08",-,PD
+CED-10693,Northgate Church,6/14/26,7/14/26,"$2,136.09",-,PD
+CED-10694,Mark Sullivan,7/13/26,8/12/26,"$1,836.90",-,PD
+CED-10695,Kevin Costa,8/12/26,9/11/26,"$11,717.44",-,PD
+CED-10696,Mark Chen,5/23/26,6/22/26,"$1,602.52",-,PD
+CED-10697,James Greer,7/24/26,8/23/26,"$1,219.55",-,PD
+CED-10698,Linda Baptiste,6/18/26,7/18/26,"$4,567.02",-,PD
+CED-10699,Karen Lindqvist,8/24/26,9/23/26,"$9,251.64","$9,251.64",Open
+CED-10700,Robert Chen,11/22/25,12/22/25,"$2,663.63",-,PD
+CED-10701,Riverbend Apartments,3/7/26,4/6/26,"$3,034.89","$3,034.89",Past due
+CED-10702,Nancy Nguyen,6/5/26,7/5/26,"$1,494.51",-,PD
+CED-10703,Riverbend Apartments,12/4/25,1/3/26,"$3,079.25",-,PD
+CED-10704,Angela Baptiste,2/11/26,3/13/26,"$1,733.67",-,PD
+CED-10705,Patricia Fletcher,12/16/25,1/15/26,"$14,597.96",-,PD
+CED-10706,Robert Chen,10/9/25,11/8/25,"$1,107.82",-,PD
+CED-10707,Karen Baptiste,5/31/26,6/30/26,"$4,181.29",-,PD
+CED-10708,Thomas Chen,7/27/26,8/26/26,"$13,230.25","$13,230.25",Past due
+CED-10709,Maria Greer,12/13/25,1/12/26,$868.31,-,PD
+CED-10710,Kevin Brooks,10/4/25,11/3/25,"$4,396.45",-,PD
+CED-10711,Maria Dubois,6/22/26,7/22/26,"$2,690.21",-,PD
+CED-10712,Maria Brooks,1/23/26,2/22/26,"$9,774.37",-,PD
+CED-10713,Chris Costa,2/27/26,3/29/26,"$2,955.58","$2,955.58",Past due
+CED-10714,Mark Nguyen,10/26/25,11/25/25,"$5,147.20",-,PD
+CED-10715,Thomas Kim,10/15/25,11/14/25,"$2,386.92","$2,386.92",Past due
+CED-10716,Riverbend Apartments LLC,6/25/26,7/25/26,$197.41,$197.41,Past due
+CED-10717,Maria Lindqvist,6/3/26,7/3/26,"$1,703.41",-,PD
+CED-10718,Michael Hansen,6/5/26,7/5/26,"$2,984.05",-,PD
+CED-10719,Linda Costa,3/22/26,4/21/26,"$4,061.33",-,PD
+CED-10720,Linda Costa,4/2/26,5/2/26,"$2,190.53",-,PD
+CED-10721,Chris Chen,12/17/25,1/16/26,"$3,547.39",-,PD
+CED-10722,Rachel Baptiste,8/17/26,9/16/26,"$14,971.34","$14,971.34",Past due
+CED-10723,Karen Chen,10/2/25,11/1/25,"$1,662.27",-,PD
+CED-10724,Robert Reyes,8/16/26,9/15/26,"$4,041.18","$4,041.18",Past due
+CED-10725,Thomas Costa,7/1/26,7/31/26,"$1,776.75",-,PD
+CED-10726,Acme Manufacturing LLC,4/29/26,5/29/26,"$8,364.45",-,PD
+CED-10727,James Nguyen,10/7/25,11/6/25,$648.16,-,PD
+CED-10728,Michael Reyes,7/26/26,8/25/26,"$3,713.40",-,PD
+CED-10729,Karen Lindqvist,1/5/26,2/4/26,"$5,918.84",-,PD
+CED-10730,Kevin Greer,7/8/26,8/7/26,"$1,186.74","$1,186.74",Past due
+CED-10731,Susan Murphy,1/22/26,2/21/26,"$3,089.49",-,PD
+CED-10732,David Brooks,11/28/25,12/28/25,"$3,244.82",-,PD
+CED-10733,Copper Kettle Bakery LLC,3/28/26,4/27/26,"$3,813.94",-,PD
+CED-10734,Meadow Ridge HOA LLC,11/14/25,12/14/25,"$4,832.56",-,PD
+CED-10735,Chris Greer,5/5/26,6/4/26,"$1,352.72",-,PD
+CED-10736,Lakeside Veterinary,3/28/26,4/27/26,"$2,911.25",-,PD
+CED-10737,Bayside Dental,1/25/26,2/24/26,"$15,029.37",-,PD
+CED-10738,Granite Peak Brewing,11/4/25,12/4/25,$427.58,-,PD
+CED-10739,Laura Kim,11/2/25,12/2/25,"$4,216.93",-,PD
+CED-10740,David Costa,4/27/26,5/27/26,"$3,630.67",-,PD
+CED-10741,Laura Baptiste,8/9/26,9/8/26,"$3,721.77","$3,721.77",Past due
+CED-10742,Nancy Nguyen,11/24/25,12/24/25,"$13,539.50",-,PD
+CED-10743,Copper Kettle Bakery LLC,2/11/26,3/13/26,"$7,018.57",-,PD
+CED-10744,Chris Costa,10/10/25,11/9/25,"$1,604.87","$1,604.87",Past due
+CED-10745,Copper Kettle Bakery LLC,5/19/26,6/18/26,"$4,031.78",-,PD
+CED-10746,Emily Costa,11/7/25,12/7/25,"$1,258.46",-,PD
+CED-10747,Chris Chen,7/8/26,8/7/26,"$17,683.73",-,PD
+CED-10748,Laura Sullivan,10/9/25,11/8/25,"$5,141.44",-,PD
+CED-10749,Susan Chen,6/24/26,7/24/26,"$1,492.33",-,PD
+CED-10750,Lakeside Veterinary,4/17/26,5/17/26,$487.24,-,PD
+CED-10751,Granite Peak Brewing,10/30/25,11/29/25,"$13,260.58",-,PD
+CED-10752,Linda Sullivan,7/12/26,8/11/26,"$2,936.94",-,PD
+CED-10753,Northgate Church,9/5/26,10/5/26,$817.79,-,PD
+CED-10754,Chris Costa,6/25/26,7/25/26,"$2,285.45","$2,285.45",Past due
+CED-10755,David Greer,7/6/26,8/5/26,"$3,583.49",-,PD
+CED-10756,Pioneer Storage LLC,10/7/25,11/6/25,"$12,757.15",-,PD
+CED-10757,Patricia Lindqvist,4/20/26,5/20/26,"$1,188.08",-,PD
+CED-10758,Maria Nguyen,11/27/25,12/27/25,"$6,554.52",-,PD
+CED-10759,Maria Greer,7/1/26,7/31/26,"$3,079.15","$3,079.15",Past due
+CED-10760,Susan Rivera,4/26/26,5/26/26,"$2,552.96",-,PD
+CED-10761,David Sullivan,1/18/26,2/17/26,"$5,474.55",-,PD
+CED-10762,Linda Malone,12/2/25,1/1/26,"$4,107.65",-,PD
+CED-10763,Karen Lindqvist,1/14/26,2/13/26,"$2,865.37",-,PD
+CED-10764,Susan Murphy,4/3/26,5/3/26,"$3,155.20",-,PD
+CED-10765,Angela Kim,8/27/26,9/26/26,"$1,624.20","$1,624.20",Open
+CED-10766,Bayside Dental,10/18/25,11/17/25,"$3,090.38",-,PD
+CED-10767,David Sullivan,5/18/26,6/17/26,"$2,343.88",-,PD
+CED-10768,Pioneer Storage,11/2/25,12/2/25,"$2,361.17",-,PD
+CED-10769,Mark Brooks,2/7/26,3/9/26,"$1,317.66",-,PD
+CED-10770,Acme Foods LLC,8/24/26,9/23/26,"$2,467.21","$2,467.21",Open
+CED-10771,Pioneer Storage LLC,2/27/26,3/29/26,"$2,584.28",-,PD
+CED-10772,Karen Kowalski,6/18/26,7/18/26,"$2,143.94",-,PD
+CED-10773,Mark Walsh,3/17/26,4/16/26,"$2,637.35",-,PD
+CED-10774,Michael Hansen,5/31/26,6/30/26,"$2,396.15",-,PD
+CED-10775,James Greer,11/8/25,12/8/25,"$1,272.91",-,PD
+CED-10776,Granite Peak Brewing,8/23/26,9/22/26,"$2,819.71",-,PD
+CED-10777,Angela Baptiste,12/29/25,1/28/26,"$4,093.46",-,PD
+CED-10778,Granite Peak Brewing,1/24/26,2/23/26,"$7,672.02",-,PD
+CED-10779,Michael Kowalski,6/5/26,7/5/26,"$17,753.35",-,PD
+CED-10780,David Rivera,2/25/26,3/27/26,$928.46,-,PD
+CED-10781,Chris Lindqvist,7/10/26,8/9/26,"$1,687.34","$1,687.34",Past due
+CED-10782,Patricia Hansen,4/15/26,5/15/26,"$2,228.43",-,PD
+CED-10783,Lakeside Veterinary,5/26/26,6/25/26,"$6,386.81",-,PD
+CED-10784,Susan Chen,12/25/25,1/24/26,"$1,911.32",-,PD
+CED-10785,Kevin Chen,2/23/26,3/25/26,"$1,734.64",-,PD
+CED-10786,Angela Greer,12/5/25,1/4/26,"$3,311.85",-,PD
+CED-10787,Angela Costa,6/20/26,7/20/26,"$15,608.82",-,PD
+CED-10788,Laura Costa,11/19/25,12/19/25,"$7,362.53",-,PD
+CED-10789,Pioneer Storage,11/9/25,12/9/25,"$2,558.72",-,PD
+CED-10790,Northgate Church,8/27/26,9/26/26,$762.26,-,PD

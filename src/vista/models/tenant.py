@@ -1,10 +1,10 @@
 import uuid
-from datetime import datetime
+from datetime import date, datetime
 from decimal import Decimal
 
-from sqlalchemy import BigInteger, DateTime, Float, ForeignKey, Integer, Numeric, String, Text, UniqueConstraint, func
+from sqlalchemy import BigInteger, Boolean, Date, DateTime, Float, ForeignKey, Integer, Numeric, String, Text, UniqueConstraint, func
 from sqlalchemy.dialects.postgresql import JSONB, UUID
-from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
+from sqlalchemy.orm import DeclarativeBase, Mapped, declared_attr, mapped_column
 
 
 class TenantBase(DeclarativeBase):
@@ -246,63 +246,291 @@ class RecordingReviewItem(TenantBase):
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
 
-class PortfolioTask(TenantBase):
-    """Analyst follow-up on one portfolio company, raised from a finding,
-    an opportunity or an integration step."""
+# ---- Canonical business state (PE portfolio workspace) ------------------------
+# Business facts live here; agent interpretation lives in findings / opportunities.
+# Every row records where it came from so any number on screen can be traced.
 
-    __tablename__ = "portfolio_tasks"
+SOURCE_TYPES = ("synthetic_seed", "manual_entry", "csv_import", "xlsx_import", "agent_import", "api_sync")
+
+
+class ProvenanceMixin:
+    company_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), index=True)  # platform.firm_companies.id
+    data_source_type: Mapped[str] = mapped_column(String(32), default="manual_entry")
+    source_file_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), nullable=True)
+    import_job_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), nullable=True)
+    synthetic_demo: Mapped[bool] = mapped_column(Boolean, default=False)
+
+    @declared_attr
+    def created_at(cls) -> Mapped[datetime]:
+        return mapped_column(DateTime(timezone=True), server_default=func.now())
+
+    @declared_attr
+    def updated_at(cls) -> Mapped[datetime]:
+        return mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+
+
+class Customer(ProvenanceMixin, TenantBase):
+    __tablename__ = "customers"
 
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    deal_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("deals.id"), index=True)
-    title: Mapped[str] = mapped_column(String(512))
+    legal_name: Mapped[str] = mapped_column(String(255))
+    display_name: Mapped[str] = mapped_column(String(255))
+    source_customer_id: Mapped[str] = mapped_column(String(64), default="")
+    contact_name: Mapped[str] = mapped_column(String(255), default="")
+    email: Mapped[str] = mapped_column(String(255), default="")
+    phone: Mapped[str] = mapped_column(String(64), default="")
+    address_line_1: Mapped[str] = mapped_column(String(255), default="")
+    address_line_2: Mapped[str] = mapped_column(String(255), default="")
+    city: Mapped[str] = mapped_column(String(128), default="")
+    state: Mapped[str] = mapped_column(String(32), default="")
+    postal_code: Mapped[str] = mapped_column(String(32), default="")
+    service_type: Mapped[str] = mapped_column(String(128), default="")
+    status: Mapped[str] = mapped_column(String(16), default="active")  # active|inactive
+
+
+class Invoice(ProvenanceMixin, TenantBase):
+    __tablename__ = "invoices"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    customer_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("customers.id"), nullable=True, index=True)
+    customer_name: Mapped[str] = mapped_column(String(255), default="")  # as written in the source
+    source_invoice_number: Mapped[str] = mapped_column(String(64))
+    issue_date: Mapped[date | None] = mapped_column(Date, nullable=True)
+    due_date: Mapped[date | None] = mapped_column(Date, nullable=True, index=True)
+    amount: Mapped[Decimal] = mapped_column(Numeric(14, 2), default=0)
+    outstanding_balance: Mapped[Decimal] = mapped_column(Numeric(14, 2), default=0)
+    status: Mapped[str] = mapped_column(String(16), default="open")  # draft|open|overdue|paid|void|disputed
+
+
+class Vendor(ProvenanceMixin, TenantBase):
+    __tablename__ = "vendors"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    normalized_name: Mapped[str] = mapped_column(String(255), index=True)
+    source_name: Mapped[str] = mapped_column(String(255))
+    contact_name: Mapped[str] = mapped_column(String(255), default="")
+    email: Mapped[str] = mapped_column(String(255), default="")
+    phone: Mapped[str] = mapped_column(String(64), default="")
+    status: Mapped[str] = mapped_column(String(16), default="active")
+
+
+class VendorPurchase(ProvenanceMixin, TenantBase):
+    __tablename__ = "vendor_purchases"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    vendor_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("vendors.id"), nullable=True, index=True)
+    purchase_date: Mapped[date | None] = mapped_column(Date, nullable=True, index=True)
+    sku: Mapped[str] = mapped_column(String(64), default="", index=True)
+    item_description: Mapped[str] = mapped_column(Text, default="")
+    quantity: Mapped[Decimal] = mapped_column(Numeric(14, 3), default=0)
+    unit: Mapped[str] = mapped_column(String(32), default="")
+    unit_price: Mapped[Decimal] = mapped_column(Numeric(14, 4), default=0)
+    total_amount: Mapped[Decimal] = mapped_column(Numeric(14, 2), default=0)
+
+
+class Subscription(ProvenanceMixin, TenantBase):
+    __tablename__ = "subscriptions"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    vendor_name: Mapped[str] = mapped_column(String(255), default="")
+    product_name: Mapped[str] = mapped_column(String(255))
+    category: Mapped[str] = mapped_column(String(128), default="")
+    monthly_cost: Mapped[Decimal] = mapped_column(Numeric(14, 2), default=0)
+    annual_cost: Mapped[Decimal] = mapped_column(Numeric(14, 2), default=0)
+    seat_count: Mapped[int] = mapped_column(Integer, default=0)
+    renewal_date: Mapped[date | None] = mapped_column(Date, nullable=True)
+    contract_end_date: Mapped[date | None] = mapped_column(Date, nullable=True)
+    restrictions_notes: Mapped[str] = mapped_column(Text, default="")
+
+
+class Task(TenantBase):
+    """Human work item. `realized_value` is only meaningful when outcome == 'Implemented'."""
+
+    __tablename__ = "tasks"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    company_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), index=True)
+    ref: Mapped[str] = mapped_column(String(16), unique=True)  # T-101 (firm-wide sequence)
+    title: Mapped[str] = mapped_column(Text)
     description: Mapped[str] = mapped_column(Text, default="")
     category: Mapped[str] = mapped_column(String(64), default="Integration")
-    source_type: Mapped[str | None] = mapped_column(String(32), nullable=True)  # finding|opportunity|subscription|manual
-    source_id: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    source_type: Mapped[str | None] = mapped_column(String(32), nullable=True)  # opportunity|finding|subscription|agent_run|import
+    source_id: Mapped[str | None] = mapped_column(String(64), nullable=True)
     assignee: Mapped[str] = mapped_column(String(255), default="")
-    priority: Mapped[str] = mapped_column(String(16), default="Medium")  # High|Medium|Low
-    due_date: Mapped[str | None] = mapped_column(String(10), nullable=True)
-    status: Mapped[str] = mapped_column(String(16), default="Open")  # Open|In progress|Complete|Dismissed
-    created_by: Mapped[str] = mapped_column(String(255), default="")
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
-    completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
-    outcome: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    priority: Mapped[str] = mapped_column(String(16), default="Medium")
+    status: Mapped[str] = mapped_column(String(16), default="Open")  # Open|In progress|Blocked|Complete|Dismissed
+    due_date: Mapped[date | None] = mapped_column(Date, nullable=True)
+    outcome: Mapped[str | None] = mapped_column(String(64), nullable=True)
     outcome_notes: Mapped[str] = mapped_column(Text, default="")
-    realized_result: Mapped[Decimal | None] = mapped_column(Numeric(14, 2), nullable=True)
-
-
-class PortfolioOpportunity(TenantBase):
-    """A cross-company saving or working-capital opportunity. Spans deals, so
-    the companies it touches live in a JSONB list rather than a foreign key."""
-
-    __tablename__ = "portfolio_opportunities"
-
-    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    title: Mapped[str] = mapped_column(String(512))
-    category: Mapped[str] = mapped_column(String(64), default="Software")
-    deal_ids: Mapped[list] = mapped_column(JSONB, default=list)  # deals.id values this spans
-    confidence: Mapped[float] = mapped_column(Float, default=0)
-    potential_value: Mapped[Decimal] = mapped_column(Numeric(14, 2), default=0)
-    status: Mapped[str] = mapped_column(String(16), default="New")  # New|Under review|Task created|Validated|Realized|Dismissed
-    found_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
-    fact: Mapped[str] = mapped_column(Text, default="")
-    evidence: Mapped[list] = mapped_column(JSONB, default=list)  # [{deal_id, entity, id}]
-    calculation: Mapped[list] = mapped_column(JSONB, default=list)  # shown line by line
-    benefit: Mapped[str] = mapped_column(Text, default="")
-    assumptions: Mapped[list] = mapped_column(JSONB, default=list)
-    next_action: Mapped[str] = mapped_column(Text, default="")
     realized_value: Mapped[Decimal | None] = mapped_column(Numeric(14, 2), nullable=True)
+    created_by: Mapped[str] = mapped_column(String(255), default="")
+    synthetic_demo: Mapped[bool] = mapped_column(Boolean, default=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+    completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
 
-class PortfolioActivity(TenantBase):
-    """Append-only audit of what the analyst and the agents did, per company."""
+# ---- Raw source layer + placeholder import pipeline ------------------------------
 
-    __tablename__ = "portfolio_activity"
+IMPORT_STATUSES = ("uploaded", "analyzing", "mapping_review", "validating", "ready_to_import", "importing", "completed", "failed")
+
+
+class SourceFile(TenantBase):
+    __tablename__ = "source_files"
 
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    deal_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("deals.id"), nullable=True, index=True)
-    kind: Mapped[str] = mapped_column(String(32))  # task|finding|opportunity|agent|import
-    summary: Mapped[str] = mapped_column(Text)
-    actor: Mapped[str] = mapped_column(String(255), default="")
-    ref: Mapped[dict] = mapped_column(JSONB, default=dict)
-    at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), index=True)
+    company_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), index=True)
+    filename: Mapped[str] = mapped_column(String(512))
+    storage_key: Mapped[str] = mapped_column(String(1024), default="")
+    mime_type: Mapped[str] = mapped_column(String(128), default="")
+    file_size: Mapped[int] = mapped_column(BigInteger, default=0)
+    content_hash: Mapped[str] = mapped_column(String(64), default="")
+    uploaded_by: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), nullable=True)
+    uploaded_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    status: Mapped[str] = mapped_column(String(16), default="stored")  # stored|failed|purged
+
+
+class ImportJob(TenantBase):
+    __tablename__ = "import_jobs"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    company_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), index=True)
+    source_file_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("source_files.id"))
+    status: Mapped[str] = mapped_column(String(16), default="uploaded")
+    dataset_type: Mapped[str] = mapped_column(String(32), default="other")  # customers|invoices|vendors|subscriptions|other
+    detection_confidence: Mapped[float] = mapped_column(Float, default=0.0)
+    sheet_name: Mapped[str] = mapped_column(String(128), default="Sheet1")
+    columns: Mapped[list] = mapped_column(JSONB, default=list)
+    processor: Mapped[str] = mapped_column(String(32), default="demo")
+    records_detected: Mapped[int] = mapped_column(Integer, default=0)
+    records_imported: Mapped[int] = mapped_column(Integer, default=0)
+    records_needing_review: Mapped[int] = mapped_column(Integer, default=0)
+    records_rejected: Mapped[int] = mapped_column(Integer, default=0)
+    error: Mapped[str | None] = mapped_column(Text, nullable=True)
+    created_by: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+
+class FieldMapping(TenantBase):
+    __tablename__ = "field_mappings"
+    __table_args__ = (UniqueConstraint("import_job_id", "source_column"),)
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    import_job_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("import_jobs.id", ondelete="CASCADE"), index=True)
+    source_column: Mapped[str] = mapped_column(String(255))
+    example_value: Mapped[str] = mapped_column(Text, default="")
+    target_entity: Mapped[str] = mapped_column(String(32))
+    target_field: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    confidence: Mapped[float] = mapped_column(Float, default=0.0)
+    status: Mapped[str] = mapped_column(String(16), default="proposed")  # proposed|needs_review|approved|ignored
+    approved_by: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), nullable=True)
+    approved_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+
+class ImportRecord(TenantBase):
+    __tablename__ = "import_records"
+    __table_args__ = (UniqueConstraint("import_job_id", "source_row"),)
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    import_job_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("import_jobs.id", ondelete="CASCADE"), index=True)
+    source_row: Mapped[int] = mapped_column(Integer)
+    raw_record: Mapped[dict] = mapped_column(JSONB, default=dict)
+    normalized_record: Mapped[dict] = mapped_column(JSONB, default=dict)
+    status: Mapped[str] = mapped_column(String(16), default="staged")  # staged|imported|merged|rejected
+    confidence: Mapped[float] = mapped_column(Float, default=1.0)
+    exception_reason: Mapped[str | None] = mapped_column(Text, nullable=True)
+    entity_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), nullable=True)  # canonical row written on approval
+
+
+class ImportException(TenantBase):
+    __tablename__ = "import_exceptions"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    import_job_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("import_jobs.id", ondelete="CASCADE"), index=True)
+    import_record_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("import_records.id"), nullable=True)
+    ref: Mapped[str] = mapped_column(String(16), default="")  # X-1 within the job
+    exception_type: Mapped[str] = mapped_column(String(64))
+    description: Mapped[str] = mapped_column(Text, default="")
+    candidate_matches: Mapped[list] = mapped_column(JSONB, default=list)
+    detail: Mapped[dict] = mapped_column(JSONB, default=dict)  # left/right values, rows, allowed actions
+    confidence: Mapped[float] = mapped_column(Float, default=0.0)
+    status: Mapped[str] = mapped_column(String(16), default="open")  # open|resolved
+    resolution: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    resolved_by: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), nullable=True)
+    resolved_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class RecordProvenance(TenantBase):
+    """Where a canonical value came from. `field_name` NULL covers the whole row."""
+
+    __tablename__ = "record_provenance"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    entity_type: Mapped[str] = mapped_column(String(32))
+    entity_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), index=True)
+    field_name: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    source_file_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), nullable=True)
+    source_filename: Mapped[str] = mapped_column(String(512), default="")
+    sheet_name: Mapped[str] = mapped_column(String(128), default="")
+    row_number: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    source_column: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    raw_value: Mapped[dict] = mapped_column(JSONB, default=dict)
+    normalized_value: Mapped[dict] = mapped_column(JSONB, default=dict)
+    import_job_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), nullable=True)
+    agent_run_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), nullable=True)
+    confidence: Mapped[float] = mapped_column(Float, default=1.0)
+    human_verified: Mapped[bool] = mapped_column(Boolean, default=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+# ---- Agent interpretation layer for the portfolio workspace -----------------------
+# Workspace agents, their runs and findings are interpretations, never business facts.
+# Display detail lives in `payload`; the indexed columns are what the API filters on.
+
+
+class WorkspaceAgent(TenantBase):
+    __tablename__ = "workspace_agents"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    company_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), index=True)
+    ref: Mapped[str] = mapped_column(String(64), unique=True)
+    name: Mapped[str] = mapped_column(String(255))
+    status: Mapped[str] = mapped_column(String(16), default="Active")  # Active|Paused
+    last_run_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    payload: Mapped[dict] = mapped_column(JSONB, default=dict)  # represents, cases, review, findings, lastFailure, cost
+    synthetic_demo: Mapped[bool] = mapped_column(Boolean, default=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class WorkspaceAgentRun(TenantBase):
+    __tablename__ = "workspace_agent_runs"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    company_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), index=True)
+    agent_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("workspace_agents.id", ondelete="CASCADE"), index=True)
+    ref: Mapped[str] = mapped_column(String(64), unique=True)
+    status: Mapped[str] = mapped_column(String(16), default="Complete")
+    started_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    needs_review: Mapped[int] = mapped_column(Integer, default=0)
+    model_cost: Mapped[Decimal] = mapped_column(Numeric(10, 4), default=0)
+    payload: Mapped[dict] = mapped_column(JSONB, default=dict)  # goal, sources, events, output, evidence, corrections
+    synthetic_demo: Mapped[bool] = mapped_column(Boolean, default=False)
+
+
+class WorkspaceFinding(TenantBase):
+    __tablename__ = "workspace_findings"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    company_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), index=True)
+    ref: Mapped[str] = mapped_column(String(16), unique=True)
+    agent_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("workspace_agents.id"), nullable=True)
+    run_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("workspace_agent_runs.id"), nullable=True)
+    title: Mapped[str] = mapped_column(Text)
+    detail: Mapped[str] = mapped_column(Text, default="")
+    severity: Mapped[str] = mapped_column(String(16), default="Medium")
+    status: Mapped[str] = mapped_column(String(16), default="Open")  # Open|Reviewed|Actioned|Dismissed
+    found_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    synthetic_demo: Mapped[bool] = mapped_column(Boolean, default=False)
