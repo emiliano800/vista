@@ -91,6 +91,7 @@ export class Recorder extends EventEmitter {
     this.appSeconds = {};
     this.lastTick = 0;
     this.startedAt = null;
+    this.intent = '';
     this.pausedMs = 0;
     this._pausedAt = null;
     this.frameNo = 0;
@@ -119,6 +120,7 @@ export class Recorder extends EventEmitter {
     fs.mkdirSync(path.join(this.dir, 'shots'), { recursive: true });
     this.stream = fs.createWriteStream(path.join(this.dir, 'events.jsonl'), { flags: 'a' });
     this.startedAt = now;
+    this.intent = '';
     this.pausedMs = 0;
     this.pauses = [];
     this.counts = this._zeroCounts();
@@ -191,6 +193,16 @@ export class Recorder extends EventEmitter {
 
   _redactText(text) {
     return this.settings.redact ? redactText(text) : String(text ?? '');
+  }
+
+  // What the employee says they are working on this session, asked right after
+  // Start. Kept in the manifest as `summary_text` so it survives Stop and names
+  // the recording.
+  setIntent(text) {
+    if (this.state === 'idle') return this.status();
+    this.intent = String(text ?? '').trim().slice(0, 4000);
+    this._writeManifest();
+    return this.status();
   }
 
   status() {
@@ -490,6 +502,7 @@ export class Recorder extends EventEmitter {
       settings: { redact: !!this.settings.redact, keyContent: this.settings.keyContent, clipboard: this.settings.clipboard, screenshots: this.settings.screenshots, video: this.settings.video },
       files: { events: 'events.jsonl', shots: 'shots/', video: this.settings.video ? 'screen.webm' : null, documents: this.settings.files ? FILES_FILE : null },
       processing: final ? 'pending' : null,
+      ...(this.intent ? { summary_text: this.intent } : {}),
     };
     if (this.dir) fs.writeFileSync(path.join(this.dir, 'manifest.json'), JSON.stringify(manifest, null, 2));
     return manifest;

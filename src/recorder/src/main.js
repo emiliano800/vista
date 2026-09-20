@@ -625,7 +625,7 @@ function addAnnotation(recordingId, { label, note = '', start, end, case_id = ''
 // ---- windows -----------------------------------------------------------------
 
 // Overlay sizes: `orb` is the idle blue circle, `pill` the recording bar, `panel` the expanded details.
-const SIZES = { orb: { w: 104, h: 104 }, pill: { w: 380, h: 64 }, panel: { w: 380, h: 332 } };
+const SIZES = { orb: { w: 104, h: 104 }, pill: { w: 380, h: 64 }, intent: { w: 380, h: 224 }, panel: { w: 380, h: 332 } };
 let overlayMode = 'orb';
 
 function setOverlayMode(mode) {
@@ -773,6 +773,21 @@ function startRecording() {
   if (recorder.settings.video && captureWin) {
     fs.writeFileSync(path.join(recorder.dir, 'screen.webm'), '');
     captureWin.webContents.send('video:start', { dir: recorder.dir, fps: 2 });
+  }
+  return status;
+}
+
+// "What are you working on today?" — asked by the overlay right after Start.
+// Stored on the recording (manifest summary_text, names it) and as a session
+// annotation so the review shows it as the general summary.
+function setIntent(text) {
+  const clean = scrub(String(text ?? '')).trim().slice(0, 4000);
+  if (recorder.state === 'idle' || !clean) return recorder.status();
+  const status = recorder.setIntent(clean);
+  try {
+    addAnnotation(recorder.recordingId, { label: clean, scope: 'session' });
+  } catch (e) {
+    console.error('intent annotation failed:', e.message);
   }
   return status;
 }
@@ -950,6 +965,7 @@ ipcMain.handle('rec:start', () => startRecording());
 ipcMain.handle('rec:pause', () => pauseRecording());
 ipcMain.handle('rec:resume', () => resumeRecording());
 ipcMain.handle('rec:stop', () => stopRecording());
+ipcMain.handle('rec:intent', (_e, text) => setIntent(text));
 ipcMain.handle('rec:toggle', () => toggle());
 ipcMain.handle('rec:status', () => recorder.status());
 ipcMain.handle('recordings:list', () => listRecordings());

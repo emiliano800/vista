@@ -568,9 +568,9 @@
         $('rv-lede').textContent = `${when} · ${hm(r.active_seconds ?? 0)} · ${(r.counts?.total ?? 0).toLocaleString()} interactions · ${up.label}${up.key === 'submitted' ? ' — files are in your workspace' : ''}`;
         $('rv-banner-t').textContent = up.key === 'submitted' ? 'Submitted' : up.key === 'uploading' ? up.label : up.key === 'failed' ? 'Submit failed' : done ? 'Ready to review' : p === 'failed' ? 'Analysis could not finish' : p === 'skipped' ? 'Analysis skipped' : 'Analyzing…';
         $('rv-banner-s').textContent = up.key === 'submitted' ? `Sent ${up.sub}. Nothing from this session is left on this computer.` : up.key === 'failed' ? `${up.sub} Press Submit to retry.` : up.key === 'uploading' ? 'Sending the video, screenshots and notes to your workspace…' : done ? analystSummary() : p === 'failed' || p === 'skipped' ? (r.processing_note ?? '') : '';
-        $('rv-note').classList.toggle('attn', !r.name && up.key !== 'submitted');
+        $('rv-note').classList.toggle('attn', !r.summary_text && up.key !== 'submitted');
         $('rv-note').classList.toggle('hidden', up.key === 'submitted');
-        $('rv-note').title = r.name ? 'Edit the general summary' : 'Tell us what this session was about — it names the recording';
+        $('rv-note').title = r.summary_text ? 'Edit the general summary' : 'Tell us what this session was about — it names the recording';
         const sb = $('rv-submit');
         sb.classList.toggle('hidden', up.key === 'submitted');
         sb.disabled = !done || up.key === 'uploading';

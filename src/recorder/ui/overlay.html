@@ -107,6 +107,47 @@
       .links a { color: var(--ink-secondary); text-decoration: none; font-size: 12px; line-height: 16px; cursor: pointer; }
       .links a:hover { color: var(--ink); text-decoration: underline; text-underline-offset: 3px; text-decoration-color: var(--rust); }
 
+      /* ---------------- intent card (right after Start) ---------------- */
+      /* The pill "melts" open into a card asking what today's work is about. The
+         liquid feel is a border-radius/scale morph on the shell plus a few brand
+         bubbles rising behind the card through an SVG goo filter. */
+      #intent { border-top: 1px solid var(--line); padding: var(--space-3) var(--space-3) var(--space-4); display: grid; gap: var(--space-2); position: relative; overflow: hidden; }
+      #intent > * { position: relative; z-index: 1; }
+      #intent .q { font-family: var(--font-display); font-size: 15px; line-height: 20px; }
+      #intent .hint { color: var(--ink-muted); font-size: 11px; line-height: 16px; }
+      #intent textarea {
+        -webkit-app-region: no-drag; resize: none; width: 100%; font: inherit; color: var(--ink);
+        background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-lg);
+        padding: var(--space-2) var(--space-3); min-height: 58px; outline: none;
+        transition: border-color 0.18s ease, box-shadow 0.18s ease;
+      }
+      #intent textarea:focus { border-color: var(--brand); box-shadow: 0 0 0 3px color-mix(in srgb, var(--brand) 18%, transparent); }
+      #intent .act { display: flex; gap: var(--space-2); align-items: center; justify-content: flex-end; }
+      #intent .act a { margin-right: auto; color: var(--ink-secondary); font-size: 12px; cursor: pointer; -webkit-app-region: no-drag; }
+      #intent .act a:hover { color: var(--ink); text-decoration: underline; text-underline-offset: 3px; }
+      .bubbles { position: absolute; inset: 0; z-index: 0; pointer-events: none; filter: url(#goo); opacity: 0.35; }
+      .bubbles i {
+        position: absolute; bottom: -30px; border-radius: 50%; background: color-mix(in srgb, var(--brand) 28%, var(--glass));
+        width: var(--s); height: var(--s); left: var(--x);
+        animation: rise var(--d) cubic-bezier(0.3, 0.6, 0.4, 1) var(--delay) infinite;
+      }
+      @keyframes rise {
+        0% { transform: translateY(0) scale(0.6); opacity: 0; }
+        15% { opacity: 0.9; }
+        100% { transform: translateY(-240px) scale(1.15); opacity: 0; }
+      }
+      body.intent #intent { display: grid; }
+      body:not(.intent) #intent { display: none; }
+      body:not(.intent) .bubbles i { animation-play-state: paused; }
+      #shell.liquid { animation: liquid 0.95s cubic-bezier(0.34, 1.4, 0.64, 1) both; }
+      @keyframes liquid {
+        0% { border-radius: 42% 58% 55% 45% / 58% 42% 58% 42%; transform: scale(0.94, 0.82); }
+        30% { border-radius: 58% 42% 45% 55% / 42% 60% 40% 58%; transform: scale(1.03, 1.06); }
+        60% { border-radius: 46% 54% 58% 42% / 54% 46% 52% 48%; transform: scale(0.99, 1.01); }
+        100% { border-radius: var(--radius-xl); transform: none; }
+      }
+      body.intent #shell { box-shadow: var(--shadow-md), 0 12px 40px color-mix(in srgb, var(--brand) 22%, transparent); }
+
       /* ---------------- idle orb ---------------- */
       /* Orb and shell both stay in the DOM; the mode switch cross-fades them so
          hovering feels like the circle unfolds into the pill instead of snapping. */
@@ -179,10 +220,13 @@
       body.orb #orb:hover { transform: scale(1.08); }
       body:not(.orb) #shell { opacity: 1; transform: none; }
       body.settling #shell, body.settling #orb { transition-duration: 0.18s; }
-      @media (prefers-reduced-motion: reduce) { #shell, #orb, #orb svg, button { transition: none !important; } #orb, #orb::before, #orb::after, #orb svg { animation: none !important; } }
+      @media (prefers-reduced-motion: reduce) { #shell, #orb, #orb svg, button { transition: none !important; } #orb, #orb::before, #orb::after, #orb svg, #shell.liquid, .bubbles i { animation: none !important; } }
     </style>
   </head>
   <body class="orb">
+    <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+      <filter id="goo"><feGaussianBlur in="SourceGraphic" stdDeviation="6" result="b"/><feColorMatrix in="b" mode="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 20 -9"/></filter>
+    </svg>
     <div id="orb" title="Vista — hover to start recording">
       <svg viewBox="0 0 20 20"><circle cx="10" cy="10" r="5"/></svg>
     </div>
@@ -207,6 +251,22 @@
           <button id="expand" class="icon" title="Details">
             <svg viewBox="0 0 16 16"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round"/></svg>
           </button>
+        </div>
+      </div>
+      <div id="intent">
+        <div class="bubbles" aria-hidden="true">
+          <i style="--s:34px;--x:6%;--d:5.2s;--delay:0s"></i>
+          <i style="--s:18px;--x:22%;--d:4.1s;--delay:1.3s"></i>
+          <i style="--s:26px;--x:48%;--d:6s;--delay:0.6s"></i>
+          <i style="--s:14px;--x:70%;--d:3.8s;--delay:2.1s"></i>
+          <i style="--s:30px;--x:86%;--d:5.6s;--delay:0.9s"></i>
+        </div>
+        <div class="q">What are you working on today?</div>
+        <textarea id="intent-text" rows="2" maxlength="4000" placeholder="e.g. Month-end close — reconciling AP invoices in Excel and QuickBooks"></textarea>
+        <div class="act">
+          <a id="intent-skip">Skip for now</a>
+          <span class="hint">Enter to save</span>
+          <button id="intent-save" class="primary">Let's go</button>
         </div>
       </div>
       <div id="panel" class="hidden">
@@ -243,11 +303,12 @@
       // leaving (still idle, not expanded) folds it back. Recording keeps the pill.
       // Growing: resize the window first, then animate the content in. Shrinking:
       // animate out first, then resize, so the window never clips mid-animation.
+      const MODE_SIZE = { orb: 0, pill: 1, intent: 2, panel: 3 };
       let mode = 'orb', shrinkTimer = null;
       function setMode(next) {
         if (next === mode) return;
         clearTimeout(shrinkTimer);
-        const growing = next !== 'orb' && (mode === 'orb' || next === 'panel');
+        const growing = MODE_SIZE[next] > MODE_SIZE[mode];
         mode = next;
         applyOrbAnim();
         if (growing) {
@@ -288,9 +349,10 @@
       function render(st) {
         const wasIdle = !status || status.state === 'idle';
         status = st;
-        if (st.state !== 'idle' && document.body.classList.contains('orb')) setMode(expanded ? 'panel' : 'pill');
+        if (st.state === 'idle' && intentOpen) closeIntent(false, { resize: false });
+        if (st.state !== 'idle' && mode === 'orb') setMode(expanded ? 'panel' : 'pill');
         if (st.state === 'idle' && !wasIdle && !expanded) setMode('orb');
-        shell.className = st.state + (st.current.private ? ' private' : '');
+        shell.className = st.state + (st.current.private ? ' private' : '') + (shell.classList.contains('liquid') ? ' liquid' : '');
         const rec = st.state === 'recording', paused = st.state === 'paused', fin = st.state === 'finishing';
         $('start').classList.toggle('hidden', st.state !== 'idle');
         $('pause').classList.toggle('hidden', !rec);
@@ -333,10 +395,46 @@
         expanded = v;
         $('panel').classList.toggle('hidden', !v);
         $('expand').style.transform = v ? 'rotate(180deg)' : '';
-        setMode(v ? 'panel' : 'pill');
+        if (intentOpen) closeIntent(false);
+        else setMode(v ? 'panel' : 'pill');
       }
 
-      $('start').onclick = () => window.vista.start().then(render);
+      // Right after Start the pill melts open into the intent card; saving or
+      // skipping melts it back to the recording pill.
+      let intentOpen = false;
+      function melt() {
+        shell.classList.remove('liquid');
+        void shell.offsetWidth;
+        shell.classList.add('liquid');
+      }
+      shell.onanimationend = (e) => { if (e.animationName === 'liquid') shell.classList.remove('liquid'); };
+      function openIntent() {
+        intentOpen = true;
+        $('intent-text').value = '';
+        expanded = false;
+        $('panel').classList.add('hidden');
+        $('expand').style.transform = '';
+        document.body.classList.add('intent');
+        setMode('intent');
+        melt();
+        setTimeout(() => $('intent-text').focus(), 320);
+      }
+      function closeIntent(save, { resize = true } = {}) {
+        if (!intentOpen) return;
+        intentOpen = false;
+        const text = $('intent-text').value.trim();
+        if (save && text) window.vista.setIntent(text).then(render);
+        document.body.classList.remove('intent');
+        if (resize) { melt(); setMode(expanded ? 'panel' : 'pill'); }
+      }
+      $('intent-save').onclick = () => closeIntent(true);
+      $('intent-skip').onclick = () => closeIntent(false);
+      $('intent-text').onkeydown = (e) => {
+        if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); closeIntent(true); }
+        if (e.key === 'Escape') closeIntent(false);
+      };
+
+      $('start').onclick = () => window.vista.start().then((st) => { render(st); if (st.state === 'recording') openIntent(); });
       $('pause').onclick = () => window.vista.pause().then(render);
       $('resume').onclick = () => window.vista.resume().then(render);
       $('stop').onclick = () => window.vista.stop().then(render);

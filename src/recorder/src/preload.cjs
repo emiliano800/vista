@@ -8,6 +8,7 @@ const on = (channel) => (fn) => {
 
 contextBridge.exposeInMainWorld('vista', {
   start: () => ipcRenderer.invoke('rec:start'),
+  setIntent: (text) => ipcRenderer.invoke('rec:intent', text),
   pause: () => ipcRenderer.invoke('rec:pause'),
   resume: () => ipcRenderer.invoke('rec:resume'),
   stop: () => ipcRenderer.invoke('rec:stop'),
