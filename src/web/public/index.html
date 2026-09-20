@@ -4,33 +4,38 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
     <title>Vista · Company workspace</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      rel="stylesheet"
-      href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600&family=Instrument+Serif:ital@1&family=JetBrains+Mono:wght@400;500&display=swap"
-    />
-    <link rel="stylesheet" href="/tokens.css" />
     <link rel="stylesheet" href="/style.css" />
     <script type="module" src="/app.js"></script>
   </head>
   <body>
     <header>
-      <a class="brand" href="/"><i class="logo-dot"></i>Vista</a
-      ><span class="divider"></span
+      <a class="brand" href="/">Vista</a
       ><span class="muted">Company workspace</span
-      ><button id="signout" class="quiet" hidden>Sign out</button>
+      ><button id="signout" class="ghost" hidden>Sign out</button>
     </header>
     <main>
       <div id="message" role="status" aria-live="polite"></div>
       <section id="login" class="login" hidden>
-        <p class="eyebrow">Work, understood</p>
-        <h1>A clearer picture<br />of <em>everyday</em> work.</h1>
-        <p class="muted">
-          Review the company’s recording reports, inspect the evidence behind
-          every number, and see which steps an agent could take over.
-        </p>
-        <div class="rule"></div>
+        <div class="login-copy">
+          <p class="eyebrow">Work, understood</p>
+          <h1>A clearer picture of <i>everyday</i> work.</h1>
+          <p class="lede">
+            Review your company’s recording reports, read the evidence behind
+            every step, and find the work worth changing.
+          </p>
+          <ul class="facts">
+            <li>
+              Reports are analysed on the recorder before anything is shared.
+            </li>
+            <li>
+              Screenshots, video and raw interaction logs never leave the
+              device.
+            </li>
+            <li>
+              Observed facts, inferred labels and employee notes stay separable.
+            </li>
+          </ul>
+        </div>
         <form id="login-form" class="card">
           <h2>Sign in to your workspace</h2>
           <label for="key">Your access key</label
@@ -41,7 +46,7 @@
             required
             minlength="32"
             maxlength="256"
-            placeholder="Paste the key from your administrator"
+            placeholder="Enter the key provided by your administrator"
           /><button class="primary" type="submit">Sign in</button
           ><small
             >Need access? Ask your workspace administrator for a personal
@@ -55,14 +60,14 @@
             <p class="eyebrow" id="identity"></p>
             <h1>Recording reports</h1>
             <p class="muted">
-              Completed sessions, analyzed on the recorder and shared with your
+              Completed sessions, analysed on the recorder and shared with your
               company.
             </p>
           </div>
           <label>Company<select id="company"></select></label>
         </div>
         <div class="card instructions">
-          <strong>Share a completed session</strong>
+          <h2>Share a completed session</h2>
           <p>
             In the Vista desktop app, open Settings → Cloud workspace, connect
             using this website address, the company ID below, and your personal
@@ -86,7 +91,7 @@
         </div>
       </section>
       <section id="detail" hidden>
-        <button id="back" class="quiet">← All recordings</button>
+        <button id="back" class="link">← All recordings</button>
         <div class="heading">
           <div>
             <p class="eyebrow">Session report</p>
@@ -134,8 +139,8 @@
           <h2>Activity evidence</h2>
           <p class="muted">
             Each row is a source step from the uploaded event log. Labels and
-            case groupings may be inferred; the source column shows how each
-            was assigned.
+            case groupings may be inferred; provenance shows how each was
+            assigned.
           </p>
           <label
             >Activity<select id="activity">
@@ -146,10 +151,9 @@
             <table>
               <thead>
                 <tr>
-                  <th class="num">Row</th>
+                  <th>Row</th>
                   <th>Activity / note</th>
                   <th>Time</th>
-                  <th class="num">Duration</th>
                   <th>App</th>
                   <th>Case</th>
                   <th>Label / case source</th>
@@ -166,6 +170,9 @@
         </div>
       </section>
     </main>
-    <footer>Vista · Evidence before decisions</footer>
+    <footer>
+      <span>Vista · Evidence before decisions</span
+      ><span>Screens stay on the device. Reports come to you.</span>
+    </footer>
   </body>
 </html>
