@@ -4,24 +4,33 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
     <title>Vista · Company workspace</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600&family=Instrument+Serif:ital@1&family=JetBrains+Mono:wght@400;500&display=swap"
+    />
+    <link rel="stylesheet" href="/tokens.css" />
     <link rel="stylesheet" href="/style.css" />
     <script type="module" src="/app.js"></script>
   </head>
   <body>
     <header>
-      <a class="brand" href="/">V<span>Vista</span></a
+      <a class="brand" href="/"><i class="logo-dot"></i>Vista</a
+      ><span class="divider"></span
       ><span class="muted">Company workspace</span
-      ><button id="signout" hidden>Sign out</button>
+      ><button id="signout" class="quiet" hidden>Sign out</button>
     </header>
     <main>
       <div id="message" role="status" aria-live="polite"></div>
       <section id="login" class="login" hidden>
-        <p class="eyebrow">WORK, UNDERSTOOD</p>
-        <h1>A clearer picture<br />of everyday work.</h1>
+        <p class="eyebrow">Work, understood</p>
+        <h1>A clearer picture<br />of <em>everyday</em> work.</h1>
         <p class="muted">
-          Review your company’s recording reports, explore the evidence, and
-          find opportunities to improve.
+          Review the company’s recording reports, inspect the evidence behind
+          every number, and see which steps an agent could take over.
         </p>
+        <div class="rule"></div>
         <form id="login-form" class="card">
           <h2>Sign in to your workspace</h2>
           <label for="key">Your access key</label
@@ -32,7 +41,7 @@
             required
             minlength="32"
             maxlength="256"
-            placeholder="Enter the key provided by your administrator"
+            placeholder="Paste the key from your administrator"
           /><button class="primary" type="submit">Sign in</button
           ><small
             >Need access? Ask your workspace administrator for a personal
@@ -77,10 +86,10 @@
         </div>
       </section>
       <section id="detail" hidden>
-        <button id="back">← All recordings</button>
+        <button id="back" class="quiet">← All recordings</button>
         <div class="heading">
           <div>
-            <p class="eyebrow">SESSION REPORT</p>
+            <p class="eyebrow">Session report</p>
             <h1 id="detail-title"></h1>
             <p class="muted" id="detail-sub"></p>
           </div>
@@ -103,8 +112,8 @@
           <h2>Activity evidence</h2>
           <p class="muted">
             Each row is a source step from the uploaded event log. Labels and
-            case groupings may be inferred; provenance shows how each was
-            assigned.
+            case groupings may be inferred; the source column shows how each
+            was assigned.
           </p>
           <label
             >Activity<select id="activity">
@@ -115,9 +124,10 @@
             <table>
               <thead>
                 <tr>
-                  <th>Row</th>
+                  <th class="num">Row</th>
                   <th>Activity / note</th>
                   <th>Time</th>
+                  <th class="num">Duration</th>
                   <th>App</th>
                   <th>Case</th>
                   <th>Label / case source</th>
