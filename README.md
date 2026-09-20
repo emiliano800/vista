@@ -1,8 +1,7 @@
 # Vista
 
-Process intelligence for lower-middle-market private equity: desktop task mining,
-company workspaces, and per-employee AI agents that surface operational
-inefficiencies with evidence.
+Operating intelligence for lower-middle-market private equity: import company
+exports, confirm their structure, and review operational findings with source evidence.
 
 Docs:
 - [CURRENT_IMPLEMENTATION.md](CURRENT_IMPLEMENTATION.md) — everything built and deployed, how it works
@@ -11,6 +10,8 @@ Docs:
 
 Live: https://bumpsolutions.org (Cloudflare Worker → AWS ECS/RDS/S3 backend).
 Demo portfolio sign-ins (synthetic companies, public demo keys): [DEMO_ACCESS.md](DEMO_ACCESS.md).
+
+Hackathon ingestion demo (local rebuild): [setup and walkthrough](deploy/INGESTION_DEMO.md).
 
 ## Quickstart
 

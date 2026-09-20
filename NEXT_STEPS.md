@@ -3,6 +3,17 @@
 Ordered by value. Current state in `CURRENT_IMPLEMENTATION.md`; business sequencing
 in `BUSINESS_COURSE_OF_ACTION.md`.
 
+## Hackathon priority update — ingestion first
+
+A local rebuild now implements a file-ingestion company workspace: upload exports,
+confirm mappings, calculate source-linked findings, review and export evidence.
+See `deploy/INGESTION_DEMO.md` for the working Meridian flow and deployment sequence.
+The next demo step is deploying the backend/migration and then the web frontend.
+Extend supported record schemas and analysis coverage after that; connect imported
+records to agent discovery when the deterministic evidence foundation is ready.
+Recording reports now live under `/account/recordings/`. The longer-term three-surface
+vision below remains useful, but employee recording is not the hackathon's lead story.
+
 ## 1. Rebuild the frontend toward the actual vision
 
 **The current web workspace (recording-report viewer) is not the envisioned

@@ -3,6 +3,29 @@
 Everything that exists and works today. (Roadmap: `NEXT_STEPS.md`. Business:
 `BUSINESS_COURSE_OF_ACTION.md`.)
 
+## Ingestion workspace rebuild (local; production deployment pending)
+
+The new `/account/` workspace is organized around **Overview → Data sources → Findings**.
+It accepts CSV/TSV/XLSX exports, persists original files to S3, previews editable
+field mappings, and runs deterministic source-linked commission, receivables and
+data-quality checks after confirmation. Imports and review history persist in the
+tenant's `import_batches` table (migration 0007). Existing recording reports are
+available at `/account/recordings/` as supporting evidence.
+
+The Meridian sample imports five files / 246 records. Its commission check calculates
+**$1,584.48** from policy and statement rows. Findings have source evidence, calculation,
+recommended next steps and reviewed/dismissed/reopen actions; none imply realized savings.
+No model call or worker is needed. Each import is an independent snapshot, not a
+cross-import or portfolio analysis. This is a hackathon implementation focused on
+insurance exports, not a general-purpose connector platform.
+
+Run `uv run python scripts/prepare_ingestion_demo.py`, then start the API on port
+8010 with `VISTA_COOKIE_SECURE=false`. Local credentials and the presentation sequence
+are described in [deploy/INGESTION_DEMO.md](deploy/INGESTION_DEMO.md).
+**Backend + migration must deploy before the new web frontend.** The older live
+backend does not have these ingestion endpoints yet. The sections below describe
+the previously deployed capabilities and retain their original deployment context.
+
 ## The system at a glance
 
 ```
