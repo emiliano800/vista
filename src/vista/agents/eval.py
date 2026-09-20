@@ -133,6 +133,16 @@ _STOP = {
     "separate",
     "across",
     "item",
+    "customer",
+    "customers",
+    "named",
+    "opportunity",
+    "cross-sell",
+    "consolidation",
+    "buys",
+    "three",
+    "two",
+    "unrelated",
 }
 
 
@@ -141,20 +151,31 @@ def _tokens(text: str) -> set[str]:
 
 
 def disambiguate(pred: Prediction, candidates: list[AnswerItem]) -> list[AnswerItem]:
-    """Several items can share kind/companies/evidence (e.g. every purchasing_price_gap). Keep the ones
-    whose title shares specific tokens (part numbers, vendor names) with the prediction; if none do,
-    keep a single candidate as-is, otherwise nothing (ambiguous)."""
+    """Several items can share kind/companies/evidence (e.g. every purchasing_price_gap). Match on specific
+    tokens (part numbers, vendor names), narrowest comparison first: the prediction's title against item titles,
+    then its full text against item titles, then its title against item descriptions (which name per-company
+    variants, e.g. 'UPS' for 'United Parcel Service'). Widening only when a tier finds nothing keeps a correct
+    'CRM: HubSpot vs Salesforce' from landing on a trap whose title merely mentions Salesforce. If no tier
+    overlaps, nothing matches (ambiguous)."""
     if len(candidates) <= 1:
         return candidates
-    words = _tokens(f"{pred.title} {pred.text}")
-    scored = [(len(_tokens(i.title) & words), i) for i in candidates]
-    best = max(s for s, _ in scored)
-    if not best:
-        return []
-    top = [i for s, i in scored if s == best]
-    # A trap only counts when it is the unambiguous best match; a tie with a real item is the real item.
-    real = [i for i in top if not i.is_false_positive_trap]
-    return real or top
+    shorts = {c.lower() for i in candidates for c in i.companies}  # every item names them; not a distinguishing token
+    title_words = _tokens(pred.title) - shorts
+    all_words = title_words | (_tokens(pred.text) - shorts)
+    tiers = (
+        lambda i: _tokens(i.title) & title_words,
+        lambda i: _tokens(i.title) & all_words,
+        lambda i: _tokens(i.description) & title_words,
+    )
+    for tier in tiers:
+        scored = [(len(tier(i)), i) for i in candidates]
+        best = max(s for s, _ in scored)
+        if best:
+            top = [i for s, i in scored if s == best]
+            # A trap only counts when it is the unambiguous best match; a tie with a real item is the real item.
+            real = [i for i in top if not i.is_false_positive_trap]
+            return real or top
+    return []
 
 
 def score(

@@ -65,7 +65,10 @@ def eval_analyze(sector: str, kinds: list[str]) -> tuple[list[Prediction], list[
     for kind in kinds:
         refs = {t.ref for tables in by_company.values() for t in analyze.tables_for_kind(kind, tables)}
         run = run_phase(
-            analyze.prepare(sector, by_company, kind), analyze.parse, lambda out, r=refs: analyze.apply(out, shorts, r), llm=chat
+            analyze.prepare(sector, by_company, kind),
+            lambda text, k=kind: analyze.parse(text, k),
+            lambda out, r=refs: analyze.apply(out, shorts, r),
+            llm=chat,
         )
         runs.append(run)
         preds.extend(Prediction.from_opportunity(row) for row in run.rows)

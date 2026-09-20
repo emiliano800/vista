@@ -339,6 +339,101 @@ def test_analyze_compact_drops_duplicate_projections():
     assert c["columns"] == ["item_id", "manufacturer_part_number", "unit_cost"] and len(c["rows"]) == 1 and c["total_rows"] == 5
 
 
+def _industrial():
+    cs = [c for c in synthetic.companies() if c.sector == "industrial_goods"]
+    return {c: synthetic.tables_for(c) for c in cs}
+
+
+def test_analyze_screen_finds_planted_shared_keys_and_flags_traps():
+    by = _industrial()
+    price = {
+        c["shared_key"]: c
+        for c in analyze.screen("purchasing_price_gap", {c: analyze.tables_for_kind("purchasing_price_gap", t) for c, t in by.items()})
+    }
+    assert {"SKF 6205-2RS1", "Gates B62", "Timken LM11949/LM11910"} <= set(price)
+    assert price["SKF 6205-2RS1"]["spread_pct"] > 0 and len(price["SKF 6205-2RS1"]["companies"]) == 3
+    assert price["Uline S-4123"]["spread_pct"] == 0 and "no gap" in price["Uline S-4123"]["note"]  # equal-price trap
+    assert not any(k.endswith(" 6205") for k in price)  # generic 6205 never joins SKF 6205-2RS1
+
+    vendors = {
+        c["shared_key"]: c
+        for c in analyze.screen("vendor_consolidation", {c: analyze.tables_for_kind("vendor_consolidation", t) for c, t in by.items()})
+    }
+    assert {"grainger", "cintas", "ups", "fedex", "staples", "sunbelt"} <= set(vendors)
+    assert len(vendors["grainger"]["companies"]) == 3 and "W.W. Grainger, Inc." in vendors["grainger"]["names_by_company"]["Northfield"]
+    assert "iron" not in vendors  # AP-file key folded into the vendor master's shared_key
+    assert "alro" not in vendors  # direct-material suppliers are out of scope
+    assert (
+        "iron_mountain" in vendors
+        and "Iron Mountain Information Management, LLC" in vendors["iron_mountain"]["names_by_company"]["Keystone"]
+    )
+
+    sw = {
+        c["shared_key"]: c
+        for c in analyze.screen("software_overlap", {c: analyze.tables_for_kind("software_overlap", t) for c, t in by.items()})
+    }
+    assert {"crm", "erp", "cad", "payroll / hris", "file storage"} <= set(sw)
+    assert sw["shipping / parcel"]["products_by_company"]["Ridgeway"] == ["FedEx Ship Manager", "UPS WorldShip"]
+
+    (freight,) = analyze.screen("freight_rate_gap", {c: analyze.tables_for_kind("freight_rate_gap", t) for c, t in by.items()})
+    assert set(freight["cost_per_lb"]) == {"Keystone", "Northfield", "Ridgeway"} and freight["spread_pct"] > 0
+
+    cust = {c["shared_key"]: c for c in analyze.screen("cross_sell", {c: analyze.tables_for_kind("cross_sell", t) for c, t in by.items()})}
+    assert len(cust["cardinal foods"]["companies"]) == 3
+    assert "keystone chemical" not in cust and not any(k.startswith("keystone") for k in cust)  # look-alike trap dropped
+    assert "fox river" not in cust  # 'Fox River Paper' and 'Fox River Climate' are different customers
+    assert analyze.screen("carrier_consolidation", by) == [] and analyze.screen("nope", by) == []
+
+
+def test_analyze_vendor_key_normalises_legal_forms_and_aliases():
+    assert analyze.vendor_key("W.W. Grainger, Inc.") == analyze.vendor_key("GRAINGER") == "grainger"
+    assert analyze.vendor_key("United Parcel Service") == analyze.vendor_key("UPS Freight / UPS") == "ups"
+    assert analyze.vendor_key("Staples Business Advantage") == "staples"
+    assert analyze.vendor_key("Apex Fastener Corp") == analyze.vendor_key("Apex Fastening Systems LLC")  # same key: the model decides
+
+
+def test_analyze_customer_key_strips_sites_and_legal_forms():
+    assert (
+        analyze.customer_key("Cardinal Foods Group - Plant 12 - Hazleton, PA")
+        == analyze.customer_key("Cardinal Foods Corp.")
+        == analyze.customer_key("Cardinal Foods Plant 21")
+        == "cardinal foods"
+    )
+    assert analyze.customer_key("Fox River Paper Co.") != analyze.customer_key("Fox River Climate Inc.")
+
+
+def test_analyze_parse_coerces_kind_for_per_kind_calls():
+    text = json.dumps(
+        {
+            "opportunities": [
+                {
+                    "kind": "vendor consolidation",
+                    "title": "SKF 6205-2RS1",
+                    "companies": ["Keystone", "Ridgeway"],
+                    "shared_key": "SKF 6205-2RS1",
+                    "evidence": [],
+                    "detail": "",
+                    "confidence": 0.8,
+                }
+            ]
+        }
+    )
+    assert analyze.parse(text).opportunities[0].kind == "vendor_consolidation"  # label normalised
+    assert analyze.parse(text, "purchasing_price_gap").opportunities[0].kind == "purchasing_price_gap"  # per-kind call wins
+
+
+def test_analyze_prompt_carries_candidates_per_kind():
+    by = _industrial()
+    body = json.loads(analyze.prepare("industrial_goods", by, "software_overlap").user)
+    assert body["candidates"] and all(len(c["companies"]) >= 2 for c in body["candidates"])
+    assert all("software_subscriptions" in ref for c in body["candidates"] for ref in c["evidence"])  # screened on the kind's tables only
+    xsell = json.loads(analyze.prepare("industrial_goods", by, "cross_sell").user)["candidates"]
+    assert "accounts payable" not in {c["shared_key"] for c in xsell}
+    assert len(body["candidates"]) <= analyze.MAX_CANDIDATES
+    assert json.loads(analyze.prepare("industrial_goods", by).user)["candidates"] == []
+    assert "candidates" in analyze.SYSTEM and "rejected" in analyze.SYSTEM
+
+
 # ---------- Eval scorer (tier 3 logic, deterministic) ----------
 
 
@@ -424,3 +519,61 @@ def test_scorer_tie_with_trap_goes_to_real_item():
     )
     s = score([pred], items, companies={"Northfield", "Keystone"}, kinds={"software_overlap"})
     assert s.trap_hits == 0 and s.tp == 1 and ("PORT-SW-FILE", "Dropbox Business") in s.matched
+
+
+def test_scorer_title_match_beats_trap_that_only_shares_detail_words():
+    """A correct 'CRM: HubSpot vs Salesforce' must not land on the trap whose title mentions Salesforce;
+    an unrelated cross-sell look-alike naming Keystone in its detail must not count as the Keystone trap."""
+    items = synthetic.answer_key()
+    crm = Prediction.from_opportunity(
+        {
+            "kind": "software_overlap",
+            "title": "CRM Systems",
+            "companies": ["Northfield", "Keystone"],
+            "shared_key": "crm",
+            "detail": "Keystone has HubSpot Sales Hub, Northfield uses Salesforce Sales Cloud.",
+            "evidence": ["14_finance_gl/software_subscriptions.csv"],
+        }
+    )
+    s = score([crm], items, companies={"Northfield", "Keystone"}, kinds={"software_overlap"})
+    assert s.trap_hits == 0 and ("PORT-SW-CRM", "CRM Systems") in s.matched
+    xsell = Prediction.from_opportunity(
+        {
+            "kind": "cross_sell",
+            "title": "Cross-sell opportunity for Allegheny Paper",
+            "companies": ["Northfield", "Keystone"],
+            "shared_key": "allegheny paper",
+            "detail": "Allegheny Paper Inc. buys from Keystone and Allegheny Paper LP from Northfield.",
+            "evidence": ["01_master_data/customers.csv"],
+        }
+    )
+    s = score([xsell], items, companies={"Northfield", "Keystone"}, kinds={"cross_sell"})
+    assert s.trap_hits == 0 and s.fp == 1
+
+
+def test_scorer_description_variant_resolves_vendor_alias():
+    items = synthetic.answer_key()
+    ups = Prediction.from_opportunity(
+        {
+            "kind": "vendor_consolidation",
+            "title": "Consolidation Opportunity for UPS",
+            "companies": ["Northfield", "Keystone", "Ridgeway"],
+            "shared_key": "ups",
+            "detail": "UPS appears in every vendor master.",
+            "evidence": ["14_finance_gl/corporate_vendors.csv"],
+        }
+    )
+    s = score([ups], items, companies={"Northfield", "Keystone", "Ridgeway"}, kinds={"vendor_consolidation"})
+    assert ("PORT-VEND-UPS", "Consolidation Opportunity for UPS") in s.matched
+
+
+# ---------- Summary provenance (no DB) ----------
+
+
+def test_summary_provenance_tags_observed_vs_hypothesis():
+    from vista.jobs.handlers import _provenance
+
+    assert _provenance({"source": "role-hypothesis", "confidence": "low"}) == "hypothesis"
+    assert _provenance(None) == "hypothesis"
+    assert _provenance({"file": "14_finance_gl/ap.csv", "columns": ["x"]}) == "observed: 14_finance_gl/ap.csv"
+    assert _provenance({"refs": ["Keystone:a.csv", "Ridgeway:b.csv"]}) == "observed: Keystone:a.csv, Ridgeway:b.csv"
