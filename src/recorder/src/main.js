@@ -13,8 +13,10 @@ import { DEMO_KEYS, DemoHook, demoActiveWindow, demoClipboard } from './demo.js'
 import { DEFAULT_SETTINGS, Recorder, keyNamesFrom, loadSettings } from './recorder.js';
 import { FILES_DIR, FILES_FILE, FileTracker, axDocuments, documentFromTitle, lsofDocuments, publicFile, readFiles, snapshotFiles, spotlightSweep, writeFiles } from './files.js';
 import { redactText } from './redact.js';
-import { cloudRequest, companyID, fetchReview, mergeReview, readSectionEdits, reviewItems, sendDecision, submitSections, uploadMedia, uploadReport, workspaceRecordingURL, workspaceRunState, workspaceURL } from './cloud.js';
+import { cloudRequest, companyID, fetchReview, mergeReview, readSectionEdits, reportBundle, reviewItems, sendDecision, submitSections, uploadMedia, uploadReport, workspaceRecordingURL, workspaceRunState, workspaceURL } from './cloud.js';
 import { appSpans, buildSections, parseEvents, recordingName } from './sections.js';
+import { apiConfig, startApi } from './api.js';
+import { JobStore } from './jobs.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const UI = path.join(__dirname, '..', 'ui');
@@ -54,7 +56,7 @@ function loadDotenv() {
 }
 loadDotenv();
 
-let overlay, dashboard, captureWin, tray, recorder;
+let overlay, dashboard, captureWin, tray, recorder, apiServer;
 let videoDone = null;
 
 // ---- recorder wiring -------------------------------------------------------
@@ -178,6 +180,7 @@ function broadcastStatus(status) {
 
 // After a recording ends: run the taskmining pipeline if it's reachable so the
 // dashboard can show steps/cases/open questions. Raw events are never modified.
+// Resolves with the manifest patch once processing is done/failed/skipped.
 async function postProcess(manifest) {
   const dir = path.join(RECORDINGS, manifest.recording_id);
   const repo = findRepoRoot();
@@ -188,26 +191,29 @@ async function postProcess(manifest) {
     const m = JSON.parse(fs.readFileSync(path.join(dir, 'manifest.json'), 'utf8'));
     fs.writeFileSync(path.join(dir, 'manifest.json'), JSON.stringify({ ...m, ...patch }, null, 2));
     broadcastRecordings();
+    return patch;
   };
   if (!repo) return write({ processing: 'skipped', processing_note: 'taskmining package not found; run `python -m taskmining run --input events.jsonl` later' });
   const args = ['-m', 'taskmining', 'run', '--input', path.join(dir, 'events.jsonl'), '--out', path.join(dir, 'processed')];
   if (!recorder.settings.redact) args.push('--no-redact', '--no-pseudonymize');
   if (fs.existsSync(path.join(dir, 'annotations.jsonl'))) args.push('--annotations', path.join(dir, 'annotations.jsonl'));
   write({ processing: 'running' });
-  const py = spawn(pythonFor(repo), args, { cwd: repo });
-  let err = '';
-  py.stderr.on('data', (d) => (err += d));
-  py.on('error', (e) => write({ processing: 'failed', processing_note: e.message }));
-  py.on('close', (code) => {
-    if (code !== 0) return write({ processing: 'failed', processing_note: err.trim().split('\n').pop() });
-    let summary = null;
-    try {
-      summary = pickSummary(JSON.parse(fs.readFileSync(path.join(dir, 'processed', 'summary.json'), 'utf8')));
-    } catch (e) {
-      return write({ processing: 'failed', processing_note: `summary unreadable: ${e.message}` });
-    }
-    write({ processing: 'done', summary });
-    if (cloudSettings()) explainRecording(manifest.recording_id).catch((e) => noteReviewError(manifest.recording_id, e));
+  return new Promise((resolve) => {
+    const py = spawn(pythonFor(repo), args, { cwd: repo });
+    let err = '';
+    py.stderr.on('data', (d) => (err += d));
+    py.on('error', (e) => resolve(write({ processing: 'failed', processing_note: e.message })));
+    py.on('close', (code) => {
+      if (code !== 0) return resolve(write({ processing: 'failed', processing_note: err.trim().split('\n').pop() }));
+      let summary = null;
+      try {
+        summary = pickSummary(JSON.parse(fs.readFileSync(path.join(dir, 'processed', 'summary.json'), 'utf8')));
+      } catch (e) {
+        return resolve(write({ processing: 'failed', processing_note: `summary unreadable: ${e.message}` }));
+      }
+      resolve(write({ processing: 'done', summary }));
+      if (cloudSettings()) explainRecording(manifest.recording_id).catch((e) => noteReviewError(manifest.recording_id, e));
+    });
   });
 }
 
@@ -775,9 +781,12 @@ function resumeRecording() {
   return status;
 }
 
-function startRecording() {
-  const perms = permissions(true);
+// `ui: false` (agent API) never opens a window: missing permissions are
+// reported through the returned status instead of the dashboard.
+function startRecording({ ui = true } = {}) {
+  const perms = permissions(ui);
   if (perms.needed && !perms.ok) {
+    if (!ui) throw new Error('Grant Accessibility and Screen Recording permissions to the recorder first.');
     if (!createDashboard()) dashboard.webContents.send('permissions:changed', perms);
     return recorder.status();
   }
@@ -807,7 +816,7 @@ function setIntent(text) {
   return status;
 }
 
-async function stopRecording() {
+async function stopRecording({ ui = true } = {}) {
   if (recorder.state === 'idle') return recorder.status();
   if (recorder.settings.video && captureWin) {
     videoDone = new Promise((res) => ipcMain.once('video:done', () => res()));
@@ -818,7 +827,7 @@ async function stopRecording() {
   broadcastRecordings();
   setOverlayMode('orb');
   if (MAC) app.dock.show();
-  openReview(status.recordingId);
+  if (ui) openReview(status.recordingId);
   // Cloud-connected: the review starts once the local analysis is done (postProcess).
   if (!cloudSettings() && openaiConfig(process.env, recorder.settings)) explainRecording(status.recordingId).catch((e) => noteReviewError(status.recordingId, e));
   return status;
@@ -1016,6 +1025,44 @@ ipcMain.on('video:chunk', (_e, dir, buf) => {
   }
 });
 
+// ---- agent API ------------------------------------------------------------------
+// The same functions the IPC handlers above call, handed to the HTTP API so an
+// agent gets exactly the dashboard's behaviour. Off unless VISTA_RECORDER_API_TOKEN is set.
+const apiActions = {
+  version: app.getVersion(),
+  status: () => recorder.status(),
+  startRecording,
+  pauseRecording,
+  resumeRecording,
+  stopRecording,
+  setIntent,
+  listRecordings,
+  sectionsFor,
+  recDir,
+  readManifest,
+  readReview,
+  reviewSummary,
+  analyze: postProcess,
+  explainRecording,
+  collectDocuments,
+  readFiles,
+  publicFile,
+  reportBundle: (id) => reportBundle(RECORDINGS, id),
+  submitRecording,
+};
+
+async function startAgentApi() {
+  const { token, host, port } = apiConfig(process.env);
+  if (!token) return;
+  const jobs = new JobStore({ home: HOME });
+  try {
+    apiServer = await startApi({ host, port, token, actions: apiActions, jobs });
+    console.log(`agent API listening on http://${host}:${port}`);
+  } catch (e) {
+    console.error('agent API failed to start:', e.message);
+  }
+}
+
 // ---- app ----------------------------------------------------------------------
 
 app.commandLine.appendSwitch('enable-transparent-visuals');
@@ -1027,12 +1074,14 @@ app.whenReady().then(async () => {
   createOverlay();
   createCaptureWindow();
   if (process.argv.includes('--dashboard')) createDashboard();
+  await startAgentApi();
 });
 
 app.on('window-all-closed', () => {
   /* keep running in the tray/overlay */
 });
 app.on('before-quit', async (e) => {
+  apiServer?.close();
   if (recorder && recorder.state !== 'idle') {
     e.preventDefault();
     await stopRecording();

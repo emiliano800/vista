@@ -264,10 +264,10 @@ export function workspaceRunState(review) {
   }[run.status] ?? { key: run.status, label: run.status, sub: left.replace(/^ · /, "") };
 }
 
-// Where the analyst sees this recording. Only for recordings the workspace knows about.
+// Where the analyst sees this recording's Recording Reviewer run. Only for recordings the workspace knows about.
 export function workspaceRecordingURL(config, cloudRecordingId) {
   if (!config?.url || !cloudRecordingId) return null;
-  return `${workspaceURL(config.url)}/account/recordings/#${encodeURIComponent(cloudRecordingId)}`;
+  return `${workspaceURL(config.url)}/account/?view=runs&recording=${encodeURIComponent(cloudRecordingId)}`;
 }
 
 // ---- media: everything else in the recording folder ---------------------------

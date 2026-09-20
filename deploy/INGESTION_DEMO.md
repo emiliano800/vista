@@ -1,7 +1,7 @@
 # Data ingestion demo
 
 The signed-in company workspace now starts with **Overview**, **Data sources**
-and **Findings**. Recording reports remain at `/account/recordings/`.
+and **Findings**.
 
 ## Run locally
 
