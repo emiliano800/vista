@@ -8,7 +8,7 @@ updates rows in place instead of duplicating them.
 Usage (against the DB in .env, after `docker compose up -d postgres minio`):
     uv run python scripts/seed_portfolio_demo.py
     uv run python scripts/seed_portfolio_demo.py --skip-cedar   # leave Cedar for the live import demo
-    uv run python scripts/seed_portfolio_demo.py --analyst-key <64 hex>   # defaults to DEMO_ACCESS.md key
+    uv run python scripts/seed_portfolio_demo.py --analyst-key <64 hex>   # stamps a new key; omit to keep the existing one
 """
 
 from __future__ import annotations
@@ -50,7 +50,6 @@ from vista.tenancy import migrate_platform, migrate_tenant_schema  # noqa: E402
 
 FIXTURE = ROOT / "synthetic_data" / "portfolio_demo" / "portfolio.json"
 NAMESPACE = uuid.uuid5(uuid.NAMESPACE_URL, "https://vista.example/portfolio_demo")
-DEFAULT_ANALYST_KEY = "88c4845687c36379be7086043bc646a37aedecd26b3f72a4f3fc842ec0a9ec95"
 FIRM = {"name": "Northstar HVAC Holdings", "slug": "northstar"}
 ANALYST = {"name": "Sarah Okafor", "email": "sarah@northstarhvac.com", "role": "analyst"}
 SEED = {"data_source_type": "synthetic_seed", "synthetic_demo": True}
@@ -94,11 +93,26 @@ def upsert(session: Session, model, id_: uuid.UUID, **values):
 # ---- Platform: firm, analyst, companies ----------------------------------------------------
 
 
-def seed_firm(session: Session, analyst_key: str) -> Firm:
+def seed_firm(session: Session, analyst_key: str | None) -> Firm:
     home = upsert(session, Tenant, sid("tenant:firm"), name=FIRM["name"], schema_name=schema_for("firm"))
     session.flush()
-    user = upsert(session, User, sid("user:analyst"), tenant_id=home.id, email=ANALYST["email"], role="member")
-    user.api_token_hash = token_digest(analyst_key)
+    # Reuse the analyst account that already exists rather than minting a second
+    # one: firm membership hangs off user_id, and api_token_hash is unique, so a
+    # duplicate would either collide with the live key or leave it without a
+    # firm. Only stamp a new key when one is given explicitly.
+    user = None
+    if analyst_key:
+        user = session.scalar(select(User).where(User.api_token_hash == token_digest(analyst_key)))
+    if user is None:
+        user = session.scalar(select(User).where(User.email == ANALYST["email"]).order_by(User.created_at))
+    if user is None:
+        if not analyst_key:
+            raise SystemExit(f"No user {ANALYST['email']!r} exists yet; pass --analyst-key to create one.")
+        user = User(id=sid("user:analyst"), tenant_id=home.id, email=ANALYST["email"], role="member")
+        session.add(user)
+    if analyst_key:
+        user.api_token_hash = token_digest(analyst_key)
+    session.flush()
     firm = upsert(session, Firm, sid("firm"), name=FIRM["name"], slug=FIRM["slug"], home_tenant_id=home.id, synthetic_demo=True)
     session.flush()
     upsert(
@@ -453,10 +467,14 @@ def seed_firm_layer(session: Session, firm: Firm, fixture: dict, slugs: set[str]
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--skip-cedar", action="store_true", help="seed Harbor and Summit only (import Cedar through the wizard)")
-    parser.add_argument("--analyst-key", default=settings.demo_analyst_key or DEFAULT_ANALYST_KEY, help="64-hex analyst access key")
+    parser.add_argument(
+        "--analyst-key",
+        default=settings.demo_analyst_key or None,
+        help="64-hex analyst access key; omit to keep the existing analyst account's key",
+    )
     parser.add_argument("--fixture", default=str(FIXTURE))
     args = parser.parse_args()
-    if not (len(args.analyst_key) == 64 and all(ch in "0123456789abcdef" for ch in args.analyst_key.lower())):
+    if args.analyst_key and not (len(args.analyst_key) == 64 and all(ch in "0123456789abcdef" for ch in args.analyst_key.lower())):
         parser.error("--analyst-key must be 64 hex characters")
 
     fixture = json.loads(Path(args.fixture).read_text())
@@ -466,7 +484,7 @@ def main() -> int:
     migrate_platform()
     ensure_bucket()
     with platform_session() as session:
-        firm = seed_firm(session, args.analyst_key.lower())
+        firm = seed_firm(session, args.analyst_key.lower() if args.analyst_key else None)
         fcs = {c["id"]: seed_company(session, firm, c) for c in companies}
         session.flush()
         schemas = {slug: session.get(Tenant, fc.tenant_id).schema_name for slug, fc in fcs.items()}
