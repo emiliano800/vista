@@ -76,9 +76,25 @@ test('suggestWorkflows combines transfers, documents, taskmining activities, sit
   assert.deepEqual(workflowsStub(wf), { count: wf.workflows.length, ids, kinds: [...new Set(wf.workflows.map((w) => w.kind))] });
 });
 
-test('suggestWorkflows with a same-app paste and no documents gives nothing', () => {
-  const wf = suggestWorkflows({ manifest: { apps: [{ app: 'Figma', seconds: 10 }] }, events: [ev(0, 'paste', 'Figma', { payload: { source_app: 'Figma' } })], files: [], summary: null });
-  assert.deepEqual(wf.workflows, []);
+test('suggestWorkflows: thin evidence still yields suggestions', () => {
+  const figma = suggestWorkflows({ manifest: { apps: [{ app: 'Figma', seconds: 10 }] }, events: [ev(0, 'paste', 'Figma', { payload: { source_app: 'Figma' } })], files: [], summary: null });
+  assert.deepEqual(figma.workflows.map((w) => w.id), ['work-figma'], 'unrecognised app alone falls back to a per-app workflow');
+  const empty = suggestWorkflows({ manifest: {}, events: [], files: [], summary: null });
+  assert.deepEqual(empty.workflows, []);
+  const onePaste = suggestWorkflows({ manifest: { apps: [{ app: 'Adobe Acrobat', seconds: 5 }, { app: 'QuickBooks', seconds: 5 }] }, events: [ev(0, 'paste', 'QuickBooks', { payload: { source_app: 'Adobe Acrobat', chars: 8, transfer_ms: 900 } })], files: [], summary: null });
+  const rekey = onePaste.workflows.find((w) => w.id === 'rekey-adobe-acrobat-quickbooks');
+  assert.equal(rekey.evidence.pastes, 1);
+  assert.match(rekey.why, /^1 value was copied/);
+  const switches = suggestWorkflows({ manifest: { apps: [{ app: 'Microsoft Excel', seconds: 5 }, { app: 'QuickBooks', seconds: 5 }] }, events: [ev(0, 'focus', 'Microsoft Excel'), ev(1, 'focus', 'QuickBooks')], files: [], summary: null });
+  assert.ok(switches.workflows.some((w) => w.id === 'carry-microsoft-excel-quickbooks'), 'one switch between two recognised systems counts');
+  const oneDoc = suggestWorkflows({ manifest: { apps: [{ app: 'Adobe Acrobat', seconds: 5 }] }, events: [], files: [{ name: 'quote.pdf', ext: '.pdf', intervals: [{ app: 'Adobe Acrobat' }] }], summary: null });
+  assert.equal(oneDoc.workflows.find((w) => w.id === 'intake-pdf').title, 'Read document PDFs');
+  const oneSheet = suggestWorkflows({ manifest: {}, events: [], files: [{ name: 'list.xlsx', ext: '.xlsx', intervals: [{ app: 'Microsoft Excel' }] }], summary: null });
+  assert.equal(oneSheet.workflows[0].id, 'tracker-list-xlsx', 'an open, unedited sheet is enough');
+  const oneWord = suggestWorkflows({ manifest: {}, events: [], files: [{ name: 'memo.docx', ext: '.docx', edited: true }], summary: null });
+  assert.equal(oneWord.workflows[0].title, 'Update the “memo.docx” document');
+  const lowScore = suggestWorkflows({ manifest: {}, events: [], files: [], summary: { automation: [{ activity: 'Filing', score: 0.2 }] } });
+  assert.equal(lowScore.workflows[0].id, 'activity-filing', 'no automation-score floor');
 });
 
 test('workflowTrends: no baseline without previous summaries; recurrence from manifest stubs', () => {

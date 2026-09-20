@@ -140,8 +140,26 @@
         will-change: transform, opacity;
       }
       #orb:hover { transform: scale(1.08); background: var(--orb-hover); }
-      #orb svg { width: 20px; height: 20px; fill: var(--on-brand); transition: transform 0.28s cubic-bezier(0.2, 0.8, 0.2, 1); position: relative; z-index: 1; }
-      #orb:hover svg { transform: scale(1.15); }
+      #orb svg { width: 28px; height: 28px; transition: transform 0.28s cubic-bezier(0.2, 0.8, 0.2, 1); position: relative; z-index: 1; overflow: visible; }
+      #orb:hover svg { transform: scale(1.1); }
+
+      /* Face: two eyes + a mouth drawn in cream. The mood class on the svg picks the
+         mouth path and eye shape; both ease between moods, and the eyes blink now and then. */
+      .eyes { transform-box: fill-box; transform-origin: center; animation: blink 4.6s ease-in-out infinite; }
+      .eye { fill: var(--on-brand); transform-box: fill-box; transform-origin: center; transition: transform 0.35s ease; }
+      .mouth { fill: none; stroke: var(--on-brand); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; transition: d 0.45s cubic-bezier(0.2, 0.8, 0.2, 1); }
+      @keyframes blink { 0%, 92%, 100% { transform: scaleY(1); } 95% { transform: scaleY(0.1); } }
+      /* every mouth is the same M-Q-Q shape so the browser can interpolate the path */
+      .m-happy .mouth     { d: path('M 9 18 Q 14 23 19 18 Q 14 23 9 18'); }
+      .m-content .mouth   { d: path('M 10 18.5 Q 14 20.5 18 18.5 Q 14 20.5 10 18.5'); }
+      .m-wink .mouth      { d: path('M 9 18 Q 14 23 19 18 Q 14 23 9 18'); }
+      .m-wink .eye.r      { transform: scaleY(0.12); }
+      .m-surprised .mouth { d: path('M 12 18.5 Q 14 15.5 16 18.5 Q 14 21.5 12 18.5'); }
+      .m-surprised .eye   { transform: scale(1.3); }
+      .m-sleepy .mouth    { d: path('M 12.5 19 Q 14 20 15.5 19 Q 14 20 12.5 19'); }
+      .m-sleepy .eye      { transform: scaleY(0.3); }
+      .m-cheeky .mouth    { d: path('M 10 19 Q 13 22.5 18.5 16.5 Q 13 22.5 10 19'); }
+      .m-cheeky .eye.l    { transform: scale(1.15); }
 
       /* The only idle motion: a slow, faint breath of the glow, so the orb reads as ready. */
       body.orb #orb { animation: breathe 5s ease-in-out infinite; }
@@ -156,12 +174,18 @@
       body.orb #orb:hover { transform: scale(1.08); }
       body:not(.orb) #shell { opacity: 1; transform: none; }
       body.settling #shell, body.settling #orb { transition-duration: 0.18s; }
-      @media (prefers-reduced-motion: reduce) { #shell, #orb, #orb svg, button { transition: none !important; } #orb { animation: none !important; } }
+      @media (prefers-reduced-motion: reduce) { #shell, #orb, #orb svg, .eye, .mouth, button { transition: none !important; } #orb, .eyes { animation: none !important; } }
     </style>
   </head>
   <body class="orb">
     <div id="orb" title="Vista — hover to start recording">
-      <svg viewBox="0 0 20 20"><circle cx="10" cy="10" r="5"/></svg>
+      <svg id="face" class="m-happy" viewBox="0 0 28 28">
+        <g class="eyes">
+          <circle class="eye l" cx="9.5" cy="11" r="1.9"/>
+          <circle class="eye r" cx="18.5" cy="11" r="1.9"/>
+        </g>
+        <path class="mouth" d="M 9 18 Q 14 23 19 18 Q 14 23 9 18"/>
+      </svg>
     </div>
     <div id="shell" class="idle">
       <div id="pill">
@@ -243,6 +267,16 @@
           shrinkTimer = setTimeout(() => window.vista.resizeOverlay(next), next === 'orb' ? 230 : 0);
         }
       }
+
+      // While the orb is idle its face drifts through moods (mostly happy/content, an
+      // occasional wink or yawn). The face is only visible in orb mode, so no reset is needed.
+      const MOODS = ['happy', 'content', 'wink', 'happy', 'surprised', 'content', 'cheeky', 'sleepy'];
+      let moodIdx = 0;
+      setInterval(() => {
+        if (mode !== 'orb') return;
+        moodIdx = (moodIdx + 1) % MOODS.length;
+        $('face').setAttribute('class', `m-${MOODS[moodIdx]}`);
+      }, 6000);
 
       // mousemove too: mouseenter doesn't fire when the cursor is already over the orb as the window appears
       $('orb').onmouseenter = $('orb').onmousemove = () => { clearTimeout(hoverTimer); setMode('pill'); };
