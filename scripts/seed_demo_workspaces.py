@@ -175,12 +175,8 @@ class ThemedSource:
         ref = r.choice(self.refs) if self.refs else ""
         system = c["system"]
         insurance = c["sector"] == "insurance"
-        subject = (
-            f"Premium invoice {inv} - {entity}" if insurance else f"Invoice {inv} from {entity}"
-        )
-        entry_title = (
-            f"Agency Bill Posting {inv} - {system}" if insurance else f"AP Invoice Entry {inv} ({ref}) - {system}"
-        )
+        subject = f"Premium invoice {inv} - {entity}" if insurance else f"Invoice {inv} from {entity}"
+        entry_title = f"Agency Bill Posting {inv} - {system}" if insurance else f"AP Invoice Entry {inv} ({ref}) - {system}"
         # 1. open the email and its attachment
         ev(out, t, user, EventType.FOCUS, "Outlook", f"{subject} - Message (HTML) - Outlook")
         t += timedelta(seconds=r.randint(2, 9))
@@ -303,9 +299,22 @@ def provision(credentials_path: Path) -> None:
     creds = []
     for company in COMPANIES:
         result = subprocess.run(
-            [sys.executable, "-m", "vista.manage", "create-workspace", "--firm", "Vista Capital Demo",
-             "--company", company["name"], "--email", company["email"]],
-            capture_output=True, text=True, check=True, cwd=ROOT,
+            [
+                sys.executable,
+                "-m",
+                "vista.manage",
+                "create-workspace",
+                "--firm",
+                "Vista Capital Demo",
+                "--company",
+                company["name"],
+                "--email",
+                company["email"],
+            ],
+            capture_output=True,
+            text=True,
+            check=True,
+            cwd=ROOT,
         )
         creds.append({"slug": company["slug"], **json.loads(result.stdout)})
         print(f"provisioned {company['slug']}")
