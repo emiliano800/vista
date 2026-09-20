@@ -10,10 +10,11 @@ from vista.agents import analyze, synthetic
 from vista.agents.keys import agent_key_for
 from vista.api.runs import _run_out
 from vista.api.schemas import RunOut
-from vista.auth import Principal, admin_principal, current_principal
+from vista.auth import Principal, current_principal
 from vista.db import platform_session, tenant_session
 from vista.jobs.queue import enqueue
 from vista.models.tenant import AgentRun, Deal
+from vista.permissions import require_agent_role
 
 router = APIRouter(tags=["synthetic"])
 
@@ -43,6 +44,8 @@ def _queue_run(
     """A synthetic company is the Deal of the same name when the firm has one, so
     the run shows up under that company in the workspace."""
     with tenant_session(principal.tenant_schema) as session:
+        deal_id = session.scalar(select(Deal.id).where(Deal.name == company.name)) if company is not None else None
+        require_agent_role(session, principal, deal_id)
         run = AgentRun(
             job_id=uuid.uuid4(),
             run_type=run_type,
@@ -52,8 +55,7 @@ def _queue_run(
             division=payload.get("division"),
             sector=company.sector if company else sector,
         )
-        if company is not None:
-            run.deal_id = session.scalar(select(Deal.id).where(Deal.name == company.name))
+        run.deal_id = deal_id
         session.add(run)
         session.flush()
         with platform_session() as psession:
@@ -70,7 +72,7 @@ def list_synthetic_companies(principal: Principal = Depends(current_principal)) 
 
 
 @router.post("/synthetic/discovery", response_model=RunOut, status_code=201)
-def trigger_synthetic_discovery(body: DiscoveryCreate, principal: Principal = Depends(admin_principal)) -> RunOut:
+def trigger_synthetic_discovery(body: DiscoveryCreate, principal: Principal = Depends(current_principal)) -> RunOut:
     """Queue a File Reviewer run over one division of one synthetic company."""
     try:
         company = synthetic.company(body.company)
@@ -82,7 +84,7 @@ def trigger_synthetic_discovery(body: DiscoveryCreate, principal: Principal = De
 
 
 @router.post("/synthetic/analyze", response_model=RunOut, status_code=201)
-def trigger_synthetic_analyze(body: AnalyzeCreate, principal: Principal = Depends(admin_principal)) -> RunOut:
+def trigger_synthetic_analyze(body: AnalyzeCreate, principal: Principal = Depends(current_principal)) -> RunOut:
     """Queue a Sector Merger (Portfolio Analyst) run across every synthetic company in one sector."""
     if body.sector not in analyze.SECTOR_KINDS:
         raise HTTPException(status_code=404, detail=f"sector must be one of {sorted(analyze.SECTOR_KINDS)}")

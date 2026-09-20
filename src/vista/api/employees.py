@@ -16,6 +16,7 @@ from vista.db import platform_session, tenant_session
 from vista.jobs.queue import enqueue
 from vista.jobs.scheduler import SCHEDULE_INTERVALS
 from vista.models.tenant import AgentRun, Deal, Employee, EmployeeAgent
+from vista.permissions import require_agent_role
 
 router = APIRouter(tags=["employees"])
 
@@ -109,12 +110,13 @@ def update_agent(agent_id: uuid.UUID, body: AgentPatch, principal: Principal = D
 
 
 @router.post("/agents/{agent_id}/runs", response_model=RunOut, status_code=201)
-def trigger_discovery_run(agent_id: uuid.UUID, principal: Principal = Depends(admin_principal)) -> RunOut:
+def trigger_discovery_run(agent_id: uuid.UUID, principal: Principal = Depends(current_principal)) -> RunOut:
     """Trigger an on-demand discovery run for one employee agent."""
     with tenant_session(principal.tenant_schema) as session:
         agent = session.get(EmployeeAgent, agent_id)
         if agent is None:
             raise HTTPException(status_code=404, detail="agent not found")
+        require_agent_role(session, principal, agent.deal_id)
         run = AgentRun(
             job_id=uuid.uuid4(),
             run_type="employee_discovery",

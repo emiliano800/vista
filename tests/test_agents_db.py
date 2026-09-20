@@ -2,6 +2,7 @@
 Model is stubbed (conftest clears the API key). Skips without Postgres."""
 
 import json
+import uuid
 
 from tests.conftest import requires_db
 from vista.jobs.worker import process_one
@@ -180,3 +181,44 @@ def test_non_member_sees_only_portfolio_wide_runs(client, tenant_factory):
     finding = client.get(f"/findings?run_id={disc['id']}", headers=headers).json()[0]
     assert client.patch(f"/findings/{finding['id']}", json={"status": "reviewed"}, headers=outsider).status_code == 403
     assert {r["id"] for r in client.get("/runs", headers=headers).json()} == {disc["id"], ana["id"]}
+
+
+@requires_db
+def test_agent_runs_need_owner_role_unless_admin(client, tenant_factory):
+    from sqlalchemy import select
+
+    from tests.test_permissions import _add_user, _tenant_schema
+    from vista.db import tenant_session
+    from vista.models.tenant import DealMembership
+
+    headers, tenant_id, _ = tenant_factory()
+    deal = client.post("/deals", json={"name": "Ridgeway Fasteners & Supply"}, headers=headers).json()
+    outsider, outsider_id = _add_user(tenant_id, "analyst@firm.example.com")
+    body = {"company": "ridgeway", "division": "11_billing_ar"}
+
+    # No deal role at all: nothing may be started.
+    assert client.post("/synthetic/discovery", json=body, headers=outsider).status_code == 403
+    assert client.post("/synthetic/analyze", json={"sector": "industrial_goods"}, headers=outsider).status_code == 403
+    assert client.post("/summaries", headers=outsider).status_code == 403
+
+    with tenant_session(_tenant_schema(tenant_id)) as session:
+        session.add(DealMembership(deal_id=uuid.UUID(deal["id"]), user_id=outsider_id, role="member"))
+        session.commit()
+    assert client.post("/synthetic/discovery", json=body, headers=outsider).status_code == 403
+
+    with tenant_session(_tenant_schema(tenant_id)) as session:
+        m = session.scalar(select(DealMembership).where(DealMembership.user_id == outsider_id))
+        m.role = "owner"
+        session.commit()
+    run = client.post("/synthetic/discovery", json=body, headers=outsider).json()
+    assert run["deal_id"] == deal["id"] and run["status"] == "queued"
+    assert (
+        client.post("/synthetic/analyze", json={"sector": "industrial_goods", "kinds": ["software_overlap"]}, headers=outsider).status_code
+        == 201
+    )
+    assert client.post("/summaries", headers=outsider).status_code == 201
+    # A company the caller does not own is still off limits once the firm has it as a deal.
+    client.post("/deals", json={"name": "Keystone Bearing & Drive Co."}, headers=headers)
+    assert (
+        client.post("/synthetic/discovery", json={"company": "keystone", "division": "11_billing_ar"}, headers=outsider).status_code == 403
+    )
