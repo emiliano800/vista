@@ -9,7 +9,7 @@ import { fileURLToPath } from 'node:url';
 import { BrowserWindow, Menu, Tray, app, clipboard, desktopCapturer, ipcMain, nativeImage, screen, session, shell, systemPreferences, safeStorage } from 'electron';
 
 import { CONFIDENCE_THRESHOLD, RESOLVED_STATUSES, SESSION_ID, applyDecision, describeSection, explainSection, openaiConfig, reviewSummary } from './explain.js';
-import { DEMO_KEYS, DemoHook, demoActiveWindow, demoClipboard } from './demo.js';
+import { DEMO_KEYS, DemoHook, demoActiveWindow, demoClipboard, demoDocuments } from './demo.js';
 import { DEFAULT_SETTINGS, Recorder, keyNamesFrom, loadSettings } from './recorder.js';
 import { FILES_DIR, FILES_FILE, FileTracker, axDocuments, documentFromTitle, lsofDocuments, publicFile, readFiles, snapshotFiles, spotlightSweep, writeFiles } from './files.js';
 import { redactText } from './redact.js';
@@ -17,11 +17,16 @@ import { cloudRequest, companyID, fetchReview, mergeReview, readSectionEdits, re
 import { appSpans, buildSections, parseEvents, recordingName } from './sections.js';
 import { apiConfig, startApi } from './api.js';
 import { JobStore } from './jobs.js';
+import { reviewFiles } from './filereview.js';
+import { FLAG_DECISIONS, INSIGHTS_FILE, buildInsights, insightsSummary, summarizeInsights } from './insights.js';
+import { WORKFLOWS_FILE, suggestWorkflows, workflowsStub } from './workflows.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const UI = path.join(__dirname, '..', 'ui');
 const PRELOAD = path.join(__dirname, 'preload.cjs');
-const DEMO = process.argv.includes('--demo');
+// `--demo` or the hidden Settings toggle (settings.demoMode); fixed for the
+// life of the process because the input hooks are built once.
+let DEMO = process.argv.includes('--demo');
 const MAC = process.platform === 'darwin';
 const HOME = process.env.VISTA_HOME ?? path.join(os.homedir(), 'Vista');
 const RECORDINGS = path.join(HOME, 'recordings'); // pending: everything still on this computer
@@ -63,6 +68,7 @@ let videoDone = null;
 
 async function buildRecorder() {
   const settings = loadSettings(SETTINGS_FILE);
+  if (settings.demoMode) DEMO = true;
   let hook = null;
   let activeWindow = null;
   let keyNames = new Map();
@@ -138,6 +144,7 @@ async function collectDocuments(dir, manifest) {
   }
   for (const hit of await spotlightSweep({ start: manifest.started_at, end: manifest.ended_at })) tracker.touch(hit.path, hit.at, { source: hit.source });
   const t0 = Date.parse(manifest.started_at), t1 = Date.parse(manifest.ended_at);
+  if (DEMO) for (const d of demoDocuments(HOME)) tracker.addInterval(d.path, t0, t1, { app: d.app, source: 'demo' });
   const files = tracker.finish({ t0, t1, pauses: manifest.pauses ?? [] });
   const excluded = new Set(live.filter((f) => f.include === false).map((f) => f.path));
   for (const f of files) if (excluded.has(f.path)) f.include = false;
@@ -187,18 +194,24 @@ async function postProcess(manifest) {
   // Documents first: Submit is only offered once processing is 'done', so the
   // snapshots are in place before anything can leave the machine.
   await collectDocuments(dir, manifest).then(() => broadcastSections(manifest.recording_id)).catch((e) => console.error('document collection failed:', e.message));
+  // File agent + insights run alongside taskmining; both are idempotent (re-runs
+  // after a decision only fill in what is missing).
+  const agents = runAgents(manifest.recording_id).catch((e) => console.error('agents failed:', e.message));
   const write = (patch) => {
     const m = JSON.parse(fs.readFileSync(path.join(dir, 'manifest.json'), 'utf8'));
     fs.writeFileSync(path.join(dir, 'manifest.json'), JSON.stringify({ ...m, ...patch }, null, 2));
     broadcastRecordings();
     return patch;
   };
-  if (!repo) return write({ processing: 'skipped', processing_note: 'taskmining package not found; run `python -m taskmining run --input events.jsonl` later' });
+  if (!repo) {
+    await agents;
+    return write({ processing: 'skipped', processing_note: 'taskmining package not found; run `python -m taskmining run --input events.jsonl` later' });
+  }
   const args = ['-m', 'taskmining', 'run', '--input', path.join(dir, 'events.jsonl'), '--out', path.join(dir, 'processed')];
   if (!recorder.settings.redact) args.push('--no-redact', '--no-pseudonymize');
   if (fs.existsSync(path.join(dir, 'annotations.jsonl'))) args.push('--annotations', path.join(dir, 'annotations.jsonl'));
   write({ processing: 'running' });
-  return new Promise((resolve) => {
+  const result = await new Promise((resolve) => {
     const py = spawn(pythonFor(repo), args, { cwd: repo });
     let err = '';
     py.stderr.on('data', (d) => (err += d));
@@ -215,6 +228,177 @@ async function postProcess(manifest) {
       if (cloudSettings()) explainRecording(manifest.recording_id).catch((e) => noteReviewError(manifest.recording_id, e));
     });
   });
+  await agents;
+  // Taskmining activities are in now: redo the suggestions and the deterministic
+  // part of the insights (the model paragraph is kept).
+  try {
+    buildWorkflows(manifest.recording_id);
+    refreshInsights(manifest.recording_id);
+  } catch (e) {
+    console.error('workflow suggestions failed:', e.message);
+  }
+  return result;
+}
+
+// ---- suggested workflows ---------------------------------------------------------
+
+function readWorkflows(dir) {
+  try {
+    return JSON.parse(fs.readFileSync(path.join(dir, WORKFLOWS_FILE), 'utf8'));
+  } catch {
+    return null;
+  }
+}
+
+// Deterministic suggestions from the environment + actions; stub on the manifest
+// so later sessions can see which ones recur.
+function buildWorkflows(recordingId) {
+  const dir = recDir(recordingId);
+  const m = readManifest(dir);
+  if (!m.ended_at || m.submitted) return readWorkflows(dir);
+  const wf = suggestWorkflows({ manifest: m, events: readEvents(dir), files: readFiles(dir), summary: m.summary ?? null });
+  fs.writeFileSync(path.join(dir, WORKFLOWS_FILE), JSON.stringify(wf, null, 2));
+  fs.writeFileSync(path.join(dir, 'manifest.json'), JSON.stringify({ ...readManifest(dir), workflows: workflowsStub(wf) }, null, 2));
+  broadcastRecordings();
+  broadcastSections(recordingId);
+  return wf;
+}
+
+function refreshInsights(recordingId) {
+  const dir = recDir(recordingId);
+  const m = readManifest(dir);
+  const prior = readInsights(dir);
+  if (!prior || m.submitted) return;
+  const events = readEvents(dir);
+  writeInsights(dir, buildInsights({ manifest: m, events, sections: buildSections(events, m), files: readFiles(dir), previous: previousManifests(recordingId), workflows: readWorkflows(dir) }, prior));
+  broadcastSections(recordingId);
+}
+
+// ---- file agent + insights ------------------------------------------------------
+
+function readInsights(dir) {
+  try {
+    return JSON.parse(fs.readFileSync(path.join(dir, INSIGHTS_FILE), 'utf8'));
+  } catch {
+    return null;
+  }
+}
+
+function writeInsights(dir, insights) {
+  fs.writeFileSync(path.join(dir, INSIGHTS_FILE), JSON.stringify(insights, null, 2));
+}
+
+// Parse, scan and (with a key) summarise every document snapshot. Each file is
+// pushed to the dashboard as soon as it is done.
+async function reviewDocuments(recordingId, { force = false } = {}) {
+  const dir = recDir(recordingId);
+  const files = readFiles(dir);
+  if (!files.length) return files;
+  const api = openaiConfig(process.env, recorder.settings);
+  await reviewFiles(dir, files, api, {
+    force,
+    onFile: () => {
+      writeFiles(dir, files);
+      broadcastSections(recordingId);
+    },
+  });
+  writeFiles(dir, files);
+  return files;
+}
+
+// Manifests of the employee's other recordings, for trends.
+function previousManifests(recordingId) {
+  const out = [];
+  for (const root of [RECORDINGS, SUBMITTED]) {
+    for (const id of fs.readdirSync(root)) {
+      if (id === recordingId) continue;
+      try {
+        out.push(JSON.parse(fs.readFileSync(path.join(root, id, 'manifest.json'), 'utf8')));
+      } catch {
+        /* skip */
+      }
+    }
+  }
+  return out.filter((m) => m.ended_at).sort((a, b) => (b.started_at ?? '').localeCompare(a.started_at ?? '')).slice(0, 20);
+}
+
+// Flags + keyboard/mouse analysis + trends (deterministic), then the model's
+// paragraph once, kept across re-runs.
+async function computeInsights(recordingId, { force = false } = {}) {
+  const dir = recDir(recordingId);
+  const m = readManifest(dir);
+  if (!m.ended_at) return null;
+  const events = readEvents(dir);
+  const sections = buildSections(events, m);
+  const prior = readInsights(dir);
+  const workflows = readWorkflows(dir) ?? buildWorkflows(recordingId);
+  const insights = buildInsights({ manifest: m, events, sections, files: readFiles(dir), previous: previousManifests(recordingId), workflows }, force ? { ...prior, summary: null } : prior);
+  writeInsights(dir, insights);
+  broadcastSections(recordingId);
+  const api = openaiConfig(process.env, recorder.settings);
+  if (api && (!insights.summary || insights.summary.error)) {
+    try {
+      insights.summary = await summarizeInsights(insights, api);
+    } catch (e) {
+      insights.summary = { error: e.message, at: new Date().toISOString() };
+    }
+    writeInsights(dir, insights);
+    broadcastSections(recordingId);
+  }
+  return insights;
+}
+
+const agentsRunning = new Set();
+async function runAgents(recordingId, opts = {}) {
+  if (agentsRunning.has(recordingId)) return;
+  agentsRunning.add(recordingId);
+  try {
+    await reviewDocuments(recordingId, opts);
+    await computeInsights(recordingId, opts);
+  } finally {
+    agentsRunning.delete(recordingId);
+  }
+}
+
+function decideFlag(recordingId, flagId, decision) {
+  if (!FLAG_DECISIONS.has(decision)) throw new Error('Decision must be confirmed or dismissed.');
+  const dir = recDir(recordingId);
+  if (readManifest(dir).submitted) throw new Error('This session was submitted.');
+  const insights = readInsights(dir);
+  const flag = insights?.flags?.find((f) => f.id === flagId);
+  if (!flag) throw new Error('Flag not found.');
+  flag.decision = decision;
+  flag.decided_at = new Date().toISOString();
+  writeInsights(dir, insights);
+  broadcastSections(recordingId);
+  return sectionsFor(recordingId);
+}
+
+function approveInsights(recordingId, approved = true) {
+  const dir = recDir(recordingId);
+  if (readManifest(dir).submitted) throw new Error('This session was submitted.');
+  const insights = readInsights(dir);
+  if (!insights) throw new Error('No analysis yet.');
+  insights.approved_at = approved ? new Date().toISOString() : null;
+  insights.approved_by = approved ? os.userInfo().username : null;
+  writeInsights(dir, insights);
+  broadcastSections(recordingId);
+  return sectionsFor(recordingId);
+}
+
+// Keep a section out of the report and the workspace review (video is untouched).
+function excludeSection(recordingId, sectionId, excluded) {
+  if (!/^[A-Za-z0-9_-]{1,64}$/.test(String(sectionId))) throw new Error('Invalid section.');
+  const dir = recDir(recordingId);
+  if (readManifest(dir).submitted) throw new Error('This session was submitted.');
+  const edits = readSectionEdits(dir);
+  const cur = edits[sectionId] ?? { name: '', note: '' };
+  if (excluded) edits[sectionId] = { ...cur, excluded: true, edited_at: new Date().toISOString() };
+  else if (cur.name || cur.note) edits[sectionId] = { name: cur.name, note: cur.note, edited_at: new Date().toISOString() };
+  else delete edits[sectionId];
+  fs.writeFileSync(path.join(dir, SECTIONS_FILE), JSON.stringify(edits, null, 2));
+  broadcastSections(recordingId);
+  return sectionsFor(recordingId);
 }
 
 // Where AI explanations come from, so the dashboard can say exactly why they are
@@ -299,8 +483,9 @@ function editSection(recordingId, sectionId, { name = '', note = '' } = {}) {
   if (readManifest(dir).submitted) throw new Error('This session was submitted; edit it in the workspace.');
   const edits = readSectionEdits(dir);
   const clean = { name: scrub(name).trim().slice(0, 200), note: scrub(note).trim().slice(0, 4000) };
-  if (!clean.name && !clean.note) delete edits[sectionId];
-  else edits[sectionId] = { ...clean, edited_at: new Date().toISOString() };
+  const excluded = edits[sectionId]?.excluded ? { excluded: true } : {};
+  if (!clean.name && !clean.note && !excluded.excluded) delete edits[sectionId];
+  else edits[sectionId] = { ...clean, ...excluded, edited_at: new Date().toISOString() };
   fs.writeFileSync(path.join(dir, SECTIONS_FILE), JSON.stringify(edits, null, 2));
   return sectionsFor(recordingId);
 }
@@ -313,14 +498,17 @@ function sectionsFor(recordingId) {
   const sections = m.submitted ? m.submitted.sections ?? [] : buildSections(events, m);
   const anns = readAnnotations(dir);
   const review = readReview(dir);
+  const insights = readInsights(dir);
   for (const s of sections) {
     const e = edits[s.id];
     if (e) {
-      s.edited = true;
+      s.edited = !!(e.name || e.note);
       s.edited_at = e.edited_at ?? null;
       if (e.name) s.name = e.name;
       s.note = e.note ?? '';
+      s.excluded = !!e.excluded;
     }
+    s.flags = (insights?.flags ?? []).filter((f) => f.scope === 'section' && f.section_id === s.id);
     // notes that cover each section so the UI can show "annotated"
     s.annotations = anns
       .filter((a) => a.scope !== 'session' && Date.parse(a.start) < Date.parse(s.end) && Date.parse(a.end) > Date.parse(s.start))
@@ -347,6 +535,8 @@ function sectionsFor(recordingId) {
     submitted: m.submitted ?? null,
     upload: uploadStates()[recordingId] ?? null,
     shots_dir: `file://${path.join(dir, 'shots')}`,
+    insights: insights ? { ...insights, summary_counts: insightsSummary(insights), running: agentsRunning.has(recordingId) } : { flags: [], input: null, trends: null, summary: null, approved_at: null, summary_counts: insightsSummary(null), running: agentsRunning.has(recordingId) },
+    workflows: readWorkflows(dir),
     review: {
       ...aiStatus(),
       sync_error: review.sync_error ?? null,
@@ -387,8 +577,11 @@ function reviewContext(dir) {
   const m = readManifest(dir);
   const events = readEvents(dir);
   const sections = buildSections(events, m);
-  const ctx = { manifest: { ...m, annotations_preview: readAnnotations(dir).map((a) => `${a.label}${a.note ? ': ' + a.note : ''}`).slice(0, 8) }, sections, events };
-  return { m, sections, ctx, targets: [...sections, { whole: true, id: SESSION_ID, seconds: m.active_seconds ?? 0 }] };
+  const edits = readSectionEdits(dir);
+  const kept = sections.filter((s) => !edits[s.id]?.excluded);
+  const flags = (readInsights(dir)?.flags ?? []).filter((f) => f.decision !== 'dismissed');
+  const ctx = { manifest: { ...m, annotations_preview: readAnnotations(dir).map((a) => `${a.label}${a.note ? ': ' + a.note : ''}`).slice(0, 8) }, sections: kept, events, flags };
+  return { m, sections: kept, ctx, targets: [...kept, { whole: true, id: SESSION_ID, seconds: m.active_seconds ?? 0 }] };
 }
 
 const REVIEW_POLL_MS = 2500;
@@ -572,6 +765,16 @@ function openPermissionPane(kind) {
 
 // ---- recordings store -------------------------------------------------------
 
+// Earliest screenshot of a recording, as a file URL for the list thumbnail.
+function firstShot(dir) {
+  try {
+    const shot = fs.readdirSync(path.join(dir, 'shots')).filter((f) => f.endsWith('.jpg')).sort()[0];
+    return shot ? `file://${path.join(dir, 'shots', shot)}` : null;
+  } catch {
+    return null;
+  }
+}
+
 function listRecordings() {
   const out = [];
   const uploads = uploadStates();
@@ -591,6 +794,7 @@ function listRecordings() {
           ...m,
           apps: (m.apps ?? []).filter((a) => !isOwnApp(a.app)),
           dir: path.join(root, id),
+          thumb: firstShot(path.join(root, id)),
           annotations,
           name: m.name ?? recordingName(m, { summary: m.summary_text ?? '' }),
           upload: uploads[id] ?? null,
@@ -825,6 +1029,7 @@ async function stopRecording({ ui = true } = {}) {
   }
   const status = await recorder.stop();
   broadcastRecordings();
+  if (overlay && !overlay.isDestroyed()) overlay.webContents.send('overlay:collapse');
   setOverlayMode('orb');
   if (MAC) app.dock.show();
   if (ui) openReview(status.recordingId);
@@ -910,7 +1115,7 @@ ipcMain.handle('cloud:upload', async (event, id) => {
 // Order: report (idempotent) → every media file via signed URLs → move the
 // metadata stub to submitted/ → delete the recording folder. A failure at any
 // step leaves the folder in place with status 'failed' so Submit can be retried.
-const STUB_FILES = ['manifest.json', REVIEW_FILE, SECTIONS_FILE, 'annotations.jsonl'];
+const STUB_FILES = ['manifest.json', REVIEW_FILE, SECTIONS_FILE, 'annotations.jsonl', WORKFLOWS_FILE];
 // files.json travels too, without the absolute paths.
 function writeFilesStub(dir, stub) {
   const files = readFiles(dir).map(publicFile);
@@ -922,14 +1127,61 @@ function writeFilesStub(dir, stub) {
 // video so the labels travel with screen.webm wherever the media goes.
 const VIDEO_SECTIONS_FILE = 'screen.sections.json';
 function writeVideoSidecar(dir, id, m) {
-  const sections = sectionsFor(id).sections.map((s) => ({ ...s, annotations: s.annotations ?? [], review: s.review ?? null }));
+  const all = sectionsFor(id);
+  const sections = all.sections.map((s) => ({ ...s, annotations: s.annotations ?? [], review: s.review ?? null }));
+  const { running: _r, ...insights } = all.insights;
   fs.writeFileSync(
     path.join(dir, VIDEO_SECTIONS_FILE),
-    JSON.stringify({ recording_id: id, video: m.files?.video ?? null, started_at: m.started_at, ended_at: m.ended_at, pauses: m.pauses ?? [], sections, documents: readFiles(dir).filter((f) => f.include !== false).map(publicFile) }, null, 2),
+    JSON.stringify({ recording_id: id, video: m.files?.video ?? null, started_at: m.started_at, ended_at: m.ended_at, pauses: m.pauses ?? [], sections, insights, documents: readFiles(dir).filter((f) => f.include !== false).map(publicFile) }, null, 2),
   );
   return sections;
 }
+// Demo mode without a workspace: the same local bookkeeping as a real submit
+// (stub in submitted/, upload state), with a short simulated upload.
+async function demoSubmit(id, dir, m) {
+  const saveState = (state) => {
+    const states = uploadStates();
+    states[id] = { ...(states[id] ?? {}), ...state, url: 'demo', companyId: 'demo' };
+    writePrivate(UPLOADS_FILE, states);
+    broadcastRecordings();
+  };
+  activeUploads.add(id);
+  try {
+    const total = 5;
+    for (let done = 0; done <= total; done++) {
+      saveState({ status: 'uploading', progress: { done, total } });
+      await new Promise((r) => setTimeout(r, 180));
+    }
+    const sections = writeVideoSidecar(dir, id, m);
+    const stub = path.join(SUBMITTED, id);
+    fs.mkdirSync(stub, { recursive: true });
+    for (const f of STUB_FILES) if (fs.existsSync(path.join(dir, f))) fs.copyFileSync(path.join(dir, f), path.join(stub, f));
+    const files_list = writeFilesStub(dir, stub);
+    const cloudId = `demo-${id}`;
+    fs.writeFileSync(path.join(stub, 'manifest.json'), JSON.stringify({ ...readManifest(dir), files: {}, submitted: { at: new Date().toISOString(), recording_id: cloudId, files: files_list.length, sections, files_list, apps: appSpans(readEvents(dir), m, { ownApps: recorder.settings.ownApps ?? [] }), demo: true } }, null, 2));
+    fs.rmSync(dir, { recursive: true, force: true });
+    saveState({ status: 'submitted', submittedAt: new Date().toISOString(), recordingId: cloudId, files: files_list.length, progress: null });
+  } catch (error) {
+    saveState({ status: 'failed', error: error.message, progress: null });
+    throw error;
+  } finally {
+    activeUploads.delete(id);
+  }
+  broadcastSections(id);
+  return sectionsFor(id);
+}
+
 async function submitRecording(id) {
+  if (DEMO && !cloudSettings()) {
+    if (!ID_RE.test(String(id))) throw new Error('Invalid recording ID.');
+    const dir = path.join(RECORDINGS, id);
+    if (!fs.existsSync(path.join(dir, 'manifest.json'))) throw new Error(fs.existsSync(path.join(SUBMITTED, id)) ? 'Already submitted.' : 'Recording not found.');
+    if (recorder.status().recordingId === id && recorder.state !== 'idle') throw new Error('Stop the recording first.');
+    const m = readManifest(dir);
+    if (m.processing !== 'done') throw new Error('Wait until this session has finished analysis.');
+    if (activeUploads.has(id)) throw new Error('This session is already uploading.');
+    return demoSubmit(id, dir, m);
+  }
   const config = cloudConfig();
   if (!ID_RE.test(String(id))) throw new Error('Invalid recording ID.');
   const dir = path.join(RECORDINGS, id);
@@ -976,7 +1228,15 @@ ipcMain.handle('recordings:submit', (event, id) => {
   return submitRecording(id);
 });
 ipcMain.handle('recordings:edit-section', (_e, id, sectionId, patch) => editSection(id, sectionId, patch ?? {}));
+ipcMain.handle('recordings:exclude-section', (_e, id, sectionId, excluded) => excludeSection(id, sectionId, !!excluded));
+ipcMain.handle('recordings:flag', (_e, id, flagId, decision) => decideFlag(id, String(flagId), String(decision)));
+ipcMain.handle('recordings:approve-insights', (_e, id, approved) => approveInsights(id, approved !== false));
+ipcMain.handle('recordings:rerun-agents', async (_e, id) => {
+  await runAgents(id, { force: true });
+  return sectionsFor(id);
+});
 ipcMain.handle('recordings:toggle-file', (_e, id, fileId, include) => toggleFile(id, fileId, include));
+ipcMain.handle('recordings:workflows', (_e, id) => readWorkflows(recDir(id)) ?? buildWorkflows(id));
 ipcMain.handle('recordings:open-file', (_e, id, fileId) => {
   const dir = recDir(id);
   const f = readFiles(dir).find((x) => x.id === fileId && x.snapshot);
@@ -1014,6 +1274,12 @@ ipcMain.handle('settings:set', (_e, patch) => {
   return recorder.settings;
 });
 ipcMain.handle('settings:defaults', () => DEFAULT_SETTINGS);
+// Demo mode swaps the input hooks, so it only takes effect on restart.
+ipcMain.handle('app:relaunch', async () => {
+  if (recorder.state === 'recording' || recorder.state === 'paused') await recorder.stop();
+  app.relaunch({ args: process.argv.slice(1).filter((a) => a !== '--demo').concat('--dashboard') });
+  app.exit(0);
+});
 ipcMain.handle('app:info', () => ({ demo: DEMO, admin: ADMIN, home: HOME, platform: process.platform, user: os.userInfo().username, openai: !!openaiConfig(process.env, recorder.settings), ai: aiStatus(), cloud: !!cloudSettings(), ownApps: recorder.settings.ownApps ?? DEFAULT_SETTINGS.ownApps }));
 ipcMain.handle('permissions:get', () => permissions(false));
 ipcMain.handle('permissions:open', (_e, kind) => openPermissionPane(kind));
@@ -1049,6 +1315,10 @@ const apiActions = {
   publicFile,
   reportBundle: (id) => reportBundle(RECORDINGS, id),
   submitRecording,
+  runAgents,
+  decideFlag,
+  approveInsights,
+  excludeSection,
 };
 
 async function startAgentApi() {

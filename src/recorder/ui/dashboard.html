@@ -115,6 +115,9 @@
       details.card[open] summary { margin-bottom: var(--space-3); color: var(--ink); }
       tr.day td { background: var(--surface); color: var(--ink); font-weight: 600; font-size: 12px; line-height: 16px; text-transform: uppercase; letter-spacing: 0.04em; padding-top: var(--space-3); }
       tr.day td .muted { font-weight: 500; text-transform: none; letter-spacing: 0; margin-left: var(--space-2); }
+      tr.day td { cursor: pointer; user-select: none; }
+      tr.day td .caret { display: inline-block; width: 14px; color: var(--ink-muted); transition: transform 0.15s; }
+      tr.day.closed td .caret { transform: rotate(-90deg); }
       .btn.attn { position: relative; border-color: var(--human); color: var(--human-ink); background: var(--human-soft); font-weight: 600; }
       .btn.attn::after { content: ''; position: absolute; inset: -3px; border-radius: inherit; border: 2px solid var(--human); animation: attn 1.6s ease-out infinite; pointer-events: none; }
       @keyframes attn { 0% { opacity: 0.9; transform: scale(1); } 100% { opacity: 0; transform: scale(1.12); } }
@@ -132,6 +135,37 @@
       .stage small { color: var(--ink-muted); font-size: 12px; line-height: 16px; display: block; }
       .stage .out { font-family: var(--font-mono); font-size: 12px; color: var(--ink-muted); font-variant-numeric: tabular-nums; }
       @keyframes spin { to { transform: rotate(360deg); } }
+      /* sensitive-content flags + keyboard/mouse analysis (file agent + insights) */
+      .flags { display: grid; gap: var(--space-2); }
+      .flag { display: grid; grid-template-columns: 8px 1fr auto; gap: var(--space-2); align-items: start; padding: 8px 10px; border: 1px solid var(--line); border-radius: var(--radius-md); font-size: 13px; line-height: 18px; }
+      .flag i { width: 8px; height: 8px; border-radius: 50%; background: var(--warning); margin-top: 5px; }
+      .flag.high i { background: var(--danger); }
+      .flag.confirmed { border-color: var(--danger-soft); background: var(--danger-soft); }
+      .flag.dismissed { opacity: 0.55; }
+      .flag .k { font-weight: 600; }
+      .flag .r { color: var(--ink-muted); font-size: 12px; }
+      .flag .act { display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
+      .fchip { display: inline-flex; align-items: center; gap: 4px; padding: 0 6px; border-radius: 999px; font-size: 11px; line-height: 16px; font-weight: 600; color: var(--danger); background: var(--danger-soft); }
+      .fchip.med { color: var(--warning); background: var(--warning-soft); }
+      .fchip.ok { color: var(--success); background: var(--success-soft); }
+      .strip i.flagged { box-shadow: inset 0 -3px 0 var(--danger); }
+      .sec.excluded { opacity: 0.5; }
+      .kv { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--space-2); margin-bottom: var(--space-3); }
+      .kv div { border: 1px solid var(--line); border-radius: var(--radius-md); padding: 8px 10px; }
+      .kv b { display: block; font-family: var(--font-display); font-size: 18px; line-height: 22px; }
+      .kv span { font-size: 11px; color: var(--ink-muted); }
+      .trend { display: grid; grid-template-columns: 1fr auto auto; gap: var(--space-2); font-size: 12px; line-height: 18px; align-items: center; }
+      .trend .d { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+      .trend .d.up { color: var(--danger); }
+      .trend .d.down { color: var(--success); }
+      .apps-tbl { width: 100%; font-size: 12px; line-height: 18px; border-collapse: collapse; margin-top: var(--space-2); }
+      .apps-tbl td, .apps-tbl th { padding: 3px 6px; text-align: right; border-bottom: 1px solid var(--line); }
+      .apps-tbl td:first-child, .apps-tbl th:first-child { text-align: left; }
+      .ins-sum { font-size: 13px; line-height: 19px; margin: 0 0 var(--space-3); }
+      .file .st .fchip { margin-left: 4px; }
+      .file .ai { font-size: 12px; line-height: 16px; color: var(--ink-muted); margin-top: 2px; }
+      .file .ai svg, .ins-sum svg { width: 12px; height: 12px; fill: var(--lime-ink); vertical-align: -2px; margin-right: 2px; }
+      .rec-thumb { width: 72px; height: 40px; object-fit: cover; border-radius: 4px; border: 1px solid var(--line); background: var(--surface); display: block; }
       .rank { display: grid; gap: var(--space-2); }
       .rank .row { display: grid; grid-template-columns: 26px 1fr auto; gap: var(--space-2); align-items: center; font-size: 13px; line-height: 18px; }
       .rank .row .muted { font-family: var(--font-mono); font-size: 12px; font-variant-numeric: tabular-nums; }
@@ -243,6 +277,23 @@
       /* Lucide icons (DESIGN.md): 16px, 1.75 stroke, currentColor */
       .ic { width: 14px; height: 14px; stroke: currentColor; stroke-width: 1.75; stroke-linecap: round; stroke-linejoin: round; fill: none; flex: none; vertical-align: -2px; }
       .pill.submitted { background: var(--success-soft); color: var(--success); }
+      /* submit progress ring + workflow button, right of the row's actions */
+      .prog { --p: 0; width: 22px; height: 22px; border-radius: 50%; display: inline-grid; place-items: center; vertical-align: middle; background: conic-gradient(var(--lime-ink) calc(var(--p) * 1%), var(--line) 0); position: relative; margin-left: 4px; }
+      .prog::after { content: ''; width: 14px; height: 14px; border-radius: 50%; background: var(--surface); position: absolute; }
+      .prog span { position: relative; font-size: 8px; line-height: 1; font-family: var(--font-mono); color: var(--ink-secondary); z-index: 1; }
+      .btn.sm.done { background: var(--success); border-color: var(--success); color: var(--on-brand); }
+      .btn.wf { animation: pop 0.35s ease-out; border-color: var(--agent); color: var(--agent-ink); }
+      @keyframes pop { from { opacity: 0; transform: scale(0.6); } to { opacity: 1; transform: scale(1); } }
+      .wf-list { display: grid; gap: 10px; }
+      .wf { border: 1px solid var(--line); border-radius: var(--radius-md, 8px); padding: 10px 12px; display: grid; gap: 6px; }
+      .wf h3 { margin: 0; font-size: 13px; line-height: 18px; display: flex; justify-content: space-between; gap: 8px; align-items: baseline; }
+      .wf h3 .auto { font-family: var(--font-mono); font-size: 11px; font-weight: 500; color: var(--agent-ink); white-space: nowrap; }
+      .wf .why { font-size: 12px; line-height: 16px; color: var(--ink-secondary); margin: 0; }
+      .wf ol { margin: 0; padding-left: 18px; font-size: 12px; line-height: 17px; color: var(--ink-secondary); }
+      .wf .src { display: flex; gap: 4px; flex-wrap: wrap; }
+      .wf .src span { font-size: 10px; line-height: 14px; padding: 1px 6px; border-radius: var(--radius-pill); background: var(--surface-sunken); color: var(--ink-muted); }
+      .wf .src span.kind { background: var(--agent-soft, var(--surface-sunken)); color: var(--agent-ink); }
+      .wf-env { font-size: 12px; line-height: 16px; color: var(--ink-secondary); margin: 0 0 10px; }
       .pill.uploading { background: var(--lime-soft); color: var(--lime-ink); }
       .pill.local { background: var(--surface-sunken); color: var(--ink-muted); }
       .pill.ws-queued, .pill.ws-running { border-color: var(--agent); color: var(--agent-ink); }
@@ -369,6 +420,12 @@
             </div>
           </section>
 
+          <section class="card" id="wf-card" style="margin:0 0 14px">
+            <h2 style="display:flex;justify-content:space-between;align-items:baseline"><span>Suggested workflows</span><span class="muted" style="text-transform:none;letter-spacing:0;font-weight:500" id="wf-sub"></span></h2>
+            <p class="muted" style="margin:-4px 0 10px;font-size:12px;line-height:16px">Repeatable pieces of work inferred on this computer from the apps and documents on screen, the copy/paste between them, and the task-mining steps. Suggestions, not confirmed processes.</p>
+            <div id="wf-body"><div class="empty">Waiting for the analysis…</div></div>
+          </section>
+
           <section class="card hidden" id="files-card" style="margin:0 0 14px">
             <h2 style="display:flex;justify-content:space-between;align-items:baseline"><span>Documents</span><span class="muted" style="text-transform:none;letter-spacing:0;font-weight:500" id="files-sub"></span></h2>
             <div class="files" id="files"></div>
@@ -376,6 +433,16 @@
 
           <div class="agent">
             <div style="display:grid;gap:14px">
+              <div class="card" id="flags-card">
+                <h2 style="display:flex;justify-content:space-between;align-items:baseline"><span>Sensitive content</span><span class="muted" style="text-transform:none;letter-spacing:0;font-weight:500" id="flags-sub"></span></h2>
+                <p class="muted" style="margin:-4px 0 10px;font-size:12px;line-height:16px">Flagged on this computer from window titles, redactions, clipboard and typing patterns — nothing typed is read. <b>Confirm</b> what is real, <b>Dismiss</b> what is not, or keep a section out of the submission.</p>
+                <div class="flags" id="flags"><div class="empty">Checking…</div></div>
+              </div>
+              <div class="card" id="input-card">
+                <h2 style="display:flex;justify-content:space-between;align-items:baseline"><span>Keyboard &amp; mouse</span><span class="muted" style="text-transform:none;letter-spacing:0;font-weight:500" id="input-sub"></span></h2>
+                <div id="input-body"><div class="empty">Waiting for the analysis…</div></div>
+                <div class="act" id="input-act" style="margin-top:10px;display:flex;gap:6px;flex-wrap:wrap"></div>
+              </div>
               <section class="grid cols-3" style="margin:0">
                 <div class="card kpi"><b id="rv-steps">—</b><span>work steps</span><small id="rv-steps-sub">from interactions</small></div>
                 <div class="card kpi"><b id="rv-cases">—</b><span>cases followed</span><small id="rv-cases-sub">start to finish</small></div>
@@ -421,9 +488,14 @@
 
         <!-- ============ SETTINGS ============ -->
         <div id="view-settings" class="hidden">
-          <h1>Settings</h1>
+          <h1 id="settings-title">Settings</h1>
           <p class="lede">Defaults are set by your company; you can always make recording stricter.</p>
           <div class="card set" id="settings"></div>
+          <section class="card set hidden" id="demo-settings">
+            <h2>Demo mode <span class="pill">hidden</span></h2>
+            <label><div>Simulated apps and input<span>Plays a scripted AP-clerk session (Outlook, Acrobat, QuickBooks, Excel) instead of recording this computer. Takes effect after the app restarts.</span></div><input type="checkbox" id="demo-mode"></label>
+            <div class="muted" id="demo-state" style="font-size:12px"></div>
+          </section>
           <div id="admin-settings" class="hidden">
           <section class="card">
             <h2>Cloud workspace <span class="pill">admin</span></h2>
@@ -472,6 +544,16 @@
       </div>
     </div>
 
+    <!-- suggested workflows for one submitted session -->
+    <div id="wf-modal" class="modal hidden">
+      <div class="card wide" style="max-height:80vh;overflow:auto">
+        <h2 style="margin:0">Suggested workflows</h2>
+        <div class="muted" id="wf-modal-sub" style="margin-bottom:10px"></div>
+        <div id="wf-modal-body"></div>
+        <div class="actions"><span style="flex:1"></span><button class="btn" id="wf-close">Close</button></div>
+      </div>
+    </div>
+
     <script>
       const $ = (id) => document.getElementById(id);
       const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
@@ -495,8 +577,11 @@
       const LUCIDE = {
         pencil: '<path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"/><path d="m15 5 4 4"/>',
         check: '<path d="M20 6 9 17l-5-5"/>',
+        workflow: '<rect width="8" height="8" x="3" y="3" rx="2"/><path d="M7 11v4a2 2 0 0 0 2 2h4"/><rect width="8" height="8" x="13" y="13" rx="2"/>',
         upload: '<path d="M12 13v8"/><path d="M4 14.899A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.242"/><path d="m8 17 4-4 4 4"/>',
         cloudCheck: '<path d="m17 15-5.5 5.5L9 18"/><path d="M5 17.743A7 7 0 1 1 15.71 10h1.79a4.5 4.5 0 0 1 1.5 8.742"/>',
+        shield: '<path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/>',
+        shieldCheck: '<path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/>',
         folder: '<path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/>',
         alert: '<circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/>',
         loader: '<path d="M21 12a9 9 0 1 1-6.219-8.56"/>',
@@ -721,6 +806,8 @@
         $('vs-sub').textContent = vs.submitted ? `${vs.sections.length} sections · in your workspace` : vs.sections.length ? `${vs.sections.length} sections` : 'No window switches recorded';
         renderSections();
         renderFiles();
+        renderInsights();
+        renderWorkflows();
         const rec = recordings.find((x) => x.recording_id === id);
         if (rec) renderWorkspaceState(rec, uploadState(rec));
         // key added after the session ended, or the app was closed mid-way: pick the explanations up now
@@ -732,8 +819,59 @@
         vs = next;
         renderSections();
         renderFiles();
+        renderInsights();
+        renderWorkflows();
         renderReview();
       });
+
+      // ---- file agent + insights: flags, keyboard/mouse analysis, trends ----
+      const KIND_LABEL = { password_entry: 'Password typed?', private_window: 'Private app on screen', sensitive_page: 'Sign-in / payment / personal page', redacted_data: 'Redacted data on screen', card_number: 'Card or account number', iban: 'Bank account (IBAN)', ssn: 'Social security number', credential: 'Credential in a document', personal: 'Personal identity data', payroll: 'Pay or compensation', confidential: 'Marked confidential', email: 'E-mail addresses', financial_account: 'Bank / card details', other: 'Sensitive content' };
+      const flagLabel = (k) => KIND_LABEL[k] ?? k.replace(/_/g, ' ');
+      const sectionFlags = (s) => (s.flags ?? []).filter((f) => f.decision !== 'dismissed');
+      const flagChips = (flags) => flags.map((f) => `<span class="fchip ${f.severity === 'high' ? '' : 'med'}" title="${esc(f.reason)}">${icon('shield')}${esc(flagLabel(f.kind))}${f.decision === 'confirmed' ? ' ✓' : ''}</span>`).join('');
+      function renderInsights() {
+        const ins = vs?.insights;
+        const flagsBox = $('flags'), sub = $('flags-sub');
+        if (!ins || (!ins.flags.length && ins.running)) { flagsBox.innerHTML = '<div class="empty">Checking window titles, clipboard and typing patterns…</div>'; sub.textContent = ''; }
+        else if (!ins.flags.length) { flagsBox.innerHTML = `<div class="empty">${icon('shieldCheck')} Nothing sensitive spotted in this session.</div>`; sub.textContent = 'clear'; }
+        else {
+          const c = ins.summary_counts;
+          sub.textContent = c.open_flags ? `${c.open_flags} to check · ${c.confirmed} confirmed` : `${c.confirmed} confirmed · ${ins.flags.length - c.confirmed} dismissed`;
+          const secOf = (f) => vs.sections.find((s) => s.id === f.section_id);
+          flagsBox.innerHTML = ins.flags.map((f) => {
+            const s = f.scope === 'section' ? secOf(f) : null;
+            const where = s ? `${esc(s.name)} · ${clock(f.at ?? s.start)}` : f.scope === 'file' ? `document: ${esc(f.file_name ?? '')}${f.line ? ` · line ${f.line}` : ''}` : '';
+            const acts = vs.submitted ? '' : f.decision
+              ? `<span class="fchip ${f.decision === 'confirmed' ? '' : 'ok'}">${f.decision}</span><button class="btn sm" data-flag="${f.id}" data-decision="${f.decision === 'confirmed' ? 'dismissed' : 'confirmed'}">Undo</button>`
+              : `<button class="btn sm warn" data-flag="${f.id}" data-decision="confirmed">Confirm</button><button class="btn sm" data-flag="${f.id}" data-decision="dismissed">Dismiss</button>`;
+            const excl = s && !vs.submitted ? `<button class="btn sm" data-excl="${s.id}" data-on="${s.excluded ? 0 : 1}" title="${s.excluded ? 'Put this section back into the submission' : 'Leave this section out of the report and the workspace review'}">${s.excluded ? 'Include section' : 'Exclude section'}</button>` : '';
+            const play = s && vs.video_url ? `<button class="btn sm" data-play="${s.index}">Play</button>` : '';
+            return `<div class="flag ${f.severity} ${f.decision ?? ''}"><i></i><div><div class="k">${esc(flagLabel(f.kind))}${f.kind === 'password_entry' ? ' <span class="muted" style="font-weight:400">(suspected — the recorder never stores what was typed)</span>' : ''}</div><div class="r">${esc(f.reason)}${where ? ` — ${where}` : ''}${s?.excluded ? ' · <b>section excluded</b>' : ''}</div></div><div class="act">${play}${acts}${excl}</div></div>`;
+          }).join('');
+          flagsBox.querySelectorAll('[data-flag]').forEach((b) => (b.onclick = async () => { b.disabled = true; try { vs = await window.vista.decideFlag(reviewing, b.dataset.flag, b.dataset.decision); } catch (e) { alert(e.message); } renderInsights(); renderSections(); }));
+          flagsBox.querySelectorAll('[data-excl]').forEach((b) => (b.onclick = async () => { b.disabled = true; try { vs = await window.vista.excludeSection(reviewing, b.dataset.excl, b.dataset.on === '1'); } catch (e) { alert(e.message); } renderInsights(); renderSections(); }));
+          flagsBox.querySelectorAll('[data-play]').forEach((b) => (b.onclick = () => playSection(+b.dataset.play)));
+        }
+
+        const body = $('input-body'), act = $('input-act'), isub = $('input-sub');
+        const inp = ins?.input;
+        if (!inp) { body.innerHTML = `<div class="empty">${ins?.running ? 'Measuring clicks, keys and idle time…' : 'No analysis for this session yet.'}</div>`; act.innerHTML = ''; isub.textContent = ''; return; }
+        const t = inp.totals;
+        const tr = ins.trends;
+        const delta = (m) => (m.delta_pct == null ? '<span class="d">—</span>' : `<span class="d ${m.delta_pct > 10 ? 'up' : m.delta_pct < -10 ? 'down' : ''}">${m.delta_pct > 0 ? '+' : ''}${m.delta_pct}%</span>`);
+        const summary = ins.summary?.text ? `<p class="ins-sum">${AI_ICON} ${esc(ins.summary.text)}</p>` : ins.summary?.error ? `<p class="ins-sum muted">AI summary unavailable: ${esc(ins.summary.error)}</p>` : ins.running ? '<p class="ins-sum muted"><span class="thinking"><i></i>Writing the summary…</span></p>' : '';
+        body.innerHTML = summary
+          + `<div class="kv"><div><b>${inp.clicks_per_min}</b><span>clicks / min</span></div><div><b>${inp.keys_per_min}</b><span>keys / min</span></div><div><b>${inp.rekeyed_between_apps}</b><span>pastes from another app</span></div><div><b>${inp.typing_bursts}</b><span>typing bursts · longest ${inp.longest_burst_keys} keys</span></div><div><b>${t.shortcut}</b><span>shortcuts${inp.top_shortcuts.length ? ` · ${esc(inp.top_shortcuts.slice(0, 2).map((s) => s.combo).join(', '))}` : ''}</span></div><div><b>${hm(inp.idle_seconds)}</b><span>idle · ${inp.idle_gaps} gap${inp.idle_gaps === 1 ? '' : 's'}${inp.longest_idle_seconds ? `, longest ${hm(inp.longest_idle_seconds)}` : ''}</span></div></div>`
+          + (tr?.metrics?.length ? `<div class="muted" style="font-size:11px;margin-bottom:4px">Versus your last ${tr.baseline} recording${tr.baseline === 1 ? '' : 's'}</div>${tr.metrics.map((m) => `<div class="trend"><span>${esc(m.label)}</span><span class="d muted">${m.now} vs ${m.baseline}</span>${delta(m)}</div>`).join('')}` : '<div class="muted" style="font-size:12px">Trends appear once you have more than one recording.</div>')
+          + (tr?.workflow?.baseline ? `<div class="muted" style="font-size:11px;margin:8px 0 4px">Workflows, versus your last ${tr.workflow.baseline} recording${tr.workflow.baseline === 1 ? '' : 's'}</div>${tr.workflow.metrics.map((m) => `<div class="trend"><span>${esc(m.label)}</span><span class="d muted">${m.now} vs ${m.baseline}</span>${delta(m)}</div>`).join('')}${tr.workflow.recurring?.some((r) => r.seen_before) ? `<div class="muted" style="font-size:12px;margin-top:4px">Seen before: ${tr.workflow.recurring.filter((r) => r.seen_before).map((r) => `${esc(r.title)} (${r.seen_before}×)`).join(' · ')}</div>` : ''}` : '')
+          + (inp.per_app.length ? `<table class="apps-tbl"><tr><th>App</th><th>min</th><th>clicks</th><th>keys</th><th>copy/paste</th></tr>${inp.per_app.slice(0, 6).map((a) => `<tr><td>${esc(a.short)}</td><td>${a.minutes}</td><td>${a.clicks}</td><td>${a.keys}</td><td>${a.copies}/${a.pastes}</td></tr>`).join('')}</table>` : '');
+        isub.textContent = ins.approved_at ? `approved ${clock(ins.approved_at)}` : `${(t.click + t.key + t.shortcut + t.copy + t.paste).toLocaleString()} interactions`;
+        act.innerHTML = vs.submitted ? '' : ins.approved_at
+          ? `<span class="conf done">${icon('check')} Analysis approved</span><button class="btn sm" data-approve-ins="0">Undo</button>`
+          : `<button class="btn sm ok" data-approve-ins="1" title="Confirm this analysis is a fair picture of how you worked">${icon('check')}Approve analysis</button><button class="btn sm" data-rerun="1" title="Parse the documents and recompute the analysis again">Re-run</button>`;
+        act.querySelectorAll('[data-approve-ins]').forEach((b) => (b.onclick = async () => { b.disabled = true; try { vs = await window.vista.approveInsights(reviewing, b.dataset.approveIns === '1'); } catch (e) { alert(e.message); } renderInsights(); }));
+        act.querySelectorAll('[data-rerun]').forEach((b) => (b.onclick = async () => { b.disabled = true; b.textContent = 'Running…'; try { vs = await window.vista.rerunAgents(reviewing); } catch (e) { alert(e.message); } renderInsights(); renderFiles(); renderSections(); }));
+      }
 
       // ---- documents: track under the scrubber, "on screen now" panel, list that ships with Submit ----
       const pausedBefore = (t) => (vs?.pauses ?? []).reduce((acc, p) => { const a = Date.parse(p.start), b = Date.parse(p.end ?? p.start); return b > a && a < t ? acc + (Math.min(b, t) - a) : acc; }, 0);
@@ -804,15 +942,29 @@
         const copied = inc.filter((f) => f.snapshot);
         $('files-sub').textContent = vs.submitted ? `${copied.length} in your workspace` : `${copied.length} of ${files.length} will be submitted · untick what should stay here`;
         const srcOf = (f) => (f.sources?.includes('download') ? `${icon('download')} downloaded` : f.intervals.length ? `open ${hm(f.seconds)}` : 'used');
+        const parsed = (f) => {
+          const rv = f.review;
+          if (!rv) return f.snapshot && f.include !== false && vs.insights?.running ? ' · <span class="thinking"><i></i>parsing…</span>' : '';
+          if (rv.status === 'parsed') return ` · ${icon('check')} parsed${rv.chars ? ` (${rv.chars.toLocaleString()} chars)` : ''}`;
+          if (rv.status === 'unsupported') return ` · <span class="fchip med" title="${esc(rv.note ?? '')}">not parsed</span>`;
+          return ` · <span class="err">parse failed: ${esc(rv.note ?? '')}</span>`;
+        };
         const state = (f) => {
           if (f.extraction?.status === 'done') return `${icon('cloudCheck')} ingested`;
           if (f.extraction?.status) return f.extraction.status;
           if (f.include === false) return 'stays on this computer';
-          if (f.snapshot) return `${fmtBytes(f.size_bytes)}${f.edited ? ' · <span class="ed">edited</span>' : ''}`;
+          if (f.snapshot) return `${fmtBytes(f.size_bytes)}${f.edited ? ' · <span class="ed">edited</span>' : ''}${parsed(f)}`;
           return `<span class="err">${esc(f.snapshot_error ?? 'not copied')}</span>`;
         };
-        $('files').innerHTML = files.map((f) => `<div class="file ${f.include === false ? 'off' : ''}" data-file="${f.id}">${vs.submitted ? '<span></span>' : `<input type="checkbox" data-inc="${f.id}" ${f.include === false ? '' : 'checked'} title="Include this file when you submit" />`}<div><div class="nm">${icon(fileIcon(f.ext))}${esc(f.name)}</div><div class="st">${esc(f.folder ?? '')}${f.folder ? ' · ' : ''}${srcOf(f)}${f.intervals.length ? ` · ${clock(f.first_opened)}–${clock(f.last_closed)}` : ''} · ${state(f)}</div></div><div class="act">${f.intervals.length && vs.video_url ? `<button class="btn sm" data-seek="${f.intervals[0].start}" title="Play from when this file was first opened">Play</button>` : ''}${f.snapshot_url && !vs.submitted ? `<button class="btn sm icon" data-open="${f.id}" title="Open the copy that ships with this recording">${icon('external')}</button>` : ''}</div></div>`).join('');
-        $('files').querySelectorAll('[data-inc]').forEach((cb) => (cb.onchange = async () => { cb.disabled = true; try { vs = await window.vista.toggleFile(reviewing, cb.dataset.inc, cb.checked); } catch (e) { alert(e.message); } renderFiles(); renderSections(); }));
+        const fileFlagsOf = (f) => (vs.insights?.flags ?? []).filter((x) => x.scope === 'file' && x.file_id === f.id && x.decision !== 'dismissed');
+        const aiLine = (f) => {
+          const ai = f.review?.ai;
+          if (!ai) return '';
+          if (ai.error) return `<div class="ai muted">AI could not summarise: ${esc(ai.error)}</div>`;
+          return `<div class="ai">${AI_ICON} ${esc(ai.summary)}${ai.kind && ai.kind !== 'other' ? ` <span class="muted">· ${esc(ai.kind)}</span>` : ''}</div>`;
+        };
+        $('files').innerHTML = files.map((f) => `<div class="file ${f.include === false ? 'off' : ''}" data-file="${f.id}">${vs.submitted ? '<span></span>' : `<input type="checkbox" data-inc="${f.id}" ${f.include === false ? '' : 'checked'} title="Include this file when you submit" />`}<div><div class="nm">${icon(fileIcon(f.ext))}${esc(f.name)}${f.include !== false ? flagChips(fileFlagsOf(f)) : ''}</div><div class="st">${esc(f.folder ?? '')}${f.folder ? ' · ' : ''}${srcOf(f)}${f.intervals.length ? ` · ${clock(f.first_opened)}–${clock(f.last_closed)}` : ''} · ${state(f)}</div>${f.include !== false ? aiLine(f) : ''}</div><div class="act">${f.intervals.length && vs.video_url ? `<button class="btn sm" data-seek="${f.intervals[0].start}" title="Play from when this file was first opened">Play</button>` : ''}${f.snapshot_url && !vs.submitted ? `<button class="btn sm icon" data-open="${f.id}" title="Open the copy that ships with this recording">${icon('external')}</button>` : ''}</div></div>`).join('');
+        $('files').querySelectorAll('[data-inc]').forEach((cb) => (cb.onchange = async () => { cb.disabled = true; try { vs = await window.vista.toggleFile(reviewing, cb.dataset.inc, cb.checked); } catch (e) { alert(e.message); } renderFiles(); renderSections(); renderInsights(); }));
         $('files').querySelectorAll('[data-seek]').forEach((b) => (b.onclick = () => { stopAt = null; seekTo(videoOffset(b.dataset.seek)).then(() => video.play().catch(() => {})); }));
         $('files').querySelectorAll('[data-open]').forEach((b) => (b.onclick = () => window.vista.openFile(reviewing, b.dataset.open).catch((e) => alert(e.message))));
       }
@@ -866,7 +1018,8 @@
         for (const s of vs.sections) {
           const a = Date.parse(s.start), b = Date.parse(s.end);
           if (a > cursor) html += `<i class="gap" style="width:${((a - cursor) / span) * 100}%"></i>`;
-          html += `<i data-sec="${s.index}" class="${activeSec === s.index ? 'on' : ''}" title="${esc(s.name)}" style="width:${((b - a) / span) * 100}%;background:${colorOf(s.app)}"></i>`;
+          const fl = sectionFlags(s);
+          html += `<i data-sec="${s.index}" class="${activeSec === s.index ? 'on' : ''} ${fl.length ? 'flagged' : ''}" title="${esc(s.name)}${fl.length ? ` · ${fl.map((f) => flagLabel(f.kind)).join(', ')}` : ''}${s.excluded ? ' · excluded' : ''}" style="width:${((b - a) / span) * 100}%;background:${colorOf(s.app)};${s.excluded ? 'opacity:.35' : ''}"></i>`;
           cursor = b;
         }
         $('strip').innerHTML = html + '<span class="head" id="head" style="left:0"></span>';
@@ -883,7 +1036,8 @@
           `<div class="sec whole ${w.cls}" data-w="1"><i class="sw" style="background:var(--line-strong)"></i><div><div class="nm">${esc(recordings.find((r) => r.recording_id === reviewing)?.name ?? 'Whole session')}</div><div class="st">${hm(whole.seconds)} · ${vs.sections.length} sections · whole recording</div>${w.read}<div class="act">${w.act}</div></div></div>`,
           ...vs.sections.map((s) => {
             const a = aiBlock(s.review, s.index);
-            return `<div class="sec ${activeSec === s.index ? 'on' : ''} ${a.cls}" data-sec="${s.index}"><i class="sw" style="background:${colorOf(s.app)}"></i><div><div class="nm">${esc(s.name)}</div><div class="st">${hm(s.seconds)} · ${esc(short(s.app))} · ${(s.counts.click ?? 0)} clicks · ${(s.counts.copy ?? 0) + (s.counts.paste ?? 0)} copy/paste${manual(s)}${s.edited ? ' · <span class="ed">edited by you</span>' : ''}</div>${s.note && editingSec !== s.index ? `<div class="note"><b>Note:</b> ${esc(s.note)}</div>` : ''}${a.read}${editForm(s)}<div class="act">${editingSec === s.index ? '' : a.act + editBtn(s)}</div></div></div>`;
+            const fl = sectionFlags(s);
+            return `<div class="sec ${activeSec === s.index ? 'on' : ''} ${a.cls} ${s.excluded ? 'excluded' : ''}" data-sec="${s.index}"><i class="sw" style="background:${colorOf(s.app)}"></i><div><div class="nm">${esc(s.name)}${fl.length ? ' ' + flagChips(fl) : ''}${s.excluded ? ' <span class="fchip ok">excluded from submission</span>' : ''}</div><div class="st">${hm(s.seconds)} · ${esc(short(s.app))} · ${(s.counts.click ?? 0)} clicks · ${(s.counts.copy ?? 0) + (s.counts.paste ?? 0)} copy/paste${manual(s)}${s.edited ? ' · <span class="ed">edited by you</span>' : ''}</div>${s.note && editingSec !== s.index ? `<div class="note"><b>Note:</b> ${esc(s.note)}</div>` : ''}${a.read}${editForm(s)}<div class="act">${editingSec === s.index ? '' : a.act + editBtn(s)}</div></div></div>`;
           }),
         ].join('');
         if (!vs.sections.length) $('secs').insertAdjacentHTML('beforeend', '<div class="empty">No long sections — the session may be very short.</div>');
@@ -909,15 +1063,25 @@
 
       const reviewItemOf = (section) => (section?.whole ? vs?.review?.session : section?.review) ?? null;
       const reviewKeyOf = (section) => (section?.whole ? 'session' : section?.id);
+      // Save the decision, then refresh everything that shows it: the recordings
+      // list first (the whole-session card reads its title from there), then the
+      // sections and the review header.
       async function decide(section, action, body = {}) {
+        const id = reviewing;
+        let next;
         try {
-          vs = await window.vista.decide(reviewing, reviewKeyOf(section), action, body);
+          next = await window.vista.decide(id, reviewKeyOf(section), action, body);
         } catch (e) {
           alert(e.message);
+          return;
         }
-        renderSections();
         recordings = await window.vista.recordings();
+        if (reviewing !== id) { renderRecordings(); return; }
+        vs = next;
         renderRecordings();
+        renderSections();
+        renderInsights();
+        renderWorkflows();
         renderReview();
       }
 
@@ -1098,7 +1262,10 @@
       window.vista.cloudStatus().then(value => { cloud = value; renderCloud(); }).catch(e => { $('cloud-state').textContent = e.message; });
 
       // ---- recordings ----
+      // Days folded shut in My recordings; today starts open, older days closed.
+      let closedDays = null;
       function renderRecordings() {
+        if (!closedDays && recordings.length) closedDays = new Set(recordings.filter((r) => !isToday(r.started_at)).map((r) => new Date(r.started_at).toDateString()));
         $('n-rec').textContent = recordings.length;
         $('rec-empty').classList.toggle('hidden', recordings.length > 0);
         const days = new Map();
@@ -1111,24 +1278,29 @@
           const d = new Date(k);
           const label = isToday(rs[0].started_at) ? 'Today' : d.toLocaleDateString([], { weekday: 'long', month: 'short', day: 'numeric' });
           const sec = rs.reduce((a, r) => a + (r.active_seconds ?? 0), 0);
-          return `<tr class="day"><td colspan="7">${esc(label)}<span class="muted">${rs.length} session${rs.length === 1 ? '' : 's'} · ${hm(sec)}</span></td></tr>`;
+          return `<tr class="day ${closedDays?.has(k) ? 'closed' : ''}" data-day="${esc(k)}"><td colspan="7"><span class="caret">▾</span>${esc(label)}<span class="muted">${rs.length} session${rs.length === 1 ? '' : 's'} · ${hm(sec)}</span></td></tr>`;
         };
         $('rec-rows').innerHTML = [...days.entries()].map(([k, rs]) => dayRow(k, rs) + rs.map((r) => {
+          const hide = closedDays?.has(k) ? ' class="hidden"' : '';
           const when = `${clock(r.started_at)}${r.ended_at ? '–' + clock(r.ended_at) : ''}`;
           const p = r.processing ?? 'pending';
           const up = uploadState(r);
           const title = r.name ? `<div style="font-weight:600;color:var(--ink)">${esc(r.name)}</div>` : '';
           const sum = r.summary ? `<div class="muted" style="font-size:12px;margin-top:3px">${r.summary.steps} steps · ${r.summary.cases} case${r.summary.cases === 1 ? '' : 's'}</div>` : (r.processing_note ? `<div class="muted" style="font-size:12px;margin-top:3px">${esc(r.processing_note)}</div>` : '');
           const notes = (r.annotations ?? 0) + (r.edits ?? 0);
-          const submitBtn = up.key === 'submitted' ? '' : `<button class="btn sm ${up.key === 'failed' ? 'warn' : ''}" data-submit="${esc(r.recording_id)}" ${p !== 'done' || up.key === 'uploading' ? 'disabled' : ''}>${icon('upload')}${up.key === 'failed' ? 'Retry' : 'Submit'}</button>`;
-          return `<tr>
-            <td>${title}<div class="muted" style="font-size:12px">${esc(when)}</div></td>
+          const pct = up.key === 'uploading' && r.upload?.progress?.total ? Math.round((r.upload.progress.done / r.upload.progress.total) * 100) : null;
+          const submitBtn = up.key === 'submitted'
+            ? `<button class="btn sm done" disabled>${icon('check')}Submitted</button> ${r.workflows?.count ? `<button class="btn sm icon wf" title="${r.workflows.count} suggested workflow${r.workflows.count === 1 ? '' : 's'}" data-wf="${esc(r.recording_id)}">${icon('workflow')}</button>` : `<span class="thinking" title="Working out the workflows"><i></i></span>`}`
+            : `<button class="btn sm ${up.key === 'failed' ? 'warn' : ''}" data-submit="${esc(r.recording_id)}" ${p !== 'done' || up.key === 'uploading' ? 'disabled' : ''}>${up.key === 'uploading' ? '<span class="thinking"><i></i></span>' : icon('upload')}${up.key === 'failed' ? 'Retry' : up.key === 'uploading' ? 'Submitting' : 'Submit'}</button>${up.key === 'uploading' ? `<span class="prog" style="--p:${pct ?? 0}" title="${pct == null ? 'Preparing…' : `${pct}% uploaded`}"><span>${pct == null ? '…' : pct}</span></span>` : ''}`;
+          const thumb = r.thumb ? `<img class="rec-thumb" src="${esc(r.thumb)}" alt="" loading="lazy">` : `<div class="rec-thumb"></div>`;
+          return `<tr${hide}>
+            <td style="min-width:280px"><div style="display:flex;gap:10px;align-items:center">${thumb}<div>${title}<div class="muted" style="font-size:12px">${esc(when)}</div></div></div></td>
             <td>${r.active_seconds != null ? hm(r.active_seconds) : '<span class="muted">live</span>'}</td>
             <td>${(r.counts?.total ?? 0).toLocaleString()}</td>
             <td><span class="pill ${p}">${p}</span>${sum}</td>
             <td><span class="pill ${up.key}" title="${esc(up.sub)}">${up.icon ? icon(up.icon) : ''}${esc(up.label)}</span> ${wsPill(r.review?.workspace)}${up.key === 'failed' ? `<div class="muted" style="font-size:11px;white-space:normal;max-width:220px">${esc(up.sub)}</div>` : ''}</td>
             <td>${notes ? `${notes} note${notes === 1 ? '' : 's'}` : '<span class="muted">—</span>'}</td>
-            <td style="white-space:nowrap"><button class="btn sm primary" data-review="${esc(r.recording_id)}">Review</button> ${up.key === 'submitted' ? '' : `<button class="btn sm" data-ann="${esc(r.recording_id)}">Add note</button> <button class="btn sm icon" title="Open folder" data-open="${esc(r.recording_id)}">${icon('folder')}</button> `}${submitBtn}</td>
+            <td style="white-space:nowrap"><button class="btn sm primary" data-review="${esc(r.recording_id)}">Review</button> ${submitBtn}</td>
           </tr>`;
         }).join('')).join('');
         $('rec-rows').querySelectorAll('[data-submit]').forEach((b) => (b.onclick = async () => {
@@ -1140,10 +1312,51 @@
           recordings = await window.vista.recordings();
           renderRecordings(); renderToday(); renderReview();
         }));
-        $('rec-rows').querySelectorAll('[data-ann]').forEach((b) => (b.onclick = () => openAnnotate(b.dataset.ann)));
         $('rec-rows').querySelectorAll('[data-review]').forEach((b) => (b.onclick = () => openReview(b.dataset.review, true)));
-        $('rec-rows').querySelectorAll('[data-open]').forEach((b) => (b.onclick = () => window.vista.openRecording(b.dataset.open)));
+        $('rec-rows').querySelectorAll('[data-wf]').forEach((b) => (b.onclick = () => openWorkflows(b.dataset.wf)));
+        $('rec-rows').querySelectorAll('tr.day').forEach((row) => (row.onclick = () => {
+          const k = row.dataset.day;
+          closedDays ??= new Set();
+          if (closedDays.has(k)) closedDays.delete(k); else closedDays.add(k);
+          renderRecordings();
+        }));
       }
+
+      // ---- suggested workflows ----
+      const SOURCE_LABEL = { events: 'app switches & clipboard', documents: 'documents', taskmining: 'task mining' };
+      const KIND_LABEL_WF = { data_transfer: 're-keying', document_processing: 'document intake', reporting: 'tracker', communication: 'inbox', lookup: 'lookup', access: 'sign-in', activity: 'activity' };
+      function workflowsHtml(wf) {
+        if (!wf) return '<div class="empty">No workflow suggestions yet — they appear once the analysis has run.</div>';
+        if (!wf.workflows?.length) return '<div class="empty">Nothing repeatable stood out in this session.</div>';
+        const env = wf.environment ?? {};
+        const envLine = [
+          env.apps?.length ? `Apps: ${env.apps.slice(0, 6).map((a) => esc(a.short)).join(', ')}` : '',
+          env.documents?.length ? `Documents: ${env.documents.slice(0, 4).map((d) => esc(d.name)).join(', ')}` : '',
+          env.sites?.length ? `Sites: ${env.sites.slice(0, 3).map((s) => esc(s.host)).join(', ')}` : '',
+        ].filter(Boolean).join(' · ');
+        return (envLine ? `<p class="wf-env">Inferred environment — ${envLine}</p>` : '')
+          + `<div class="wf-list">${wf.workflows.map((w) => `<div class="wf" data-kind="${esc(w.kind)}">
+            <h3><span>${icon('workflow')} ${esc(w.title)}</span><span class="auto" title="How much of this could run without a person">${Math.round(w.automation * 100)}% automatable</span></h3>
+            <p class="why">${esc(w.why)}</p>
+            ${w.steps?.length ? `<ol>${w.steps.map((s) => `<li>${esc(s)}</li>`).join('')}</ol>` : ''}
+            <div class="src"><span class="kind">${esc(KIND_LABEL_WF[w.kind] ?? w.kind)}</span>${(w.apps ?? []).map((a) => `<span>${esc(short(a))}</span>`).join('')}${(w.sources ?? []).map((s) => `<span>from ${esc(SOURCE_LABEL[s] ?? s)}</span>`).join('')}</div>
+          </div>`).join('')}</div>`;
+      }
+      function renderWorkflows() {
+        const wf = vs?.workflows;
+        $('wf-body').innerHTML = wf ? workflowsHtml(wf) : `<div class="empty">${vs?.insights?.running ? 'Working out the workflows…' : 'No workflow suggestions for this session yet.'}</div>`;
+        $('wf-sub').textContent = wf?.workflows?.length ? `${wf.workflows.length} suggested · ${wf.environment?.roles?.length ?? 0} kinds of app` : '';
+      }
+      async function openWorkflows(id) {
+        const r = recordings.find((x) => x.recording_id === id);
+        $('wf-modal-sub').textContent = r ? `${r.name ?? id} · ${new Date(r.started_at).toLocaleString()}` : id;
+        $('wf-modal-body').innerHTML = '<div class="empty">Loading…</div>';
+        $('wf-modal').classList.remove('hidden');
+        try { $('wf-modal-body').innerHTML = workflowsHtml(await window.vista.workflows(id)); }
+        catch (e) { $('wf-modal-body').innerHTML = `<div class="empty">${esc(e.message)}</div>`; }
+      }
+      $('wf-close').onclick = () => $('wf-modal').classList.add('hidden');
+      $('wf-modal').onclick = (e) => { if (e.target === $('wf-modal')) $('wf-modal').classList.add('hidden'); };
 
       // ---- annotate / fix / explain ----
       // `section` is a video section ({index, name, start, end, review, ...}) or {whole:true}; omitted = free note.
@@ -1257,6 +1470,9 @@
         $('settings').innerHTML = SETTINGS_UI.map(([k, t, s]) => `<label><div>${t}<span>${s}</span></div><input type="checkbox" data-k="${k}" ${settings[k] ? 'checked' : ''}></label>`).join('');
         $('settings').querySelectorAll('input').forEach((i) => (i.onchange = async () => { settings = await window.vista.setSettings({ [i.dataset.k]: i.checked }); }));
         $('admin-settings').classList.toggle('hidden', !info?.admin);
+        $('demo-mode').checked = !!settings.demoMode;
+        $('demo-state').textContent = !!settings.demoMode === !!info?.demo ? (info?.demo ? 'Demo mode is on.' : '') : settings.demoMode ? 'Restart the app to enter demo mode.' : 'Restart the app to leave demo mode.';
+        if (info?.demo) $('demo-settings').classList.remove('hidden');
         $('private-apps').value = settings.privateApps.join(', ');
         $('private-titles').value = settings.privateTitles.join(', ');
         $('openai-key').value = settings.openaiApiKey ?? '';
@@ -1272,6 +1488,14 @@
           : ai.key_source === 'settings' ? `AI explanations on · key from Settings · model ${ai.model}`
           : 'AI explanations off — no key found.';
       }
+      // Hidden: five clicks on the Settings heading reveal the demo-mode card.
+      let titleClicks = 0;
+      $('settings-title').onclick = () => { if (++titleClicks >= 5) $('demo-settings').classList.remove('hidden'); };
+      $('demo-mode').onchange = async () => {
+        settings = await window.vista.setSettings({ demoMode: $('demo-mode').checked });
+        renderSettings();
+        if (confirm(`Restart Vista now to turn demo mode ${settings.demoMode ? 'on' : 'off'}?`)) window.vista.relaunch();
+      };
       $('save-openai').onclick = async () => {
         settings = await window.vista.setSettings({ openaiApiKey: $('openai-key').value.trim(), openaiModel: $('openai-model').value.trim(), clarifyScreenshots: $('openai-shots').checked });
         info = await window.vista.info();

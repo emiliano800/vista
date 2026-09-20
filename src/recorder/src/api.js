@@ -132,6 +132,30 @@ export function routes(actions, jobs) {
       return summaryOf(id, review, actions);
     }],
 
+    // File agent + insights (flags, keyboard/mouse analysis, trends): computed after Stop, re-runnable.
+    ['GET', /^\/recordings\/([^/]+)\/insights$/, ({ params: [id] }) => {
+      const s = actions.sectionsFor(id);
+      return { recording_id: id, insights: s.insights, documents: s.files.map((f) => ({ id: f.id, name: f.name, include: f.include !== false, review: f.review ?? null })) };
+    }],
+    ['POST', /^\/recordings\/([^/]+)\/insights$/, ({ params: [id], body }) => {
+      const manifest = actions.readManifest(actions.recDir(id));
+      if (!manifest.ended_at) throw new ApiError(409, 'Stop the recording first.');
+      if (manifest.submitted) throw new ApiError(409, 'This session was submitted.');
+      return accepted(jobs.create('insights', id, async () => {
+        await actions.runAgents(id, { force: !!body.force });
+        return actions.sectionsFor(id).insights;
+      }));
+    }],
+    ['POST', /^\/recordings\/([^/]+)\/flags\/([^/]+)$/, ({ params: [id, flagId], body }) => {
+      if (!body.decision) throw new ApiError(400, 'decision (confirmed|dismissed) is required.');
+      return actions.decideFlag(id, flagId, String(body.decision)).insights;
+    }],
+    ['POST', /^\/recordings\/([^/]+)\/insights\/approve$/, ({ params: [id], body }) => actions.approveInsights(id, body.approved !== false).insights],
+    ['POST', /^\/recordings\/([^/]+)\/sections\/([^/]+)\/exclude$/, ({ params: [id, sectionId], body }) => {
+      const s = actions.excludeSection(id, sectionId, body.excluded !== false);
+      return s.sections.find((x) => x.id === sectionId) ?? notFound('Section');
+    }],
+
     ['GET', /^\/jobs\/([^/]+)$/, ({ params: [id] }) => jobs.get(id) ?? notFound('Job')],
 
     ['POST', /^\/batches$/, ({ body }) => {

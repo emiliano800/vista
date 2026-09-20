@@ -125,6 +125,7 @@ export function readSectionEdits(dir) {
       name: String(e.name ?? "").slice(0, 4096),
       note: String(e.note ?? "").slice(0, 4096),
       ...(e.edited_at ? { edited_at: e.edited_at } : {}),
+      ...(e.excluded ? { excluded: true } : {}),
     };
   }
   return out;

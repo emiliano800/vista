@@ -49,9 +49,30 @@ function fakeActions(home) {
       if (!/^[a-zA-Z0-9_-]{1,128}$/.test(String(id))) throw new Error('Invalid recording ID.');
       return path.join(recordings, id);
     },
+    insights: { flags: [{ id: 'section-S1-private_window-1', kind: 'private_window', scope: 'section', section_id: 'S1', decision: null }], input: { clicks_per_min: 2 }, trends: null, summary: null, approved_at: null, running: false },
+    excluded: new Set(),
     sectionsFor(id) {
       this.readManifest(this.recDir(id));
-      return { recording_id: id, sections: [{ id: 'S1', review: null }], apps: [{ app: 'Excel' }] };
+      const files = this.readFiles(this.recDir(id)).map(this.publicFile);
+      return { recording_id: id, sections: [{ id: 'S1', review: null, excluded: this.excluded.has('S1') }], apps: [{ app: 'Excel' }], files, insights: this.insights };
+    },
+    runAgents(id, opts) {
+      calls.push(['agents', id, opts]);
+      this.insights = { ...this.insights, input: { clicks_per_min: 3 } };
+    },
+    decideFlag(id, flagId, decision) {
+      const f = this.insights.flags.find((x) => x.id === flagId);
+      if (!f) throw new Error('Flag not found.');
+      f.decision = decision;
+      return this.sectionsFor(id);
+    },
+    approveInsights(id, approved) {
+      this.insights = { ...this.insights, approved_at: approved ? '2026-01-01T00:11:00Z' : null };
+      return this.sectionsFor(id);
+    },
+    excludeSection(id, sectionId, excluded) {
+      if (excluded) this.excluded.add(sectionId); else this.excluded.delete(sectionId);
+      return this.sectionsFor(id);
     },
     readManifest: (dir) => JSON.parse(fs.readFileSync(path.join(dir, 'manifest.json'), 'utf8')),
     readReview: () => ({ threshold: 0.88, model: null, generated_at: null, generating: false, items: {} }),
@@ -225,4 +246,38 @@ test('jobs interrupted by a restart are marked failed, finished jobs stay readab
   assert.match(jobs.get('j1').error, /restarted/);
   assert.equal(jobs.get('j2').result, 1);
   assert.equal(jobs.get('../j2'), null);
+});
+
+test('insights: read, re-run (async job), decide flags, approve, exclude a section', async (t) => {
+  const { call, poll, actions } = await serve(t);
+  const get = await call('GET', '/recordings/done1/insights');
+  assert.equal(get.status, 200);
+  assert.equal(get.body.insights.flags.length, 1);
+  assert.equal(get.body.documents.length, 2);
+  assert.equal(get.body.documents[0].include, true);
+  assert.equal(get.body.documents[0].review, null);
+  assert.equal((await call('GET', '/recordings/nope/insights')).status, 404);
+
+  const run = await call('POST', '/recordings/done1/insights', { force: true });
+  assert.equal(run.status, 202);
+  const job = await poll(`/jobs/${run.body.job_id}`, (j) => j.status === 'succeeded');
+  assert.equal(job.body.result.input.clicks_per_min, 3);
+  assert.deepEqual(actions.calls.at(-1), ['agents', 'done1', { force: true }]);
+  assert.equal((await call('POST', '/recordings/live2/insights', {})).status, 409);
+
+  assert.equal((await call('POST', '/recordings/done1/flags/section-S1-private_window-1', {})).status, 400);
+  const dec = await call('POST', '/recordings/done1/flags/section-S1-private_window-1', { decision: 'confirmed' });
+  assert.equal(dec.status, 200);
+  assert.equal(dec.body.flags[0].decision, 'confirmed');
+  assert.equal((await call('POST', '/recordings/done1/flags/missing', { decision: 'dismissed' })).status, 404);
+
+  const ok = await call('POST', '/recordings/done1/insights/approve', {});
+  assert.equal(ok.body.approved_at, '2026-01-01T00:11:00Z');
+  assert.equal((await call('POST', '/recordings/done1/insights/approve', { approved: false })).body.approved_at, null);
+
+  const ex = await call('POST', '/recordings/done1/sections/S1/exclude', {});
+  assert.equal(ex.status, 200);
+  assert.deepEqual(ex.body, { id: 'S1', review: null, excluded: true });
+  assert.equal((await call('POST', '/recordings/done1/sections/S1/exclude', { excluded: false })).body.excluded, false);
+  assert.equal((await call('POST', '/recordings/done1/sections/S9/exclude', {})).status, 404);
 });
