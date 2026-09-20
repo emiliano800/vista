@@ -29,8 +29,9 @@ const KEY_NAMES = {
 const IS_MAC = process.platform === 'darwin';
 
 export const DEFAULT_SETTINGS = {
+  redact: false,              // mask emails/phones/cards/IBANs in titles and clipboard text before writing to disk
   keyContent: false,          // record typed characters (false = counts + named keys only)
-  clipboard: true,            // record redacted clipboard text on copy/paste
+  clipboard: true,            // record clipboard text on copy/paste
   screenshots: true,          // JPEG frame on every focus change, on screen change + every `frameEverySec`
   video: true,                // low-fps webm of the screen alongside events
   frameEverySec: 15,
@@ -40,8 +41,9 @@ export const DEFAULT_SETTINGS = {
   changeMinGapMs: 1500,       // never more than one change-shot per this window
   privateApps: ['1Password', 'Bitwarden', 'KeePass', 'LastPass', 'Keychain Access', 'Signal', 'WhatsApp'],
   privateTitles: ['password', 'bank', 'banking', 'incognito', 'private browsing'],
-  openaiApiKey: '',           // AI explanations after a session; OPENAI_API_KEY env overrides
-  openaiModel: 'gpt-4o-mini',
+  ownApps: ['Vista', 'Electron'], // the recorder itself: time and clicks here are not the employee's work
+  openaiApiKey: '',           // AI explanations after a session; OPENAI_API_KEY / VISTA_OPENAI_API_KEY env overrides
+  openaiModel: '', // empty → provider default (explain.js); VISTA_OPENAI_MODEL env overrides
   clarifyScreenshots: false,  // also send up to 3 low-res frames per section to OpenAI
 };
 
@@ -178,6 +180,10 @@ export class Recorder extends EventEmitter {
     return done;
   }
 
+  _redactText(text) {
+    return this.settings.redact ? redactText(text) : String(text ?? '');
+  }
+
   status() {
     const elapsed = this.startedAt ? Date.now() - this.startedAt.getTime() - this.pausedMs - (this._pausedAt ? Date.now() - this._pausedAt : 0) : 0;
     return {
@@ -271,7 +277,7 @@ export class Recorder extends EventEmitter {
       } catch {
         raw = '';
       }
-      const text = this.settings.clipboard ? redactText(raw).slice(0, 200) : '';
+      const text = this.settings.clipboard ? this._redactText(raw).slice(0, 200) : '';
       const hash = raw ? clipHash(raw, this.recordingId) : '';
       const payload = { combo, ...extra, clip_hash: hash, chars: raw.length };
       let crossApp = false;
@@ -309,7 +315,9 @@ export class Recorder extends EventEmitter {
     const url = win.url ?? '';
     if (!force && app === this.current.app && title === this.current.title && url === this.current.url) return;
     const priv = this._isPrivate(app, title);
-    this.current = { app, title: priv ? '(private)' : redactText(title), url: priv ? '' : url, private: priv };
+    const own = this._isOwn(app);
+    this.current = { app, title: priv ? '(private)' : this._redactText(title), url: priv ? '' : url, private: priv, own };
+    if (own) return this._emitStatus();
     this._write('focus', { payload: { window_id: win.id ?? null } });
     this._requestFrame('focus');
     this._emitStatus();
@@ -321,9 +329,14 @@ export class Recorder extends EventEmitter {
     return this.settings.privateApps.some((p) => a.includes(p.toLowerCase())) || this.settings.privateTitles.some((p) => t.includes(p.toLowerCase()));
   }
 
+  _isOwn(app) {
+    const a = app.toLowerCase();
+    return (this.settings.ownApps ?? []).some((p) => a === p.toLowerCase());
+  }
+
   _tickApp() {
     const now = Date.now();
-    if (this.lastTick && this.state === 'recording' && this.current.app) {
+    if (this.lastTick && this.state === 'recording' && this.current.app && !this.current.own) {
       const key = this.current.private ? '(private)' : this.current.app;
       this.appSeconds[key] = (this.appSeconds[key] ?? 0) + (now - this.lastTick) / 1000;
     }
@@ -343,7 +356,7 @@ export class Recorder extends EventEmitter {
   }
 
   async _changeTick() {
-    if (this._thumbBusy || this.state !== 'recording' || this.current.private || !this.settings.screenshots) return;
+    if (this._thumbBusy || this.state !== 'recording' || this.current.private || this.current.own || !this.settings.screenshots) return;
     this._thumbBusy = true;
     try {
       const thumb = await this.thumbProvider();
@@ -363,7 +376,7 @@ export class Recorder extends EventEmitter {
   }
 
   async _requestFrame(reason, extra = {}) {
-    if (!this.settings.screenshots || !this.frameProvider || this.state !== 'recording' || this.current.private) return;
+    if (!this.settings.screenshots || !this.frameProvider || this.state !== 'recording' || this.current.private || this.current.own) return;
     this._lastFrameAt = Date.now();
     let buf = null;
     try {
@@ -383,6 +396,7 @@ export class Recorder extends EventEmitter {
   _write(type, { text = '', payload = {}, element = '' } = {}) {
     if (this.state !== 'recording' || !this.stream) return false;
     if (this.current.private && type !== 'focus') return false; // nothing leaves a private app
+    if (this.current.own) return false; // clicks in the recorder's own windows are not work
     const raw = {
       timestamp: new Date().toISOString(),
       user: this.user,
@@ -394,7 +408,7 @@ export class Recorder extends EventEmitter {
       text,
       payload: { recording_id: this.recordingId, ...payload },
     };
-    const ev = redactEvent(raw);
+    const ev = this.settings.redact ? redactEvent(raw) : raw;
     if (ev.text !== raw.text || ev.window_title !== raw.window_title) this.counts.redactions += 1;
     this.stream.write(JSON.stringify(ev) + '\n');
     this.counts[type] = (this.counts[type] ?? 0) + 1;
@@ -429,7 +443,7 @@ export class Recorder extends EventEmitter {
       counts: this.counts,
       apps: this._appSummary(),
       pauses: this.pauses ?? [],
-      settings: { keyContent: this.settings.keyContent, clipboard: this.settings.clipboard, screenshots: this.settings.screenshots, video: this.settings.video },
+      settings: { redact: !!this.settings.redact, keyContent: this.settings.keyContent, clipboard: this.settings.clipboard, screenshots: this.settings.screenshots, video: this.settings.video },
       files: { events: 'events.jsonl', shots: 'shots/', video: this.settings.video ? 'screen.webm' : null },
       processing: final ? 'pending' : null,
     };

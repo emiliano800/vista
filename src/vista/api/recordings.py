@@ -2,11 +2,15 @@ import csv
 import hashlib
 import io
 import json
+import re
 import uuid
 from datetime import UTC, datetime
+from typing import Annotated
 
 from botocore.exceptions import BotoCoreError, ClientError
 from fastapi import APIRouter, Depends, HTTPException, Query, Response
+from fastapi.responses import RedirectResponse
+from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy import select, text
 
 from vista.auth import Principal, current_principal
@@ -24,7 +28,7 @@ from vista.review import (
     apply_decision,
     public_review,
 )
-from vista.storage import s3_client
+from vista.storage import presigned_download_url, presigned_upload_url, s3_client
 
 router = APIRouter(tags=["recordings"])
 
@@ -39,6 +43,8 @@ def public_recording(record: Recording):
         "active_seconds": record.active_seconds,
         "manifest": record.manifest,
         "summary": record.summary,
+        "sections": record.sections or {},
+        "media": sorted((record.media or {}).keys()),
         "uploaded_at": record.updated_at,
         "analysis_source": "local_taskmining",
         "content_hash": record.content_hash,
@@ -73,7 +79,9 @@ def upload_recording(deal_id: uuid.UUID, body: RecordingUpload, principal: Princ
             session.add(record)
         record.started_at, record.ended_at = body.manifest.started_at, body.manifest.ended_at
         record.active_seconds = body.manifest.active_seconds
-        record.manifest, record.summary = payload["manifest"], payload["summary"]
+        record.manifest = {**payload["manifest"], "name": body.name, "summary_text": body.summary_text}
+        record.summary = payload["summary"]
+        record.sections = payload["sections"]
         record.s3_key, record.content_hash = key, digest
         record.updated_at = datetime.now(UTC)
         session.commit()
@@ -157,6 +165,74 @@ def download(
         media_type=media,
         headers={"Cache-Control": "no-store", "Content-Disposition": f'attachment; filename="vista-{recording_id}.{format}"'},
     )
+
+
+# ---- media: screenshots, screen video and raw events go straight to object storage ----
+# The recorder asks for signed PUT URLs (the API body limit is far below a video), uploads,
+# then keeps nothing on the employee's machine. Only the uploader may add media; viewers read.
+
+MEDIA_NAME = re.compile(r"^(?!.*\.\.)[A-Za-z0-9][A-Za-z0-9._-]*(/[A-Za-z0-9][A-Za-z0-9._-]*)*$")
+MEDIA_MAX_BYTES = 2 * 1024 * 1024 * 1024
+MEDIA_MAX_FILES = 5000
+
+
+class MediaFile(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    name: str = Field(max_length=255)
+    content_type: str = Field(max_length=128, pattern=r"^[a-z]+/[a-z0-9.+-]+$")
+    size_bytes: int = Field(ge=0, le=MEDIA_MAX_BYTES)
+
+
+class MediaRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    files: Annotated[list[MediaFile], Field(max_length=500)]
+
+
+@router.post("/recordings/{recording_id}/media")
+def request_media_uploads(recording_id: uuid.UUID, body: MediaRequest, principal: Principal = Depends(current_principal)):
+    with tenant_session(principal.tenant_schema) as session:
+        record = session.get(Recording, recording_id)
+        if record is None:
+            raise HTTPException(404, "Recording not found")
+        require_deal_role(session, record.deal_id, principal.user_id, "member")
+        if record.uploaded_by != principal.user_id:
+            raise HTTPException(403, "Only the employee who recorded a session can upload its files")
+        media = dict(record.media or {})
+        uploads = []
+        for f in body.files:
+            if not MEDIA_NAME.match(f.name):
+                raise HTTPException(422, f"Invalid file name: {f.name!r}")
+            key = f"{principal.tenant_schema}/deals/{record.deal_id}/recordings/{record.id}/media/{f.name}"
+            media[f.name] = {"key": key, "content_type": f.content_type, "size_bytes": f.size_bytes}
+            try:
+                uploads.append({"name": f.name, "url": presigned_upload_url(key, f.content_type)})
+            except (BotoCoreError, ClientError) as exc:
+                raise HTTPException(503, "File storage is unavailable; retry the upload") from exc
+        if len(media) > MEDIA_MAX_FILES:
+            raise HTTPException(422, f"A recording may hold at most {MEDIA_MAX_FILES} files")
+        record.media = media
+        record.updated_at = datetime.now(UTC)
+        session.commit()
+        return {"uploads": uploads}
+
+
+@router.get("/recordings/{recording_id}/media")
+def list_media(recording_id: uuid.UUID, principal: Principal = Depends(current_principal)):
+    record = authorized_recording(recording_id, principal)
+    return [{"name": n, "content_type": m["content_type"], "size_bytes": m["size_bytes"]} for n, m in sorted((record.media or {}).items())]
+
+
+@router.get("/recordings/{recording_id}/media/{name:path}")
+def get_media(recording_id: uuid.UUID, name: str, principal: Principal = Depends(current_principal)):
+    record = authorized_recording(recording_id, principal)
+    item = (record.media or {}).get(name)
+    if item is None:
+        raise HTTPException(404, "File not found")
+    try:
+        url = presigned_download_url(item["key"])
+    except (BotoCoreError, ClientError) as exc:
+        raise HTTPException(503, "File storage is unavailable; try again") from exc
+    return RedirectResponse(url, status_code=307, headers={"Cache-Control": "no-store"})
 
 
 # ---- employee review: AI explanation per section, approve / fix / explain --------

@@ -22,6 +22,8 @@ contextBridge.exposeInMainWorld('vista', {
   onSections: on('recordings:sections'),
   explain: (id, opts) => ipcRenderer.invoke('recordings:explain', id, opts),
   decide: (id, itemId, action, body) => ipcRenderer.invoke('recordings:decide', id, itemId, action, body),
+  editSection: (id, sectionId, patch) => ipcRenderer.invoke('recordings:edit-section', id, sectionId, patch),
+  submit: (id) => ipcRenderer.invoke('recordings:submit', id),
   openDashboard: () => ipcRenderer.invoke('dashboard:open'),
   resizeOverlay: (mode) => ipcRenderer.invoke('overlay:resize', mode),
   onReview: on('dashboard:review'),

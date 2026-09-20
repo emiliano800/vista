@@ -12,7 +12,7 @@ import { CONFIDENCE_THRESHOLD, RESOLVED_STATUSES, SESSION_ID, applyDecision, des
 import { DEMO_KEYS, DemoHook, demoActiveWindow, demoClipboard } from './demo.js';
 import { DEFAULT_SETTINGS, Recorder, keyNamesFrom, loadSettings } from './recorder.js';
 import { redactText } from './redact.js';
-import { cloudRequest, companyID, fetchReview, mergeReview, reviewItems, sendDecision, submitSections, uploadReport, workspaceURL } from './cloud.js';
+import { cloudRequest, companyID, fetchReview, mergeReview, readSectionEdits, reviewItems, sendDecision, submitSections, uploadMedia, uploadReport, workspaceURL } from './cloud.js';
 import { buildSections, parseEvents, recordingName } from './sections.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -21,10 +21,37 @@ const PRELOAD = path.join(__dirname, 'preload.cjs');
 const DEMO = process.argv.includes('--demo');
 const MAC = process.platform === 'darwin';
 const HOME = process.env.VISTA_HOME ?? path.join(os.homedir(), 'Vista');
-const RECORDINGS = path.join(HOME, 'recordings');
+const RECORDINGS = path.join(HOME, 'recordings'); // pending: everything still on this computer
+const SUBMITTED = path.join(HOME, 'submitted'); // uploaded: only the metadata stub stays
 const SETTINGS_FILE = path.join(HOME, 'settings.json');
+const ADMIN = process.env.VISTA_ADMIN === '1';
+const ID_RE = /^[a-zA-Z0-9_-]{1,128}$/;
 
 fs.mkdirSync(RECORDINGS, { recursive: true });
+fs.mkdirSync(SUBMITTED, { recursive: true });
+
+// A recording lives in recordings/ until it is submitted, then in submitted/.
+function recDir(id) {
+  if (!ID_RE.test(String(id))) throw new Error('Invalid recording ID.');
+  const pending = path.join(RECORDINGS, id);
+  return fs.existsSync(path.join(pending, 'manifest.json')) ? pending : path.join(SUBMITTED, id);
+}
+
+// Pick up OPENAI_API_KEY / VISTA_OPENAI_* from ~/Vista/.env and the repo's .env so a key
+// set once for the backend also works when the app is launched from Finder / `make start`.
+// Variables already in the environment win.
+function loadDotenv() {
+  const repo = findRepoRoot();
+  for (const f of [path.join(HOME, '.env'), repo && path.join(repo, '.env')]) {
+    if (!f || !fs.existsSync(f)) continue;
+    for (const line of fs.readFileSync(f, 'utf8').split('\n')) {
+      const m = /^\s*(?:export\s+)?([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.*?)\s*$/.exec(line);
+      if (!m || m[1] in process.env) continue;
+      process.env[m[1]] = m[2].replace(/^(['"])(.*)\1$/, '$2');
+    }
+  }
+}
+loadDotenv();
 
 let overlay, dashboard, captureWin, tray, recorder;
 let videoDone = null;
@@ -110,6 +137,7 @@ function postProcess(manifest) {
   };
   if (!repo) return write({ processing: 'skipped', processing_note: 'taskmining package not found; run `python -m taskmining run --input events.jsonl` later' });
   const args = ['-m', 'taskmining', 'run', '--input', path.join(dir, 'events.jsonl'), '--out', path.join(dir, 'processed')];
+  if (!recorder.settings.redact) args.push('--no-redact', '--no-pseudonymize');
   if (fs.existsSync(path.join(dir, 'annotations.jsonl'))) args.push('--annotations', path.join(dir, 'annotations.jsonl'));
   write({ processing: 'running' });
   const py = spawn(pythonFor(repo), args, { cwd: repo });
@@ -125,15 +153,39 @@ function postProcess(manifest) {
       return write({ processing: 'failed', processing_note: `summary unreadable: ${e.message}` });
     }
     write({ processing: 'done', summary });
-    if (cloudSettings()) explainRecording(manifest.recording_id).catch(() => {});
+    if (cloudSettings()) explainRecording(manifest.recording_id).catch((e) => noteReviewError(manifest.recording_id, e));
   });
+}
+
+// Where AI explanations come from, so the dashboard can say exactly why they are
+// (not) running: company workspace, a local key from the environment, a key
+// typed into Settings, or nothing. The key itself never leaves the main process.
+function aiStatus() {
+  const cloud = cloudSettings();
+  const api = openaiConfig(process.env, recorder.settings);
+  return {
+    enabled: !!cloud || !!api,
+    source: cloud ? 'cloud' : 'local',
+    key_source: cloud ? 'cloud' : api?.source ?? 'none',
+    model: cloud ? null : api?.model ?? null,
+  };
+}
+
+function firstError(items) {
+  const f = Object.values(items).find((i) => i.status === 'failed' && i.error);
+  return f ? f.error : null;
 }
 
 // Video sections: the long single-window stretches of a recording, computed
 // once after Stop (and again when the employee asks) from events.jsonl.
+function isOwnApp(app) {
+  const a = String(app ?? '').toLowerCase();
+  return (recorder?.settings.ownApps ?? DEFAULT_SETTINGS.ownApps).some((p) => a === p.toLowerCase());
+}
+
 function readEvents(dir) {
   try {
-    return parseEvents(fs.readFileSync(path.join(dir, 'events.jsonl'), 'utf8'));
+    return parseEvents(fs.readFileSync(path.join(dir, 'events.jsonl'), 'utf8')).filter((e) => !isOwnApp(e.app));
   } catch {
     return [];
   }
@@ -167,14 +219,38 @@ function writeReview(dir, review) {
   fs.writeFileSync(path.join(dir, REVIEW_FILE), JSON.stringify(review, null, 2));
 }
 
+// Employee edits over a section (name, note) live in sections.json next to the
+// recording and travel with it on submit. Applied on top of the computed sections.
+const SECTIONS_FILE = 'sections.json';
+
+function editSection(recordingId, sectionId, { name = '', note = '' } = {}) {
+  if (!/^[A-Za-z0-9_-]{1,64}$/.test(String(sectionId))) throw new Error('Invalid section.');
+  const dir = recDir(recordingId);
+  if (readManifest(dir).submitted) throw new Error('This session was submitted; edit it in the workspace.');
+  const edits = readSectionEdits(dir);
+  const clean = { name: scrub(name).trim().slice(0, 200), note: scrub(note).trim().slice(0, 4000) };
+  if (!clean.name && !clean.note) delete edits[sectionId];
+  else edits[sectionId] = { ...clean, edited_at: new Date().toISOString() };
+  fs.writeFileSync(path.join(dir, SECTIONS_FILE), JSON.stringify(edits, null, 2));
+  return sectionsFor(recordingId);
+}
+
 function sectionsFor(recordingId) {
-  const dir = path.join(RECORDINGS, recordingId);
+  const dir = recDir(recordingId);
   const m = readManifest(dir);
   const events = readEvents(dir);
-  const sections = buildSections(events, m);
+  const edits = readSectionEdits(dir);
+  const sections = m.submitted ? m.submitted.sections ?? [] : buildSections(events, m);
   const anns = readAnnotations(dir);
   const review = readReview(dir);
   for (const s of sections) {
+    const e = edits[s.id];
+    if (e) {
+      s.edited = true;
+      s.edited_at = e.edited_at ?? null;
+      if (e.name) s.name = e.name;
+      s.note = e.note ?? '';
+    }
     // notes that cover each section so the UI can show "annotated"
     s.annotations = anns
       .filter((a) => a.scope !== 'session' && Date.parse(a.start) < Date.parse(s.end) && Date.parse(a.end) > Date.parse(s.start))
@@ -190,14 +266,16 @@ function sectionsFor(recordingId) {
     ended_at: m.ended_at,
     pauses: m.pauses ?? [],
     sections,
+    submitted: m.submitted ?? null,
+    upload: uploadStates()[recordingId] ?? null,
     shots_dir: `file://${path.join(dir, 'shots')}`,
     review: {
-      enabled: !!cloudSettings() || !!openaiConfig(process.env, recorder.settings),
-      source: cloudSettings() ? 'cloud' : 'local',
+      ...aiStatus(),
       sync_error: review.sync_error ?? null,
       generating: !!review.generating,
       generated_at: review.generated_at,
       model: review.model,
+      error: firstError(review.items),
       session: review.items[SESSION_ID] ?? null,
       summary: reviewSummary(review.items, review.threshold ?? CONFIDENCE_THRESHOLD),
     },
@@ -212,6 +290,17 @@ function broadcastSections(recordingId) {
 // employee has already resolved are never redone; `force` redoes the open
 // ones. Runs after Stop when a key is configured, and on demand from the dashboard.
 const explaining = new Set();
+
+function noteReviewError(recordingId, e) {
+  const dir = recDir(recordingId);
+  const review = readReview(dir);
+  review.generating = false;
+  review.sync_error = e?.message ?? String(e);
+  writeReview(dir, review);
+  console.error('AI review failed:', review.sync_error);
+  broadcastSections(recordingId);
+}
+
 function reviewContext(dir) {
   const m = readManifest(dir);
   const events = readEvents(dir);
@@ -252,8 +341,9 @@ async function explainRecording(recordingId, { force = false } = {}) {
   const cloud = cloudSettings();
   if (!api && !cloud) return { error: 'no_key', message: 'Connect your company workspace under Settings → Cloud workspace (or add an OpenAI API key) and the AI will explain each stretch.' };
   if (explaining.has(recordingId)) return sectionsFor(recordingId);
+  const dir = recDir(recordingId);
+  if (readManifest(dir).submitted) return sectionsFor(recordingId);
   explaining.add(recordingId);
-  const dir = path.join(RECORDINGS, recordingId);
   const review = readReview(dir);
   review.generating = true;
   review.threshold = CONFIDENCE_THRESHOLD;
@@ -298,7 +388,8 @@ async function explainRecording(recordingId, { force = false } = {}) {
 // annotation (with the AI's version kept alongside for provenance) and
 // updates review.json.
 async function decide(recordingId, itemId, action, body = {}) {
-  const dir = path.join(RECORDINGS, recordingId);
+  const dir = recDir(recordingId);
+  if (readManifest(dir).submitted) throw new Error('This session was submitted; review it in the workspace.');
   const review = readReview(dir);
   const { item, annotation } = applyDecision(review.items[itemId], action, body);
   review.items[itemId] = item;
@@ -357,6 +448,8 @@ function findRepoRoot() {
   return null;
 }
 
+const scrub = (text) => (recorder?.settings.redact ? redactText(text) : String(text ?? ''));
+
 // VISTA_PYTHON wins; otherwise the repo's uv/venv interpreter; otherwise whatever python3 is on PATH.
 function pythonFor(repo) {
   if (process.env.VISTA_PYTHON) return process.env.VISTA_PYTHON;
@@ -399,20 +492,31 @@ function openPermissionPane(kind) {
 
 function listRecordings() {
   const out = [];
-  for (const id of fs.readdirSync(RECORDINGS)) {
-    const f = path.join(RECORDINGS, id, 'manifest.json');
-    if (!fs.existsSync(f)) continue;
-    try {
-      const m = JSON.parse(fs.readFileSync(f, 'utf8'));
-      let annotations = 0;
+  const uploads = uploadStates();
+  for (const root of [RECORDINGS, SUBMITTED]) {
+    for (const id of fs.readdirSync(root)) {
+      const f = path.join(root, id, 'manifest.json');
+      if (!fs.existsSync(f)) continue;
       try {
-        annotations = fs.readFileSync(path.join(RECORDINGS, id, 'annotations.jsonl'), 'utf8').trim().split('\n').filter(Boolean).length;
+        const m = JSON.parse(fs.readFileSync(f, 'utf8'));
+        let annotations = 0;
+        try {
+          annotations = fs.readFileSync(path.join(root, id, 'annotations.jsonl'), 'utf8').trim().split('\n').filter(Boolean).length;
+        } catch {
+          /* none */
+        }
+        out.push({
+          ...m,
+          apps: (m.apps ?? []).filter((a) => !isOwnApp(a.app)),
+          dir: path.join(root, id),
+          annotations,
+          name: m.name ?? recordingName(m, { summary: m.summary_text ?? '' }),
+          upload: uploads[id] ?? null,
+          edits: Object.keys(readSectionEdits(path.join(root, id))).length,
+        });
       } catch {
-        /* none */
+        /* corrupt manifest */
       }
-      out.push({ ...m, dir: path.join(RECORDINGS, id), annotations, name: m.name ?? recordingName(m, { summary: m.summary_text ?? '' }) });
-    } catch {
-      /* corrupt manifest */
     }
   }
   return out.sort((a, b) => (b.started_at ?? '').localeCompare(a.started_at ?? ''));
@@ -429,19 +533,20 @@ function broadcastRecordings() {
 // `author` is 'employee' for anything typed, 'ai' for an approved AI
 // explanation; `ai` keeps the model's version when the employee fixed it.
 function addAnnotation(recordingId, { label, note = '', start, end, case_id = '', scope = 'manual', section_id = null, qa = [], author = 'employee', ai = null }) {
-  const dir = path.join(RECORDINGS, recordingId);
+  const dir = recDir(recordingId);
   const m = readManifest(dir);
+  if (m.submitted) throw new Error('This session was submitted; add notes in the workspace.');
   const row = {
     user: m.user,
     start: start ?? m.started_at,
     end: end ?? m.ended_at ?? new Date().toISOString(),
-    label: redactText(label),
-    note: redactText(note),
+    label: scrub(label),
+    note: scrub(note),
     case_id,
     author,
     scope,
     section_id,
-    qa: qa.map((x) => ({ q: redactText(x.q), a: redactText(x.a) })),
+    qa: qa.map((x) => ({ q: scrub(x.q), a: scrub(x.a) })),
     ...(ai ? { ai } : {}),
   };
   fs.appendFileSync(path.join(dir, 'annotations.jsonl'), JSON.stringify(row) + '\n');
@@ -623,7 +728,7 @@ async function stopRecording() {
   if (MAC) app.dock.show();
   openReview(status.recordingId);
   // Cloud-connected: the review starts once the local analysis is done (postProcess).
-  if (!cloudSettings() && openaiConfig(process.env, recorder.settings)) explainRecording(status.recordingId).catch(() => {});
+  if (!cloudSettings() && openaiConfig(process.env, recorder.settings)) explainRecording(status.recordingId).catch((e) => noteReviewError(status.recordingId, e));
   return status;
 }
 
@@ -688,14 +793,69 @@ async function uploadToCloud(id, config) {
     throw error;
   } finally { activeUploads.delete(id); }
 }
-ipcMain.handle('cloud:upload', async (event, id) => {
-  requireDashboard(event); requireKeyStorage();
+function cloudConfig() {
   const c = cloudSettings();
-  if (!c) throw new Error('Connect your cloud workspace in Settings first.');
-  const token = safeStorage.decryptString(Buffer.from(c.encryptedToken,'base64'));
-  await uploadToCloud(id,{...c,token});
+  if (!c) throw new Error(ADMIN ? 'Connect your cloud workspace in Settings first.' : 'This computer is not connected to a workspace yet. Ask your Vista admin.');
+  requireKeyStorage();
+  return { ...c, token: safeStorage.decryptString(Buffer.from(c.encryptedToken, 'base64')) };
+}
+ipcMain.handle('cloud:upload', async (event, id) => {
+  requireDashboard(event);
+  await uploadToCloud(id, cloudConfig());
   return cloudStatus();
 });
+
+// Submit = the whole recording goes to the workspace, then leaves this computer.
+// Order: report (idempotent) → every media file via signed URLs → move the
+// metadata stub to submitted/ → delete the recording folder. A failure at any
+// step leaves the folder in place with status 'failed' so Submit can be retried.
+const STUB_FILES = ['manifest.json', REVIEW_FILE, SECTIONS_FILE, 'annotations.jsonl'];
+async function submitRecording(id) {
+  const config = cloudConfig();
+  if (!ID_RE.test(String(id))) throw new Error('Invalid recording ID.');
+  const dir = path.join(RECORDINGS, id);
+  if (!fs.existsSync(path.join(dir, 'manifest.json'))) throw new Error(fs.existsSync(path.join(SUBMITTED, id)) ? 'Already submitted.' : 'Recording not found.');
+  if (fs.realpathSync(dir) !== path.join(fs.realpathSync(RECORDINGS), id)) throw new Error('Invalid recording directory.');
+  if (recorder.status().recordingId === id && recorder.state !== 'idle') throw new Error('Stop the recording first.');
+  const m = readManifest(dir);
+  if (m.processing !== 'done') throw new Error('Wait until this session has finished analysis.');
+  if (activeUploads.has(id)) throw new Error('This session is already uploading.');
+  activeUploads.add(id);
+  const saveState = (state, { sections = true } = {}) => {
+    const states = uploadStates();
+    states[id] = { ...(states[id] ?? {}), ...state, url: config.url, companyId: config.companyId };
+    writePrivate(UPLOADS_FILE, states);
+    broadcastRecordings();
+    if (sections) broadcastSections(id);
+  };
+  try {
+    saveState({ status: 'uploading', progress: { done: 0, total: 0 } });
+    const cloudId = (await uploadReport(config, RECORDINGS, id)).id;
+    saveState({ status: 'uploading', recordingId: cloudId, progress: { done: 0, total: 0 } }, { sections: false });
+    const files = await uploadMedia(config, RECORDINGS, id, cloudId, { onProgress: (p) => saveState({ status: 'uploading', progress: p }, { sections: false }) });
+    const sections = sectionsFor(id).sections.map((s) => ({ ...s, annotations: s.annotations ?? [], review: s.review ?? null }));
+    const stub = path.join(SUBMITTED, id);
+    fs.mkdirSync(stub, { recursive: true });
+    for (const f of STUB_FILES) if (fs.existsSync(path.join(dir, f))) fs.copyFileSync(path.join(dir, f), path.join(stub, f));
+    fs.writeFileSync(
+      path.join(stub, 'manifest.json'),
+      JSON.stringify({ ...m, files: {}, submitted: { at: new Date().toISOString(), recording_id: cloudId, files: files.length, sections } }, null, 2),
+    );
+    fs.rmSync(dir, { recursive: true, force: true });
+    saveState({ status: 'submitted', submittedAt: new Date().toISOString(), recordingId: cloudId, files: files.length, progress: null });
+  } catch (error) {
+    saveState({ status: 'failed', error: error.message, progress: null });
+    throw error;
+  } finally {
+    activeUploads.delete(id);
+  }
+  return sectionsFor(id);
+}
+ipcMain.handle('recordings:submit', (event, id) => {
+  requireDashboard(event);
+  return submitRecording(id);
+});
+ipcMain.handle('recordings:edit-section', (_e, id, sectionId, patch) => editSection(id, sectionId, patch ?? {}));
 
 // ---- IPC ----------------------------------------------------------------------
 
@@ -706,7 +866,7 @@ ipcMain.handle('rec:stop', () => stopRecording());
 ipcMain.handle('rec:toggle', () => toggle());
 ipcMain.handle('rec:status', () => recorder.status());
 ipcMain.handle('recordings:list', () => listRecordings());
-ipcMain.handle('recordings:open', (_e, id) => shell.openPath(id ? path.join(RECORDINGS, id) : RECORDINGS));
+ipcMain.handle('recordings:open', (_e, id) => shell.openPath(id ? recDir(id) : RECORDINGS));
 ipcMain.handle('recordings:annotate', (_e, id, ann) => addAnnotation(id, ann));
 ipcMain.handle('recordings:sections', (_e, id) => sectionsFor(id));
 ipcMain.handle('recordings:explain', (_e, id, opts) => explainRecording(id, opts ?? {}));
@@ -721,7 +881,7 @@ ipcMain.handle('settings:set', (_e, patch) => {
   return recorder.settings;
 });
 ipcMain.handle('settings:defaults', () => DEFAULT_SETTINGS);
-ipcMain.handle('app:info', () => ({ demo: DEMO, home: HOME, platform: process.platform, user: os.userInfo().username, openai: !!openaiConfig(process.env, recorder.settings) }));
+ipcMain.handle('app:info', () => ({ demo: DEMO, admin: ADMIN, home: HOME, platform: process.platform, user: os.userInfo().username, openai: !!openaiConfig(process.env, recorder.settings), ai: aiStatus(), cloud: !!cloudSettings(), ownApps: recorder.settings.ownApps ?? DEFAULT_SETTINGS.ownApps }));
 ipcMain.handle('permissions:get', () => permissions(false));
 ipcMain.handle('permissions:open', (_e, kind) => openPermissionPane(kind));
 ipcMain.on('video:chunk', (_e, dir, buf) => {

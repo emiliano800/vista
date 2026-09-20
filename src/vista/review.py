@@ -125,15 +125,13 @@ def explain(prompt: str) -> tuple[str, dict, int, int]:
     is asked instead of being shown an invented explanation."""
     if not settings.openai_api_key:
         return "stub-model-v0", parse_explanation(None) | {"explanation": "No model configured; please explain this stretch."}, 0, 0
-    from openai import OpenAI
-
-    client = OpenAI(api_key=settings.openai_api_key)
-    resp = client.chat.completions.create(
+    resp = settings.openai_client().chat.completions.create(
         model=settings.openai_model,
         max_tokens=500,
         temperature=0.2,
         response_format={"type": "json_object"},
         messages=[{"role": "system", "content": SYSTEM}, {"role": "user", "content": prompt}],
+        extra_body=settings.openai_extra_body(),
     )
     usage = resp.usage
     return (

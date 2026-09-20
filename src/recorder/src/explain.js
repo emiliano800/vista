@@ -26,11 +26,28 @@ export const SESSION_ID = 'session';
 export const OPEN_STATUSES = new Set(['proposed', 'unsure', 'failed']);
 export const RESOLVED_STATUSES = new Set(['approved', 'fixed', 'explained']);
 
+export const OPENROUTER_URL = 'https://openrouter.ai/api/v1/chat/completions';
+export const DEFAULT_MODEL = 'gpt-4.1-nano';
+export const DEFAULT_OPENROUTER_MODEL = 'nvidia/nemotron-3-ultra-550b-a55b:free';
+
+// Any OpenAI-compatible chat endpoint. Key precedence: OPENAI_API_KEY, then
+// VISTA_OPENAI_API_KEY (the backend's name, so one .env serves both), then Settings.
+// An `sk-or-` key or VISTA_OPENAI_BASE_URL=https://openrouter.ai/api/v1 selects OpenRouter;
+// VISTA_OPENAI_PROVIDER_ONLY=nvidia pins OpenRouter to one provider with no fallbacks.
+// `source` tells the UI where the key came from; the key itself never leaves this module.
 export function openaiConfig(env = process.env, settings = {}) {
-  const key = env.OPENAI_API_KEY || settings.openaiApiKey || '';
-  const model = env.VISTA_OPENAI_MODEL || settings.openaiModel || 'gpt-4o-mini';
-  const url = env.VISTA_OPENAI_URL || OPENAI_URL; // OpenAI-compatible proxies (Azure, LiteLLM, a company gateway)
-  return key ? { key, model, url } : null;
+  const envKey = env.OPENAI_API_KEY || env.VISTA_OPENAI_API_KEY || '';
+  const key = envKey || settings.openaiApiKey || '';
+  if (!key) return null;
+  const base = (env.VISTA_OPENAI_BASE_URL || '').replace(/\/+$/, '');
+  const openrouter = key.startsWith('sk-or-') || /openrouter\.ai/.test(base);
+  const url = env.VISTA_OPENAI_URL || (base ? `${base}/chat/completions` : openrouter ? OPENROUTER_URL : OPENAI_URL);
+  const model = env.VISTA_OPENAI_MODEL || settings.openaiModel || (openrouter ? DEFAULT_OPENROUTER_MODEL : DEFAULT_MODEL);
+  const only = (env.VISTA_OPENAI_PROVIDER_ONLY || '').split(',').map((s) => s.trim()).filter(Boolean);
+  // Reasoning models spend the token budget thinking; the review only needs the JSON answer.
+  const extra = openrouter ? { reasoning: { enabled: false } } : {};
+  if (only.length) extra.provider = { only, allow_fallbacks: false };
+  return { key, model, url, extra, source: envKey ? 'env' : 'settings', provider: openrouter ? 'openrouter' : 'openai' };
 }
 
 const SYSTEM = `You are Vista, a process analyst helping a small company understand how its employees actually work.
@@ -150,6 +167,7 @@ export async function explainSection(section, ctx, api, { fetchFn = globalThis.f
     method: 'POST',
     headers: { Authorization: `Bearer ${api.key}`, 'Content-Type': 'application/json' },
     body: JSON.stringify({
+      ...(api.extra ?? {}),
       model: api.model,
       max_tokens: 500,
       temperature: 0.2,
@@ -162,7 +180,7 @@ export async function explainSection(section, ctx, api, { fetchFn = globalThis.f
   });
   if (!res.ok) {
     const body = await res.text().catch(() => '');
-    throw new Error(`OpenAI ${res.status}: ${body.slice(0, 200) || res.statusText}`);
+    throw new Error(`${api.provider === 'openrouter' ? 'OpenRouter' : 'OpenAI'} ${res.status}: ${body.slice(0, 200) || res.statusText}`);
   }
   const data = await res.json();
   const parsed = parseExplanation(data.choices?.[0]?.message?.content);

@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
-import { CONFIDENCE_THRESHOLD, OPENAI_URL, applyDecision, describeSection, explainSection, openaiConfig, parseExplanation, reviewSummary, statusFor } from '../src/explain.js';
+import { CONFIDENCE_THRESHOLD, DEFAULT_MODEL, DEFAULT_OPENROUTER_MODEL, OPENAI_URL, OPENROUTER_URL, applyDecision, describeSection, explainSection, openaiConfig, parseExplanation, reviewSummary, statusFor } from '../src/explain.js';
 import { buildSections, focusSpans, parseEvents, pausedBefore, recordingName, sectionName } from '../src/sections.js';
 
 const T0 = Date.parse('2026-03-03T09:00:00.000Z');
@@ -130,14 +130,20 @@ test('explainSection posts to OpenAI and classifies by the 88% threshold', async
   await assert.rejects(explainSection(secs[1], { manifest: MANIFEST }, { key: 'x', model: 'm' }, { fetchFn: bad }), /OpenAI 401/);
 });
 
-test('openaiConfig prefers the environment over settings', () => {
+test('openaiConfig prefers the environment over settings and detects OpenRouter', () => {
   assert.equal(openaiConfig({}, {}), null);
-  assert.deepEqual(openaiConfig({}, { openaiApiKey: 'sk-a', openaiModel: 'm1' }), { key: 'sk-a', model: 'm1', url: OPENAI_URL });
-  assert.deepEqual(openaiConfig({ OPENAI_API_KEY: 'sk-env', VISTA_OPENAI_URL: 'http://gw/v1/chat/completions' }, { openaiApiKey: 'sk-a' }), {
-    key: 'sk-env',
-    model: 'gpt-4o-mini',
-    url: 'http://gw/v1/chat/completions',
-  });
+  assert.deepEqual(openaiConfig({}, { openaiApiKey: 'sk-a', openaiModel: 'm1' }), { key: 'sk-a', model: 'm1', url: OPENAI_URL, extra: {}, source: 'settings', provider: 'openai' });
+  const gw = openaiConfig({ OPENAI_API_KEY: 'sk-env', VISTA_OPENAI_URL: 'http://gw/v1/chat/completions' }, { openaiApiKey: 'sk-a' });
+  assert.equal(gw.key, 'sk-env');
+  assert.equal(gw.model, DEFAULT_MODEL);
+  assert.equal(gw.url, 'http://gw/v1/chat/completions');
+  assert.equal(gw.source, 'env');
+  const or = openaiConfig({ VISTA_OPENAI_API_KEY: 'sk-or-v1-x', VISTA_OPENAI_BASE_URL: 'https://openrouter.ai/api/v1/', VISTA_OPENAI_PROVIDER_ONLY: 'nvidia' }, {});
+  assert.equal(or.provider, 'openrouter');
+  assert.equal(or.url, OPENROUTER_URL);
+  assert.equal(or.model, DEFAULT_OPENROUTER_MODEL);
+  assert.deepEqual(or.extra, { reasoning: { enabled: false }, provider: { only: ['nvidia'], allow_fallbacks: false } });
+  assert.equal(openaiConfig({ OPENAI_API_KEY: 'sk-or-v1-x' }, {}).url, OPENROUTER_URL);
 });
 
 test('parseExplanation tolerates fences and garbage; statusFor uses the threshold', () => {

@@ -81,18 +81,21 @@ class Pipeline:
         key_gap: timedelta = timedelta(seconds=2),
         pseudonymize: bool = True,
         episode_fallback: bool = True,
+        redact: bool = True,
     ):
         self.rules = rules
         self.idle_gap = idle_gap
         self.key_gap = key_gap
         self.pseudonymize = pseudonymize
         self.episode_fallback = episode_fallback
+        self.redact = redact
 
     def run(self, source: EventSource, human: list[Annotation] | None = None) -> PipelineResult:
         raw = list(source.events())
         human = list(human or [])
-        clean = preprocess.redact(raw)
-        human = [replace(a, note=preprocess.redact_text(a.note)) for a in human]
+        clean = preprocess.redact(raw) if self.redact else list(raw)
+        if self.redact:
+            human = [replace(a, note=preprocess.redact_text(a.note)) for a in human]
         if self.pseudonymize:
             clean = preprocess.pseudonymize_users(clean)
             human = [replace(a, user=preprocess.pseudonym(a.user)) for a in human]

@@ -224,7 +224,10 @@ const { Card, Table, Badge, Button } = window.Vista;
 
 ## 8. Icons and logo
 
-- Icons: [Lucide](https://lucide.dev). 16px in the product, 20px on marketing, stroke 1.75, `currentColor`.
+- Icons: [Lucide](https://lucide.dev) is the standard — the only icon set in the product. 16px in the product (14px inside `sm` controls), 20px on marketing, stroke 1.75, round caps and joins, `currentColor`, no fill.
+  - Web (React): `lucide-react`, import icons by name. Static/Electron pages: inline the icon's SVG paths from lucide.dev in a 24-unit `viewBox`, `aria-hidden` when next to a label.
+  - Icon + label: `--space-1` gap, icon before the word. Icon-only buttons need a `title`. Never draw ad-hoc glyphs or use emoji/unicode symbols (✓, →, ⚠) where a Lucide icon exists.
+  - Status pairs: submitted `cloud-check`, uploading `loader-circle`, failed `circle-alert`, edit `pencil`, confirm `check`, folder `folder`, upload `cloud-upload`.
 - Logo: none yet. Set "Vista" in Instrument Sans 600 with -0.02em tracking. The nav dot is a `--brand` circle with a `--lime` satellite top-right and a `--periwinkle` satellite bottom-left.
 
 ---
