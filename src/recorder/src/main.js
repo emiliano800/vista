@@ -11,10 +11,10 @@ import { BrowserWindow, Menu, Tray, app, clipboard, desktopCapturer, ipcMain, na
 import { CONFIDENCE_THRESHOLD, RESOLVED_STATUSES, SESSION_ID, applyDecision, describeSection, explainSection, openaiConfig, reviewSummary } from './explain.js';
 import { DEMO_KEYS, DemoHook, demoActiveWindow, demoClipboard } from './demo.js';
 import { DEFAULT_SETTINGS, Recorder, keyNamesFrom, loadSettings } from './recorder.js';
-import { FILES_DIR, FILES_FILE, FileTracker, axDocuments, lsofDocuments, publicFile, readFiles, snapshotFiles, spotlightSweep, writeFiles } from './files.js';
+import { FILES_DIR, FILES_FILE, FileTracker, axDocuments, documentFromTitle, lsofDocuments, publicFile, readFiles, snapshotFiles, spotlightSweep, writeFiles } from './files.js';
 import { redactText } from './redact.js';
 import { cloudRequest, companyID, fetchReview, mergeReview, readSectionEdits, reviewItems, sendDecision, submitSections, uploadMedia, uploadReport, workspaceURL } from './cloud.js';
-import { buildSections, parseEvents, recordingName } from './sections.js';
+import { appSpans, buildSections, parseEvents, recordingName } from './sections.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const UI = path.join(__dirname, '..', 'ui');
@@ -110,11 +110,17 @@ async function grabFrame() {
   return img && !img.isEmpty() ? img.toJPEG(70) : null;
 }
 
-// Documents shown by the frontmost app: Accessibility first, open handles as fallback.
+// Every document open right now: Accessibility across all running apps, plus the
+// frontmost app's open handles and its window title for apps that expose no
+// AXDocument. Returns null when nothing could be probed (keep the current state).
 async function probeDocuments(win) {
-  const ax = await axDocuments();
-  if (ax.length) return ax;
-  return lsofDocuments(win?.owner?.processId);
+  const app = win?.owner?.name ?? '';
+  const [ax, handles, titled] = await Promise.all([axDocuments(), lsofDocuments(win?.owner?.processId), documentFromTitle(win?.title)]);
+  if (!ax && !handles.length && !titled) return null;
+  const docs = [...(ax?.docs ?? [])];
+  for (const p of handles) docs.push({ path: p, app, wide: false, source: 'lsof' });
+  if (titled) docs.push({ path: titled, app, wide: false, source: 'title' });
+  return { docs, running: ax?.running ?? null };
 }
 
 // After Stop: add what Spotlight saw used/added during the session, then copy
@@ -125,10 +131,8 @@ async function collectDocuments(dir, manifest) {
   if (live.some((f) => 'snapshot' in f)) return; // already collected (a re-run after an annotation)
   const tracker = new FileTracker();
   for (const f of live) {
-    for (const iv of f.intervals) {
-      tracker.observe([f.path], Date.parse(iv.start), { app: iv.app, source: 'ax' });
-      tracker.observe([], Date.parse(iv.end));
-    }
+    for (const iv of f.intervals) tracker.addInterval(f.path, Date.parse(iv.start), Date.parse(iv.end), { app: iv.app, source: f.sources?.[0] ?? 'ax' });
+    for (const t of f.used_at ?? []) tracker.touch(f.path, Date.parse(t), { source: f.sources?.[0] ?? 'ax' });
   }
   for (const hit of await spotlightSweep({ start: manifest.started_at, end: manifest.ended_at })) tracker.touch(hit.path, hit.at, { source: hit.source });
   const t0 = Date.parse(manifest.started_at), t1 = Date.parse(manifest.ended_at);
@@ -313,11 +317,13 @@ function sectionsFor(recordingId) {
     const a = Date.parse(s.start), b = Date.parse(s.end);
     s.files = files.filter((f) => f.intervals.some((iv) => Date.parse(iv.start) < b && Date.parse(iv.end) > a)).map((f) => f.name);
   }
+  const apps = m.submitted ? m.submitted.apps ?? [] : appSpans(events, m, { ownApps: recorder?.settings?.ownApps ?? [] });
   return {
     recording_id: recordingId,
     video,
     video_url: video ? `file://${video}` : null,
     files,
+    apps,
     started_at: m.started_at,
     ended_at: m.ended_at,
     pauses: m.pauses ?? [],
@@ -914,7 +920,7 @@ async function submitRecording(id) {
     const files_list = writeFilesStub(dir, stub);
     fs.writeFileSync(
       path.join(stub, 'manifest.json'),
-      JSON.stringify({ ...m, files: {}, submitted: { at: new Date().toISOString(), recording_id: cloudId, files: files.length, sections, files_list } }, null, 2),
+      JSON.stringify({ ...m, files: {}, submitted: { at: new Date().toISOString(), recording_id: cloudId, files: files.length, sections, files_list, apps: appSpans(readEvents(dir), m, { ownApps: recorder?.settings?.ownApps ?? [] }) } }, null, 2),
     );
     fs.rmSync(dir, { recursive: true, force: true });
     saveState({ status: 'submitted', submittedAt: new Date().toISOString(), recordingId: cloudId, files: files.length, progress: null });

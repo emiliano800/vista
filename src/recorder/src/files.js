@@ -1,11 +1,14 @@
 // Documents the employee worked with during a recording, and when.
 //
-// Three signals, all macOS-only today:
-//   AXDocument  the focused window of most document apps (Excel, Word, PowerPoint,
+// Four signals, all macOS-only today:
+//   AXDocument  every window of every running app (Excel, Word, PowerPoint,
 //               Preview, Numbers, Pages, Acrobat…) exposes its file URL through
-//               Accessibility — read via System Events on every focus change.
+//               Accessibility — read via System Events on focus changes and every
+//               few seconds, so a document open in the background still counts.
 //   lsof        fallback for apps without AXDocument: document files the
 //               frontmost process has open.
+//   title       the frontmost window's title, when it is a document name, is
+//               resolved to a path through Spotlight (apps that expose neither).
 //   Spotlight   at Stop: every file whose "last used" or "date added" falls inside
 //               the session (kMDItemLastUsedDate / kMDItemDateAdded), which also
 //               catches downloads and anything the live probes missed.
@@ -46,7 +49,9 @@ export const FILES_FILE = 'files.json';
 export const FILES_DIR = 'files';
 
 // Folders we never look into: the recorder's own data, app bundles, caches.
-const IGNORE = [/\/Library\//, /\/\.Trash\//, /\/node_modules\//, /\/\.git\//, /\/Vista\/(recordings|submitted)\//, /\/~\$[^/]*$/];
+// ~/Library is skipped except the two places macOS keeps real documents: iCloud
+// Drive (Desktop & Documents when synced) and CloudStorage (OneDrive, Dropbox, Drive).
+const IGNORE = [/\/Library\/(?!Mobile Documents\/|CloudStorage\/)/, /\/\.Trash\//, /\/node_modules\//, /\/\.git\//, /\/Vista\/(recordings|submitted)\//, /\/~\$[^/]*$/];
 
 export const isDocument = (p) => !!FILE_TYPES[path.extname(String(p ?? '')).toLowerCase()] && !IGNORE.some((re) => re.test(p));
 
@@ -63,14 +68,15 @@ export const sha256 = (buf) => createHash('sha256').update(buf).digest('hex');
 
 /**
  * Pure bookkeeping: which documents are "open" (seen by a probe) and for how
- * long. `observe(paths, at)` is called with everything a probe currently sees;
- * files that stop being seen are closed at that instant. Intervals shorter than
- * `minSeconds` are dropped as noise (a Finder preview flicker).
+ * long. `observe(docs, at)` is called with everything a probe currently sees;
+ * files that stop being seen are closed at that instant. Every file ever seen
+ * stays in the history: a sighting too short for an interval (< `minSeconds`)
+ * is kept as a point use instead of being dropped.
  */
 export class FileTracker {
   constructor({ minSeconds = 3 } = {}) {
     this.minSeconds = minSeconds;
-    this.files = new Map(); // path -> { path, first_seen, intervals: [{start, end, app}], open: {start, app} | null, sources: Set }
+    this.files = new Map(); // path -> { path, first_seen, intervals: [{start, end, app}], open: {start, app, wide} | null, sources: Set, point_uses: [] }
   }
 
   _entry(p) {
@@ -82,17 +88,45 @@ export class FileTracker {
     return f;
   }
 
-  /** Probe result at `at` (ms): the set of document paths currently on screen / open in the frontmost app. */
-  observe(paths, at, { app = '', source = 'ax' } = {}) {
-    const seen = new Set(paths.filter(isDocument).map((p) => path.resolve(p)));
-    for (const p of seen) {
-      const f = this._entry(p);
-      f.sources.add(source);
-      if (f.first_seen == null) f.first_seen = at;
-      if (!f.open) f.open = { start: at, app };
-      else if (app && !f.open.app) f.open.app = app;
+  /**
+   * Probe result at `at` (ms). `docs` are the documents currently open: strings
+   * (paths, attributed to `app`) or `{ path, app, wide }`. `wide` marks a sighting
+   * from a probe that sees every app (AXDocument across processes): such a file
+   * closes as soon as it is no longer seen. Files seen only through the frontmost
+   * app (lsof, window title) close when that app is frontmost again without
+   * them, or when their app is no longer running (`running`, when known).
+   */
+  observe(docs, at, { app = '', source = 'ax', running = null } = {}) {
+    const seen = new Map();
+    for (const d of docs) {
+      const item = typeof d === 'string' ? { path: d, app, wide: true } : d;
+      if (!isDocument(item.path)) continue;
+      seen.set(path.resolve(item.path), { app: item.app ?? app, wide: item.wide !== false, source: item.source ?? source });
     }
-    for (const f of this.files.values()) if (f.open && !seen.has(f.path)) this._close(f, at);
+    for (const [p, s] of seen) {
+      const f = this._entry(p);
+      f.sources.add(s.source);
+      if (f.first_seen == null) f.first_seen = at;
+      if (!f.open) f.open = { start: at, app: s.app, wide: s.wide };
+      else {
+        if (s.app && !f.open.app) f.open.app = s.app;
+        f.open.wide = f.open.wide || s.wide;
+      }
+    }
+    for (const f of this.files.values()) {
+      if (!f.open || seen.has(f.path)) continue;
+      const gone = running?.size ? !isRunning(f.open.app, running) : false;
+      if (f.open.wide || gone || (app && f.open.app === app)) this._close(f, at);
+    }
+  }
+
+  /** A known span (rebuilding from files.json). */
+  addInterval(p, start, end, { app = '', source = 'ax' } = {}) {
+    if (!isDocument(p) || !(end > start)) return;
+    const f = this._entry(path.resolve(p));
+    f.sources.add(source);
+    if (f.first_seen == null || start < f.first_seen) f.first_seen = start;
+    f.intervals.push({ start, end, app });
   }
 
   /** A pause or Stop: everything open closes now. */
@@ -104,6 +138,7 @@ export class FileTracker {
     const { start, app } = f.open;
     f.open = null;
     if (at - start >= this.minSeconds * 1000) f.intervals.push({ start, end: at, app });
+    else f.point_uses.push(start);
   }
 
   /** Spotlight-style evidence: the file was used at `at` but we have no span. */
@@ -122,11 +157,11 @@ export class FileTracker {
   finish({ t0, t1, pauses = [] }) {
     const out = [];
     for (const f of this.files.values()) {
-      const intervals = f.intervals
+      const pieces = f.intervals
         .flatMap((iv) => cutPauses(Math.max(iv.start, t0), Math.min(iv.end, t1), pauses).map(([s, e]) => ({ start: s, end: e, app: iv.app })))
-        .filter((iv) => iv.end - iv.start >= this.minSeconds * 1000)
         .sort((a, b) => a.start - b.start);
-      const points = f.point_uses.filter((t) => t >= t0 && t <= t1);
+      const intervals = pieces.filter((iv) => iv.end - iv.start >= this.minSeconds * 1000);
+      const points = [...f.point_uses, ...pieces.filter((iv) => iv.end - iv.start < this.minSeconds * 1000).map((iv) => iv.start)].filter((t) => t >= t0 && t <= t1).sort((a, b) => a - b);
       if (!intervals.length && !points.length) continue;
       const opened = intervals.length ? intervals[0].start : Math.min(...points);
       const closed = intervals.length ? intervals[intervals.length - 1].end : Math.max(...points);
@@ -140,7 +175,7 @@ export class FileTracker {
         last_closed: iso(closed),
         seconds: Math.round(intervals.reduce((s, iv) => s + (iv.end - iv.start), 0) / 1000),
         intervals: intervals.map((iv) => ({ start: iso(iv.start), end: iso(iv.end), app: iv.app })),
-        used_at: points.map(iso),
+        used_at: [...new Set(points)].map(iso),
         sources: [...f.sources].sort(),
         include: true,
       });
@@ -150,6 +185,14 @@ export class FileTracker {
 }
 
 const iso = (ms) => new Date(ms).toISOString();
+
+// active-win and System Events name the same app slightly differently at times
+// ("Microsoft Excel" vs "Excel"); an unknown app counts as running.
+function isRunning(app, running) {
+  const a = String(app ?? '').toLowerCase();
+  if (!a) return true;
+  return [...running].some((r) => { const n = r.toLowerCase(); return n === a || n.includes(a) || a.includes(n); });
+}
 
 function cutPauses(s, e, pauses) {
   let pieces = e > s ? [[s, e]] : [];
@@ -225,18 +268,23 @@ export function publicFile(f) {
 
 // ---- macOS probes -------------------------------------------------------------
 
+// Every window of every foreground app: "<app>\t<AXDocument>" per document
+// window, plus "<app>\t" for apps without one so the caller knows what is running.
 const AX_SCRIPT = `
 tell application "System Events"
   set out to ""
-  try
-    set p to first process whose frontmost is true
-    repeat with w in windows of p
-      try
-        set d to value of attribute "AXDocument" of w
-        if d is not missing value then set out to out & d & linefeed
-      end try
-    end repeat
-  end try
+  repeat with p in (every process whose background only is false)
+    try
+      set n to name of p
+      set out to out & n & tab & linefeed
+      repeat with w in windows of p
+        try
+          set d to value of attribute "AXDocument" of w
+          if d is not missing value then set out to out & n & tab & d & linefeed
+        end try
+      end repeat
+    end try
+  end repeat
   return out
 end tell`;
 
@@ -248,15 +296,66 @@ function fromFileURL(s) {
   }
 }
 
-/** Documents shown in the frontmost app's windows (Accessibility). */
+/**
+ * Documents open in any running app (Accessibility), as `{ path, app }`, and the
+ * set of running app names — or null when the probe failed (timeout, no
+ * permission), so the caller keeps its current state instead of closing everything.
+ */
 export async function axDocuments(exec = run) {
-  if (!IS_MAC) return [];
+  if (!IS_MAC) return null;
   try {
-    const { stdout } = await exec('osascript', ['-e', AX_SCRIPT], { timeout: 1500 });
-    return stdout.split('\n').map((s) => fromFileURL(s.trim())).filter(isDocument);
+    const { stdout } = await exec('osascript', ['-e', AX_SCRIPT], { timeout: 4000, maxBuffer: 4 * 1024 * 1024 });
+    return parseAxOutput(stdout);
   } catch {
-    return [];
+    return null;
   }
+}
+
+export function parseAxOutput(stdout) {
+  const docs = [], running = new Set();
+  for (const line of String(stdout).split('\n')) {
+    const i = line.indexOf('\t');
+    if (i < 0) continue;
+    const app = line.slice(0, i).trim(), p = fromFileURL(line.slice(i + 1).trim());
+    if (app) running.add(app);
+    if (p && isDocument(p)) docs.push({ path: p, app, wide: true, source: 'ax' });
+  }
+  return { docs, running };
+}
+
+// "Q3 budget.xlsx — Edited", "invoice.pdf (page 2 of 9)", "report.docx - Word" → the file name.
+export function documentNameFromTitle(title) {
+  const exts = Object.keys(FILE_TYPES).map((e) => e.replace('.', '\\.')).join('|');
+  const m = String(title ?? '').match(new RegExp(`([^/\\\\:*?"<>|\\t]+?(?:${exts}))(?=$|\\s*[—–\\-|(·:]|\\s+\\()`, 'i'));
+  return m ? m[1].trim() : null;
+}
+
+const titleCache = new Map();
+/** Resolve a window title that names a document to a path via Spotlight (cached per name). */
+export async function documentFromTitle(title, exec = run, home = os.homedir()) {
+  const name = documentNameFromTitle(title);
+  if (!IS_MAC || !name) return null;
+  if (titleCache.has(name)) return titleCache.get(name);
+  let found = null;
+  try {
+    const { stdout } = await exec('mdfind', ['-onlyin', home, `kMDItemFSName == ${JSON.stringify(name)}`], { timeout: 3000 });
+    const hits = stdout.split('\n').filter(isDocument);
+    if (hits.length === 1) found = hits[0];
+    else if (hits.length > 1) found = await mostRecentlyUsed(hits, exec);
+  } catch {
+    /* Spotlight unavailable */
+  }
+  titleCache.set(name, found);
+  return found;
+}
+
+async function mostRecentlyUsed(paths, exec) {
+  let best = null, bestAt = -1;
+  for (const p of paths.slice(0, 8)) {
+    const at = (await fileUsedAt(p, 'kMDItemLastUsedDate', exec)) ?? 0;
+    if (at > bestAt) { best = p; bestAt = at; }
+  }
+  return best;
 }
 
 /** Document files a process has open (fallback for apps without AXDocument). */
@@ -277,7 +376,8 @@ export async function lsofDocuments(pid, exec = run) {
  */
 export async function spotlightSweep({ start, end }, exec = run, home = os.homedir()) {
   if (!IS_MAC) return [];
-  const q = (attr) => `${attr} >= $time.iso(${start}) && ${attr} <= $time.iso(${end})`;
+  const stamp = (s) => new Date(s).toISOString().replace(/\.\d{3}Z$/, 'Z');
+  const q = (attr) => `${attr} >= $time.iso(${stamp(start)}) && ${attr} <= $time.iso(${stamp(end)})`;
   const out = [];
   for (const [attr, source] of [['kMDItemDateAdded', 'download'], ['kMDItemLastUsedDate', 'spotlight'], ['kMDItemContentModificationDate', 'spotlight']]) {
     try {

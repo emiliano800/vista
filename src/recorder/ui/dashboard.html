@@ -167,9 +167,12 @@
       .strip i:hover, .strip i.on { opacity: 1; transform: scaleY(1.15); }
       .strip .gap { background: transparent; cursor: default; border: 0; }
       .strip .head { position: absolute; top: -3px; bottom: -3px; width: 2px; background: var(--ink); pointer-events: none; transition: left 0.25s linear; }
-      /* document track: one row per file, bars where it was on screen, ticks where Spotlight saw it used */
-      .docs { display: grid; gap: 3px; margin-top: var(--space-2); position: relative; }
-      .docs .row { display: grid; grid-template-columns: 120px minmax(0, 1fr); gap: var(--space-2); align-items: center; height: 14px; }
+      /* timeline under the video: one row per app, then one row per file — bars where it was on screen, ticks where Spotlight saw a file used */
+      .docs { display: grid; gap: 3px; margin-top: var(--space-2); position: relative; max-height: 260px; overflow: auto; align-content: start; }
+      .docs .grp { font-size: 11px; line-height: 14px; letter-spacing: 0.04em; text-transform: uppercase; color: var(--ink-faint); margin-top: var(--space-1); }
+      .docs .grp:first-child { margin-top: 0; }
+      .docs .row { display: grid; grid-template-columns: 140px minmax(0, 1fr); gap: var(--space-2); align-items: center; height: 14px; }
+      .docs .row.app .tr i { background: var(--app-color, var(--periwinkle)); }
       .docs .row .lb { font-size: 11px; line-height: 14px; color: var(--ink-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: flex; align-items: center; gap: 4px; }
       .docs .row .lb svg { width: 11px; height: 11px; flex: none; }
       .docs .row .tr { position: relative; height: 100%; background: var(--surface-sunken); border-radius: 3px; }
@@ -178,8 +181,7 @@
       .docs .row .tr b { position: absolute; top: 0; bottom: 0; width: 2px; background: var(--human-ink); opacity: 0.6; pointer-events: none; }
       .docs .row.on .lb { color: var(--ink); font-weight: 600; }
       .docs .row.off { opacity: 0.45; }
-      .docs .head { position: absolute; top: 0; bottom: 0; left: 128px; width: 2px; background: var(--ink); pointer-events: none; transition: left 0.25s linear; }
-      .docs .more { font-size: 11px; color: var(--ink-faint); }
+      .docs .head { position: absolute; top: 0; left: 148px; width: 2px; background: var(--ink); pointer-events: none; transition: left 0.25s linear; }
       /* what's on screen at the playhead */
       .doc-now { display: flex; align-items: center; gap: var(--space-2); margin-top: var(--space-2); padding: var(--space-2) var(--space-3); border: 1px solid var(--line); border-radius: var(--radius-lg); background: var(--surface-raised); font-size: 12px; line-height: 16px; min-height: 36px; }
       .doc-now .nm { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -195,7 +197,7 @@
       .file .st .err { color: var(--danger-ink, var(--ink)); }
       .file .act { display: flex; gap: var(--space-2); align-items: center; }
       .file input[type=checkbox] { width: 16px; height: 16px; accent-color: var(--periwinkle); }
-      .secs { display: grid; gap: var(--space-2); max-height: 420px; overflow: auto; }
+      .secs { display: grid; gap: var(--space-2); max-height: 560px; overflow: auto; align-content: start; scroll-behavior: smooth; }
       .sec { display: grid; grid-template-columns: 6px minmax(0, 1fr); gap: var(--space-3); align-items: start; padding: var(--space-2) var(--space-3); border: 1px solid var(--line); border-radius: var(--radius-lg); cursor: pointer; transition: background 0.15s, border-color 0.15s; background: var(--surface-raised); }
       .sec:hover { background: var(--surface-hover); }
       .sec.on { background: var(--surface-selected); border-color: var(--periwinkle); }
@@ -491,6 +493,7 @@
         alert: '<circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/>',
         loader: '<path d="M21 12a9 9 0 1 1-6.219-8.56"/>',
         file: '<path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/>',
+        appWindow: '<rect x="2" y="4" width="20" height="16" rx="2"/><path d="M10 4v4"/><path d="M2 8h20"/><path d="M6 4v4"/>',
         sheet: '<path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M8 13h8"/><path d="M8 17h8"/><path d="M10 9H8"/>',
         text: '<path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M10 9H8"/><path d="M16 13H8"/><path d="M16 17H8"/>',
         slides: '<rect width="20" height="14" x="2" y="3" rx="2"/><line x1="8" x2="16" y1="21" y2="21"/><line x1="12" x2="12" y1="17" y2="21"/>',
@@ -705,21 +708,29 @@
       // ---- documents: track under the scrubber, "on screen now" panel, list that ships with Submit ----
       const pausedBefore = (t) => (vs?.pauses ?? []).reduce((acc, p) => { const a = Date.parse(p.start), b = Date.parse(p.end ?? p.start); return b > a && a < t ? acc + (Math.min(b, t) - a) : acc; }, 0);
       const videoOffset = (iso) => { const t = Date.parse(iso), t0 = Date.parse(vs.started_at); return Math.max(0, (t - t0 - pausedBefore(t)) / 1000); };
-      const MAX_DOC_ROWS = 8;
-      let activeDoc = null;
+      let activeDoc = null, activeApp = null;
       function fileAt(sec) {
         return (vs?.files ?? []).filter((f) => f.include !== false).find((f) => f.intervals.some((iv) => sec >= videoOffset(iv.start) && sec < videoOffset(iv.end))) ?? null;
       }
+      function appAt(sec) {
+        return (vs?.apps ?? []).find((s) => sec >= videoOffset(s.start) && sec < videoOffset(s.end))?.app ?? null;
+      }
+      // Apps grouped into one row each (most time first), then every file that was open.
       function renderDocTrack() {
         const box = $('docs');
         const files = (vs?.files ?? []).filter((f) => f.intervals.length || f.used_at?.length);
-        box.classList.toggle('hidden', !files.length);
-        if (!files.length) return;
+        const byApp = new Map();
+        for (const s of vs?.apps ?? []) byApp.set(s.app, [...(byApp.get(s.app) ?? []), s]);
+        const apps = [...byApp.entries()].map(([app, spans]) => ({ app, spans, ms: spans.reduce((n, s) => n + Date.parse(s.end) - Date.parse(s.start), 0) })).sort((a, b) => b.ms - a.ms);
+        box.classList.toggle('hidden', !files.length && !apps.length);
+        if (!files.length && !apps.length) return;
         const t0 = Date.parse(vs.started_at), t1 = (vs.ended_at ? Date.parse(vs.ended_at) : Date.now()) || t0 + 1;
         const span = Math.max(1, t1 - t0), x = (iso) => Math.min(100, Math.max(0, ((Date.parse(iso) - t0) / span) * 100));
-        const shown = files.slice(0, MAX_DOC_ROWS);
-        box.innerHTML = shown.map((f) => `<div class="row ${activeDoc === f.id ? 'on' : ''} ${f.include === false ? 'off' : ''}" data-doc="${f.id}"><span class="lb" title="${esc(f.name)}">${icon(fileIcon(f.ext))}${esc(f.name)}</span><span class="tr">${f.intervals.map((iv) => `<i data-seek="${iv.start}" title="${esc(f.name)} · ${clock(iv.start)}–${clock(iv.end)}${iv.app ? ' · ' + esc(short(iv.app)) : ''}" style="left:${x(iv.start)}%;width:${Math.max(0.4, x(iv.end) - x(iv.start))}%"></i>`).join('')}${(f.used_at ?? []).map((t) => `<b title="used ${clock(t)}" style="left:${x(t)}%"></b>`).join('')}</span></div>`).join('')
-          + (files.length > shown.length ? `<div class="more">+${files.length - shown.length} more below</div>` : '')
+        const bar = (iv, title) => `<i data-seek="${iv.start}" title="${esc(title)} · ${clock(iv.start)}–${clock(iv.end)}" style="left:${x(iv.start)}%;width:${Math.max(0.4, x(iv.end) - x(iv.start))}%"></i>`;
+        const appRows = apps.map((a) => `<div class="row app ${activeApp === a.app ? 'on' : ''}" style="--app-color:${colorOf(a.app)}"><span class="lb" title="${esc(a.app)}">${icon('appWindow')}${esc(short(a.app))}</span><span class="tr">${a.spans.map((s) => bar(s, s.title ? `${short(a.app)} — ${s.title}` : short(a.app))).join('')}</span></div>`);
+        const fileRows = files.map((f) => `<div class="row ${activeDoc === f.id ? 'on' : ''} ${f.include === false ? 'off' : ''}" data-doc="${f.id}"><span class="lb" title="${esc(f.name)}">${icon(fileIcon(f.ext))}${esc(f.name)}</span><span class="tr">${f.intervals.map((iv) => bar(iv, `${f.name}${iv.app ? ' · ' + short(iv.app) : ''}`)).join('')}${(f.used_at ?? []).map((t) => `<b title="used ${clock(t)}" style="left:${x(t)}%"></b>`).join('')}</span></div>`);
+        box.innerHTML = (appRows.length ? `<div class="grp">Apps</div>${appRows.join('')}` : '')
+          + (fileRows.length ? `<div class="grp">Files · ${files.length}</div>${fileRows.join('')}` : '')
           + '<span class="head" id="doc-head"></span>';
         box.querySelectorAll('[data-seek]').forEach((el) => (el.onclick = () => { if (!vs.video_url) return; stopAt = null; seekTo(videoOffset(el.dataset.seek)).then(() => video.play().catch(() => {})); }));
         moveDocHead();
@@ -729,7 +740,8 @@
         if (!h || !vs) return;
         const t0 = Date.parse(vs.started_at), t1 = vs.ended_at ? Date.parse(vs.ended_at) : Date.now();
         const pct = Math.min(100, (video.currentTime * 1000 / Math.max(1, t1 - t0)) * 100);
-        h.style.left = `calc(128px + (100% - 128px) * ${pct / 100})`;
+        h.style.height = `${h.parentElement.scrollHeight}px`;
+        h.style.left = `calc(148px + (100% - 148px) * ${pct / 100})`;
       }
       function renderDocNow(f) {
         const box = $('doc-now');
@@ -832,7 +844,7 @@
           `<div class="sec whole ${w.cls}" data-w="1"><i class="sw" style="background:var(--line-strong)"></i><div><div class="nm">${esc(recordings.find((r) => r.recording_id === reviewing)?.name ?? 'Whole session')}</div><div class="st">${hm(whole.seconds)} · ${vs.sections.length} sections · whole recording</div>${w.read}<div class="act">${w.act}</div></div></div>`,
           ...vs.sections.map((s) => {
             const a = aiBlock(s.review, s.index);
-            return `<div class="sec ${activeSec === s.index ? 'on' : ''} ${a.cls}" data-sec="${s.index}"><i class="sw" style="background:${colorOf(s.app)}"></i><div><div class="nm">${esc(s.name)}</div><div class="st">${hm(s.seconds)} · ${esc(short(s.app))} · ${(s.counts.click ?? 0)} clicks · ${(s.counts.copy ?? 0) + (s.counts.paste ?? 0)} copy/paste${manual(s)}${s.edited ? ' · <span class="ed">edited by you</span>' : ''}${s.files?.length ? `<br>${icon('file')} ${esc(s.files.slice(0, 3).join(', '))}${s.files.length > 3 ? ` +${s.files.length - 3}` : ''}` : ''}</div>${s.note && editingSec !== s.index ? `<div class="note"><b>Note:</b> ${esc(s.note)}</div>` : ''}${a.read}${editForm(s)}<div class="act">${editingSec === s.index ? '' : a.act + editBtn(s)}</div></div></div>`;
+            return `<div class="sec ${activeSec === s.index ? 'on' : ''} ${a.cls}" data-sec="${s.index}"><i class="sw" style="background:${colorOf(s.app)}"></i><div><div class="nm">${esc(s.name)}</div><div class="st">${hm(s.seconds)} · ${esc(short(s.app))} · ${(s.counts.click ?? 0)} clicks · ${(s.counts.copy ?? 0) + (s.counts.paste ?? 0)} copy/paste${manual(s)}${s.edited ? ' · <span class="ed">edited by you</span>' : ''}</div>${s.note && editingSec !== s.index ? `<div class="note"><b>Note:</b> ${esc(s.note)}</div>` : ''}${a.read}${editForm(s)}<div class="act">${editingSec === s.index ? '' : a.act + editBtn(s)}</div></div></div>`;
           }),
         ].join('');
         if (!vs.sections.length) $('secs').insertAdjacentHTML('beforeend', '<div class="empty">No long sections — the session may be very short.</div>');
@@ -870,6 +882,11 @@
         renderReview();
       }
 
+      // keep the current section in view in the (scrollable) list on the right
+      function followSection() {
+        if (activeSec == null) return;
+        $('secs').querySelector(`.sec[data-sec="${activeSec}"]`)?.scrollIntoView({ block: 'nearest' });
+      }
       function playSection(i) {
         const s = vs?.sections[i];
         if (!s) return;
@@ -877,6 +894,7 @@
         stopAt = s.offset_s + s.seconds;
         $('v-now').textContent = s.name;
         renderSections();
+        followSection();
         if (!vs.video_url) return;
         seekTo(s.offset_s).then(() => video.play().catch(() => {}));
       }
@@ -901,10 +919,10 @@
         if (head) head.style.left = `${Math.min(100, (video.currentTime * 1000 / Math.max(1, t1 - t0)) * 100)}%`;
         if (stopAt != null && video.currentTime >= stopAt) { video.pause(); stopAt = null; }
         const cur = vs.sections.find((s) => video.currentTime >= s.offset_s && video.currentTime < s.offset_s + s.seconds);
-        if (cur && cur.index !== activeSec) { activeSec = cur.index; $('v-now').textContent = cur.name; renderSections(); }
+        if (cur && cur.index !== activeSec) { activeSec = cur.index; $('v-now').textContent = cur.name; renderSections(); followSection(); }
         moveDocHead();
-        const doc = fileAt(video.currentTime);
-        if ((doc?.id ?? null) !== activeDoc) { activeDoc = doc?.id ?? null; renderDocTrack(); renderDocNow(doc); }
+        const doc = fileAt(video.currentTime), app = appAt(video.currentTime);
+        if ((doc?.id ?? null) !== activeDoc || app !== activeApp) { activeDoc = doc?.id ?? null; activeApp = app; renderDocTrack(); renderDocNow(doc); }
       });
       const syncPlayBtns = () => { $('v-play').classList.toggle('hidden', !video.paused); $('v-pause').classList.toggle('hidden', video.paused); };
       video.addEventListener('play', syncPlayBtns); video.addEventListener('pause', syncPlayBtns);

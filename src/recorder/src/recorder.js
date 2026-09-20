@@ -340,11 +340,15 @@ export class Recorder extends EventEmitter {
     if (priv) return this.files.closeAll(Date.now());
     this._probing = true;
     try {
-      const paths = (await this.fileProbe(win)) ?? [];
-      if (this.state === 'recording' && this.files) {
+      const res = await this.fileProbe(win);
+      const docs = Array.isArray(res) ? res : res?.docs;
+      if (docs && this.state === 'recording' && this.files) {
         const before = new Set([...this.files.files.values()].filter((f) => f.open).map((f) => f.path));
-        this.files.observe(paths, Date.now(), { app });
-        for (const p of paths) if (!before.has(p)) this._pushLog({ timestamp: new Date().toISOString(), event_type: 'file', app, window_title: p.split('/').pop(), text: '', payload: {} });
+        this.files.observe(docs, Date.now(), { app, running: Array.isArray(res) ? null : res.running });
+        for (const d of docs) {
+          const p = typeof d === 'string' ? d : d.path;
+          if (!before.has(p)) this._pushLog({ timestamp: new Date().toISOString(), event_type: 'file', app: (typeof d === 'string' ? app : d.app) || app, window_title: p.split('/').pop(), text: '', payload: {} });
+        }
       }
     } catch (err) {
       this._note(`file probe failed: ${err.message}`);

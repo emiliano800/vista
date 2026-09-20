@@ -46,6 +46,21 @@ export function focusSpans(events, { startedAt, endedAt, pauses = [] } = {}) {
   return { spans, t0, tEnd };
 }
 
+// The app lane of the timeline: consecutive focus spans in the same app merged
+// into one, own/empty apps dropped. [{start, end, app, title}] in ISO time.
+export function appSpans(events, manifest = {}, { ownApps = [] } = {}) {
+  const own = new Set(ownApps.map((a) => a.toLowerCase()));
+  const { spans } = focusSpans(events, { startedAt: manifest.started_at, endedAt: manifest.ended_at, pauses: manifest.pauses ?? [] });
+  const out = [];
+  for (const s of spans) {
+    if (!s.app || own.has(s.app.toLowerCase())) continue;
+    const last = out[out.length - 1];
+    if (last && last.app === s.app && s.start - last.end < 1500) last.end = s.end;
+    else out.push({ start: s.start, end: s.end, app: s.app, title: s.title });
+  }
+  return out.map((s) => ({ start: new Date(s.start).toISOString(), end: new Date(s.end).toISOString(), app: s.app, title: s.title }));
+}
+
 function cutPauses(s, e, pauses) {
   let pieces = [[s, e]];
   for (const p of pauses) {

@@ -149,7 +149,7 @@ class RecordingDocument(BaseModel):
     seconds: Count = 0
     intervals: list[FileInterval] = Field(default_factory=list, max_length=500)
     used_at: list[AwareDatetime] = Field(default_factory=list, max_length=500)
-    sources: list[Literal["ax", "lsof", "spotlight", "download"]] = Field(default_factory=list, max_length=4)
+    sources: list[Literal["ax", "lsof", "title", "spotlight", "download"]] = Field(default_factory=list, max_length=5)
     snapshot: str | None = Field(default=None, max_length=255, pattern=r"^files/[a-f0-9]{12}/[A-Za-z0-9][A-Za-z0-9._-]*$")
     sha256: str | None = Field(default=None, pattern=r"^[a-f0-9]{64}$")
     size_bytes: Count | None = None
