@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { appRole, inferEnvironment, suggestWorkflows, workflowTrends, workflowsStub } from '../src/workflows.js';
+import { appRole, inferEnvironment, refineSessionWorkflow, sessionDigest, suggestWorkflows, workflowTrends, workflowsStub } from '../src/workflows.js';
 import { buildInsights, summarizeInsights } from '../src/insights.js';
 
 const T0 = Date.parse('2026-03-02T09:00:00Z');
@@ -78,7 +78,10 @@ test('suggestWorkflows combines transfers, documents, taskmining activities, sit
 
 test('suggestWorkflows: thin evidence still yields suggestions', () => {
   const figma = suggestWorkflows({ manifest: { apps: [{ app: 'Figma', seconds: 10 }] }, events: [ev(0, 'paste', 'Figma', { payload: { source_app: 'Figma' } })], files: [], summary: null });
-  assert.deepEqual(figma.workflows.map((w) => w.id), ['work-figma'], 'unrecognised app alone falls back to a per-app workflow');
+  assert.deepEqual(figma.workflows.map((w) => w.id), ['session'], 'unrecognised app alone falls back to one session workflow');
+  assert.equal(figma.fallback, true);
+  assert.equal(figma.workflows[0].kind, 'session');
+  assert.equal(figma.workflows[0].title, 'Session in Figma');
   const empty = suggestWorkflows({ manifest: {}, events: [], files: [], summary: null });
   assert.deepEqual(empty.workflows, []);
   const onePaste = suggestWorkflows({ manifest: { apps: [{ app: 'Adobe Acrobat', seconds: 5 }, { app: 'QuickBooks', seconds: 5 }] }, events: [ev(0, 'paste', 'QuickBooks', { payload: { source_app: 'Adobe Acrobat', chars: 8, transfer_ms: 900 } })], files: [], summary: null });
@@ -139,4 +142,37 @@ test('buildInsights carries workflow trends + a compact workflow list; the model
   user = JSON.parse(sent.messages[1].content);
   assert.equal(user.trends.workflow.baseline, 1);
   assert.deepEqual(user.trends.workflow.recurring.map((r) => r.id), ['intake-quickbooks'], 'only recurring workflows are sent');
+});
+
+test('session fallback: one workflow from the digest, rewritten by the model when a key is present', async () => {
+  const m = { apps: [{ app: 'Figma', seconds: 300 }, { app: 'Notion', seconds: 120 }] };
+  const evs = [ev(0, 'focus', 'Figma'), ev(10000, 'focus', 'Notion'), ev(20000, 'focus', 'Figma'), ev(25000, 'paste', 'Figma', { payload: { source_app: 'Figma' } })];
+  const wf = suggestWorkflows({ manifest: m, events: evs, files: [], summary: null });
+  assert.equal(wf.fallback, true);
+  assert.equal(wf.workflows.length, 1, 'never several small workflows');
+  const d = sessionDigest({ manifest: m, events: evs, files: [] });
+  assert.deepEqual(d.apps.map((a) => a.app), ['Figma', 'Notion']);
+  assert.deepEqual(d.sequence, ['Figma', 'Notion', 'Figma']);
+  assert.equal(d.pastes, 1);
+  assert.equal(d.duration_min, 7);
+
+  let sent = null;
+  const fetchFn = async (_url, init) => {
+    sent = JSON.parse(init.body);
+    return { ok: true, json: async () => ({ model: 'stub', usage: { total_tokens: 12 }, choices: [{ message: { content: JSON.stringify({ title: 'Design brief hand-off', steps: ['Open the brief in Figma', 'Note decisions in Notion', 'Back to Figma'], why: 'Same two tools all session.', automation: 0.4 }) } }] }) };
+  };
+  const out = await refineSessionWorkflow(wf, d, { key: 'k', model: 'stub' }, { fetchFn });
+  assert.match(sent.messages[0].content, /ONE workflow/);
+  assert.equal(JSON.parse(sent.messages[1].content).pastes, 1);
+  assert.equal(out.workflows[0].title, 'Design brief hand-off');
+  assert.equal(out.workflows[0].generated, true);
+  assert.equal(out.workflows[0].automation, 0.4);
+  assert.equal(out.workflows[0].id, 'session');
+
+  // Not a fallback → untouched, no call.
+  const full = suggestWorkflows({ manifest, events, files, summary: manifest.summary });
+  assert.equal(await refineSessionWorkflow(full, d, { key: 'k' }, { fetchFn: () => { throw new Error('should not call'); } }), full);
+  // Bad model output → keep the deterministic one.
+  const bad = await refineSessionWorkflow(wf, d, { key: 'k' }, { fetchFn: async () => ({ ok: true, json: async () => ({ choices: [{ message: { content: '{}' } }] }) }) });
+  assert.equal(bad.workflows[0].title, 'Session in Figma and Notion');
 });

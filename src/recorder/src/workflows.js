@@ -253,27 +253,94 @@ export function suggestWorkflows({ manifest = {}, events = [], files = [], summa
     });
   }
 
-  // 8. Nothing matched: every app that was actually used is still a piece of
-  // work worth naming, so the card is never empty for a real session.
+  // 8. Nothing matched: one workflow that summarises the whole session. The
+  // deterministic version is written here; with a key, refineSessionWorkflow
+  // asks the model to rewrite it from the same digest.
+  let fallback = false;
   if (!out.length) {
-    for (const a of [...(manifest.apps ?? [])].sort((x, y) => (y.seconds ?? 0) - (x.seconds ?? 0)).slice(0, 3)) {
-      add({
-        id: `work-${slug(a.app)}`,
-        title: `Work in ${shortApp(a.app)}`,
-        kind: 'activity',
-        apps: [a.app],
-        steps: [`Open ${shortApp(a.app)}`, 'Do the task', 'Move on'],
-        evidence: { seconds: a.seconds ?? 0 },
-        automation: 0.3,
-        sources: ['events'],
-        why: `${shortApp(a.app)} took ${Math.round((a.seconds ?? 0) / 60)} min this session; time spent in one place is where a repeatable step usually hides.`,
-      });
+    const digest = sessionDigest({ manifest, events, files, summary, env });
+    if (digest.apps.length || digest.documents.length || digest.activities.length) {
+      fallback = true;
+      add(sessionWorkflow(digest));
     }
   }
 
   out.sort((a, b) => b.automation - a.automation);
   const { _roleOf, ...environment } = env;
-  return { version: 1, generated_at: new Date().toISOString(), environment, workflows: out.slice(0, 12) };
+  return { version: 1, generated_at: new Date().toISOString(), environment, fallback, workflows: out.slice(0, 12) };
+}
+
+// Everything that happened, compact and free of typed text: apps by time, the
+// order they were visited, documents, sites, pastes and task-mining activities.
+export function sessionDigest({ manifest = {}, events = [], files = [], summary = null, env = null }) {
+  const e = env ?? inferEnvironment({ manifest, events, files });
+  const { focus, pairs } = orderedSwitches(events);
+  const sequence = [];
+  for (const f of focus) if (sequence[sequence.length - 1] !== shortApp(f.app)) sequence.push(shortApp(f.app));
+  const pastes = events.filter((x) => x.event_type === 'paste').length;
+  const totalS = (manifest.apps ?? []).reduce((s, a) => s + (a.seconds ?? 0), 0) || manifest.active_seconds || 0;
+  return {
+    duration_min: r1(totalS / 60),
+    apps: [...(manifest.apps ?? [])].sort((x, y) => (y.seconds ?? 0) - (x.seconds ?? 0)).slice(0, 8).map((a) => ({ app: shortApp(a.app), role: e._roleOf?.get(a.app) ?? appRole(a.app), minutes: r1((a.seconds ?? 0) / 60) })),
+    sequence: sequence.slice(0, 20),
+    switches: [...pairs.entries()].sort((a, b) => b[1] - a[1]).slice(0, 5).map(([k, n]) => ({ from: shortApp(k.split('→')[0]), to: shortApp(k.split('→')[1]), n })),
+    pastes,
+    documents: e.documents.slice(0, 8).map((d) => ({ name: d.name, edited: d.edited })),
+    sites: e.sites.slice(0, 5).map((s) => s.host),
+    activities: (summary?.top_activities ?? []).slice(0, 8).map((a) => ({ activity: a.activity, count: a.count })),
+    steps: summary?.steps ?? null,
+    cases: summary?.cases ?? null,
+  };
+}
+
+// Deterministic one-workflow summary of a session; what the model rewrites.
+export function sessionWorkflow(d) {
+  const names = d.apps.map((a) => a.app);
+  const list = names.length <= 1 ? names[0] ?? 'this computer' : `${names.slice(0, -1).join(', ')} and ${names[names.length - 1]}`;
+  const steps = d.activities.length ? d.activities.map((a) => a.activity) : d.sequence.length ? d.sequence.map((a, i) => (i === 0 ? `Start in ${a}` : `Move to ${a}`)) : names.map((a) => `Work in ${a}`);
+  return {
+    id: 'session',
+    title: `Session in ${list}`,
+    kind: 'session',
+    apps: (d.apps ?? []).map((a) => a.app),
+    steps: steps.slice(0, 8),
+    evidence: { minutes: d.duration_min, switches: d.switches.reduce((s, x) => s + x.n, 0), pastes: d.pastes, documents: d.documents.map((x) => x.name), sites: d.sites },
+    automation: 0.3,
+    sources: ['events', ...(d.documents.length ? ['documents'] : []), ...(d.activities.length ? ['taskmining'] : [])],
+    why: `No single repeatable pattern stood out, so this is the whole ${d.duration_min} min session as one piece of work${d.documents.length ? ` around ${d.documents.map((x) => x.name).slice(0, 2).join(' and ')}` : ''}.`,
+    generated: false,
+  };
+}
+
+const SESSION_WORKFLOW_SYSTEM = `You are Vista, a process analyst. You get a compact digest of one recorded work session on an employee's computer: apps with minutes and roles, the order apps were visited, app switches, paste count, document names, web hosts, and any task-mining activities. No typed text is ever included.
+No repeatable pattern was detected by rules, so describe the WHOLE session as ONE workflow — not several. Name the piece of work the employee was most likely doing, list its steps in the order the evidence suggests (3 to 7 short imperative steps, grounded in the apps and documents named), say why it is a candidate to streamline, and estimate how automatable it is from 0 to 1 (be conservative; 0.2-0.5 when the evidence is thin).
+Use only what is in the digest; do not invent apps, documents, amounts or people. Never speculate about what was typed.
+Respond as JSON: {"title": "3-8 words", "steps": ["..."], "why": "1-2 sentences", "automation": 0.3}`;
+
+// With an API key, rewrite the fallback session workflow from the digest.
+// Returns the updated workflow file, or the input unchanged on any failure.
+export async function refineSessionWorkflow(wf, digest, api, { fetchFn = globalThis.fetch } = {}) {
+  const idx = wf?.workflows?.findIndex((w) => w.id === 'session') ?? -1;
+  if (!wf?.fallback || idx < 0 || !api) return wf;
+  const res = await fetchFn(api.url ?? 'https://api.openai.com/v1/chat/completions', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${api.key}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ ...(api.extra ?? {}), model: api.model, max_tokens: 400, temperature: 0.2, response_format: { type: 'json_object' }, messages: [{ role: 'system', content: SESSION_WORKFLOW_SYSTEM }, { role: 'user', content: JSON.stringify(digest) }] }),
+  });
+  if (!res.ok) {
+    const body = await res.text().catch(() => '');
+    throw new Error(`${api.provider === 'openrouter' ? 'OpenRouter' : 'OpenAI'} ${res.status}: ${body.slice(0, 200) || res.statusText}`);
+  }
+  const data = await res.json();
+  let p = {};
+  try { p = JSON.parse(data.choices?.[0]?.message?.content ?? '{}'); } catch { p = {}; }
+  const steps = Array.isArray(p.steps) ? p.steps.map((s) => String(s).slice(0, 120)).filter(Boolean).slice(0, 8) : [];
+  if (!String(p.title ?? '').trim() || !steps.length) return wf;
+  const cur = wf.workflows[idx];
+  const next = { ...cur, title: String(p.title).trim().slice(0, 80), steps, why: String(p.why ?? cur.why).trim().slice(0, 400), automation: Math.min(1, Math.max(0, r1(Number(p.automation) || cur.automation))), generated: true, model: data.model ?? api.model, usage: data.usage ?? null };
+  const workflows = wf.workflows.slice();
+  workflows[idx] = next;
+  return { ...wf, workflows };
 }
 
 // Compact form kept on the manifest so later sessions can compare.
