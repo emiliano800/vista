@@ -245,6 +245,54 @@ def test_request_limit_and_validation_does_not_echo_secrets():
 
 
 @requires_db
+def test_recording_workflows_are_stored_with_the_report(client, tenant_factory, bundle, objects):
+    headers, _, _ = tenant_factory()
+    deal = company(client, headers)
+    path = f"/api/deals/{deal}/recordings"
+    workflow = {
+        "id": "rekey-excel-quickbooks",
+        "title": "Re-key Excel data into QuickBooks",
+        "kind": "data_transfer",
+        "apps": ["Microsoft Excel", "QuickBooks"],
+        "steps": ["Open the source in Excel", "Copy one field at a time", "Switch to QuickBooks and paste it"],
+        "evidence": {"pastes": 12, "chars": 340, "mean_transfer_s": 4.5, "sources": ["Q3.xlsx"]},
+        "automation": 0.85,
+        "sources": ["events"],
+        "why": "12 values were copied from a spreadsheet and pasted into accounting software.",
+    }
+    workflows = {
+        "version": 1,
+        "generated_at": "2026-09-19T10:02:00Z",
+        "fallback": False,
+        "environment": {
+            "apps": [{"app": "Microsoft Excel", "short": "Excel", "role": "spreadsheet", "seconds": 300}],
+            "roles": ["spreadsheet"],
+            "documents": [{"name": "Q3.xlsx", "ext": ".xlsx", "app": "Microsoft Excel", "edited": True, "parsed": False, "flags": 0}],
+            "sites": [{"host": "qbo.intuit.com", "n": 4}],
+        },
+        "workflows": [workflow],
+    }
+    plain = client.post(path, headers=headers, json=bundle)
+    assert plain.status_code == 200 and plain.json()["workflows"] is None
+    rid = plain.json()["id"]
+    with_workflows = client.post(path, headers=headers, json={**bundle, "workflows": workflows})
+    assert with_workflows.status_code == 200, with_workflows.text
+    stored = with_workflows.json()
+    assert stored["id"] == rid and stored["workflows"]["workflows"][0]["id"] == "rekey-excel-quickbooks"
+    assert stored["workflows"]["environment"]["sites"] == [{"host": "qbo.intuit.com", "n": 4}]
+    assert client.get(f"/api/recordings/{rid}", headers=headers).json()["workflows"]["workflows"][0]["automation"] == 0.85
+    assert client.post(path, headers=headers, json={**bundle, "workflows": workflows}).json()["content_hash"] == stored["content_hash"]
+    assert objects.puts == 2
+    for broken in (
+        {**workflows, "workflows": [{**workflow, "kind": "magic"}]},
+        {**workflows, "workflows": [{**workflow, "automation": 1.5}]},
+        {**workflows, "workflows": [{**workflow, "path": "/Users/private"}]},
+        {**workflows, "workflows": [workflow] * 13},
+    ):
+        assert client.post(path, headers=headers, json={**bundle, "workflows": broken}).status_code == 422
+
+
+@requires_db
 def test_recording_sections_metadata_and_media_uploads(client, tenant_factory, bundle, objects, monkeypatch):
     monkeypatch.setattr("vista.api.recordings.presigned_upload_url", lambda key, ct: f"https://s3.test/put/{key}")
     monkeypatch.setattr("vista.api.recordings.presigned_download_url", lambda key: f"https://s3.test/get/{key}")

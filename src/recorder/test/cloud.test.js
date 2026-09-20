@@ -68,9 +68,23 @@ test("only completed portable reports are uploaded; retries use the same source 
         ],
       }),
     );
+    fs.writeFileSync(
+      path.join(dir, "workflows.json"),
+      JSON.stringify({
+        version: 1,
+        generated_at: "2026-09-19T10:02:00Z",
+        fallback: false,
+        environment: { apps: [{ app: "Microsoft Excel", short: "Excel", role: "spreadsheet", seconds: 300 }], roles: ["spreadsheet"], documents: [{ name: "Q3.xlsx", ext: ".xlsx", app: "Microsoft Excel", edited: true, parsed: false, flags: 0 }], sites: [] },
+        workflows: [{ id: "rekey-a-b", title: "Re-key", kind: "data_transfer", apps: ["A", "B"], steps: ["Copy", "Paste"], evidence: { pastes: 3, sources: ["Q3.xlsx"] }, automation: 0.85, sources: ["events"], why: "3 values were copied.", generated: false, secret: "PRIVATE" }],
+      }),
+    );
     const body = reportBundle(root, "session-1");
     assert.ok(!body.includes("PRIVATE"));
     const parsed = JSON.parse(body);
+    assert.equal(parsed.workflows.workflows.length, 1, "workflows.json travels with the report");
+    assert.equal(parsed.workflows.workflows[0].id, "rekey-a-b");
+    assert.equal(parsed.workflows.workflows[0].secret, undefined, "only known workflow fields are sent");
+    assert.equal(parsed.workflows.environment.apps[0].role, "spreadsheet");
     assert.equal(parsed.files.length, 1, "unticked documents stay off the report");
     assert.equal(parsed.files[0].name, "Q3.xlsx");
     assert.equal(parsed.files[0].path, undefined);
@@ -83,7 +97,10 @@ test("only completed portable reports are uploaded; retries use the same source 
       "summary",
       "summary_text",
       "version",
+      "workflows",
     ]);
+    fs.rmSync(path.join(dir, "workflows.json"));
+    assert.equal(JSON.parse(reportBundle(root, "session-1")).workflows, null, "no workflows.json means none were built");
     assert.deepEqual(parsed.sections, { S1: { name: "Enter bills", note: "from PDFs", edited_at: "2026-09-19T10:01:00Z" } });
     assert.deepEqual(readSectionEdits(path.join(root, "missing")), {});
     assert.throws(() => reportBundle(root, "../other"));

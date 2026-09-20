@@ -394,7 +394,7 @@
             <div class="sp"></div>
             <button class="btn sm" id="rv-note">Add a general summary</button>
             <button class="btn sm" id="rv-done">Done</button>
-            <button class="btn sm primary" id="rv-submit" title="Send the whole recording to your workspace and remove it from this computer"><svg class="ic" viewBox="0 0 24 24"><path d="M12 13v8"/><path d="M4 14.899A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.242"/><path d="m8 17 4-4 4 4"/></svg>Submit</button>
+            <button class="btn sm primary" id="rv-submit" title="Send the report and suggested workflows to your workspace; video and screenshots stay on this computer"><svg class="ic" viewBox="0 0 24 24"><path d="M12 13v8"/><path d="M4 14.899A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.242"/><path d="m8 17 4-4 4 4"/></svg>Submit</button>
           </div>
 
           <section class="card" style="margin:0 0 14px">
@@ -609,7 +609,7 @@
       };
       const fileIcon = (ext) => ({ '.xlsx': 'sheet', '.xlsm': 'sheet', '.xls': 'sheet', '.csv': 'sheet', '.tsv': 'sheet', '.pptx': 'slides', '.ppt': 'slides', '.docx': 'text', '.doc': 'text', '.txt': 'text', '.md': 'text', '.rtf': 'text', '.pdf': 'text' }[ext] ?? 'file');
       const icon = (name) => `<svg class="ic" viewBox="0 0 24 24" aria-hidden="true">${LUCIDE[name]}</svg>`;
-      // Upload state of one recording: submitted (files in the workspace, gone from here),
+      // Upload state of one recording: submitted (report + workflows in the workspace, media still here),
       // uploading, failed (retry), uploaded (report only, older flow) or local.
       function uploadState(r) {
         const u = r?.upload;
@@ -672,9 +672,9 @@
         const when = `${clock(r.started_at)}–${r.ended_at ? clock(r.ended_at) : '…'}`;
         const up = uploadState(r);
         $('rv-title').textContent = r.name ?? (done ? 'Session analyzed' : 'Session saved');
-        $('rv-lede').textContent = `${when} · ${hm(r.active_seconds ?? 0)} · ${(r.counts?.total ?? 0).toLocaleString()} interactions · ${up.label}${up.key === 'submitted' ? ' — files are in your workspace' : ''}`;
+        $('rv-lede').textContent = `${when} · ${hm(r.active_seconds ?? 0)} · ${(r.counts?.total ?? 0).toLocaleString()} interactions · ${up.label}${up.key === 'submitted' ? ' — report in your workspace' : ''}`;
         $('rv-banner-t').textContent = up.key === 'submitted' ? 'Submitted' : up.key === 'uploading' ? up.label : up.key === 'failed' ? 'Submit failed' : done ? 'Ready to review' : p === 'failed' ? 'Analysis could not finish' : p === 'skipped' ? 'Analysis skipped' : 'Analyzing…';
-        $('rv-banner-s').textContent = up.key === 'submitted' ? `Sent ${up.sub}. Nothing from this session is left on this computer.` : up.key === 'failed' ? `${up.sub} Press Submit to retry.` : up.key === 'uploading' ? 'Sending the video, screenshots and notes to your workspace…' : done ? analystSummary() : p === 'failed' || p === 'skipped' ? (r.processing_note ?? '') : '';
+        $('rv-banner-s').textContent = up.key === 'submitted' ? `Sent ${up.sub}. The report and workflows are in your workspace; the video and screenshots stay on this computer.` : up.key === 'failed' ? `${up.sub} Press Submit to retry.` : up.key === 'uploading' ? 'Sending the report and workflows to your workspace…' : done ? analystSummary() : p === 'failed' || p === 'skipped' ? (r.processing_note ?? '') : '';
         renderWorkspaceState(r, up);
         $('rv-note').classList.toggle('attn', !r.summary_text && up.key !== 'submitted');
         $('rv-note').classList.toggle('hidden', up.key === 'submitted');
@@ -734,7 +734,7 @@
       $('rv-submit').onclick = async () => {
         const r = recordings.find((x) => x.recording_id === reviewing);
         const open = vs?.review?.summary?.open ?? 0;
-        const ask = `Submit “${r?.name ?? 'this session'}” to your workspace?\n\nThe video, screenshots, notes and analysis are uploaded and then removed from this computer.${open ? `\n${open} section${open === 1 ? '' : 's'} still unreviewed — you can finish in the workspace.` : ''}`;
+        const ask = `Submit “${r?.name ?? 'this session'}” to your workspace?\n\nOnly the report and suggested workflows are sent. The video, screenshots and documents stay on this computer.${open ? `\n${open} section${open === 1 ? '' : 's'} still unreviewed — you can finish in the workspace.` : ''}`;
         if (!confirm(ask)) return;
         $('rv-submit').disabled = true;
         try {
@@ -963,7 +963,7 @@
         if (!files.length) return;
         const inc = files.filter((f) => f.include !== false);
         const copied = inc.filter((f) => f.snapshot);
-        $('files-sub').textContent = vs.submitted ? `${copied.length} in your workspace` : `${copied.length} of ${files.length} will be submitted · untick what should stay here`;
+        $('files-sub').textContent = vs.submitted ? `${copied.length} listed in your workspace · copies stay on this computer` : `${copied.length} of ${files.length} will be listed in the report · untick what should stay private`;
         const srcOf = (f) => (f.sources?.includes('download') ? `${icon('download')} downloaded` : f.intervals.length ? `open ${hm(f.seconds)}` : 'used');
         const parsed = (f) => {
           const rv = f.review;
@@ -1328,7 +1328,7 @@
         }).join('')).join('');
         $('rec-rows').querySelectorAll('[data-submit]').forEach((b) => (b.onclick = async () => {
           const r = recordings.find((x) => x.recording_id === b.dataset.submit);
-          if (!confirm(`Submit “${r?.name ?? 'this session'}” to your workspace?\n\nThe video, screenshots, notes and analysis are uploaded and then removed from this computer.`)) return;
+          if (!confirm(`Submit “${r?.name ?? 'this session'}” to your workspace?\n\nOnly the report and suggested workflows are sent. The video, screenshots and documents stay on this computer.`)) return;
           b.disabled = true;
           try { await window.vista.submit(b.dataset.submit); }
           catch (e) { alert(e.message); }

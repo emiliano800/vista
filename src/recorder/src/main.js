@@ -11,9 +11,9 @@ import { BrowserWindow, Menu, Tray, app, clipboard, desktopCapturer, ipcMain, na
 import { CONFIDENCE_THRESHOLD, RESOLVED_STATUSES, SESSION_ID, applyDecision, describeSection, explainSection, openaiConfig, reviewSummary } from './explain.js';
 import { DEMO_KEYS, DemoHook, demoActiveWindow, demoClipboard, demoDocuments } from './demo.js';
 import { DEFAULT_SETTINGS, Recorder, keyNamesFrom, loadSettings } from './recorder.js';
-import { FILES_DIR, FILES_FILE, FileTracker, axDocuments, documentFromTitle, lsofDocuments, publicFile, readFiles, snapshotFiles, spotlightSweep, writeFiles } from './files.js';
+import { FILES_DIR, FileTracker, axDocuments, documentFromTitle, lsofDocuments, publicFile, readFiles, snapshotFiles, spotlightSweep, writeFiles } from './files.js';
 import { redactText } from './redact.js';
-import { cloudRequest, companyID, fetchReview, mergeReview, readSectionEdits, reportBundle, reviewItems, sendDecision, submitSections, uploadMedia, uploadReport, workspaceRecordingURL, workspaceRunState, workspaceURL } from './cloud.js';
+import { cloudRequest, companyID, fetchReview, mergeReview, readSectionEdits, reportBundle, reviewItems, sendDecision, submitSections, uploadReport, workspaceRecordingURL, workspaceRunState, workspaceURL } from './cloud.js';
 import { appSpans, buildSections, parseEvents, recordingName } from './sections.js';
 import { apiConfig, startApi } from './api.js';
 import { JobStore } from './jobs.js';
@@ -30,7 +30,7 @@ let DEMO = process.argv.includes('--demo');
 const MAC = process.platform === 'darwin';
 const HOME = process.env.VISTA_HOME ?? path.join(os.homedir(), 'Vista');
 const RECORDINGS = path.join(HOME, 'recordings'); // pending: everything still on this computer
-const SUBMITTED = path.join(HOME, 'submitted'); // uploaded: only the metadata stub stays
+const SUBMITTED = path.join(HOME, 'submitted'); // report + workflows sent; media stays here
 const SETTINGS_FILE = path.join(HOME, 'settings.json');
 const ADMIN = process.env.VISTA_ADMIN === '1';
 const ID_RE = /^[a-zA-Z0-9_-]{1,128}$/;
@@ -1139,12 +1139,18 @@ ipcMain.handle('cloud:upload', async (event, id) => {
 // Order: report (idempotent) → every media file via signed URLs → move the
 // metadata stub to submitted/ → delete the recording folder. A failure at any
 // step leaves the folder in place with status 'failed' so Submit can be retried.
-const STUB_FILES = ['manifest.json', REVIEW_FILE, SECTIONS_FILE, 'annotations.jsonl', WORKFLOWS_FILE];
-// files.json travels too, without the absolute paths.
-function writeFilesStub(dir, stub) {
-  const files = readFiles(dir).map(publicFile);
-  if (files.length) fs.writeFileSync(path.join(stub, FILES_FILE), JSON.stringify({ version: 1, files }, null, 2));
-  return files;
+// Move the whole recording (video, screenshots, documents included) from
+// recordings/ to submitted/ once the report and workflows are in the workspace.
+function markSubmitted(dir, id, m, submitted) {
+  const files_list = readFiles(dir).map(publicFile);
+  const dest = path.join(SUBMITTED, id);
+  fs.rmSync(dest, { recursive: true, force: true });
+  fs.renameSync(dir, dest);
+  fs.writeFileSync(
+    path.join(dest, 'manifest.json'),
+    JSON.stringify({ ...m, submitted: { ...submitted, at: new Date().toISOString(), media: 'local', files: files_list.length, files_list, apps: appSpans(readEvents(dest), m, { ownApps: recorder?.settings?.ownApps ?? [] }) } }, null, 2),
+  );
+  return files_list;
 }
 // Resolved section metadata (time span, video offsets, name, employee note,
 // AI explanation + decision, annotations) written as a sidecar next to the
@@ -1177,13 +1183,8 @@ async function demoSubmit(id, dir, m) {
       await new Promise((r) => setTimeout(r, 180));
     }
     const sections = writeVideoSidecar(dir, id, m);
-    const stub = path.join(SUBMITTED, id);
-    fs.mkdirSync(stub, { recursive: true });
-    for (const f of STUB_FILES) if (fs.existsSync(path.join(dir, f))) fs.copyFileSync(path.join(dir, f), path.join(stub, f));
-    const files_list = writeFilesStub(dir, stub);
     const cloudId = `demo-${id}`;
-    fs.writeFileSync(path.join(stub, 'manifest.json'), JSON.stringify({ ...readManifest(dir), files: {}, submitted: { at: new Date().toISOString(), recording_id: cloudId, files: files_list.length, sections, files_list, apps: appSpans(readEvents(dir), m, { ownApps: recorder.settings.ownApps ?? [] }), demo: true } }, null, 2));
-    fs.rmSync(dir, { recursive: true, force: true });
+    const files_list = markSubmitted(dir, id, readManifest(dir), { recording_id: cloudId, sections, demo: true });
     saveState({ status: 'submitted', submittedAt: new Date().toISOString(), recordingId: cloudId, files: files_list.length, progress: null });
   } catch (error) {
     saveState({ status: 'failed', error: error.message, progress: null });
@@ -1224,21 +1225,12 @@ async function submitRecording(id) {
     if (sections) broadcastSections(id);
   };
   try {
-    saveState({ status: 'uploading', progress: { done: 0, total: 0 } });
+    saveState({ status: 'uploading', progress: { done: 0, total: 1 } });
     const cloudId = (await uploadReport(config, RECORDINGS, id)).id;
-    saveState({ status: 'uploading', recordingId: cloudId, progress: { done: 0, total: 0 } }, { sections: false });
+    saveState({ status: 'uploading', recordingId: cloudId, progress: { done: 1, total: 1 } }, { sections: false });
     const sections = writeVideoSidecar(dir, id, m);
-    const files = await uploadMedia(config, RECORDINGS, id, cloudId, { onProgress: (p) => saveState({ status: 'uploading', progress: p }, { sections: false }) });
-    const stub = path.join(SUBMITTED, id);
-    fs.mkdirSync(stub, { recursive: true });
-    for (const f of STUB_FILES) if (fs.existsSync(path.join(dir, f))) fs.copyFileSync(path.join(dir, f), path.join(stub, f));
-    const files_list = writeFilesStub(dir, stub);
-    fs.writeFileSync(
-      path.join(stub, 'manifest.json'),
-      JSON.stringify({ ...m, files: {}, submitted: { at: new Date().toISOString(), recording_id: cloudId, files: files.length, sections, files_list, apps: appSpans(readEvents(dir), m, { ownApps: recorder?.settings?.ownApps ?? [] }) } }, null, 2),
-    );
-    fs.rmSync(dir, { recursive: true, force: true });
-    saveState({ status: 'submitted', submittedAt: new Date().toISOString(), recordingId: cloudId, files: files.length, progress: null });
+    const files_list = markSubmitted(dir, id, m, { recording_id: cloudId, sections });
+    saveState({ status: 'submitted', submittedAt: new Date().toISOString(), recordingId: cloudId, files: 0, progress: null });
   } catch (error) {
     saveState({ status: 'failed', error: error.message, progress: null });
     throw error;

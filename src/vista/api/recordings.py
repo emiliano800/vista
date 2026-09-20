@@ -46,6 +46,7 @@ def public_recording(record: Recording):
         "sections": record.sections or {},
         "media": sorted((record.media or {}).keys()),
         "files": record.files or [],
+        "workflows": record.workflows,
         "uploaded_at": record.updated_at,
         "analysis_source": "local_taskmining",
         "content_hash": record.content_hash,
@@ -85,6 +86,7 @@ def upload_recording(deal_id: uuid.UUID, body: RecordingUpload, principal: Princ
         record.sections = payload["sections"]
         prev = {f.get("id"): f for f in record.files or []}
         record.files = [{**f, "extraction": _kept_extraction(prev.get(f["id"]), f)} for f in payload["files"]]
+        record.workflows = payload["workflows"]
         record.s3_key, record.content_hash = key, digest
         record.updated_at = datetime.now(UTC)
         session.commit()

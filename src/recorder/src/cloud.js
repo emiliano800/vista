@@ -6,6 +6,7 @@ import fs from "node:fs";
 import path from "node:path";
 
 import { FILES_DIR, FILES_FILE, FILE_TYPES, publicFile, readFiles } from "./files.js";
+import { WORKFLOWS_FILE } from "./workflows.js";
 
 const LIMIT = 8 * 1024 * 1024;
 export function workspaceURL(input) {
@@ -76,10 +77,54 @@ export function reportBundle(root, id) {
     summary_text: String(m.summary_text ?? "").slice(0, 4096),
     sections,
     files: documentList(dir),
+    workflows: readWorkflows(dir),
   });
   if (Buffer.byteLength(body) > LIMIT)
     throw new Error("Report exceeds the 8 MiB upload limit.");
   return body;
+}
+// workflows.json: the workflows suggested on this computer, trimmed to the
+// fields the workspace stores. Missing or unreadable means none were built.
+export function readWorkflows(dir) {
+  let wf;
+  try {
+    wf = JSON.parse(readBounded(path.join(dir, WORKFLOWS_FILE)));
+  } catch {
+    return null;
+  }
+  if (!wf || !Array.isArray(wf.workflows)) return null;
+  const short = (v) => String(v ?? "").slice(0, 512);
+  const list = (v, f, n) => (Array.isArray(v) ? v.slice(0, n).map(f) : []);
+  const env = wf.environment ?? {};
+  return {
+    version: 1,
+    generated_at: wf.generated_at ?? null,
+    fallback: !!wf.fallback,
+    environment: {
+      apps: list(env.apps, (a) => ({ app: short(a.app), short: short(a.short), role: short(a.role ?? "other"), seconds: Number(a.seconds ?? 0) }), 1000),
+      roles: list(env.roles, short, 20),
+      documents: list(env.documents, (d) => ({ name: short(d.name), ext: short(d.ext).slice(0, 16), app: d.app == null ? null : short(d.app), edited: !!d.edited, parsed: !!d.parsed, flags: Number(d.flags ?? 0), from_title: !!d.from_title }), 500),
+      sites: list(env.sites, (s) => ({ host: short(s.host), n: Number(s.n ?? 0) }), 20),
+    },
+    workflows: list(
+      wf.workflows,
+      (w) => ({
+        id: short(w.id),
+        title: short(w.title),
+        kind: short(w.kind),
+        apps: list(w.apps, short, 50),
+        steps: list(w.steps, short, 20),
+        evidence: w.evidence && typeof w.evidence === "object" ? w.evidence : {},
+        automation: Math.min(1, Math.max(0, Number(w.automation) || 0)),
+        sources: list(w.sources, short, 3),
+        why: String(w.why ?? "").slice(0, 4096),
+        generated: !!w.generated,
+        model: w.model == null ? null : short(w.model),
+        usage: w.usage && typeof w.usage === "object" ? w.usage : null,
+      }),
+      12,
+    ),
+  };
 }
 // files.json: the documents on screen during the session, with open/close
 // intervals and the snapshot (files/<id>/<name>) that ships as media. Only the

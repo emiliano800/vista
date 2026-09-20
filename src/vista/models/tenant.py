@@ -207,6 +207,7 @@ class Recording(TenantBase):
     media: Mapped[dict] = mapped_column(JSONB, default=dict)  # name -> {key, content_type, size_bytes}
     sections: Mapped[dict] = mapped_column(JSONB, default=dict)  # section id -> employee edits {name, note}
     files: Mapped[list] = mapped_column(JSONB, default=list)  # documents on screen: markers, snapshot key, extraction state
+    workflows: Mapped[dict | None] = mapped_column(JSONB, nullable=True)  # recorder's suggested workflows (workflows.json)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 

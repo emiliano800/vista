@@ -5,7 +5,7 @@ import io
 from datetime import datetime
 from typing import Annotated, Literal
 
-from pydantic import AwareDatetime, BaseModel, ConfigDict, Field, model_validator
+from pydantic import AwareDatetime, BaseModel, ConfigDict, Field, JsonValue, model_validator
 
 from taskmining.eventlog import CSV_COLUMNS
 
@@ -166,6 +166,72 @@ class RecordingDocument(BaseModel):
         return self
 
 
+Score = Annotated[float, Field(ge=0, le=1, allow_inf_nan=False)]
+Short = Annotated[str, Field(max_length=512)]
+
+
+class Workflow(BaseModel):
+    """One suggested workflow the recorder inferred on the device (workflows.json)."""
+
+    model_config = ConfigDict(extra="forbid")
+    id: str = Field(pattern=r"^[A-Za-z0-9_-]{1,128}$")
+    title: Short
+    kind: Literal["data_transfer", "document_processing", "reporting", "communication", "lookup", "access", "activity", "session"]
+    apps: list[Short] = Field(default_factory=list, max_length=50)
+    steps: list[Short] = Field(default_factory=list, max_length=20)
+    evidence: dict[str, JsonValue] = Field(default_factory=dict, max_length=20)
+    automation: Score = 0
+    sources: list[Literal["events", "documents", "taskmining"]] = Field(default_factory=list, max_length=3)
+    why: Text = ""
+    generated: bool = False
+    model: Short | None = None
+    usage: dict[str, JsonValue] | None = None
+
+
+class WorkflowApp(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    app: Short
+    short: Short = ""
+    role: Short = "other"
+    seconds: Amount = 0
+
+
+class WorkflowDocument(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    name: Short
+    ext: str = Field(default="", max_length=16)
+    app: Short | None = None
+    edited: bool = False
+    parsed: bool = False
+    flags: Count = 0
+    from_title: bool = False
+
+
+class WorkflowSite(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    host: Short
+    n: Count = 0
+
+
+class WorkflowEnvironment(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    apps: list[WorkflowApp] = Field(default_factory=list, max_length=1000)
+    roles: list[Short] = Field(default_factory=list, max_length=20)
+    documents: list[WorkflowDocument] = Field(default_factory=list, max_length=500)
+    sites: list[WorkflowSite] = Field(default_factory=list, max_length=20)
+
+
+class Workflows(BaseModel):
+    """The recorder's workflows.json: suggested workflows plus the environment they ran in."""
+
+    model_config = ConfigDict(extra="forbid")
+    version: Literal[1] = 1
+    generated_at: AwareDatetime | None = None
+    environment: WorkflowEnvironment = Field(default_factory=WorkflowEnvironment)
+    fallback: bool = False
+    workflows: list[Workflow] = Field(default_factory=list, max_length=12)
+
+
 class RecordingUpload(BaseModel):
     model_config = ConfigDict(extra="forbid")
     version: Literal[1] = 1
@@ -176,6 +242,7 @@ class RecordingUpload(BaseModel):
     summary_text: Text = ""
     sections: dict[SectionId, SectionEdit] = Field(default_factory=dict, max_length=500)
     files: list[RecordingDocument] = Field(default_factory=list, max_length=500)
+    workflows: Workflows | None = None
 
     @model_validator(mode="after")
     def evidence_matches(self):
