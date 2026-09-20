@@ -1,0 +1,12 @@
+{
+  "company": "Meridian Risk Partners, LLC",
+  "as_of": "2026-03-31",
+  "synthetic": true,
+  "files": [
+    "clients.csv",
+    "policies.csv",
+    "commission_statements.csv",
+    "carriers.csv",
+    "invoices.csv"
+  ]
+}

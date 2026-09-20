@@ -1,7 +1,13 @@
 const apiRoutes =
-  /^\/api\/(?:auth\/(?:session|me)|deals(?:\/[0-9a-f-]+\/recordings)?|recordings\/[0-9a-f-]+(?:\/(?:evidence|download|review(?:\/[a-z0-9_-]{1,64})?))?|health)$/i;
+  /^\/api\/(?:auth\/(?:session|me)|deals(?:\/[0-9a-f-]+\/recordings)?|recordings\/[0-9a-f-]+(?:\/(?:evidence|download|files|media(?:\/complete)?|review(?:\/[a-z0-9_-]{1,64})?))?|health)$/i;
 const reviewSections = /^\/api\/recordings\/[0-9a-f-]+\/review\/sections$/i;
-const reviewDecision = /^\/api\/recordings\/[0-9a-f-]+\/review\/(?!sections$)[a-z0-9_-]{1,64}$/i;
+const reviewDecision =
+  /^\/api\/recordings\/[0-9a-f-]+\/review\/(?!sections$)[a-z0-9_-]{1,64}$/i;
+const mediaUpload = /^\/api\/recordings\/[0-9a-f-]+\/media(?:\/complete)?$/i;
+const importRead =
+  /^\/api\/(?:deals\/[0-9a-f-]+\/imports|imports\/[0-9a-f-]+(?:\/export)?)$/i;
+const importWrite =
+  /^\/api\/(?:deals\/[0-9a-f-]+\/imports|imports\/[0-9a-f-]+\/(?:commit|findings\/[a-f0-9]{16}))$/i;
 const securityHeaders = {
   "X-Content-Type-Options": "nosniff",
   "Referrer-Policy": "no-referrer",
@@ -13,14 +19,20 @@ async function handle(request, env) {
   const url = new URL(request.url);
   let response;
   if (url.pathname.startsWith("/api/")) {
-    if (!apiRoutes.test(url.pathname))
+    if (
+      !apiRoutes.test(url.pathname) &&
+      !importRead.test(url.pathname) &&
+      !importWrite.test(url.pathname)
+    )
       return new Response("Not found", { status: 404 });
-    // The public web surface only exposes sign-in, recording reports and their review.
+    // Only explicitly allowed workspace operations reach the backend.
     if (
       !["GET", "HEAD", "POST", "PUT", "DELETE"].includes(request.method) ||
       (request.method === "POST" &&
         !url.pathname.endsWith("/recordings") &&
+        !mediaUpload.test(url.pathname) &&
         !reviewDecision.test(url.pathname) &&
+        !importWrite.test(url.pathname) &&
         url.pathname !== "/api/auth/session") ||
       (request.method === "PUT" && !reviewSections.test(url.pathname)) ||
       (request.method === "DELETE" && url.pathname !== "/api/auth/session")

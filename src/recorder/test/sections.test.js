@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
 import { CONFIDENCE_THRESHOLD, DEFAULT_MODEL, DEFAULT_OPENROUTER_MODEL, OPENAI_URL, OPENROUTER_URL, applyDecision, describeSection, explainSection, openaiConfig, parseExplanation, reviewSummary, statusFor } from '../src/explain.js';
-import { buildSections, focusSpans, parseEvents, pausedBefore, recordingName, sectionName } from '../src/sections.js';
+import { appSpans, buildSections, focusSpans, parseEvents, pausedBefore, recordingName, sectionName } from '../src/sections.js';
 
 const T0 = Date.parse('2026-03-03T09:00:00.000Z');
 const at = (sec) => new Date(T0 + sec * 1000).toISOString();
@@ -51,6 +51,15 @@ test('video offsets skip paused time (the webm is paused with the hooks)', () =>
   assert.equal(outlook[0].offset_s, 1100);
   assert.equal(outlook[1].start, at(1400));
   assert.equal(outlook[1].offset_s, 1200);
+});
+
+test('appSpans keeps every focus span (quick hops too), merges back-to-back same-app spans and drops our own app', () => {
+  const spans = appSpans([...EVENTS, focus(1800, 'Electron', 'Vista')], { ...MANIFEST, ended_at: at(1900) }, { ownApps: ['Electron'] });
+  assert.deepEqual(
+    spans.map((s) => [s.app, (Date.parse(s.start) - T0) / 1000, (Date.parse(s.end) - T0) / 1000]),
+    [['Microsoft Excel', 0, 600], ['Slack', 600, 604], ['Microsoft Excel', 604, 1200], ['Microsoft Outlook', 1200, 1500], ['Google Chrome', 1500, 1520], ['Microsoft Outlook', 1520, 1800]],
+  );
+  assert.equal(spans[0].title, 'AP tracker.xlsx - Excel');
 });
 
 test('buildSections folds quick hops into the surrounding long span', () => {

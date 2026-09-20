@@ -944,7 +944,7 @@ requires-dist = [
     { name = "email-validator", specifier = ">=2.0" },
     { name = "fastapi", specifier = ">=0.115" },
     { name = "openai", specifier = ">=3.16.2" },
-    { name = "openpyxl", specifier = ">=3.1" },
+    { name = "openpyxl", specifier = ">=3.1.5,<4" },
     { name = "psycopg", extras = ["binary"], specifier = ">=3.2" },
     { name = "pydantic-settings", specifier = ">=2.4" },
     { name = "sqlalchemy", specifier = ">=2.0" },

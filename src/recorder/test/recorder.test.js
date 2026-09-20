@@ -102,6 +102,24 @@ test('clipboard text is not persisted when the setting is off, hash still links'
   assert.equal(ev[1].payload.source_app, 'Adobe Acrobat');
 });
 
+test('session intent is kept in the manifest through Stop and ignored when idle', async () => {
+  const t = makeRecorder({ thumbProvider: null });
+  t.rec.setIntent('nothing yet');
+  t.rec.start();
+  const manifestPath = path.join(t.root, t.rec.recordingId, 'manifest.json');
+  assert.equal(JSON.parse(fs.readFileSync(manifestPath, 'utf8')).summary_text, undefined);
+  t.rec.setIntent('  Month-end close — AP reconciliation  ');
+  assert.equal(JSON.parse(fs.readFileSync(manifestPath, 'utf8')).summary_text, 'Month-end close — AP reconciliation');
+  await sleep(10);
+  await t.rec.stop();
+  const final = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
+  assert.equal(final.summary_text, 'Month-end close — AP reconciliation');
+  assert.ok(final.ended_at);
+  t.rec.start();
+  assert.equal(JSON.parse(fs.readFileSync(path.join(t.root, t.rec.recordingId, 'manifest.json'), 'utf8')).summary_text, undefined);
+  await t.rec.stop();
+});
+
 test('screenshot fires when the thumbnail changes, not when it is stable', async () => {
   let cur = thumb(10);
   const t = makeRecorder({ thumbProvider: async () => cur });

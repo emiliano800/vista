@@ -3,8 +3,10 @@ import uuid
 from datetime import UTC, datetime
 from decimal import Decimal
 
+from botocore.exceptions import BotoCoreError, ClientError
 from sqlalchemy import select
 
+from vista import documents
 from vista.agents import discover, synthetic
 from vista.agents.llm import chat
 from vista.agents.runtime import pricing as _pricing
@@ -20,11 +22,13 @@ from vista.models.tenant import (
     Employee,
     EmployeeAgent,
     Finding,
+    Recording,
     RecordingReviewItem,
     UsageEvent,
 )
 from vista.review import explain as explain_section
 from vista.review import status_for
+from vista.storage import s3_client
 
 FINDING_KINDS = {"observed_fact", "inefficiency", "proposed_automation"}
 
@@ -428,6 +432,53 @@ def handle_synthetic_discovery(job: Job, tenant_schema: str) -> None:
         session.commit()
 
 
+def handle_extract_recording_files(job: Job, tenant_schema: str) -> None:
+    """Pull every queued document snapshot of a recording from object storage,
+    extract bounded text/tables (vista.documents) and store the JSON next to the
+    snapshot; the recording's file entry records the summary and the key."""
+    recording_id = uuid.UUID(job.payload["recording_id"])
+    with tenant_session(tenant_schema) as session:
+        record = session.get(Recording, recording_id)
+        if record is None:
+            return
+        queued = [f["id"] for f in record.files or [] if (f.get("extraction") or {}).get("status") in ("queued", "failed")]
+        media = dict(record.media or {})
+    failures = 0
+    for file_id in queued:
+        with tenant_session(tenant_schema) as session:
+            record = session.get(Recording, recording_id)
+            if record is None:
+                return
+            files = [dict(f) for f in record.files or []]
+            entry = next((f for f in files if f.get("id") == file_id), None)
+            if entry is None or (entry.get("extraction") or {}).get("status") not in ("queued", "failed"):
+                continue
+            item = media.get(entry.get("snapshot") or "")
+            try:
+                if item is None:
+                    raise FileNotFoundError(entry.get("snapshot"))
+                if item["size_bytes"] > documents.MAX_BYTES:
+                    result = {"kind": "skipped", "error": "too large"}
+                else:
+                    obj = s3_client().get_object(Bucket=settings.s3_bucket, Key=item["key"])
+                    with obj["Body"] as stream:
+                        data = stream.read(documents.MAX_BYTES + 1)
+                    result = documents.extract(data, entry.get("ext", ""))
+                key = f"{item['key']}.extracted.json" if item else None
+                if key:
+                    body = json.dumps(result, ensure_ascii=False).encode()
+                    s3_client().put_object(Bucket=settings.s3_bucket, Key=key, Body=body, ContentType="application/json")
+                entry["extraction"] = {"status": "done", "key": key, "at": datetime.now(UTC).isoformat(), **documents.summary(result)}
+            except (BotoCoreError, ClientError, FileNotFoundError) as exc:
+                failures += 1
+                entry["extraction"] = {"status": "failed", "error": repr(exc)[:500]}
+            record.files = files
+            record.updated_at = datetime.now(UTC)
+            session.commit()
+    if failures:
+        raise RuntimeError(f"{failures} of {len(queued)} documents could not be read")
+
+
 def mark_run_failed(job: Job, tenant_schema: str, error: str, permanent: bool) -> None:
     if "run_id" not in job.payload:
         return
@@ -454,4 +505,5 @@ HANDLERS = {
     "company_summary": handle_company_summary,
     "explain_recording": handle_explain_recording,
     "synthetic_discovery": handle_synthetic_discovery,
+    "extract_recording_files": handle_extract_recording_files,
 }

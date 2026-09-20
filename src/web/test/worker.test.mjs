@@ -46,6 +46,12 @@ test("serves assets with a restrictive CSP and proxies only the report surface",
   assert.equal(await status(rec, "PUT"), 405);
   assert.equal(await status("/api/deals", "PUT"), 405);
   assert.equal(await status(`${rec}/S1/x`, "GET"), 404);
+  const media = "/api/recordings/00000000-0000-0000-0000-000000000002/media";
+  assert.equal(await status(media, "POST"), 503);
+  assert.equal(await status(`${media}/complete`, "POST"), 503);
+  assert.equal(await status(media, "GET"), 503);
+  assert.equal(await status(media, "PUT"), 405);
+  assert.equal(await status(`${media}/screen.webm`, "GET"), 404);
 });
 test("proxy forwards sessions, preserves cookies, never caches data, rejects cross-origin writes", async () => {
   const original = globalThis.fetch;
@@ -111,4 +117,27 @@ test("proxy forwards sessions, preserves cookies, never caches data, rejects cro
   } finally {
     globalThis.fetch = original;
   }
+});
+
+test("ingestion proxy allows only scoped import operations", async () => {
+  const status = async (path, method) =>
+    (
+      await worker.fetch(
+        new Request(`https://vista.test/api${path}`, { method }),
+        {},
+      )
+    ).status;
+  const id = "00000000-0000-0000-0000-000000000001";
+  assert.equal(await status(`/deals/${id}/imports`, "GET"), 503);
+  assert.equal(await status(`/deals/${id}/imports`, "POST"), 503);
+  assert.equal(await status(`/imports/${id}`, "GET"), 503);
+  assert.equal(await status(`/imports/${id}/commit`, "POST"), 503);
+  assert.equal(
+    await status(`/imports/${id}/findings/123456789abcdef0`, "POST"),
+    503,
+  );
+  assert.equal(await status(`/imports/${id}/export`, "GET"), 503);
+  assert.equal(await status(`/imports/${id}/export`, "POST"), 405);
+  assert.equal(await status(`/imports/${id}`, "DELETE"), 405);
+  assert.equal(await status(`/imports/${id}/commit`, "PUT"), 405);
 });
