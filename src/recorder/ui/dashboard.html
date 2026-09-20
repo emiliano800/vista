@@ -167,6 +167,34 @@
       .strip i:hover, .strip i.on { opacity: 1; transform: scaleY(1.15); }
       .strip .gap { background: transparent; cursor: default; border: 0; }
       .strip .head { position: absolute; top: -3px; bottom: -3px; width: 2px; background: var(--ink); pointer-events: none; transition: left 0.25s linear; }
+      /* document track: one row per file, bars where it was on screen, ticks where Spotlight saw it used */
+      .docs { display: grid; gap: 3px; margin-top: var(--space-2); position: relative; }
+      .docs .row { display: grid; grid-template-columns: 120px minmax(0, 1fr); gap: var(--space-2); align-items: center; height: 14px; }
+      .docs .row .lb { font-size: 11px; line-height: 14px; color: var(--ink-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: flex; align-items: center; gap: 4px; }
+      .docs .row .lb svg { width: 11px; height: 11px; flex: none; }
+      .docs .row .tr { position: relative; height: 100%; background: var(--surface-sunken); border-radius: 3px; }
+      .docs .row .tr i { position: absolute; top: 2px; bottom: 2px; border-radius: 2px; background: var(--periwinkle); opacity: 0.7; cursor: pointer; min-width: 2px; }
+      .docs .row .tr i:hover, .docs .row.on .tr i { opacity: 1; }
+      .docs .row .tr b { position: absolute; top: 0; bottom: 0; width: 2px; background: var(--human-ink); opacity: 0.6; pointer-events: none; }
+      .docs .row.on .lb { color: var(--ink); font-weight: 600; }
+      .docs .row.off { opacity: 0.45; }
+      .docs .head { position: absolute; top: 0; bottom: 0; left: 128px; width: 2px; background: var(--ink); pointer-events: none; transition: left 0.25s linear; }
+      .docs .more { font-size: 11px; color: var(--ink-faint); }
+      /* what's on screen at the playhead */
+      .doc-now { display: flex; align-items: center; gap: var(--space-2); margin-top: var(--space-2); padding: var(--space-2) var(--space-3); border: 1px solid var(--line); border-radius: var(--radius-lg); background: var(--surface-raised); font-size: 12px; line-height: 16px; min-height: 36px; }
+      .doc-now .nm { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+      .doc-now .mu { color: var(--ink-muted); white-space: nowrap; }
+      .doc-now .sp { flex: 1; }
+      /* documents list: what ships with the recording */
+      .files { display: grid; gap: var(--space-1); }
+      .file { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: var(--space-3); align-items: center; padding: var(--space-2) var(--space-3); border: 1px solid var(--line); border-radius: var(--radius-lg); background: var(--surface-raised); }
+      .file.off { opacity: 0.5; }
+      .file .nm { font-weight: 600; font-size: 13px; line-height: 18px; overflow-wrap: anywhere; display: flex; align-items: center; gap: 6px; }
+      .file .st { color: var(--ink-muted); font-size: 12px; line-height: 16px; }
+      .file .st .ed { color: var(--human-ink); }
+      .file .st .err { color: var(--danger-ink, var(--ink)); }
+      .file .act { display: flex; gap: var(--space-2); align-items: center; }
+      .file input[type=checkbox] { width: 16px; height: 16px; accent-color: var(--periwinkle); }
       .secs { display: grid; gap: var(--space-2); max-height: 420px; overflow: auto; }
       .sec { display: grid; grid-template-columns: 6px minmax(0, 1fr); gap: var(--space-3); align-items: start; padding: var(--space-2) var(--space-3); border: 1px solid var(--line); border-radius: var(--radius-lg); cursor: pointer; transition: background 0.15s, border-color 0.15s; background: var(--surface-raised); }
       .sec:hover { background: var(--surface-hover); }
@@ -324,9 +352,16 @@
                 </div>
                 <div class="strip" id="strip"><span class="head" id="head" style="left:0"></span></div>
                 <div class="tl-axis"><span id="vs-a">—</span><span id="vs-b">—</span></div>
+                <div class="docs hidden" id="docs"></div>
+                <div class="doc-now hidden" id="doc-now"></div>
               </div>
               <div class="secs" id="secs"><div class="empty">Working out the sections…</div></div>
             </div>
+          </section>
+
+          <section class="card hidden" id="files-card" style="margin:0 0 14px">
+            <h2 style="display:flex;justify-content:space-between;align-items:baseline"><span>Documents</span><span class="muted" style="text-transform:none;letter-spacing:0;font-weight:500" id="files-sub"></span></h2>
+            <div class="files" id="files"></div>
           </section>
 
           <div class="agent">
@@ -455,7 +490,14 @@
         folder: '<path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/>',
         alert: '<circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/>',
         loader: '<path d="M21 12a9 9 0 1 1-6.219-8.56"/>',
+        file: '<path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/>',
+        sheet: '<path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M8 13h8"/><path d="M8 17h8"/><path d="M10 9H8"/>',
+        text: '<path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M10 9H8"/><path d="M16 13H8"/><path d="M16 17H8"/>',
+        slides: '<rect width="20" height="14" x="2" y="3" rx="2"/><line x1="8" x2="16" y1="21" y2="21"/><line x1="12" x2="12" y1="17" y2="21"/>',
+        download: '<path d="M12 15V3"/><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/>',
+        external: '<path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>',
       };
+      const fileIcon = (ext) => ({ '.xlsx': 'sheet', '.xlsm': 'sheet', '.xls': 'sheet', '.csv': 'sheet', '.tsv': 'sheet', '.pptx': 'slides', '.ppt': 'slides', '.docx': 'text', '.doc': 'text', '.txt': 'text', '.md': 'text', '.rtf': 'text', '.pdf': 'text' }[ext] ?? 'file');
       const icon = (name) => `<svg class="ic" viewBox="0 0 24 24" aria-hidden="true">${LUCIDE[name]}</svg>`;
       // Upload state of one recording: submitted (files in the workspace, gone from here),
       // uploading, failed (retry), uploaded (report only, older flow) or local.
@@ -647,6 +689,7 @@
         $('vs-b').textContent = vs.ended_at ? clock(vs.ended_at) : '…';
         $('vs-sub').textContent = vs.submitted ? `${vs.sections.length} sections · in your workspace` : vs.sections.length ? `${vs.sections.length} sections` : 'No window switches recorded';
         renderSections();
+        renderFiles();
         // key added after the session ended, or the app was closed mid-way: pick the explanations up now
         if (vs.review.enabled && vs.ended_at && !vs.review.generating && !vs.review.summary.total && !vs.review.session) window.vista.explain(id).catch(() => {});
       }
@@ -655,8 +698,73 @@
         if (!reviewing || next.recording_id !== reviewing) return;
         vs = next;
         renderSections();
+        renderFiles();
         renderReview();
       });
+
+      // ---- documents: track under the scrubber, "on screen now" panel, list that ships with Submit ----
+      const pausedBefore = (t) => (vs?.pauses ?? []).reduce((acc, p) => { const a = Date.parse(p.start), b = Date.parse(p.end ?? p.start); return b > a && a < t ? acc + (Math.min(b, t) - a) : acc; }, 0);
+      const videoOffset = (iso) => { const t = Date.parse(iso), t0 = Date.parse(vs.started_at); return Math.max(0, (t - t0 - pausedBefore(t)) / 1000); };
+      const MAX_DOC_ROWS = 8;
+      let activeDoc = null;
+      function fileAt(sec) {
+        return (vs?.files ?? []).filter((f) => f.include !== false).find((f) => f.intervals.some((iv) => sec >= videoOffset(iv.start) && sec < videoOffset(iv.end))) ?? null;
+      }
+      function renderDocTrack() {
+        const box = $('docs');
+        const files = (vs?.files ?? []).filter((f) => f.intervals.length || f.used_at?.length);
+        box.classList.toggle('hidden', !files.length);
+        if (!files.length) return;
+        const t0 = Date.parse(vs.started_at), t1 = (vs.ended_at ? Date.parse(vs.ended_at) : Date.now()) || t0 + 1;
+        const span = Math.max(1, t1 - t0), x = (iso) => Math.min(100, Math.max(0, ((Date.parse(iso) - t0) / span) * 100));
+        const shown = files.slice(0, MAX_DOC_ROWS);
+        box.innerHTML = shown.map((f) => `<div class="row ${activeDoc === f.id ? 'on' : ''} ${f.include === false ? 'off' : ''}" data-doc="${f.id}"><span class="lb" title="${esc(f.name)}">${icon(fileIcon(f.ext))}${esc(f.name)}</span><span class="tr">${f.intervals.map((iv) => `<i data-seek="${iv.start}" title="${esc(f.name)} · ${clock(iv.start)}–${clock(iv.end)}${iv.app ? ' · ' + esc(short(iv.app)) : ''}" style="left:${x(iv.start)}%;width:${Math.max(0.4, x(iv.end) - x(iv.start))}%"></i>`).join('')}${(f.used_at ?? []).map((t) => `<b title="used ${clock(t)}" style="left:${x(t)}%"></b>`).join('')}</span></div>`).join('')
+          + (files.length > shown.length ? `<div class="more">+${files.length - shown.length} more below</div>` : '')
+          + '<span class="head" id="doc-head"></span>';
+        box.querySelectorAll('[data-seek]').forEach((el) => (el.onclick = () => { if (!vs.video_url) return; stopAt = null; seekTo(videoOffset(el.dataset.seek)).then(() => video.play().catch(() => {})); }));
+        moveDocHead();
+      }
+      function moveDocHead() {
+        const h = document.getElementById('doc-head');
+        if (!h || !vs) return;
+        const t0 = Date.parse(vs.started_at), t1 = vs.ended_at ? Date.parse(vs.ended_at) : Date.now();
+        const pct = Math.min(100, (video.currentTime * 1000 / Math.max(1, t1 - t0)) * 100);
+        h.style.left = `calc(128px + (100% - 128px) * ${pct / 100})`;
+      }
+      function renderDocNow(f) {
+        const box = $('doc-now');
+        const any = (vs?.files ?? []).some((x) => x.include !== false);
+        box.classList.toggle('hidden', !any);
+        if (!any) return;
+        if (!f) { box.innerHTML = `<span class="mu">${icon('file')} No document on screen at this point</span>`; return; }
+        const st = f.snapshot ? `${f.edited ? 'edited during the session' : 'read'} · ${fmtBytes(f.size_bytes)}` : f.snapshot_error ? `not copied: ${f.snapshot_error}` : 'not copied';
+        box.innerHTML = `${icon(fileIcon(f.ext))}<span class="nm" title="${esc(f.name)}">${esc(f.name)}</span><span class="mu">${esc(f.folder ?? '')}</span><span class="sp"></span><span class="mu">${esc(st)}</span>${f.snapshot_url ? `<button class="btn sm icon" data-open="${f.id}" title="Open the copy that ships with this recording">${icon('external')}</button>` : ''}`;
+        box.querySelector('[data-open]')?.addEventListener('click', () => window.vista.openFile(reviewing, f.id).catch((e) => alert(e.message)));
+      }
+      const fmtBytes = (n) => (n == null ? '' : n < 1048576 ? `${Math.max(1, Math.round(n / 1024))} KB` : `${(n / 1048576).toFixed(1)} MB`);
+      function renderFiles() {
+        const card = $('files-card');
+        const files = vs?.files ?? [];
+        card.classList.toggle('hidden', !files.length);
+        renderDocTrack();
+        renderDocNow(fileAt(video.currentTime));
+        if (!files.length) return;
+        const inc = files.filter((f) => f.include !== false);
+        const copied = inc.filter((f) => f.snapshot);
+        $('files-sub').textContent = vs.submitted ? `${copied.length} in your workspace` : `${copied.length} of ${files.length} will be submitted · untick what should stay here`;
+        const srcOf = (f) => (f.sources?.includes('download') ? `${icon('download')} downloaded` : f.intervals.length ? `open ${hm(f.seconds)}` : 'used');
+        const state = (f) => {
+          if (f.extraction?.status === 'done') return `${icon('cloudCheck')} ingested`;
+          if (f.extraction?.status) return f.extraction.status;
+          if (f.include === false) return 'stays on this computer';
+          if (f.snapshot) return `${fmtBytes(f.size_bytes)}${f.edited ? ' · <span class="ed">edited</span>' : ''}`;
+          return `<span class="err">${esc(f.snapshot_error ?? 'not copied')}</span>`;
+        };
+        $('files').innerHTML = files.map((f) => `<div class="file ${f.include === false ? 'off' : ''}" data-file="${f.id}">${vs.submitted ? '<span></span>' : `<input type="checkbox" data-inc="${f.id}" ${f.include === false ? '' : 'checked'} title="Include this file when you submit" />`}<div><div class="nm">${icon(fileIcon(f.ext))}${esc(f.name)}</div><div class="st">${esc(f.folder ?? '')}${f.folder ? ' · ' : ''}${srcOf(f)}${f.intervals.length ? ` · ${clock(f.first_opened)}–${clock(f.last_closed)}` : ''} · ${state(f)}</div></div><div class="act">${f.intervals.length && vs.video_url ? `<button class="btn sm" data-seek="${f.intervals[0].start}" title="Play from when this file was first opened">Play</button>` : ''}${f.snapshot_url && !vs.submitted ? `<button class="btn sm icon" data-open="${f.id}" title="Open the copy that ships with this recording">${icon('external')}</button>` : ''}</div></div>`).join('');
+        $('files').querySelectorAll('[data-inc]').forEach((cb) => (cb.onchange = async () => { cb.disabled = true; try { vs = await window.vista.toggleFile(reviewing, cb.dataset.inc, cb.checked); } catch (e) { alert(e.message); } renderFiles(); renderSections(); }));
+        $('files').querySelectorAll('[data-seek]').forEach((b) => (b.onclick = () => { stopAt = null; seekTo(videoOffset(b.dataset.seek)).then(() => video.play().catch(() => {})); }));
+        $('files').querySelectorAll('[data-open]').forEach((b) => (b.onclick = () => window.vista.openFile(reviewing, b.dataset.open).catch((e) => alert(e.message))));
+      }
 
       const RESOLVED = new Set(['approved', 'fixed', 'explained']);
       const pct = (c) => `${Math.round((c ?? 0) * 100)}%`;
@@ -724,7 +832,7 @@
           `<div class="sec whole ${w.cls}" data-w="1"><i class="sw" style="background:var(--line-strong)"></i><div><div class="nm">${esc(recordings.find((r) => r.recording_id === reviewing)?.name ?? 'Whole session')}</div><div class="st">${hm(whole.seconds)} · ${vs.sections.length} sections · whole recording</div>${w.read}<div class="act">${w.act}</div></div></div>`,
           ...vs.sections.map((s) => {
             const a = aiBlock(s.review, s.index);
-            return `<div class="sec ${activeSec === s.index ? 'on' : ''} ${a.cls}" data-sec="${s.index}"><i class="sw" style="background:${colorOf(s.app)}"></i><div><div class="nm">${esc(s.name)}</div><div class="st">${hm(s.seconds)} · ${esc(short(s.app))} · ${(s.counts.click ?? 0)} clicks · ${(s.counts.copy ?? 0) + (s.counts.paste ?? 0)} copy/paste${manual(s)}${s.edited ? ' · <span class="ed">edited by you</span>' : ''}</div>${s.note && editingSec !== s.index ? `<div class="note"><b>Note:</b> ${esc(s.note)}</div>` : ''}${a.read}${editForm(s)}<div class="act">${editingSec === s.index ? '' : a.act + editBtn(s)}</div></div></div>`;
+            return `<div class="sec ${activeSec === s.index ? 'on' : ''} ${a.cls}" data-sec="${s.index}"><i class="sw" style="background:${colorOf(s.app)}"></i><div><div class="nm">${esc(s.name)}</div><div class="st">${hm(s.seconds)} · ${esc(short(s.app))} · ${(s.counts.click ?? 0)} clicks · ${(s.counts.copy ?? 0) + (s.counts.paste ?? 0)} copy/paste${manual(s)}${s.edited ? ' · <span class="ed">edited by you</span>' : ''}${s.files?.length ? `<br>${icon('file')} ${esc(s.files.slice(0, 3).join(', '))}${s.files.length > 3 ? ` +${s.files.length - 3}` : ''}` : ''}</div>${s.note && editingSec !== s.index ? `<div class="note"><b>Note:</b> ${esc(s.note)}</div>` : ''}${a.read}${editForm(s)}<div class="act">${editingSec === s.index ? '' : a.act + editBtn(s)}</div></div></div>`;
           }),
         ].join('');
         if (!vs.sections.length) $('secs').insertAdjacentHTML('beforeend', '<div class="empty">No long sections — the session may be very short.</div>');
@@ -794,6 +902,9 @@
         if (stopAt != null && video.currentTime >= stopAt) { video.pause(); stopAt = null; }
         const cur = vs.sections.find((s) => video.currentTime >= s.offset_s && video.currentTime < s.offset_s + s.seconds);
         if (cur && cur.index !== activeSec) { activeSec = cur.index; $('v-now').textContent = cur.name; renderSections(); }
+        moveDocHead();
+        const doc = fileAt(video.currentTime);
+        if ((doc?.id ?? null) !== activeDoc) { activeDoc = doc?.id ?? null; renderDocTrack(); renderDocNow(doc); }
       });
       const syncPlayBtns = () => { $('v-play').classList.toggle('hidden', !video.paused); $('v-pause').classList.toggle('hidden', video.paused); };
       video.addEventListener('play', syncPlayBtns); video.addEventListener('pause', syncPlayBtns);

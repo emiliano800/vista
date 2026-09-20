@@ -128,6 +128,44 @@ class SectionEdit(BaseModel):
 SectionId = Annotated[str, Field(pattern=r"^[A-Za-z0-9_-]{1,64}$")]
 
 
+class FileInterval(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    start: AwareDatetime
+    end: AwareDatetime
+    app: Text = ""
+
+
+class RecordingDocument(BaseModel):
+    """A document on screen during the session: when it was open (video markers)
+    and the snapshot of its last version that ships as media under files/."""
+
+    model_config = ConfigDict(extra="forbid")
+    id: str = Field(pattern=r"^[a-f0-9]{12}$")
+    name: str = Field(max_length=255)
+    ext: str = Field(max_length=16, pattern=r"^(\.[a-z0-9]{1,15})?$")
+    folder: str = Field(max_length=255, default="")
+    first_opened: AwareDatetime
+    last_closed: AwareDatetime
+    seconds: Count = 0
+    intervals: list[FileInterval] = Field(default_factory=list, max_length=500)
+    used_at: list[AwareDatetime] = Field(default_factory=list, max_length=500)
+    sources: list[Literal["ax", "lsof", "spotlight", "download"]] = Field(default_factory=list, max_length=4)
+    snapshot: str | None = Field(default=None, max_length=255, pattern=r"^files/[a-f0-9]{12}/[A-Za-z0-9][A-Za-z0-9._-]*$")
+    sha256: str | None = Field(default=None, pattern=r"^[a-f0-9]{64}$")
+    size_bytes: Count | None = None
+    modified_at: AwareDatetime | None = None
+    edited: bool = False
+    content_type: str | None = Field(default=None, max_length=128, pattern=r"^[a-z]+/[a-z0-9.+-]+$")
+
+    @model_validator(mode="after")
+    def ordered(self):
+        if self.last_closed < self.first_opened or any(iv.end < iv.start for iv in self.intervals):
+            raise ValueError("Document closes before it opens")
+        if self.snapshot and not self.snapshot.startswith(f"files/{self.id}/"):
+            raise ValueError("Snapshot path does not belong to this document")
+        return self
+
+
 class RecordingUpload(BaseModel):
     model_config = ConfigDict(extra="forbid")
     version: Literal[1] = 1
@@ -137,6 +175,7 @@ class RecordingUpload(BaseModel):
     name: Text = ""
     summary_text: Text = ""
     sections: dict[SectionId, SectionEdit] = Field(default_factory=dict, max_length=500)
+    files: list[RecordingDocument] = Field(default_factory=list, max_length=500)
 
     @model_validator(mode="after")
     def evidence_matches(self):

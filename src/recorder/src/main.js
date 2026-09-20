@@ -11,6 +11,7 @@ import { BrowserWindow, Menu, Tray, app, clipboard, desktopCapturer, ipcMain, na
 import { CONFIDENCE_THRESHOLD, RESOLVED_STATUSES, SESSION_ID, applyDecision, describeSection, explainSection, openaiConfig, reviewSummary } from './explain.js';
 import { DEMO_KEYS, DemoHook, demoActiveWindow, demoClipboard } from './demo.js';
 import { DEFAULT_SETTINGS, Recorder, keyNamesFrom, loadSettings } from './recorder.js';
+import { FILES_DIR, FILES_FILE, FileTracker, axDocuments, lsofDocuments, publicFile, readFiles, snapshotFiles, spotlightSweep, writeFiles } from './files.js';
 import { redactText } from './redact.js';
 import { cloudRequest, companyID, fetchReview, mergeReview, readSectionEdits, reviewItems, sendDecision, submitSections, uploadMedia, uploadReport, workspaceURL } from './cloud.js';
 import { buildSections, parseEvents, recordingName } from './sections.js';
@@ -91,9 +92,10 @@ async function buildRecorder() {
     readClipboard: DEMO ? demoClipboard : () => clipboard.readText(),
     frameProvider: grabFrame,
     thumbProvider: grabThumb,
+    fileProbe: DEMO ? null : probeDocuments,
   });
   rec.on('status', broadcastStatus);
-  rec.on('finished', postProcess);
+  rec.on('finished', (m) => postProcess(m).catch((e) => console.error('post-processing failed:', e.message)));
   return rec;
 }
 
@@ -106,6 +108,51 @@ async function grabFrame() {
   });
   const img = sources[0]?.thumbnail;
   return img && !img.isEmpty() ? img.toJPEG(70) : null;
+}
+
+// Documents shown by the frontmost app: Accessibility first, open handles as fallback.
+async function probeDocuments(win) {
+  const ax = await axDocuments();
+  if (ax.length) return ax;
+  return lsofDocuments(win?.owner?.processId);
+}
+
+// After Stop: add what Spotlight saw used/added during the session, then copy
+// the last version of every document into files/ so it ships with the recording.
+async function collectDocuments(dir, manifest) {
+  if (!recorder.settings.files) return;
+  const live = readFiles(dir);
+  if (live.some((f) => 'snapshot' in f)) return; // already collected (a re-run after an annotation)
+  const tracker = new FileTracker();
+  for (const f of live) {
+    for (const iv of f.intervals) {
+      tracker.observe([f.path], Date.parse(iv.start), { app: iv.app, source: 'ax' });
+      tracker.observe([], Date.parse(iv.end));
+    }
+  }
+  for (const hit of await spotlightSweep({ start: manifest.started_at, end: manifest.ended_at })) tracker.touch(hit.path, hit.at, { source: hit.source });
+  const t0 = Date.parse(manifest.started_at), t1 = Date.parse(manifest.ended_at);
+  const files = tracker.finish({ t0, t1, pauses: manifest.pauses ?? [] });
+  const excluded = new Set(live.filter((f) => f.include === false).map((f) => f.path));
+  for (const f of files) if (excluded.has(f.path)) f.include = false;
+  writeFiles(dir, snapshotFiles(dir, files, { startedAt: manifest.started_at }));
+}
+
+// The employee can leave a document out before Submit; its snapshot is deleted.
+function toggleFile(recordingId, fileId, include) {
+  if (!/^[a-f0-9]{12}$/.test(String(fileId))) throw new Error('Invalid file.');
+  const dir = recDir(recordingId);
+  if (readManifest(dir).submitted) throw new Error('This session was submitted.');
+  const files = readFiles(dir);
+  const f = files.find((x) => x.id === fileId);
+  if (!f) throw new Error('File not found.');
+  f.include = !!include;
+  if (!f.include && f.snapshot) {
+    fs.rmSync(path.join(dir, FILES_DIR, f.id), { recursive: true, force: true });
+    f.snapshot = null;
+  } else if (f.include && !f.snapshot) snapshotFiles(dir, [f]);
+  writeFiles(dir, files);
+  return sectionsFor(recordingId);
 }
 
 // 64x36 grayscale fingerprint of the screen for change detection (~1 ms to compare)
@@ -127,9 +174,12 @@ function broadcastStatus(status) {
 
 // After a recording ends: run the taskmining pipeline if it's reachable so the
 // dashboard can show steps/cases/open questions. Raw events are never modified.
-function postProcess(manifest) {
+async function postProcess(manifest) {
   const dir = path.join(RECORDINGS, manifest.recording_id);
   const repo = findRepoRoot();
+  // Documents first: Submit is only offered once processing is 'done', so the
+  // snapshots are in place before anything can leave the machine.
+  await collectDocuments(dir, manifest).then(() => broadcastSections(manifest.recording_id)).catch((e) => console.error('document collection failed:', e.message));
   const write = (patch) => {
     const m = JSON.parse(fs.readFileSync(path.join(dir, 'manifest.json'), 'utf8'));
     fs.writeFileSync(path.join(dir, 'manifest.json'), JSON.stringify({ ...m, ...patch }, null, 2));
@@ -258,10 +308,16 @@ function sectionsFor(recordingId) {
     s.review = review.items[s.id] ?? null;
   }
   const video = m.files?.video && fs.existsSync(path.join(dir, m.files.video)) ? path.join(dir, m.files.video) : null;
+  const files = m.submitted ? m.submitted.files_list ?? [] : readFiles(dir).map((f) => ({ ...publicFile(f), snapshot_url: f.snapshot ? `file://${path.join(dir, f.snapshot)}` : null }));
+  for (const s of sections) {
+    const a = Date.parse(s.start), b = Date.parse(s.end);
+    s.files = files.filter((f) => f.intervals.some((iv) => Date.parse(iv.start) < b && Date.parse(iv.end) > a)).map((f) => f.name);
+  }
   return {
     recording_id: recordingId,
     video,
     video_url: video ? `file://${video}` : null,
+    files,
     started_at: m.started_at,
     ended_at: m.ended_at,
     pauses: m.pauses ?? [],
@@ -555,7 +611,7 @@ function addAnnotation(recordingId, { label, note = '', start, end, case_id = ''
     const patched = { ...m, summary_text, name: recordingName(m, { summary: summary_text }) };
     fs.writeFileSync(path.join(dir, 'manifest.json'), JSON.stringify(patched, null, 2));
   }
-  if (m.ended_at) postProcess(readManifest(dir));
+  if (m.ended_at) postProcess(readManifest(dir)).catch((e) => console.error('post-processing failed:', e.message));
   else broadcastRecordings();
   return row;
 }
@@ -810,6 +866,12 @@ ipcMain.handle('cloud:upload', async (event, id) => {
 // metadata stub to submitted/ → delete the recording folder. A failure at any
 // step leaves the folder in place with status 'failed' so Submit can be retried.
 const STUB_FILES = ['manifest.json', REVIEW_FILE, SECTIONS_FILE, 'annotations.jsonl'];
+// files.json travels too, without the absolute paths.
+function writeFilesStub(dir, stub) {
+  const files = readFiles(dir).map(publicFile);
+  if (files.length) fs.writeFileSync(path.join(stub, FILES_FILE), JSON.stringify({ version: 1, files }, null, 2));
+  return files;
+}
 // Resolved section metadata (time span, video offsets, name, employee note,
 // AI explanation + decision, annotations) written as a sidecar next to the
 // video so the labels travel with screen.webm wherever the media goes.
@@ -818,7 +880,7 @@ function writeVideoSidecar(dir, id, m) {
   const sections = sectionsFor(id).sections.map((s) => ({ ...s, annotations: s.annotations ?? [], review: s.review ?? null }));
   fs.writeFileSync(
     path.join(dir, VIDEO_SECTIONS_FILE),
-    JSON.stringify({ recording_id: id, video: m.files?.video ?? null, started_at: m.started_at, ended_at: m.ended_at, pauses: m.pauses ?? [], sections }, null, 2),
+    JSON.stringify({ recording_id: id, video: m.files?.video ?? null, started_at: m.started_at, ended_at: m.ended_at, pauses: m.pauses ?? [], sections, documents: readFiles(dir).filter((f) => f.include !== false).map(publicFile) }, null, 2),
   );
   return sections;
 }
@@ -849,9 +911,10 @@ async function submitRecording(id) {
     const stub = path.join(SUBMITTED, id);
     fs.mkdirSync(stub, { recursive: true });
     for (const f of STUB_FILES) if (fs.existsSync(path.join(dir, f))) fs.copyFileSync(path.join(dir, f), path.join(stub, f));
+    const files_list = writeFilesStub(dir, stub);
     fs.writeFileSync(
       path.join(stub, 'manifest.json'),
-      JSON.stringify({ ...m, files: {}, submitted: { at: new Date().toISOString(), recording_id: cloudId, files: files.length, sections } }, null, 2),
+      JSON.stringify({ ...m, files: {}, submitted: { at: new Date().toISOString(), recording_id: cloudId, files: files.length, sections, files_list } }, null, 2),
     );
     fs.rmSync(dir, { recursive: true, force: true });
     saveState({ status: 'submitted', submittedAt: new Date().toISOString(), recordingId: cloudId, files: files.length, progress: null });
@@ -868,6 +931,12 @@ ipcMain.handle('recordings:submit', (event, id) => {
   return submitRecording(id);
 });
 ipcMain.handle('recordings:edit-section', (_e, id, sectionId, patch) => editSection(id, sectionId, patch ?? {}));
+ipcMain.handle('recordings:toggle-file', (_e, id, fileId, include) => toggleFile(id, fileId, include));
+ipcMain.handle('recordings:open-file', (_e, id, fileId) => {
+  const dir = recDir(id);
+  const f = readFiles(dir).find((x) => x.id === fileId && x.snapshot);
+  return f ? shell.openPath(path.join(dir, f.snapshot)) : 'No copy of this file.';
+});
 
 // ---- IPC ----------------------------------------------------------------------
 

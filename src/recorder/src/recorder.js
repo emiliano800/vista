@@ -18,6 +18,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 
+import { FILES_FILE, FileTracker } from './files.js';
 import { redactEvent, redactText } from './redact.js';
 
 const MOD_KEYS = new Set(['ctrl', 'alt', 'shift', 'meta']);
@@ -31,6 +32,7 @@ const IS_MAC = process.platform === 'darwin';
 export const DEFAULT_SETTINGS = {
   redact: false,              // mask emails/phones/cards/IBANs in titles and clipboard text before writing to disk
   keyContent: false,          // record typed characters (false = counts + named keys only)
+  files: true,                // track documents on screen (macOS) and snapshot their last version at Stop
   clipboard: true,            // record clipboard text on copy/paste
   screenshots: true,          // JPEG frame on every focus change, on screen change + every `frameEverySec`
   video: true,                // low-fps webm of the screen alongside events
@@ -65,6 +67,7 @@ export class Recorder extends EventEmitter {
    * @param {Function|null} opts.frameProvider  async () => Buffer (JPEG) | null
    * @param {Function|null} opts.thumbProvider  async () => { width, height, gray: Uint8Array } | null
    * @param {Function|null} opts.readClipboard  () => string
+   * @param {Function|null} opts.fileProbe  async (win) => string[]  document paths shown by the frontmost app
    */
   constructor(opts) {
     super();
@@ -75,6 +78,8 @@ export class Recorder extends EventEmitter {
     this.frameProvider = opts.frameProvider ?? null;
     this.thumbProvider = opts.thumbProvider ?? null;
     this.readClipboard = opts.readClipboard ?? (() => '');
+    this.fileProbe = opts.fileProbe ?? null;
+    this.files = null;
     this.keyNames = opts.keyNames ?? new Map(); // uiohook keycode -> UiohookKey name
     this.user = opts.user ?? os.userInfo().username;
 
@@ -122,12 +127,14 @@ export class Recorder extends EventEmitter {
     this._log = [];
     this._thumb = null;
     this._lastClip = null;
+    this.files = this.settings.files ? new FileTracker() : null;
     this.state = 'recording';
     this._writeManifest();
     this._attachHooks();
     this._timers.push(setInterval(() => this._pollWindow(), 500));
     this._timers.push(setInterval(() => this._periodicFrame(), 1000));
     if (this.settings.changeDetect && this.thumbProvider) this._timers.push(setInterval(() => this._changeTick(), this.settings.changePollMs));
+    if (this.files && this.fileProbe) this._timers.push(setInterval(() => this.state === 'recording' && this._probeFiles(this._lastWin, this.current.app, this.current.private), 5000));
     this._pollWindow(true);
     this._emitStatus();
     return this.status();
@@ -138,6 +145,7 @@ export class Recorder extends EventEmitter {
     this.state = 'paused';
     this._pausedAt = Date.now();
     this.pauses.push({ start: new Date(this._pausedAt).toISOString(), end: null });
+    this.files?.closeAll(this._pausedAt);
     this._note('paused by employee');
     this._emitStatus();
     return this.status();
@@ -168,6 +176,7 @@ export class Recorder extends EventEmitter {
     this._timers = [];
     this._tickApp();
     this.endedAt = new Date();
+    this._writeFiles();
     await new Promise((res) => this.stream.end(res));
     this.stream = null;
     const manifest = this._writeManifest(true);
@@ -310,6 +319,7 @@ export class Recorder extends EventEmitter {
       return;
     }
     if (!win) return;
+    this._lastWin = win;
     const app = win.owner?.name ?? '';
     const title = win.title ?? '';
     const url = win.url ?? '';
@@ -320,7 +330,36 @@ export class Recorder extends EventEmitter {
     if (own) return this._emitStatus();
     this._write('focus', { payload: { window_id: win.id ?? null } });
     this._requestFrame('focus');
+    this._probeFiles(win, app, priv);
     this._emitStatus();
+  }
+
+  // Which documents the frontmost app shows right now; closes the ones no longer seen.
+  async _probeFiles(win, app, priv) {
+    if (!this.files || !this.fileProbe || this._probing) return;
+    if (priv) return this.files.closeAll(Date.now());
+    this._probing = true;
+    try {
+      const paths = (await this.fileProbe(win)) ?? [];
+      if (this.state === 'recording' && this.files) {
+        const before = new Set([...this.files.files.values()].filter((f) => f.open).map((f) => f.path));
+        this.files.observe(paths, Date.now(), { app });
+        for (const p of paths) if (!before.has(p)) this._pushLog({ timestamp: new Date().toISOString(), event_type: 'file', app, window_title: p.split('/').pop(), text: '', payload: {} });
+      }
+    } catch (err) {
+      this._note(`file probe failed: ${err.message}`);
+    } finally {
+      this._probing = false;
+    }
+  }
+
+  _writeFiles() {
+    if (!this.files || !this.dir) return;
+    const t1 = this.endedAt.getTime();
+    this.files.closeAll(t1);
+    const files = this.files.finish({ t0: this.startedAt.getTime(), t1, pauses: this.pauses ?? [] });
+    fs.writeFileSync(path.join(this.dir, FILES_FILE), JSON.stringify({ version: 1, files }, null, 2));
+    this.counts.file = files.length;
   }
 
   _isPrivate(app, title) {
@@ -421,6 +460,7 @@ export class Recorder extends EventEmitter {
   _pushLog(ev) {
     let label;
     if (ev.event_type === 'focus') label = `${ev.app} — ${ev.window_title}`;
+    else if (ev.event_type === 'file') label = `file ${ev.window_title}`;
     else if (ev.event_type === 'paste' && ev.payload.source_app) label = `paste ← ${ev.payload.source_app} ${ev.text}`.trim();
     else label = `${ev.event_type} ${ev.text}`.trim();
     this._log.push({ t: ev.timestamp, type: ev.event_type, label: label.slice(0, 80) });
@@ -444,7 +484,7 @@ export class Recorder extends EventEmitter {
       apps: this._appSummary(),
       pauses: this.pauses ?? [],
       settings: { redact: !!this.settings.redact, keyContent: this.settings.keyContent, clipboard: this.settings.clipboard, screenshots: this.settings.screenshots, video: this.settings.video },
-      files: { events: 'events.jsonl', shots: 'shots/', video: this.settings.video ? 'screen.webm' : null },
+      files: { events: 'events.jsonl', shots: 'shots/', video: this.settings.video ? 'screen.webm' : null, documents: this.settings.files ? FILES_FILE : null },
       processing: final ? 'pending' : null,
     };
     if (this.dir) fs.writeFileSync(path.join(this.dir, 'manifest.json'), JSON.stringify(manifest, null, 2));

@@ -5,6 +5,8 @@
 import fs from "node:fs";
 import path from "node:path";
 
+import { FILES_DIR, FILES_FILE, FILE_TYPES, publicFile, readFiles } from "./files.js";
+
 const LIMIT = 8 * 1024 * 1024;
 export function workspaceURL(input) {
   const url = new URL(input);
@@ -73,10 +75,40 @@ export function reportBundle(root, id) {
     name: String(m.name ?? "").slice(0, 4096),
     summary_text: String(m.summary_text ?? "").slice(0, 4096),
     sections,
+    files: documentList(dir),
   });
   if (Buffer.byteLength(body) > LIMIT)
     throw new Error("Report exceeds the 8 MiB upload limit.");
   return body;
+}
+// files.json: the documents on screen during the session, with open/close
+// intervals and the snapshot (files/<id>/<name>) that ships as media. Only the
+// ones the employee kept; never the absolute path.
+export function documentList(dir) {
+  return readFiles(dir)
+    .filter((f) => f.include !== false)
+    .slice(0, 500)
+    .map((f) => {
+      const p = publicFile(f);
+      return {
+        id: String(p.id),
+        name: String(p.name ?? "").slice(0, 255),
+        ext: String(p.ext ?? "").slice(0, 16),
+        folder: String(p.folder ?? "").slice(0, 255),
+        first_opened: p.first_opened,
+        last_closed: p.last_closed,
+        seconds: Number(p.seconds ?? 0),
+        intervals: (p.intervals ?? []).slice(0, 500).map((iv) => ({ start: iv.start, end: iv.end, app: String(iv.app ?? "").slice(0, 255) })),
+        used_at: (p.used_at ?? []).slice(0, 500),
+        sources: p.sources ?? [],
+        snapshot: p.snapshot ?? null,
+        sha256: p.sha256 ?? null,
+        size_bytes: p.size_bytes ?? null,
+        modified_at: p.modified_at ?? null,
+        edited: !!p.edited,
+        content_type: p.content_type ?? null,
+      };
+    });
 }
 // sections.json: what the employee typed over each video section ({id: {name, note, edited_at}}).
 export function readSectionEdits(dir) {
@@ -227,6 +259,13 @@ const MEDIA_TYPES = {
   ".csv": "text/csv",
   ".xes": "application/xml",
 };
+// Document snapshots live under files/ and may be any allowlisted document type.
+// files.json holds absolute local paths and never leaves the machine (the report carries documentList()).
+const typeFor = (rel) => {
+  if (rel === FILES_FILE) return null;
+  const ext = path.extname(rel).toLowerCase();
+  return rel.startsWith(`${FILES_DIR}/`) ? FILE_TYPES[ext] ?? MEDIA_TYPES[ext] : MEDIA_TYPES[ext];
+};
 export function mediaFiles(root, id) {
   const dir = path.join(root, id);
   const out = [];
@@ -236,7 +275,7 @@ export function mediaFiles(root, id) {
       if (ent.isSymbolicLink()) continue;
       if (ent.isDirectory()) walk(r);
       else if (ent.isFile()) {
-        const type = MEDIA_TYPES[path.extname(ent.name).toLowerCase()];
+        const type = typeFor(r);
         if (!type || ent.name.endsWith(".tmp")) continue;
         out.push({ name: r, content_type: type, size_bytes: fs.statSync(path.join(dir, r)).size });
       }
@@ -272,5 +311,7 @@ export async function uploadMedia(config, root, id, cloudRecordingId, { fetchImp
       onProgress({ done, total: files.length, name: f.name });
     }
   }
+  // Tell the workspace the package is complete so it can read the documents.
+  await cloudRequest(config, `${recordingPath(cloudRecordingId)}/media/complete`, { method: "POST", body: "{}" }, fetchImpl);
   return files.map((f) => f.name);
 }
