@@ -30,8 +30,18 @@ shots/NNNNNN.jpg  screenshots referenced by `screen` events (payload.image)
 screen.webm       optional screen video
 annotations.jsonl notes the employee adds + approved/fixed AI explanations (author, ai provenance)
 review.json       the AI's explanation per section and the employee's decision on each
+sections.json     the employee's edits per section (name, note, edited_at)
+screen.sections.json  written on Submit: every section resolved (span, video offset,
+                  name, note, AI explanation + decision, annotations) — the video's
+                  label track, uploaded next to screen.webm
 processed/        output of `taskmining run`, executed automatically on Stop
 ```
+
+**Submit** uploads the report, then every file above to the workspace
+(`<tenant>/deals/<deal>/recordings/<id>/media/…`), then deletes the folder.
+Only a metadata stub stays in `~/Vista/submitted/<id>/`; section labels are kept
+three ways — in the recording row (`Recording.sections`), in
+`screen.sections.json` beside the video, and in the stub.
 
 **Review after Stop.** The dashboard splits the session into *sections* — the
 longest stretches in one window, with quick hops (a 4-second Outlook check in

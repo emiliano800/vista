@@ -82,13 +82,6 @@
       .pill.skipped { border-color: var(--warning); color: var(--warning); }
       .muted { color: var(--ink-muted); }
       .mono { font-family: var(--font-mono); font-size: 12px; }
-      /* privacy */
-      .pv { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-4); }
-      .pv ul { margin: var(--space-2) 0 0; padding-left: 18px; color: var(--ink-secondary); font-size: 13px; line-height: 18px; }
-      .pv li { margin-bottom: var(--space-1); }
-      .pv h3 { margin: 0; }
-      .pv .yes h3::before { content: '■'; color: var(--moss); margin-right: var(--space-2); font-size: 11px; vertical-align: 2px; }
-      .pv .no h3::before { content: '■'; color: var(--rust); margin-right: var(--space-2); font-size: 11px; vertical-align: 2px; }
       /* settings */
       .set { display: grid; gap: 0; }
       .set label { display: grid; grid-template-columns: 1fr auto; gap: var(--space-3); align-items: center; padding: var(--space-3) 0; border-bottom: 1px solid var(--line); font-size: 13px; line-height: 18px; }
@@ -114,7 +107,18 @@
       .chip.on { background: var(--periwinkle-soft); border-color: var(--periwinkle); color: var(--periwinkle-ink); }
       .empty { color: var(--ink-muted); text-align: center; padding: var(--space-8) 0; font-size: 13px; line-height: 18px; }
       /* review / agent */
-      .agent { display: grid; grid-template-columns: 1fr 1.3fr; gap: var(--space-4); margin-top: var(--space-4); }
+      .agent { display: grid; gap: var(--space-4); margin-top: var(--space-4); }
+      details.card summary { cursor: pointer; font-size: 13px; line-height: 18px; color: var(--ink-muted); list-style: none; display: flex; align-items: center; gap: var(--space-2); }
+      details.card summary::-webkit-details-marker { display: none; }
+      details.card summary::before { content: ''; width: 6px; height: 6px; border-right: 1.5px solid currentColor; border-bottom: 1.5px solid currentColor; transform: rotate(-45deg); transition: transform 0.15s; }
+      details.card[open] summary::before { transform: rotate(45deg); }
+      details.card[open] summary { margin-bottom: var(--space-3); color: var(--ink); }
+      tr.day td { background: var(--surface); color: var(--ink); font-weight: 600; font-size: 12px; line-height: 16px; text-transform: uppercase; letter-spacing: 0.04em; padding-top: var(--space-3); }
+      tr.day td .muted { font-weight: 500; text-transform: none; letter-spacing: 0; margin-left: var(--space-2); }
+      .btn.attn { position: relative; border-color: var(--human); color: var(--human-ink); background: var(--human-soft); font-weight: 600; }
+      .btn.attn::after { content: ''; position: absolute; inset: -3px; border-radius: inherit; border: 2px solid var(--human); animation: attn 1.6s ease-out infinite; pointer-events: none; }
+      @keyframes attn { 0% { opacity: 0.9; transform: scale(1); } 100% { opacity: 0; transform: scale(1.12); } }
+      @media (prefers-reduced-motion: reduce) { .btn.attn::after { animation: none; opacity: 0.9; } }
       .stages { display: grid; gap: 0; }
       .stage { display: grid; grid-template-columns: 20px 1fr auto; gap: var(--space-3); align-items: center; padding: var(--space-3) 0; border-bottom: 1px solid var(--line); color: var(--ink-muted); font-size: 13px; line-height: 18px; }
       .stage:last-child { border-bottom: 0; }
@@ -157,7 +161,7 @@
       .ctl .time { font-family: var(--font-mono); font-variant-numeric: tabular-nums; color: var(--ink-muted); font-size: 12px; min-width: 96px; }
       .ctl .sp { flex: 1; }
       .btn.icon { width: var(--control-md); padding: 0; display: inline-grid; place-items: center; }
-      .btn.icon svg { width: 14px; height: 14px; fill: currentColor; }
+      .btn.icon svg { width: 14px; height: 14px; }
       .strip { display: flex; height: 20px; border-radius: var(--radius-sm); overflow: hidden; background: var(--surface-sunken); margin-top: var(--space-3); position: relative; }
       .strip i { display: block; height: 100%; cursor: pointer; opacity: 0.85; transition: opacity 0.15s, transform 0.15s; border-right: 1px solid var(--surface-raised); }
       .strip i:hover, .strip i.on { opacity: 1; transform: scaleY(1.15); }
@@ -203,16 +207,32 @@
       .modal .card.wide { width: 560px; }
       .modal .autoname { font-size: 12px; line-height: 16px; color: var(--ink-muted); }
       .modal .autoname b { color: var(--ink); font-weight: 600; }
+      /* Lucide icons (DESIGN.md): 16px, 1.75 stroke, currentColor */
+      .ic { width: 14px; height: 14px; stroke: currentColor; stroke-width: 1.75; stroke-linecap: round; stroke-linejoin: round; fill: none; flex: none; vertical-align: -2px; }
+      .pill.submitted { background: var(--success-soft); color: var(--success); }
+      .pill.uploading { background: var(--lime-soft); color: var(--lime-ink); }
+      .pill.local { background: var(--surface-sunken); color: var(--ink-muted); }
+      /* week: one bar per day */
+      .week { display: grid; grid-template-columns: repeat(7, 1fr); gap: var(--space-2); align-items: end; height: 120px; }
+      .week .d { display: grid; grid-template-rows: 1fr auto auto; height: 100%; text-align: center; font-size: 11px; line-height: 16px; color: var(--ink-muted); gap: var(--space-1); }
+      .week .d .b { align-self: end; border-radius: var(--radius-sm) var(--radius-sm) 0 0; background: var(--brand); min-height: 2px; }
+      .week .d.today b { color: var(--ink); }
+      .week .d .v { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+      /* section edit form */
+      .sec .edit { display: grid; gap: var(--space-2); margin-top: var(--space-2); }
+      .sec .edit input, .sec .edit textarea { font-size: 12px; }
+      .sec .note { color: var(--ink-secondary); font-size: 12px; line-height: 16px; margin-top: var(--space-1); }
+      .sec .note b { color: var(--human-ink); font-weight: 600; }
+      .sec .st .ed { color: var(--human-ink); }
     </style>
   </head>
   <body>
     <div class="shell">
       <nav>
         <div class="brand"><i class="logo-dot"></i> Vista</div>
-        <button data-view="today" class="active">Today</button>
+        <button data-view="today" class="active">This week</button>
         <button data-view="review" id="nav-review" class="hidden">Last session</button>
         <button data-view="recordings">My recordings <span id="n-rec" class="pill">0</span></button>
-        <button data-view="privacy">What is recorded</button>
         <button data-view="settings">Settings</button>
         <div class="spacer"></div>
         <div class="who"><b id="who-name">—</b><span id="who-sub">this computer</span></div>
@@ -222,7 +242,7 @@
         <!-- ============ TODAY ============ -->
         <div id="view-today">
           <h1>Good day.</h1>
-          <p class="lede">One button. Press it when you start working, stop it when you leave. Everything else is automatic.</p>
+          <p class="lede">Press Start when you begin working, Stop when you leave. Below: your past seven days.</p>
           <div class="rule" style="margin:0 0 var(--space-6)"></div>
 
           <div class="banner warn hidden" id="perm-banner">
@@ -246,27 +266,25 @@
           </div>
 
           <section class="grid cols-3">
-            <div class="card kpi"><b id="k-hours">0h 00m</b><span>recorded today</span><small id="k-hours-sub">across 0 sessions</small></div>
-            <div class="card kpi"><b id="k-events">0</b><span>interactions captured</span><small id="k-events-sub">clicks, keys, shortcuts, copy/paste</small></div>
-            <div class="card kpi"><b id="k-redact">0</b><span>items redacted on this device</span><small>emails, phone numbers, card &amp; account numbers</small></div>
+            <div class="card kpi"><b id="k-hours">0h 00m</b><span>recorded this week</span><small id="k-hours-sub">across 0 sessions</small></div>
+            <div class="card kpi"><b id="k-events">0</b><span>interactions</span><small id="k-events-sub">clicks, keys, shortcuts, copy/paste</small></div>
+            <div class="card kpi"><b id="k-submitted">0</b><span>submitted</span><small id="k-submitted-sub">0 waiting on this computer</small></div>
           </section>
 
           <section class="grid cols-2">
             <div class="card">
-              <h2>Your day, by application</h2>
-              <div class="tl" id="tl"></div>
-              <div class="tl-axis"><span id="tl-a">—</span><span id="tl-b">—</span></div>
-              <div class="legend" id="legend"></div>
+              <h2>Hours per day</h2>
+              <div class="week" id="week"></div>
             </div>
             <div class="card">
               <h2>Where the time went</h2>
-              <div class="apps" id="apps"><div class="empty">No recordings yet today</div></div>
+              <div class="apps" id="apps"><div class="empty">No recordings in the past week</div></div>
             </div>
           </section>
 
           <section class="card">
-            <h2>What the screen can't see</h2>
-            <p class="muted" style="margin:0 0 10px">Phone calls, paper invoices, a chat at someone's desk — tell us in one line so the picture of your day is complete. Never required.</p>
+            <h2>Off-screen work</h2>
+            <p class="muted" style="margin:0 0 10px">Calls, paper, meetings — one line adds it to your latest session. Optional.</p>
             <div class="chips" id="quick-chips"></div>
           </section>
         </div>
@@ -274,25 +292,26 @@
         <!-- ============ REVIEW (after Stop) ============ -->
         <div id="view-review" class="hidden">
           <h1 id="rv-title">Session saved</h1>
-          <p class="lede" id="rv-lede">Your recording is on this computer. The analysis agent is turning clicks into steps.</p>
+          <p class="lede" id="rv-lede">Saved on this computer.</p>
 
           <div class="banner" id="rv-banner">
             <span class="badge agent">Agent</span>
-            <div><b id="rv-banner-t">Analyzing your session…</b><div id="rv-banner-s" style="font-size:12px;line-height:16px">Analysis runs on this computer. Reports are shared only when you choose Upload report.</div></div>
+            <div><b id="rv-banner-t">Analyzing your session…</b><div id="rv-banner-s" style="font-size:12px;line-height:16px"></div></div>
             <div class="sp"></div>
             <button class="btn sm" id="rv-note">Add a general summary</button>
-            <button class="btn sm primary" id="rv-done">Back to today</button>
+            <button class="btn sm" id="rv-done">Done</button>
+            <button class="btn sm primary" id="rv-submit" title="Send the whole recording to your workspace and remove it from this computer"><svg class="ic" viewBox="0 0 24 24"><path d="M12 13v8"/><path d="M4 14.899A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.242"/><path d="m8 17 4-4 4 4"/></svg>Submit</button>
           </div>
 
           <section class="card" style="margin:0 0 14px">
-            <h2 style="display:flex;justify-content:space-between;align-items:baseline"><span>Session video, by task</span><span class="muted" style="text-transform:none;letter-spacing:0;font-weight:500" id="vs-sub">Split where you switched windows for a while</span></h2>
+            <h2 style="display:flex;justify-content:space-between;align-items:baseline"><span>Session, by task</span><span class="muted" style="text-transform:none;letter-spacing:0;font-weight:500" id="vs-sub">Split where you switched windows</span></h2>
             <div class="rv-sum" id="rv-sum"></div>
-            <p class="muted" style="margin:-4px 0 10px;font-size:12px;line-height:16px" id="rv-how">The AI (OpenAI) reads each stretch's activity data — apps, window titles, click/copy/paste counts, never keystrokes or, by default, screenshots — and explains what it thinks you were doing. <b>Approve</b> if it's right, <b>Fix</b> if not. Where it is less than <span id="rv-thr">88</span>% sure, it asks you to explain instead.</p>
+            <p class="muted" style="margin:-4px 0 10px;font-size:12px;line-height:16px" id="rv-how">The AI explains each section. <b>Approve</b>, <b>Fix</b>, or <b>Edit</b> the name and note; under <span id="rv-thr">88</span>% sure it asks you.</p>
             <div class="vid">
               <div>
                 <div class="player" id="player">
                   <video id="video" preload="metadata"></video>
-                  <div class="nov hidden" id="novideo">Screen video was off for this session. Sections below still work from the interaction log.</div>
+                  <div class="nov hidden" id="novideo">No video on this computer.</div>
                 </div>
                 <div class="ctl">
                   <button class="btn icon" id="v-play" title="Play"><svg viewBox="0 0 16 16"><path d="M4 2.5v11l9-5.5z"/></svg></button>
@@ -311,10 +330,6 @@
           </section>
 
           <div class="agent">
-            <div class="card">
-              <h2>Analysis agent</h2>
-              <div class="stages" id="rv-stages"></div>
-            </div>
             <div style="display:grid;gap:14px">
               <section class="grid cols-3" style="margin:0">
                 <div class="card kpi"><b id="rv-steps">—</b><span>work steps</span><small id="rv-steps-sub">from interactions</small></div>
@@ -338,16 +353,20 @@
                 <div class="rank" id="rv-auto"><div class="empty">—</div></div>
               </div>
             </div>
+            <details class="card" id="rv-details">
+              <summary id="rv-details-t">How this was analysed</summary>
+              <div class="stages" id="rv-stages"></div>
+            </details>
           </div>
         </div>
 
         <!-- ============ RECORDINGS ============ -->
         <div id="view-recordings" class="hidden">
           <h1>My recordings</h1>
-          <p class="lede">Every session lives in a folder on this computer. Use Upload report to share a completed analysis with your company. Screenshots, video and raw interaction logs stay here.</p>
+          <p class="lede" id="rec-lede">Grouped by day. Sessions stay in <span class="mono" id="home-path">~/Vista/recordings</span> until you submit them.</p>
           <div class="card" style="padding:0;overflow-x:auto;border-top:3px solid var(--lime)">
             <table>
-              <thead><tr><th>Session</th><th>Length</th><th>Interactions</th><th>Screens</th><th>Redacted</th><th>Processing</th><th>Notes</th><th></th></tr></thead>
+              <thead><tr><th>Session</th><th>Length</th><th>Interactions</th><th>Analysis</th><th>Upload</th><th>Notes</th><th></th></tr></thead>
               <tbody id="rec-rows"></tbody>
             </table>
             <div id="rec-empty" class="empty">No recordings yet — press Start on the overlay.</div>
@@ -355,45 +374,14 @@
           <p class="muted" style="margin-top:12px"><a id="open-folder">Open the recordings folder</a></p>
         </div>
 
-        <!-- ============ PRIVACY ============ -->
-        <div id="view-privacy" class="hidden">
-          <h1>What is recorded</h1>
-          <p class="lede">The recorder watches how work moves between applications, not what you write.</p>
-          <div class="pv">
-            <div class="card yes">
-              <h3>Captured</h3>
-              <ul>
-                <li>Which application and window is in front (e.g. <em>Excel — AP tracker.xlsx</em>)</li>
-                <li>Clicks, scrolls and <b>counts</b> of keystrokes</li>
-                <li>Shortcut combinations (Ctrl+C, Ctrl+S, Alt+Tab)</li>
-                <li>A low-resolution screenshot when you switch windows, when the screen changes, and every 15 s</li>
-                <li>Copied text after redaction, and which app a paste came from, so re-keying between systems is visible</li>
-              </ul>
-            </div>
-            <div class="card no">
-              <h3>Never captured</h3>
-              <ul>
-                <li>Passwords or anything typed into a private app (1Password, banking, …)</li>
-                <li>The letters you type — only how many, unless your company turns that on</li>
-                <li>Emails, phone numbers, card and account numbers — replaced with <span class="mono">[EMAIL]</span>, <span class="mono">[PHONE]</span>, <span class="mono">[CARD]</span> before saving</li>
-                <li>Anything while the recorder is paused or off</li>
-                <li>Audio, webcam, or files on your disk</li>
-              </ul>
-            </div>
-          </div>
-          <section class="card">
-            <h2>Where it goes</h2>
-            <p class="muted" style="margin:0">Recordings are saved to <span class="mono" id="home-path">~/Vista/recordings</span>. Each folder holds <span class="mono">events.jsonl</span> (one line per interaction), <span class="mono">shots/</span>, <span class="mono">screen.webm</span> and <span class="mono">manifest.json</span>. Your name is replaced with a code before analysis.</p>
-          </section>
-        </div>
-
         <!-- ============ SETTINGS ============ -->
         <div id="view-settings" class="hidden">
           <h1>Settings</h1>
           <p class="lede">Defaults are set by your company; you can always make recording stricter.</p>
           <div class="card set" id="settings"></div>
+          <div id="admin-settings" class="hidden">
           <section class="card">
-            <h2>Cloud workspace</h2>
+            <h2>Cloud workspace <span class="pill">admin</span></h2>
             <p class="muted">Connect to review completed reports on the website. Uploads include activity labels, app names, case IDs, notes and pseudonymous user IDs. Screenshots, video and raw interaction logs stay on this computer.</p>
             <label for="cloud-url">Website address</label><input id="cloud-url" type="url" placeholder="https://bumpsolutions.org" />
             <label for="cloud-company">Company ID (shown on the website)</label><input id="cloud-company" type="text" />
@@ -402,7 +390,7 @@
             <p class="muted" id="cloud-state" role="status"></p>
           </section>
           <section class="card">
-            <h2>Private apps and words</h2>
+            <h2>Private apps and words <span class="pill">admin</span></h2>
             <p class="muted" style="margin:0 0 8px">Capture is muted while any of these apps are in front or these words appear in the window title.</p>
             <input type="text" id="private-apps" placeholder="1Password, Bitwarden, KeePass" />
             <div style="height:8px"></div>
@@ -410,14 +398,16 @@
             <div style="margin-top:10px"><button class="btn sm" id="save-private">Save</button> <span class="muted" id="saved-msg"></span></div>
           </section>
           <section class="card">
-            <h2>AI explanations (OpenAI)</h2>
-            <p class="muted" style="margin:0 0 8px">After a session, the AI explains each stretch of work for you to approve or fix; where it is under 88% sure it asks you to explain instead. Uses your company's OpenAI key; only window names, counts and your notes are sent — never keystrokes. <span class="mono">OPENAI_API_KEY</span> in the environment overrides this.</p>
+            <h2>AI explanations <span class="pill">admin</span></h2>
+            <p class="muted" style="margin:0 0 8px">Any OpenAI-compatible endpoint (OpenAI, OpenRouter). <span class="mono">VISTA_OPENAI_*</span> in the environment or a <span class="mono">.env</span> in <span class="mono">~/Vista</span> or the repo overrides these fields.</p>
+            <p class="muted" id="ai-state" role="status" style="margin:0 0 8px"></p>
             <input type="text" id="openai-key" placeholder="sk-…" autocomplete="off" />
             <div style="height:8px"></div>
-            <input type="text" id="openai-model" placeholder="gpt-4o-mini" />
-            <div class="set" style="margin-top:6px"><label><div>Also send up to 3 screenshots per section<span>Off: text only. On: low-resolution frames go to OpenAI so it can see what was on screen.</span></div><input type="checkbox" id="openai-shots"></label></div>
+            <input type="text" id="openai-model" placeholder="model (default: gpt-4.1-nano, or nvidia/nemotron-3-ultra-550b-a55b:free on OpenRouter)" />
+            <div class="set" style="margin-top:6px"><label><div>Also send up to 3 screenshots per section<span>Off: text only. On: low-resolution frames go to the model so it can see what was on screen.</span></div><input type="checkbox" id="openai-shots"></label></div>
             <div style="margin-top:10px"><button class="btn sm" id="save-openai">Save</button> <span class="muted" id="saved-openai"></span></div>
           </section>
+          </div>
         </div>
       </main>
     </div>
@@ -430,7 +420,7 @@
         <div class="chips" id="modal-chips"></div>
         <input type="text" id="ann-label" placeholder="e.g. Phone: chased 3 overdue vendors" />
         <div class="when"><span class="muted">From</span><input type="time" id="ann-from" /><span class="muted">to</span><input type="time" id="ann-to" /></div>
-        <textarea id="ann-note" rows="2" placeholder="What were you doing, and why? Emails and numbers are redacted."></textarea>
+        <textarea id="ann-note" rows="2" placeholder="Add detail (optional)"></textarea>
         <div class="qa hidden" id="qa"></div>
         <div class="autoname" id="autoname"></div>
         <div class="actions"><span style="flex:1"></span><button class="btn" id="ann-cancel">Cancel</button><button class="btn primary" id="ann-save">Save note</button></div>
@@ -455,16 +445,38 @@
       const hhmm = (iso) => { const d = new Date(iso); return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`; };
       const clock = (iso) => new Date(iso).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
       const isToday = (iso) => iso && new Date(iso).toDateString() === new Date().toDateString();
+      const isOwn = (app) => (info?.ownApps ?? ['Vista', 'Electron']).some((p) => String(app ?? '').toLowerCase() === p.toLowerCase());
+      // Lucide (lucide.dev) paths, inlined; 24-unit viewBox, stroked with currentColor.
+      const LUCIDE = {
+        pencil: '<path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"/><path d="m15 5 4 4"/>',
+        check: '<path d="M20 6 9 17l-5-5"/>',
+        upload: '<path d="M12 13v8"/><path d="M4 14.899A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.242"/><path d="m8 17 4-4 4 4"/>',
+        cloudCheck: '<path d="m17 15-5.5 5.5L9 18"/><path d="M5 17.743A7 7 0 1 1 15.71 10h1.79a4.5 4.5 0 0 1 1.5 8.742"/>',
+        folder: '<path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/>',
+        alert: '<circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/>',
+        loader: '<path d="M21 12a9 9 0 1 1-6.219-8.56"/>',
+      };
+      const icon = (name) => `<svg class="ic" viewBox="0 0 24 24" aria-hidden="true">${LUCIDE[name]}</svg>`;
+      // Upload state of one recording: submitted (files in the workspace, gone from here),
+      // uploading, failed (retry), uploaded (report only, older flow) or local.
+      function uploadState(r) {
+        const u = r?.upload;
+        if (r?.submitted || u?.status === 'submitted') return { key: 'submitted', label: 'Submitted', icon: 'cloudCheck', sub: u?.submittedAt ?? r?.submitted?.at ? new Date(u?.submittedAt ?? r.submitted.at).toLocaleString() : '' };
+        if (u?.status === 'uploading') return { key: 'uploading', label: u.progress?.total ? `Uploading ${u.progress.done}/${u.progress.total}` : 'Uploading…', icon: 'loader', sub: '' };
+        if (u?.status === 'failed') return { key: 'failed', label: 'Failed', icon: 'alert', sub: u.error ?? '' };
+        if (u?.status === 'uploaded') return { key: 'pending', label: 'Report sent', icon: 'upload', sub: 'Files still on this computer — Submit to finish.' };
+        return { key: 'local', label: 'Not submitted', icon: '', sub: '' };
+      }
 
       // ---- views ----
       document.querySelectorAll('nav button').forEach((b) => (b.onclick = () => show(b.dataset.view)));
       function show(v) {
         document.querySelectorAll('nav button').forEach((b) => b.classList.toggle('active', b.dataset.view === v));
-        for (const x of ['today', 'review', 'recordings', 'privacy', 'settings']) $('view-' + x).classList.toggle('hidden', x !== v);
+        for (const x of ['today', 'review', 'recordings', 'settings']) $('view-' + x).classList.toggle('hidden', x !== v);
       }
 
       // ---- review: the analysis agent, shown when the dashboard comes back after Stop ----
-      const STAGES = [
+      const ALL_STAGES = [
         ['save', 'Saving screen capture and events', 'events.jsonl, shots/, screen.webm'],
         ['redact', 'Redacting and pseudonymising', 'emails, phones, cards → tokens; your name → a code'],
         ['steps', 'Grouping clicks into work steps', 'window + activity rules'],
@@ -472,12 +484,15 @@
         ['discover', 'Mapping the process', 'paths, variants, rework'],
         ['score', 'Ranking automation potential', 'frequency × regularity × re-keying'],
       ];
+      const stages = () => ALL_STAGES.filter(([k]) => k !== 'redact' || settings?.redact);
       let reviewing = null, stageIdx = -1, stageTimer = null;
 
       function openReview(id, instant = false) {
         reviewing = id;
+        const STAGES = stages();
         stageIdx = instant ? STAGES.length - 1 : 0;
         clearInterval(stageTimer);
+        $('rv-details').open = false;
         $('nav-review').classList.remove('hidden');
         show('review');
         loadSections(id);
@@ -496,18 +511,27 @@
         if (!reviewing) return;
         const r = recordings.find((x) => x.recording_id === reviewing);
         if (!r) return;
+        const STAGES = stages();
         const p = r.processing ?? 'pending';
         const finished = p !== 'running' && p !== 'pending';
         const allShown = stageIdx >= STAGES.length - 1;
         const done = finished && allShown && p === 'done';
         const s = r.summary;
         const when = `${clock(r.started_at)}–${r.ended_at ? clock(r.ended_at) : '…'}`;
+        const up = uploadState(r);
         $('rv-title').textContent = r.name ?? (done ? 'Session analyzed' : 'Session saved');
-        $('rv-lede').textContent = `${when} · ${hm(r.active_seconds ?? 0)} · ${(r.counts?.total ?? 0).toLocaleString()} interactions · ${(r.counts?.redactions ?? 0)} redacted on this device`;
-        $('rv-banner-t').textContent = done ? 'Analysis complete' : p === 'failed' ? 'Analysis could not finish' : p === 'skipped' ? 'Analysis skipped' : 'Analyzing your session…';
-        $('rv-banner-s').textContent = done
-          ? analystSummary()
-          : p === 'failed' || p === 'skipped' ? (r.processing_note ?? '') : cloud?.connected ? 'Analysis runs on this computer; the redacted report then goes to your company workspace, where the AI explains each stretch for you.' : 'Analysis runs on this computer. Reports are shared only when you choose Upload report.';
+        $('rv-lede').textContent = `${when} · ${hm(r.active_seconds ?? 0)} · ${(r.counts?.total ?? 0).toLocaleString()} interactions · ${up.label}${up.key === 'submitted' ? ' — files are in your workspace' : ''}`;
+        $('rv-banner-t').textContent = up.key === 'submitted' ? 'Submitted' : up.key === 'uploading' ? up.label : up.key === 'failed' ? 'Submit failed' : done ? 'Ready to review' : p === 'failed' ? 'Analysis could not finish' : p === 'skipped' ? 'Analysis skipped' : 'Analyzing…';
+        $('rv-banner-s').textContent = up.key === 'submitted' ? `Sent ${up.sub}. Nothing from this session is left on this computer.` : up.key === 'failed' ? `${up.sub} Press Submit to retry.` : up.key === 'uploading' ? 'Sending the video, screenshots and notes to your workspace…' : done ? analystSummary() : p === 'failed' || p === 'skipped' ? (r.processing_note ?? '') : '';
+        $('rv-note').classList.toggle('attn', !r.name && up.key !== 'submitted');
+        $('rv-note').classList.toggle('hidden', up.key === 'submitted');
+        $('rv-note').title = r.name ? 'Edit the general summary' : 'Tell us what this session was about — it names the recording';
+        const sb = $('rv-submit');
+        sb.classList.toggle('hidden', up.key === 'submitted');
+        sb.disabled = !done || up.key === 'uploading';
+        sb.innerHTML = up.key === 'uploading' ? `${icon('loader')}${esc(up.label)}` : up.key === 'failed' ? `${icon('upload')}Retry submit` : `${icon('upload')}Submit`;
+        sb.title = !info?.cloud ? 'Not connected to a workspace yet — ask your Vista admin' : sb.title;
+        $('rv-details-t').textContent = done && s ? `How this was analysed · ${(r.counts?.total ?? 0).toLocaleString()} events → ${s.steps} steps → ${s.cases} case${s.cases === 1 ? '' : 's'}` : finished && p !== 'done' ? 'How this was analysed' : `Analysing · ${STAGES[Math.max(0, Math.min(stageIdx, STAGES.length - 1))][1].toLowerCase()}…`;
 
         const out = (k) => {
           if (!s) return '';
@@ -554,23 +578,37 @@
       }
       $('rv-done').onclick = () => show('today');
       $('rv-note').onclick = () => openAnnotate(reviewing, '', { whole: true });
+      $('rv-submit').onclick = async () => {
+        const r = recordings.find((x) => x.recording_id === reviewing);
+        const open = vs?.review?.summary?.open ?? 0;
+        const ask = `Submit “${r?.name ?? 'this session'}” to your workspace?\n\nThe video, screenshots, notes and analysis are uploaded and then removed from this computer.${open ? `\n${open} section${open === 1 ? '' : 's'} still unreviewed — you can finish in the workspace.` : ''}`;
+        if (!confirm(ask)) return;
+        $('rv-submit').disabled = true;
+        try {
+          vs = await window.vista.submit(reviewing);
+        } catch (e) {
+          alert(e.message);
+        }
+        recordings = await window.vista.recordings();
+        renderRecordings(); renderToday(); renderSections(); renderReview();
+      };
 
       // One line for the analyst (and the employee) on where the review stands:
       // how many stretches the AI explained, how many still need approval, how many it found unclear.
       function analystSummary() {
         const rv = vs?.review;
         if (!rv) return 'Working out the stretches of work…';
-        if (!rv.enabled) return 'Connect your company workspace under Settings → Cloud workspace (or add an OpenAI key) and the AI will explain each stretch for you to approve. Until then, describe them yourself below.';
+        if (!rv.enabled) return info?.admin ? 'AI is off — no key found (Settings → AI explanations).' : 'Name each section yourself, then Submit.';
         const s = rv.summary;
-        const where = rv.source === 'cloud' ? 'Your workspace' : 'The AI';
-        if (rv.generating) return `${where} is explaining each stretch of work… ${s.total ? `${s.total} of ${vs.sections.length} done.` : ''}`;
-        if (rv.sync_error) return `Could not sync with your workspace: ${rv.sync_error}`;
+        if (rv.generating) return `Explaining each section… ${s.total ? `${s.total} of ${vs.sections.length} done.` : ''}`;
+        if (rv.sync_error) return rv.source === 'cloud' ? `Could not sync with your workspace: ${rv.sync_error}` : `AI explanations failed: ${rv.sync_error}`;
+        if (rv.error && s.failed === s.total) return `AI explanations failed: ${rv.error}`;
         if (!s.total) return 'No explanations yet.';
-        const parts = [`The AI explained ${s.total} stretch${s.total === 1 ? '' : 'es'} of work.`];
-        if (s.awaiting) parts.push(`${s.awaiting} need${s.awaiting === 1 ? 's' : ''} your approval.`);
-        if (s.unclear + s.failed) parts.push(`${s.unclear + s.failed} ${s.unclear + s.failed === 1 ? 'was' : 'were'} unclear (under ${Math.round(s.threshold * 100)}% sure) and need${s.unclear + s.failed === 1 ? 's' : ''} your explanation.`);
-        if (!s.open) parts.push('All confirmed — nothing left to review.');
-        if (rv.session && rv.session.status !== 'approved' && rv.session.status !== 'fixed' && rv.session.status !== 'explained') parts.push('The whole-session summary is waiting for you too.');
+        const parts = [];
+        if (s.awaiting) parts.push(`${s.awaiting} to approve.`);
+        if (s.unclear + s.failed) parts.push(`${s.unclear + s.failed} unclear — need${s.unclear + s.failed === 1 ? 's' : ''} your explanation.`);
+        if (!s.open) parts.push('All confirmed.');
+        if (rv.session && rv.session.status !== 'approved' && rv.session.status !== 'fixed' && rv.session.status !== 'explained') parts.push('General summary waiting.');
         return parts.join(' ');
       }
 
@@ -580,11 +618,11 @@
         $('rv-how').classList.toggle('hidden', !rv?.enabled);
         if (!rv?.enabled || !s?.total) { $('rv-sum').innerHTML = ''; return; }
         $('rv-sum').innerHTML = [
-          `<span><b>${s.total}</b> explained by AI</span>`,
-          `<span class="${s.awaiting ? '' : 'ok-t'}"><b>${s.awaiting}</b> awaiting approval</span>`,
-          `<span class="${s.unclear + s.failed ? 'warn-t' : 'ok-t'}"><b>${s.unclear + s.failed}</b> unclear — need your explanation</span>`,
+          `<span><b>${s.total}</b> explained</span>`,
+          `<span class="${s.awaiting ? '' : 'ok-t'}"><b>${s.awaiting}</b> to approve</span>`,
+          `<span class="${s.unclear + s.failed ? 'warn-t' : 'ok-t'}"><b>${s.unclear + s.failed}</b> unclear</span>`,
           `<span class="ok-t"><b>${s.resolved}</b> confirmed</span>`,
-          rv.generating ? '<span class="thinking"><i></i> still explaining…</span>' : `<button class="btn sm" id="rv-regen" title="Ask the AI again for anything not yet confirmed">Re-run AI</button>`,
+          vs.submitted ? '' : rv.generating ? '<span class="thinking"><i></i> explaining…</span>' : `<button class="btn sm" id="rv-regen" title="Ask the AI again for anything not yet confirmed">Re-run AI</button>`,
         ].join('');
         const b = $('rv-regen');
         if (b) b.onclick = () => window.vista.explain(reviewing, { force: true });
@@ -592,11 +630,11 @@
 
       // ---- session video, split into task sections --------------------------------
       const video = $('video');
-      let vs = null, activeSec = null, stopAt = null;
+      let vs = null, activeSec = null, stopAt = null, editingSec = null;
       const mmss = (s) => { s = Math.max(0, Math.floor(s || 0)); const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), r = s % 60; return (h ? h + ':' : '') + String(m).padStart(2, '0') + ':' + String(r).padStart(2, '0'); };
 
       async function loadSections(id) {
-        vs = null; activeSec = null; stopAt = null;
+        vs = null; activeSec = null; stopAt = null; editingSec = null;
         $('secs').innerHTML = '<div class="empty">Working out the sections…</div>';
         try { vs = await window.vista.sections(id); } catch (e) { $('secs').innerHTML = `<div class="empty">${esc(e.message)}</div>`; return; }
         if (reviewing !== id) return;
@@ -607,7 +645,7 @@
         if (hasVideo && video.src !== vs.video_url) { video.src = vs.video_url; video.load(); }
         $('vs-a').textContent = clock(vs.started_at);
         $('vs-b').textContent = vs.ended_at ? clock(vs.ended_at) : '…';
-        $('vs-sub').textContent = vs.sections.length ? `${vs.sections.length} stretches of work · short hops folded in` : 'No window switches recorded';
+        $('vs-sub').textContent = vs.submitted ? `${vs.sections.length} sections · in your workspace` : vs.sections.length ? `${vs.sections.length} sections` : 'No window switches recorded';
         renderSections();
         // key added after the session ended, or the app was closed mid-way: pick the explanations up now
         if (vs.review.enabled && vs.ended_at && !vs.review.generating && !vs.review.summary.total && !vs.review.session) window.vista.explain(id).catch(() => {});
@@ -625,13 +663,17 @@
       // The AI's read of a stretch + the one decision the employee has to make about it.
       function aiBlock(item, key) {
         const rv = vs.review;
-        if (!rv.enabled) return { cls: '', read: '', act: `<button class="btn sm primary" data-ann="${key}">Describe</button>` };
-        if (!item) return { cls: '', read: '', act: rv.generating ? '<span class="thinking"><i></i>AI is explaining…</span>' : `<button class="btn sm primary" data-ann="${key}">Describe</button>` };
+        if (vs.submitted) {
+          const lbl = item && RESOLVED.has(item.status) ? item.final_label : item?.label;
+          return { cls: 'resolved', read: lbl ? `<div class="ai-read"><div class="lbl">${esc(lbl)}${item && RESOLVED.has(item.status) ? ` <span class="conf done">${icon('check')} confirmed</span>` : ''}</div>${item?.final_note || item?.explanation ? `<div class="ex">${esc(item.final_note || item.explanation)}</div>` : ''}</div>` : '', act: '' };
+        }
+        if (!rv.enabled) return { cls: '', read: '', act: key === 'w' ? `<button class="btn sm primary" data-ann="${key}">Describe</button>` : '' };
+        if (!item) return { cls: '', read: '', act: rv.generating ? '<span class="thinking"><i></i>Explaining…</span>' : `<button class="btn sm primary" data-ann="${key}">Describe</button>` };
         if (RESOLVED.has(item.status)) {
           const how = { approved: 'AI explanation approved', fixed: 'You corrected the AI', explained: 'You explained it' }[item.status];
           return {
             cls: 'resolved',
-            read: `<div class="ai-read"><div class="lbl">${esc(item.final_label)} <span class="conf done">✓ ${how}</span></div>${item.final_note ? `<div class="ex">${esc(item.final_note)}</div>` : ''}</div>`,
+            read: `<div class="ai-read"><div class="lbl">${esc(item.final_label)} <span class="conf done">${icon('check')} ${how}</span></div>${item.final_note ? `<div class="ex">${esc(item.final_note)}</div>` : ''}</div>`,
             act: `<button class="btn sm" data-ann="${key}">Edit</button>`,
           };
         }
@@ -672,19 +714,34 @@
         $('strip').querySelectorAll('[data-sec]').forEach((el) => (el.onclick = () => playSection(+el.dataset.sec)));
         // list: whole session first, then the sections
         const whole = { whole: true, name: 'Whole session', seconds: Math.round(span / 1000) };
-        const manual = (s) => (!vs.review.enabled && s.annotations?.length ? ` · <b>✓ ${esc(s.annotations[0].label)}</b>` : '');
+        const manual = (s) => (!vs.review.enabled && s.annotations?.length ? ` · <b>${icon('check')} ${esc(s.annotations[0].label)}</b>` : '');
         const w = aiBlock(vs.review.session, 'w');
+        const editBtn = (s) => (vs.submitted ? '' : `<button class="btn sm" data-edit="${s.index}" title="Edit the name and note; saved with the recording">${icon('pencil')}Edit</button>`);
+        const editForm = (s) => (editingSec === s.index
+          ? `<div class="edit" data-form="${s.index}"><input type="text" id="ed-name-${s.index}" value="${esc(s.name)}" placeholder="Section name" /><textarea id="ed-note-${s.index}" rows="2" placeholder="What was this about? (optional)">${esc(s.note ?? '')}</textarea><div class="act" style="margin:0"><button class="btn sm ok" data-edit-save="${s.index}">${icon('check')}Save</button><button class="btn sm" data-edit-cancel="${s.index}">Cancel</button></div></div>`
+          : '');
         $('secs').innerHTML = [
-          `<div class="sec whole ${w.cls}" data-w="1"><i class="sw" style="background:var(--line-strong)"></i><div><div class="nm">${esc(recordings.find((r) => r.recording_id === reviewing)?.name ?? 'Whole session')}</div><div class="st">${hm(whole.seconds)} · ${vs.sections.length} stretches · general summary of the whole recording</div>${w.read}<div class="act">${w.act}</div></div></div>`,
+          `<div class="sec whole ${w.cls}" data-w="1"><i class="sw" style="background:var(--line-strong)"></i><div><div class="nm">${esc(recordings.find((r) => r.recording_id === reviewing)?.name ?? 'Whole session')}</div><div class="st">${hm(whole.seconds)} · ${vs.sections.length} sections · whole recording</div>${w.read}<div class="act">${w.act}</div></div></div>`,
           ...vs.sections.map((s) => {
             const a = aiBlock(s.review, s.index);
-            return `<div class="sec ${activeSec === s.index ? 'on' : ''} ${a.cls}" data-sec="${s.index}"><i class="sw" style="background:${colorOf(s.app)}"></i><div><div class="nm">${esc(s.name)}</div><div class="st">${hm(s.seconds)} · ${(s.counts.click ?? 0)} clicks · ${(s.counts.copy ?? 0) + (s.counts.paste ?? 0)} copy/paste${manual(s)}</div>${a.read}<div class="act">${a.act}</div></div></div>`;
+            return `<div class="sec ${activeSec === s.index ? 'on' : ''} ${a.cls}" data-sec="${s.index}"><i class="sw" style="background:${colorOf(s.app)}"></i><div><div class="nm">${esc(s.name)}</div><div class="st">${hm(s.seconds)} · ${esc(short(s.app))} · ${(s.counts.click ?? 0)} clicks · ${(s.counts.copy ?? 0) + (s.counts.paste ?? 0)} copy/paste${manual(s)}${s.edited ? ' · <span class="ed">edited by you</span>' : ''}</div>${s.note && editingSec !== s.index ? `<div class="note"><b>Note:</b> ${esc(s.note)}</div>` : ''}${a.read}${editForm(s)}<div class="act">${editingSec === s.index ? '' : a.act + editBtn(s)}</div></div></div>`;
           }),
         ].join('');
-        if (!vs.sections.length) $('secs').insertAdjacentHTML('beforeend', '<div class="empty">No long stretches found — the session may be very short.</div>');
+        if (!vs.sections.length) $('secs').insertAdjacentHTML('beforeend', '<div class="empty">No long sections — the session may be very short.</div>');
         renderReviewSummary();
         const target = (k) => (k === 'w' ? { whole: true } : vs.sections[+k]);
-        $('secs').querySelectorAll('.sec[data-sec]').forEach((el) => (el.onclick = (e) => { if (!e.target.closest('button')) playSection(+el.dataset.sec); }));
+        $('secs').querySelectorAll('.sec[data-sec]').forEach((el) => (el.onclick = (e) => { if (!e.target.closest('button, input, textarea, .edit')) playSection(+el.dataset.sec); }));
+        $('secs').querySelectorAll('[data-edit]').forEach((b) => (b.onclick = (e) => { e.stopPropagation(); editingSec = +b.dataset.edit; renderSections(); $(`ed-name-${editingSec}`)?.focus(); }));
+        $('secs').querySelectorAll('[data-edit-cancel]').forEach((b) => (b.onclick = (e) => { e.stopPropagation(); editingSec = null; renderSections(); }));
+        $('secs').querySelectorAll('[data-edit-save]').forEach((b) => (b.onclick = async (e) => {
+          e.stopPropagation();
+          const i = +b.dataset.editSave, s = vs.sections[i];
+          const name = $(`ed-name-${i}`).value.trim(), note = $(`ed-note-${i}`).value.trim();
+          b.disabled = true;
+          try { vs = await window.vista.editSection(reviewing, s.id, { name: name === s.name && !s.edited ? '' : name, note }); } catch (err) { alert(err.message); }
+          editingSec = null;
+          renderSections();
+        }));
         $('secs').querySelectorAll('[data-ann]').forEach((b) => (b.onclick = (e) => { e.stopPropagation(); openAnnotate(reviewing, '', target(b.dataset.ann)); }));
         $('secs').querySelectorAll('[data-approve]').forEach((b) => (b.onclick = async (e) => { e.stopPropagation(); b.disabled = true; await decide(target(b.dataset.approve), 'approve'); }));
         $('secs').querySelectorAll('[data-fix]').forEach((b) => (b.onclick = (e) => { e.stopPropagation(); openAnnotate(reviewing, '', target(b.dataset.fix), 'fix'); }));
@@ -757,7 +814,7 @@
         $('h-stop').classList.toggle('hidden', !live);
         if (st.state === 'recording') {
           $('hero-t').textContent = st.current.private ? 'Recording — private app, capture muted' : `Recording · ${short(st.current.app || '…')}`;
-          $('hero-s').textContent = `${hm(st.elapsedMs / 1000)} this session · ${st.counts.total.toLocaleString()} interactions · ${st.counts.redactions} redacted`;
+          $('hero-s').textContent = `${hm(st.elapsedMs / 1000)} this session · ${st.counts.total.toLocaleString()} interactions`;
         } else if (st.state === 'paused') {
           $('hero-t').textContent = 'Paused';
           $('hero-s').textContent = 'Nothing is being recorded. Resume when you are back at your work.';
@@ -770,65 +827,57 @@
         }
       }
 
+      // Past seven days (today included), from the saved manifests plus the live session.
       function renderToday() {
-        const today = recordings.filter((r) => isToday(r.started_at));
-        const liveSec = status && status.state !== 'idle' ? status.elapsedMs / 1000 : 0;
-        const sec = today.reduce((a, r) => a + (r.active_seconds ?? 0), 0) + liveSec;
-        const ev = today.reduce((a, r) => a + (r.counts?.total ?? 0), 0) + (status && status.state !== 'idle' ? status.counts.total : 0);
-        const red = today.reduce((a, r) => a + (r.counts?.redactions ?? 0), 0) + (status && status.state !== 'idle' ? status.counts.redactions : 0);
+        const dayKey = (d) => { const x = new Date(d); x.setHours(0, 0, 0, 0); return x.getTime(); };
+        const todayKey = dayKey(Date.now());
+        const days = [...Array(7)].map((_, i) => todayKey - (6 - i) * 86400000);
+        const week = recordings.filter((r) => r.started_at && dayKey(r.started_at) >= days[0]);
+        const live = status && status.state !== 'idle' ? status : null;
+        const sec = week.reduce((a, r) => a + (r.active_seconds ?? 0), 0) + (live ? live.elapsedMs / 1000 : 0);
+        const ev = week.reduce((a, r) => a + (r.counts?.total ?? 0), 0) + (live ? live.counts.total : 0);
+        const n = week.length + (live ? 1 : 0);
         $('k-hours').textContent = hm(sec);
-        $('k-hours-sub').textContent = `across ${today.length + (status && status.state !== 'idle' ? 1 : 0)} session${today.length === 1 ? '' : 's'}`;
+        $('k-hours-sub').textContent = `across ${n} session${n === 1 ? '' : 's'}`;
         $('k-events').textContent = ev.toLocaleString();
-        $('k-redact').textContent = red.toLocaleString();
+        const submitted = recordings.filter((r) => uploadState(r).key === 'submitted').length;
+        const waiting = recordings.length - submitted;
+        $('k-submitted').textContent = submitted;
+        $('k-submitted-sub').textContent = waiting ? `${waiting} waiting on this computer` : 'nothing waiting on this computer';
 
-        // app totals (finished sessions + live)
+        // app totals (finished sessions + live), our own app never shown
         const totals = {};
-        for (const r of today) for (const a of r.apps ?? []) totals[a.app] = (totals[a.app] ?? 0) + a.seconds;
-        if (status && status.state !== 'idle') for (const a of status.apps) totals[a.app] = (totals[a.app] ?? 0) + a.seconds;
+        for (const r of week) for (const a of r.apps ?? []) if (!isOwn(a.app)) totals[a.app] = (totals[a.app] ?? 0) + a.seconds;
+        if (live) for (const a of live.apps) if (!isOwn(a.app)) totals[a.app] = (totals[a.app] ?? 0) + a.seconds;
         const list = Object.entries(totals).map(([app, seconds]) => ({ app, seconds })).sort((a, b) => b.seconds - a.seconds);
         const sum = list.reduce((a, b) => a + b.seconds, 0) || 1;
         $('apps').innerHTML = list.length
           ? list.slice(0, 7).map((a) => `<div class="row"><span><i class="legend" style="display:inline-block;width:9px;height:9px;border-radius:2px;background:${colorOf(a.app)};margin-right:8px"></i>${esc(short(a.app))}</span><span class="muted">${hm(a.seconds)} · ${Math.round((a.seconds / sum) * 100)}%</span><div class="bar"><i style="width:${(a.seconds / sum) * 100}%;background:${colorOf(a.app)}"></i></div></div>`).join('')
-          : '<div class="empty">No recordings yet today</div>';
+          : '<div class="empty">No recordings in the past week</div>';
 
-        // timeline: sessions laid out over the day, coloured by dominant app
-        const segs = today.map((r) => ({ s: new Date(r.started_at), e: new Date(r.ended_at ?? Date.now()), app: r.apps?.[0]?.app ?? '?' }));
-        if (status && status.state !== 'idle' && status.startedAt) segs.push({ s: new Date(status.startedAt), e: new Date(), app: status.apps?.[0]?.app ?? status.current.app ?? '…' });
-        if (segs.length) {
-          const t0 = Math.min(...segs.map((x) => x.s)), t1 = Math.max(...segs.map((x) => x.e)) + 1;
-          const span = t1 - t0;
-          const sorted = segs.sort((a, b) => a.s - b.s);
-          let cursor = t0, html = '';
-          for (const g of sorted) {
-            if (g.s - cursor > 0) html += `<i style="width:${((g.s - cursor) / span) * 100}%;background:transparent"></i>`;
-            html += `<i title="${esc(short(g.app))}" style="width:${((g.e - g.s) / span) * 100}%;background:${colorOf(g.app)}"></i>`;
-            cursor = g.e;
-          }
-          $('tl').innerHTML = html;
-          $('tl-a').textContent = clock(t0);
-          $('tl-b').textContent = clock(t1);
-          $('legend').innerHTML = [...new Set(sorted.map((g) => g.app))].map((a) => `<span><i style="background:${colorOf(a)}"></i>${esc(short(a))}</span>`).join('');
-        } else {
-          $('tl').innerHTML = '';
-          $('tl-a').textContent = $('tl-b').textContent = '—';
-          $('legend').innerHTML = '';
-        }
-        const target = recordings[0];
+        // hours per day
+        const perDay = new Map(days.map((d) => [d, 0]));
+        for (const r of week) perDay.set(dayKey(r.started_at), (perDay.get(dayKey(r.started_at)) ?? 0) + (r.active_seconds ?? 0));
+        if (live && live.startedAt) perDay.set(dayKey(live.startedAt), (perDay.get(dayKey(live.startedAt)) ?? 0) + live.elapsedMs / 1000);
+        const max = Math.max(1, ...perDay.values());
+        $('week').innerHTML = days.map((d) => {
+          const s = perDay.get(d) ?? 0;
+          const name = d === todayKey ? 'Today' : new Date(d).toLocaleDateString([], { weekday: 'short' });
+          return `<div class="d ${d === todayKey ? 'today' : ''}" title="${esc(new Date(d).toLocaleDateString())} · ${hm(s)}"><div class="b" style="height:${Math.max(2, (s / max) * 100)}%;opacity:${s ? 1 : 0.25}"></div><span class="v">${s ? hm(s) : '—'}</span><b>${name}</b></div>`;
+        }).join('');
+        const target = recordings.find((r) => uploadState(r).key !== 'submitted');
         $('quick-chips').innerHTML = QUICK.map((q) => `<span class="chip" data-q="${esc(q)}">${esc(q)}</span>`).join('');
         $('quick-chips').querySelectorAll('.chip').forEach((c) => (c.onclick = () => openAnnotate(target?.recording_id, c.dataset.q)));
       }
 
-      function uploadLabel(id) {
-        const u = cloud?.uploads?.[id];
-        if (!u) return '';
-        return u.status === 'uploaded' ? `Last uploaded ${esc(new Date(u.uploadedAt).toLocaleString())} · ${esc(u.url)}<br>Upload again after editing notes.` : `Upload failed: ${esc(u.error)}. Click Upload report to retry.`;
-      }
       function renderCloud() {
         $('cloud-url').value = cloud?.url || 'https://bumpsolutions.org';
         $('cloud-company').value = cloud?.companyId || '';
-        $('cloud-state').textContent = cloud?.connected ? `Connected to ${cloud.companyName} as ${cloud.email}. Reports upload only when you choose Upload report.` : 'Not connected. Enter the details from your workspace.';
+        $('cloud-state').textContent = cloud?.connected ? `Connected to ${cloud.companyName} as ${cloud.email}. Recordings upload only when the employee presses Submit.` : 'Not connected. Enter the details from your workspace.';
         $('cloud-disconnect').disabled = !cloud?.connected;
+        if (info) info.cloud = !!cloud?.connected;
         renderRecordings();
+        renderReview();
       }
       $('cloud-connect').onclick = async () => {
         $('cloud-connect').disabled = true;
@@ -848,29 +897,45 @@
       function renderRecordings() {
         $('n-rec').textContent = recordings.length;
         $('rec-empty').classList.toggle('hidden', recordings.length > 0);
-        $('rec-rows').innerHTML = recordings.map((r) => {
-          const d = new Date(r.started_at);
-          const when = `${d.toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' })} · ${clock(r.started_at)}${r.ended_at ? '–' + clock(r.ended_at) : ''}`;
+        const days = new Map();
+        for (const r of recordings) {
+          const k = new Date(r.started_at).toDateString();
+          if (!days.has(k)) days.set(k, []);
+          days.get(k).push(r);
+        }
+        const dayRow = (k, rs) => {
+          const d = new Date(k);
+          const label = isToday(rs[0].started_at) ? 'Today' : d.toLocaleDateString([], { weekday: 'long', month: 'short', day: 'numeric' });
+          const sec = rs.reduce((a, r) => a + (r.active_seconds ?? 0), 0);
+          return `<tr class="day"><td colspan="7">${esc(label)}<span class="muted">${rs.length} session${rs.length === 1 ? '' : 's'} · ${hm(sec)}</span></td></tr>`;
+        };
+        $('rec-rows').innerHTML = [...days.entries()].map(([k, rs]) => dayRow(k, rs) + rs.map((r) => {
+          const when = `${clock(r.started_at)}${r.ended_at ? '–' + clock(r.ended_at) : ''}`;
           const p = r.processing ?? 'pending';
+          const up = uploadState(r);
           const title = r.name ? `<div style="font-weight:600;color:var(--ink)">${esc(r.name)}</div>` : '';
-          const sum = r.summary ? `<div class="muted" style="font-size:12px;margin-top:3px">${r.summary.steps} steps · ${r.summary.cases} case${r.summary.cases === 1 ? '' : 's'} · ${r.summary.open_questions} question${r.summary.open_questions === 1 ? '' : 's'}</div>` : (r.processing_note ? `<div class="muted" style="font-size:12px;margin-top:3px">${esc(r.processing_note)}</div>` : '');
+          const sum = r.summary ? `<div class="muted" style="font-size:12px;margin-top:3px">${r.summary.steps} steps · ${r.summary.cases} case${r.summary.cases === 1 ? '' : 's'}</div>` : (r.processing_note ? `<div class="muted" style="font-size:12px;margin-top:3px">${esc(r.processing_note)}</div>` : '');
+          const notes = (r.annotations ?? 0) + (r.edits ?? 0);
+          const submitBtn = up.key === 'submitted' ? '' : `<button class="btn sm ${up.key === 'failed' ? 'warn' : ''}" data-submit="${esc(r.recording_id)}" ${p !== 'done' || up.key === 'uploading' ? 'disabled' : ''}>${icon('upload')}${up.key === 'failed' ? 'Retry' : 'Submit'}</button>`;
           return `<tr>
             <td>${title}<div class="muted" style="font-size:12px">${esc(when)}</div></td>
             <td>${r.active_seconds != null ? hm(r.active_seconds) : '<span class="muted">live</span>'}</td>
             <td>${(r.counts?.total ?? 0).toLocaleString()}</td>
-            <td>${(r.counts?.screen ?? 0).toLocaleString()}</td>
-            <td>${(r.counts?.redactions ?? 0).toLocaleString()}</td>
             <td><span class="pill ${p}">${p}</span>${sum}</td>
-            <td>${r.annotations ? `${r.annotations} note${r.annotations === 1 ? '' : 's'}` : '<span class="muted">—</span>'}</td>
-            <td style="white-space:nowrap"><button class="btn sm primary" data-review="${esc(r.recording_id)}">Review</button> <button class="btn sm" data-ann="${esc(r.recording_id)}">Add note</button> <button class="btn sm" data-open="${esc(r.recording_id)}">Folder</button> <button class="btn sm" data-upload="${esc(r.recording_id)}" ${p !== 'done' ? 'disabled' : ''}>Upload report</button><div class="muted" style="font-size:11px;white-space:normal">${uploadLabel(r.recording_id)}</div></td>
+            <td><span class="pill ${up.key}" title="${esc(up.sub)}">${up.icon ? icon(up.icon) : ''}${esc(up.label)}</span>${up.key === 'failed' ? `<div class="muted" style="font-size:11px;white-space:normal;max-width:220px">${esc(up.sub)}</div>` : ''}</td>
+            <td>${notes ? `${notes} note${notes === 1 ? '' : 's'}` : '<span class="muted">—</span>'}</td>
+            <td style="white-space:nowrap"><button class="btn sm primary" data-review="${esc(r.recording_id)}">Review</button> ${up.key === 'submitted' ? '' : `<button class="btn sm" data-ann="${esc(r.recording_id)}">Add note</button> <button class="btn sm icon" title="Open folder" data-open="${esc(r.recording_id)}">${icon('folder')}</button> `}${submitBtn}</td>
           </tr>`;
-        }).join('');
-        $('rec-rows').querySelectorAll('[data-upload]').forEach(b => b.onclick = async () => {
-          b.disabled = true; b.textContent = 'Uploading…';
-          try { cloud = await window.vista.cloudUpload(b.dataset.upload); }
-          catch (e) { alert(e.message); cloud = await window.vista.cloudStatus(); }
-          finally { renderRecordings(); }
-        });
+        }).join('')).join('');
+        $('rec-rows').querySelectorAll('[data-submit]').forEach((b) => (b.onclick = async () => {
+          const r = recordings.find((x) => x.recording_id === b.dataset.submit);
+          if (!confirm(`Submit “${r?.name ?? 'this session'}” to your workspace?\n\nThe video, screenshots, notes and analysis are uploaded and then removed from this computer.`)) return;
+          b.disabled = true;
+          try { await window.vista.submit(b.dataset.submit); }
+          catch (e) { alert(e.message); }
+          recordings = await window.vista.recordings();
+          renderRecordings(); renderToday(); renderReview();
+        }));
         $('rec-rows').querySelectorAll('[data-ann]').forEach((b) => (b.onclick = () => openAnnotate(b.dataset.ann)));
         $('rec-rows').querySelectorAll('[data-review]').forEach((b) => (b.onclick = () => openReview(b.dataset.review, true)));
         $('rec-rows').querySelectorAll('[data-open]').forEach((b) => (b.onclick = () => window.vista.openRecording(b.dataset.open)));
@@ -892,11 +957,11 @@
         const what = whole ? 'this session' : 'this stretch of work';
         $('modal-title').textContent = annMode === 'fix' ? `Fix the AI's explanation of ${what}`
           : annMode === 'explain' ? `Explain ${what} — the AI wasn't sure`
-          : whole ? 'General summary — what was this session about?' : section ? 'Describe this stretch of work' : 'Add a note';
+          : whole ? 'What was this session about?' : section ? 'What were you doing here?' : 'Add a note';
         $('modal-sub').textContent = whole
-          ? 'A line or two on what you were trying to get done and why. It names the recording and frames the analysis.'
-          : section ? `${section.name} · ${hm(section.seconds)}. What were you doing here, and why?`
-          : r ? `Attached to your ${clock(r.started_at)} session (${r.active_seconds != null ? hm(r.active_seconds) : 'in progress'}).` : '';
+          ? 'One line on what this session was about. It names the recording.'
+          : section ? `${section.name} · ${hm(section.seconds)}`
+          : r ? `Your ${clock(r.started_at)} session` : '';
         $('modal-chips').classList.toggle('hidden', !!section);
         $('ann-save').textContent = annMode === 'fix' ? 'Save correction' : annMode === 'explain' ? 'Save explanation' : whole ? 'Save summary' : 'Save note';
         $('modal-chips').innerHTML = QUICK.map((q) => `<span class="chip ${q === preset ? 'on' : ''}" data-q="${esc(q)}">${esc(q)}</span>`).join('');
@@ -905,16 +970,14 @@
         $('ann-label').value = preset || item?.final_label || (annMode === 'fix' ? item?.label ?? '' : '');
         $('ann-label').placeholder = whole ? 'e.g. Month-end AP run for March — entering vendor bills and reconciling the tracker' : section ? `e.g. Matching vendor invoices to POs` : 'e.g. Phone: chased 3 overdue vendors';
         $('ann-note').value = item?.final_note ?? '';
-        $('ann-note').placeholder = annMode === 'explain'
-          ? 'What was actually going on here? Phone calls, paper, meetings and anything off-screen count. Emails and numbers are redacted.'
-          : whole
-          ? 'Anything that explains the session: what triggered it, what happened off-screen, what was hard. Emails and numbers are redacted.'
-          : 'What were you doing, and why? Emails and numbers are redacted.';
+        $('ann-note').placeholder = annMode === 'explain' ? 'What was going on — including phone calls, paper or anything off-screen' : 'Add detail (optional)';
         const from = section && !whole ? section.start : r?.started_at;
         const to = section && !whole ? section.end : (r?.ended_at ?? new Date().toISOString());
         $('ann-from').value = from ? hhmm(from) : '';
         $('ann-to').value = to ? hhmm(to) : '';
         $('ann-from').disabled = $('ann-to').disabled = !!section;
+        document.querySelector('.modal .when').classList.toggle('hidden', !!section);
+        $('autoname').classList.toggle('hidden', !!section);
         renderAiContext(item);
         updateAutoName();
         $('modal').classList.remove('hidden');
@@ -981,23 +1044,35 @@
         ['screenshots', 'Screenshots', 'Low-resolution frame when you change window, when the screen changes, and every 15 seconds.'],
         ['changeDetect', 'Screenshot when the screen changes', 'Compares a tiny thumbnail twice a second; shoots when at least 4% of it moves (a new email, sheet or dialog).'],
         ['video', 'Screen video', 'Low frame-rate recording of the screen, saved next to the events.'],
-        ['clipboard', 'Copied text (redacted)', 'Shows where information is re-typed between systems.'],
+        ['clipboard', 'Copied text', 'Shows where information is re-typed between systems.'],
         ['keyContent', 'Typed characters', 'Off: only the number of keys is stored. Usually left off.'],
+        ['redact', 'Redact sensitive text', 'Off by default. On: emails, phone, card and account numbers become [EMAIL], [PHONE], [CARD] before saving, and your name becomes a code in the analysis.'],
       ];
       function renderSettings() {
         if (!settings) return;
         $('settings').innerHTML = SETTINGS_UI.map(([k, t, s]) => `<label><div>${t}<span>${s}</span></div><input type="checkbox" data-k="${k}" ${settings[k] ? 'checked' : ''}></label>`).join('');
         $('settings').querySelectorAll('input').forEach((i) => (i.onchange = async () => { settings = await window.vista.setSettings({ [i.dataset.k]: i.checked }); }));
+        $('admin-settings').classList.toggle('hidden', !info?.admin);
         $('private-apps').value = settings.privateApps.join(', ');
         $('private-titles').value = settings.privateTitles.join(', ');
         $('openai-key').value = settings.openaiApiKey ?? '';
         $('openai-model').value = settings.openaiModel ?? '';
         $('openai-shots').checked = !!settings.clarifyScreenshots;
+        renderAiState();
+      }
+      function renderAiState() {
+        const ai = info?.ai;
+        if (!ai) return;
+        $('ai-state').textContent = ai.key_source === 'cloud' ? 'AI explanations run in your company workspace.'
+          : ai.key_source === 'env' ? `AI explanations on · key from the environment · model ${ai.model}`
+          : ai.key_source === 'settings' ? `AI explanations on · key from Settings · model ${ai.model}`
+          : 'AI explanations off — no key found.';
       }
       $('save-openai').onclick = async () => {
         settings = await window.vista.setSettings({ openaiApiKey: $('openai-key').value.trim(), openaiModel: $('openai-model').value.trim(), clarifyScreenshots: $('openai-shots').checked });
         info = await window.vista.info();
         $('saved-openai').textContent = info.openai ? 'Saved — AI explanations are on' : 'Saved — no key, AI explanations are off';
+        renderAiState();
         setTimeout(() => ($('saved-openai').textContent = ''), 2500);
       };
       $('save-private').onclick = async () => {
@@ -1044,6 +1119,7 @@
         $('who-name').textContent = info.user;
         $('who-sub').textContent = info.demo ? 'demo mode · simulated apps' : `${info.platform} · this computer`;
         $('home-path').textContent = info.home + '/recordings';
+        $('rv-submit').title = info.cloud ? $('rv-submit').title : 'Not connected to a workspace yet — ask your Vista admin';
         renderHero(status); renderRecordings(); renderToday(); renderSettings(); checkPermissions();
         setInterval(async () => { if (status && status.state !== 'idle') { status = await window.vista.status(); renderHero(status); renderToday(); } }, 1000);
       })();

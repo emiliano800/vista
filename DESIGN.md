@@ -231,8 +231,18 @@ recording dot is `--danger`, finishing is `--moss`.
 
 ## 8. Icons and logo
 
-- Icons: line only, `stroke: currentColor`, `stroke-width: 1.4–1.75`, round
-  caps, no fill. 14–16px in the product, 40px on marketing.
+- Icons: [Lucide](https://lucide.dev) is the standard — the only icon set in the
+  product. Line only, `stroke: currentColor`, `stroke-width: 1.4–1.75`, round
+  caps and joins, no fill. 14–16px in the product, 40px on marketing.
+  - Web (React): `lucide-react`, import icons by name. Static/Electron pages:
+    inline the icon's SVG paths from lucide.dev in a 24-unit `viewBox`,
+    `aria-hidden` when next to a label.
+  - Icon + label: `--space-1` gap, icon before the word. Icon-only buttons need
+    a `title`. Never draw ad-hoc glyphs or use emoji/unicode symbols (✓, →, ⚠)
+    where a Lucide icon exists.
+  - Status pairs: submitted `cloud-check`, uploading `loader-circle`, failed
+    `circle-alert`, edit `pencil`, confirm `check`, folder `folder`, upload
+    `cloud-upload`.
 - Logo: "Vista" in Newsreader 500 with `.logo-dot` — a 10px `--ink` square
   with 2px radius (the "observed" swatch from the ledger legend).
 

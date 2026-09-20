@@ -61,7 +61,7 @@ class Source(StrEnum):
 
     OBSERVED = "observed"  # read directly from a screen (id in window title / url)
     RULE = "rule"  # produced by an ActivityRule
-    FALLBACK = "fallback"  # no rule matched -> "Other (<app>)"
+    FALLBACK = "fallback"  # no rule matched -> the application name
     FILLED = "filled"  # propagated from a neighbouring step
     EPISODE = "episode"  # synthetic case from a contiguous burst of work (no id available)
     HUMAN = "human"  # stated by an employee / analyst annotation

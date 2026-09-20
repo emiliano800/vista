@@ -43,9 +43,7 @@ def _call_model(document: Document | None) -> tuple[str, str, int, int]:
     """Returns (model, output_text, input_tokens, output_tokens). Uses OpenAI when
     a key is configured, otherwise a deterministic stub."""
     if settings.openai_api_key:
-        from openai import OpenAI
-
-        client = OpenAI(api_key=settings.openai_api_key)
+        client = settings.openai_client()
         subject = f"a document named {document.filename!r}" if document else "a deal with no document"
         resp = client.chat.completions.create(
             model=settings.openai_model,
@@ -60,6 +58,7 @@ def _call_model(document: Document | None) -> tuple[str, str, int, int]:
                     "content": f"In 2-3 sentences, describe what analysis you would run on {subject} during diligence.",
                 },
             ],
+            extra_body=settings.openai_extra_body(),
         )
         return (
             resp.model,
@@ -73,13 +72,11 @@ def _call_model(document: Document | None) -> tuple[str, str, int, int]:
 def _chat(system: str, user: str, max_tokens: int = 800) -> tuple[str, str, int, int]:
     """One model call. Returns (model, text, input_tokens, output_tokens)."""
     if settings.openai_api_key:
-        from openai import OpenAI
-
-        client = OpenAI(api_key=settings.openai_api_key)
-        resp = client.chat.completions.create(
+        resp = settings.openai_client().chat.completions.create(
             model=settings.openai_model,
             max_tokens=max_tokens,
             messages=[{"role": "system", "content": system}, {"role": "user", "content": user}],
+            extra_body=settings.openai_extra_body(),
         )
         return (
             resp.model,

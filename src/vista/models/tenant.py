@@ -144,6 +144,8 @@ class Recording(TenantBase):
     summary: Mapped[dict] = mapped_column(JSONB)
     s3_key: Mapped[str] = mapped_column(String(1024))
     content_hash: Mapped[str] = mapped_column(String(64))
+    media: Mapped[dict] = mapped_column(JSONB, default=dict)  # name -> {key, content_type, size_bytes}
+    sections: Mapped[dict] = mapped_column(JSONB, default=dict)  # section id -> employee edits {name, note}
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 

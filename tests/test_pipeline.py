@@ -50,9 +50,9 @@ def test_abstract_merges_consecutive_same_activity():
     assert steps[0].duration_s == 1.0
 
 
-def test_unmatched_events_fall_back_to_other():
+def test_unmatched_events_fall_back_to_app_name():
     steps = abstraction.abstract([("s", ev(0, EventType.CLICK, app="Notepad"))], [])
-    assert steps[0].activity == "Other (Notepad)"
+    assert steps[0].activity == "Notepad"
 
 
 def test_correlate_forward_and_backward_fill():

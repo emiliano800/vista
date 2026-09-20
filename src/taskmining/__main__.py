@@ -62,6 +62,7 @@ def main(argv: list[str] | None = None) -> int:
     run.add_argument("--out", type=Path, default=Path("out"))
     run.add_argument("--seed", type=int, default=7)
     run.add_argument("--no-pseudonymize", action="store_true")
+    run.add_argument("--no-redact", action="store_true", help="keep emails/phones/card numbers in titles and text as recorded")
     run.add_argument("--no-episodes", action="store_true", help="disable synthetic episode cases for id-less steps")
     run.add_argument(
         "--annotations",
@@ -89,7 +90,7 @@ def main(argv: list[str] | None = None) -> int:
             print(f"wrote {len(src.annotations())} annotations to {args.annotations_out}")
         return 0
 
-    pipeline = Pipeline(pseudonymize=not args.no_pseudonymize, episode_fallback=not args.no_episodes)
+    pipeline = Pipeline(pseudonymize=not args.no_pseudonymize, episode_fallback=not args.no_episodes, redact=not args.no_redact)
     human = None
     if args.annotations and str(args.annotations) != "auto":
         with args.annotations.open() as fp:

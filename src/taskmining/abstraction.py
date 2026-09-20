@@ -55,7 +55,7 @@ def classify(e: RawEvent, rules: list[ActivityRule]) -> tuple[str, Source]:
     for r in rules:
         if r.matches(e):
             return r.activity, Source.RULE
-    return f"Other ({e.app})", Source.FALLBACK
+    return e.app or "Unknown app", Source.FALLBACK
 
 
 def is_transfer(e: RawEvent) -> bool:
