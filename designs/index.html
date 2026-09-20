@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Vista — landing page design directions</title>
+<style>
+  :root { --ink: #141518; --ink-2: #5a5f6b; --line: #e3e5ea; --bg: #fafafa; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.55 system-ui, -apple-system, "Segoe UI", sans-serif; }
+  a { color: inherit; }
+  .wrap { max-width: 1200px; margin: 0 auto; padding: 48px 28px 96px; }
+  h1 { font-size: 30px; letter-spacing: -.02em; margin: 0 0 6px; }
+  .intro { color: var(--ink-2); max-width: 70ch; margin: 0 0 40px; }
+  .card { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 24px; padding: 28px 0; border-top: 1px solid var(--line); align-items: start; }
+  .card h2 { font-size: 20px; margin: 0 0 4px; letter-spacing: -.01em; }
+  .card h2 small { color: var(--ink-2); font-weight: 400; font-size: 14px; margin-left: 8px; }
+  .card p { margin: 0 0 12px; color: var(--ink-2); }
+  .card dl { margin: 0 0 14px; font-size: 13.5px; display: grid; grid-template-columns: auto 1fr; gap: 3px 12px; }
+  .card dt { color: var(--ink-2); } .card dd { margin: 0; }
+  .card .open { display: inline-block; font-weight: 600; text-decoration: none; border: 1px solid var(--ink); border-radius: 6px; padding: 7px 12px; }
+  .card .open:hover { background: var(--ink); color: #fff; }
+  .card .open:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+  figure { margin: 0; }
+  figure img { display: block; width: 100%; height: auto; border: 1px solid var(--line); border-radius: 6px; background: #fff; }
+  figure figcaption { font-size: 12.5px; color: var(--ink-2); margin-top: 6px; }
+  .mob img { max-width: 220px; }
+  @media (max-width: 900px) { .card { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body><main class="wrap">
+  <h1>Vista — landing page design directions</h1>
+  <p class="intro">Six standalone mockups for a public Vista marketing site. Each is a materially different visual world over the same product truth: on-device recording → redaction → steps → cases → process map → ranked automation candidates. Screenshots are 1440 px (first viewport) and 390 px. Click "Open" for the live, responsive page.</p>
+
+  <section class="card">
+    <div><h2>01 · Ledger <small>product-led, light</small></h2>
+      <p>Clean operational-software feel. The hero object is a discovered process map with real edge counts; the pipeline is a proper table, the swivel-chair map is a ranked list.</p>
+      <dl><dt>Type</dt><dd>Inter Tight + JetBrains Mono</dd><dt>Mood</dt><dd>Attio / Affinity</dd><dt>Best for</dt><dd>Buyers who want to see the product</dd></dl>
+      <a class="open" href="01-ledger.html">Open →</a></div>
+    <figure><img src="shots/01-ledger-desktop.png" alt="Ledger design, desktop" /><figcaption>1440 px</figcaption></figure>
+    <figure class="mob"><img src="shots/01-ledger-mobile.png" alt="Ledger design, mobile" /><figcaption>390 px</figcaption></figure>
+  </section>
+
+  <section class="card">
+    <div><h2>02 · Field Notes <small>warm editorial</small></h2>
+      <p>Serif, essay-led, calm. A day-timeline of a pseudonymised AP clerk anchors the hero; the argument "process maps are drawn from memory, ours from Tuesdays" carries the page.</p>
+      <dl><dt>Type</dt><dd>Newsreader + Inter</dd><dt>Mood</dt><dd>Anthropic</dd><dt>Best for</dt><dd>Trust, thoughtfulness, privacy story</dd></dl>
+      <a class="open" href="02-field-notes.html">Open →</a></div>
+    <figure><img src="shots/02-field-notes-desktop.png" alt="Field Notes design, desktop" /><figcaption>1440 px</figcaption></figure>
+    <figure class="mob"><img src="shots/02-field-notes-mobile.png" alt="Field Notes design, mobile" /><figcaption>390 px</figcaption></figure>
+  </section>
+
+  <section class="card">
+    <div><h2>03 · Control Room <small>dark, cinematic</small></h2>
+      <p>Near-black with signal green. A live canvas of raw events collapsing into process nodes sits behind the headline; a terminal-style redaction sample and a summary.json panel make the engine tangible.</p>
+      <dl><dt>Type</dt><dd>Space Grotesk + IBM Plex Mono</dd><dt>Mood</dt><dd>Noomo / Greyparrot</dd><dt>Best for</dt><dd>Technical credibility, "AI infra" positioning</dd></dl>
+      <a class="open" href="03-control-room.html">Open →</a></div>
+    <figure><img src="shots/03-control-room-desktop.png" alt="Control Room design, desktop" /><figcaption>1440 px</figcaption></figure>
+    <figure class="mob"><img src="shots/03-control-room-mobile.png" alt="Control Room design, mobile" /><figcaption>390 px</figcaption></figure>
+  </section>
+
+  <section class="card">
+    <div><h2>04 · Colour Blocks <small>bold geometric</small></h2>
+      <p>The clicks → steps → cases → map → dollars formula rendered as five coloured plates with CSS-drawn glyphs. Heavy type, thick rules, a ranked candidate list instead of feature cards.</p>
+      <dl><dt>Type</dt><dd>Manrope + Fraunces</dd><dt>Mood</dt><dd>Cohere</dd><dt>Best for</dt><dd>Standing out, brand memorability</dd></dl>
+      <a class="open" href="04-colour-blocks.html">Open →</a></div>
+    <figure><img src="shots/04-colour-blocks-desktop.png" alt="Colour Blocks design, desktop" /><figcaption>1440 px</figcaption></figure>
+    <figure class="mob"><img src="shots/04-colour-blocks-mobile.png" alt="Colour Blocks design, mobile" /><figcaption>390 px</figcaption></figure>
+  </section>
+
+  <section class="card">
+    <div><h2>05 · Overlay <small>friendly, recorder-first</small></h2>
+      <p>Consumer-app warmth. The hero is a fake desktop (Acrobat → QuickBooks) with the Vista recorder pill on top and an animated cross-app paste. Sells simplicity: one button, honest map.</p>
+      <dl><dt>Type</dt><dd>Plus Jakarta Sans</dd><dt>Mood</dt><dd>Jasper / Jamie</dd><dt>Best for</dt><dd>Employee adoption, low-friction pitch</dd></dl>
+      <a class="open" href="05-overlay.html">Open →</a></div>
+    <figure><img src="shots/05-overlay-desktop.png" alt="Overlay design, desktop" /><figcaption>1440 px</figcaption></figure>
+    <figure class="mob"><img src="shots/05-overlay-mobile.png" alt="Overlay design, mobile" /><figcaption>390 px</figcaption></figure>
+  </section>
+
+  <section class="card">
+    <div><h2>06 · Dossier <small>PE diligence memo</small></h2>
+      <p>Navy, serif headlines, a printed-memo hero. Speaks directly to the fund: observed hours versus interview estimates, a four-step method, a data-flow table as the integration backlog.</p>
+      <dl><dt>Type</dt><dd>Source Serif 4 + Geist</dd><dt>Mood</dt><dd>Affinity / institutional</dd><dt>Best for</dt><dd>Selling to operating partners and deal teams</dd></dl>
+      <a class="open" href="06-dossier.html">Open →</a></div>
+    <figure><img src="shots/06-dossier-desktop.png" alt="Dossier design, desktop" /><figcaption>1440 px</figcaption></figure>
+    <figure class="mob"><img src="shots/06-dossier-mobile.png" alt="Dossier design, mobile" /><figcaption>390 px</figcaption></figure>
+  </section>
+</main></body>
+</html>

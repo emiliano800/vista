@@ -1,0 +1,163 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Vista — One button. Your whole process.</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --bg: #fbfaff; --ink: #1b1735; --ink-2: #5a5577; --ink-3: #8f8aa8; --line: #e6e3f2;
+    --violet: #6a4cff; --violet-ink: #3d27b5; --violet-soft: #ece8ff; --rec: #ff4d5e; --lime: #cdf564; --sky: #dcefff;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 17px/1.55 "Plus Jakarta Sans", system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+  ::selection { background: var(--lime); color: var(--ink); }
+  a { color: inherit; text-decoration: none; }
+  .wrap { max-width: 1160px; margin: 0 auto; padding: 0 24px; }
+
+  nav .wrap { display: flex; align-items: center; height: 76px; gap: 26px; }
+  .logo { font-weight: 800; font-size: 22px; letter-spacing: -.03em; display: flex; align-items: center; gap: 8px; }
+  .logo i { width: 14px; height: 14px; border-radius: 50%; background: var(--rec); box-shadow: 0 0 0 4px #ffd9dd; }
+  nav ul { list-style: none; display: flex; gap: 24px; margin: 0 0 0 auto; padding: 0; font-weight: 600; font-size: 15px; color: var(--ink-2); }
+  .btn { display: inline-flex; align-items: center; gap: 8px; height: 48px; padding: 0 22px; border-radius: 14px; font-weight: 700; font-size: 15.5px; background: var(--violet); color: #fff; box-shadow: 0 8px 20px -10px rgba(106,76,255,.7); transition: transform .18s cubic-bezier(.2,.8,.2,1), box-shadow .18s; }
+  .btn:hover { transform: translateY(-2px); box-shadow: 0 14px 26px -12px rgba(106,76,255,.75); }
+  .btn.soft { background: var(--violet-soft); color: var(--violet-ink); box-shadow: none; }
+  .btn.soft:hover { background: #e2dcff; }
+  .btn:focus-visible { outline: 3px solid var(--violet); outline-offset: 3px; }
+
+  .hero { padding: 64px 0 40px; text-align: center; }
+  h1 { font-size: clamp(42px, 6vw, 84px); line-height: 1; letter-spacing: -.04em; font-weight: 800; margin: 0 auto 22px; max-width: 16ch; text-wrap: balance; }
+  h1 mark { background: linear-gradient(transparent 62%, var(--lime) 62%); color: inherit; }
+  .lede { font-size: 20px; color: var(--ink-2); max-width: 52ch; margin: 0 auto 30px; }
+  .cta { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+
+  /* the desktop stage: fake windows with the overlay pill on top */
+  .stage { position: relative; margin: 56px auto 0; max-width: 980px; height: 460px; border-radius: 26px; background: linear-gradient(160deg, var(--sky), var(--violet-soft)); border: 1px solid var(--line); overflow: hidden; }
+  .win { position: absolute; background: #fff; border-radius: 12px; border: 1px solid var(--line); box-shadow: 0 20px 40px -24px rgba(27,23,53,.35); overflow: hidden; }
+  .win .tb { display: flex; align-items: center; gap: 6px; height: 34px; padding: 0 12px; border-bottom: 1px solid var(--line); font-size: 12.5px; font-weight: 600; color: var(--ink-2); }
+  .win .tb i { width: 10px; height: 10px; border-radius: 50%; background: var(--line); }
+  .win .tb span { margin-left: 8px; }
+  .win .body { padding: 14px; font-size: 12.5px; color: var(--ink-2); }
+  .rows div { height: 10px; background: #f0eef8; border-radius: 4px; margin: 8px 0; }
+  .rows div.hl { background: #ffe0e3; position: relative; }
+  .rows div.hl::after { content: "INV-20419 · $4,318.50"; position: absolute; inset: -6px auto auto 0; font-weight: 700; color: var(--ink); font-size: 12px; }
+  .paste { position: absolute; left: 40%; top: 40%; width: 16%; height: 2px; background: repeating-linear-gradient(90deg, var(--violet) 0 8px, transparent 8px 14px); animation: slide 1.4s linear infinite; }
+  @keyframes slide { to { background-position: 14px 0; } }
+  .paste::after { content: "paste · 11 s · cross-app"; position: absolute; top: -24px; left: 50%; transform: translateX(-50%); background: #fff; padding: 2px 8px; border-radius: 999px; font: 700 12px "Plus Jakarta Sans"; color: var(--violet-ink); white-space: nowrap; }
+  .pill { position: absolute; left: 50%; bottom: 28px; transform: translateX(-50%); display: flex; align-items: center; gap: 12px; padding: 10px 14px 10px 12px; background: var(--ink); color: #fff; border-radius: 999px; box-shadow: 0 18px 40px -16px rgba(27,23,53,.7); font-weight: 600; font-size: 14px; }
+  .pill .dot { width: 12px; height: 12px; border-radius: 50%; background: var(--rec); animation: blink 1.6s ease-in-out infinite; }
+  @keyframes blink { 50% { opacity: .35; } }
+  .pill .time { font-variant-numeric: tabular-nums; color: #cfc9ee; }
+  .pill button { height: 30px; padding: 0 12px; border-radius: 999px; border: 0; background: #fff; color: var(--ink); font: 700 13px "Plus Jakarta Sans"; cursor: pointer; }
+  .pill button.note { background: transparent; color: #fff; border: 1px solid #4a4470; }
+  .pill button:hover { filter: brightness(.95); }
+
+  section { padding: 100px 0; }
+  h2 { font-size: clamp(32px, 4vw, 54px); letter-spacing: -.035em; line-height: 1.02; font-weight: 800; margin: 0 0 18px; text-wrap: balance; }
+  .sub { color: var(--ink-2); font-size: 19px; max-width: 54ch; margin: 0 0 40px; }
+
+  .steps { display: grid; grid-template-columns: 1fr 1fr; gap: 24px 64px; align-items: center; }
+  .steps ul { list-style: none; margin: 0; padding: 0; }
+  .steps li { display: grid; grid-template-columns: 44px 1fr; gap: 16px; padding: 18px 0; border-bottom: 1px solid var(--line); }
+  .steps li:last-child { border-bottom: 0; }
+  .steps li i { width: 44px; height: 44px; border-radius: 12px; display: grid; place-items: center; background: var(--violet-soft); }
+  .steps li i svg { width: 22px; height: 22px; stroke: var(--violet-ink); fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+  .steps li b { display: block; font-size: 18px; letter-spacing: -.01em; margin-bottom: 2px; }
+  .steps li span { color: var(--ink-2); font-size: 15.5px; }
+  .report { background: #fff; border: 1px solid var(--line); border-radius: 22px; padding: 26px; box-shadow: 0 30px 60px -40px rgba(27,23,53,.4); }
+  .report h4 { margin: 0 0 4px; font-size: 16px; }
+  .report p { margin: 0 0 18px; color: var(--ink-3); font-size: 13.5px; }
+  .cand { display: grid; grid-template-columns: 1fr auto; gap: 6px 14px; align-items: center; padding: 12px 0; border-top: 1px solid var(--line); }
+  .cand b { font-size: 15px; }
+  .cand small { display: block; color: var(--ink-2); font-size: 13px; }
+  .cand .score { font-weight: 800; font-size: 22px; letter-spacing: -.02em; font-variant-numeric: tabular-nums; color: var(--violet-ink); }
+  .cand .meter { grid-column: 1 / -1; height: 8px; border-radius: 4px; background: var(--violet-soft); overflow: hidden; }
+  .cand .meter i { display: block; height: 100%; background: var(--violet); border-radius: 4px; }
+
+  .promise { background: var(--ink); color: #fff; border-radius: 30px; padding: 72px 0; }
+  .promise .wrap { display: grid; grid-template-columns: 1fr 1fr; gap: 48px; align-items: center; }
+  .promise h2 { color: #fff; }
+  .promise p { color: #c9c4e6; font-size: 18px; }
+  .promise ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+  .promise li { display: flex; gap: 12px; align-items: flex-start; padding: 16px 18px; border-radius: 14px; background: #262047; font-size: 15.5px; }
+  .promise li svg { flex: none; width: 20px; height: 20px; stroke: var(--lime); fill: none; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; margin-top: 2px; }
+
+  .close { text-align: center; padding: 120px 0; }
+  .close h2 { max-width: 18ch; margin: 0 auto 28px; }
+  footer { border-top: 1px solid var(--line); padding: 28px 0; color: var(--ink-3); font-size: 14px; font-weight: 500; }
+  footer .wrap { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px; }
+
+  @media (max-width: 900px) {
+    .steps, .promise .wrap { grid-template-columns: 1fr; }
+    nav ul { display: none; }
+    .stage { height: 380px; }
+    .win.w2 { display: none; }
+    .win.w1 { left: 6% !important; width: 88% !important; }
+    .paste { display: none; }
+    section { padding: 64px 0; }
+    .promise { border-radius: 0; }
+  }
+</style>
+</head>
+<body>
+<nav><div class="wrap">
+  <a class="logo" href="#"><i></i>Vista</a>
+  <ul><li><a href="#how">How it works</a></li><li><a href="#report">The report</a></li><li><a href="#promise">Privacy</a></li></ul>
+  <a class="btn soft" href="#">Sign in</a>
+</div></nav>
+
+<header class="hero"><div class="wrap">
+  <h1>One button. <mark>Your whole process</mark>, mapped.</h1>
+  <p class="lede">Press record. Do your normal work. Vista turns the clicks into a process map and shows what's worth automating — with every number linked to what it saw.</p>
+  <div class="cta"><a class="btn" href="#">Download for Mac &amp; Windows</a><a class="btn soft" href="#report">See a sample report</a></div>
+
+  <div class="stage" aria-label="Recorder overlay over Acrobat and QuickBooks">
+    <div class="win w1" style="left:4%;top:9%;width:36%;height:76%"><div class="tb"><i></i><i></i><i></i><span>Invoice_20419.pdf — Acrobat</span></div><div class="body rows"><div style="width:60%"></div><div style="width:85%"></div><div class="hl" style="width:70%;margin-top:22px"></div><div style="width:50%;margin-top:22px"></div><div style="width:80%"></div><div style="width:65%"></div></div></div>
+    <div class="win w2" style="left:56%;top:16%;width:40%;height:72%"><div class="tb"><i></i><i></i><i></i><span>Enter Bill — QuickBooks</span></div><div class="body"><div style="display:grid;grid-template-columns:auto 1fr;gap:8px 12px;align-items:center"><span>Vendor</span><div class="rows" style="margin:0"><div style="width:70%;margin:0"></div></div><span>Ref no.</span><div style="border:1.5px solid var(--violet);border-radius:6px;padding:5px 8px;font-weight:700;color:var(--ink)">INV-20419</div><span>Amount</span><div style="border:1.5px solid var(--line);border-radius:6px;padding:5px 8px;color:var(--ink-3)">$4,318.50|</div><span>Terms</span><div class="rows" style="margin:0"><div style="width:40%;margin:0"></div></div></div></div></div>
+    <div class="paste"></div>
+    <div class="pill" role="status"><span class="dot" aria-hidden="true"></span>Recording<span class="time">01:42:17</span><button class="note">+ Note</button><button>Stop</button></div>
+  </div>
+</div></header>
+
+<section id="how"><div class="wrap">
+  <h2>Two weeks of normal work. One honest map.</h2>
+  <p class="sub">No ERP integration, no consultants with sticky notes. A small desktop app, an always-visible pill so nobody forgets it's on, and an engine that runs on the laptop the moment you press Stop.</p>
+  <div class="steps">
+    <ul>
+      <li><i><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3.5"/></svg></i><div><b>Record</b><span>Start once. The overlay pill stays on top of Excel, Outlook, anything. Private apps and keywords mute capture.</span></div></li>
+      <li><i><svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h10M4 17h6"/><path d="M17 14l4 4M21 14l-4 4"/></svg></i><div><b>Redact on device</b><span>Emails, phones, IBANs and cards are scrubbed before anything is written. Typed text is never stored.</span></div></li>
+      <li><i><svg viewBox="0 0 24 24"><path d="M9 12H4M20 12h-5"/><rect x="9" y="8" width="6" height="8" rx="1.5"/></svg></i><div><b>Link copy to paste</b><span>A paste into QuickBooks knows it came from Acrobat 11 seconds earlier. Re-keying becomes a number.</span></div></li>
+      <li><i><svg viewBox="0 0 24 24"><path d="M12 20V10M6 20v-4M18 20V4"/></svg></i><div><b>Get the report</b><span>Process map, rework loops, data flows and a ranked list of what to automate, generated locally on Stop.</span></div></li>
+    </ul>
+    <div class="report" id="report">
+      <h4>Session report · Tue 18 Sep · 6h 12m</h4>
+      <p>40 cases · 1,284 steps · 7 variants · 4.5 h off-screen (annotated)</p>
+      <div class="cand"><div><b>Enter invoice (QuickBooks)</b><small>42 pastes from Acrobat · 3.1 h/week observed</small></div><span class="score">0.82</span><span class="meter"><i style="width:82%"></i></span></div>
+      <div class="cand"><div><b>Match PO (Excel)</b><small>6 rework loops · 1.9 h/week observed</small></div><span class="score">0.71</span><span class="meter"><i style="width:71%"></i></span></div>
+      <div class="cand"><div><b>Read email (Outlook)</b><small>31 pastes to Excel</small></div><span class="score">0.54</span><span class="meter"><i style="width:54%"></i></span></div>
+    </div>
+  </div>
+</div></section>
+
+<section id="promise" style="padding-top:0"><div class="wrap"><div class="promise"><div class="wrap">
+  <div>
+    <h2>Built to be run on someone else's laptop.</h2>
+    <p>Employees can see it's on, can pause it, can tell it what happened off-screen — and their word outranks our rules. Nothing leaves the machine but a summary and the activity log.</p>
+  </div>
+  <ul>
+    <li><svg viewBox="0 0 24 24"><path d="M5 12l5 5L20 7"/></svg>Screenshots and video never leave the device.</li>
+    <li><svg viewBox="0 0 24 24"><path d="M5 12l5 5L20 7"/></svg>Users are pseudonymised with a salted hash before storage.</li>
+    <li><svg viewBox="0 0 24 24"><path d="M5 12l5 5L20 7"/></svg>Every step says where its label came from: observed, rule, filled or human.</li>
+    <li><svg viewBox="0 0 24 24"><path d="M5 12l5 5L20 7"/></svg>Annotations split and relabel our steps. Human case IDs are never overwritten.</li>
+  </ul>
+</div></div></div></section>
+
+<section class="close"><div class="wrap">
+  <h2>See your own Tuesday on a map.</h2>
+  <div class="cta"><a class="btn" href="#">Download for Mac &amp; Windows</a><a class="btn soft" href="#">Talk to us</a></div>
+</div></section>
+<footer><div class="wrap"><span>Vista</span><span>Privacy · Method · Support</span></div></footer>
+</body>
+</html>
