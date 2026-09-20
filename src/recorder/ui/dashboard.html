@@ -510,7 +510,7 @@
         $('rv-banner-t').textContent = done ? 'Analysis complete' : p === 'failed' ? 'Analysis could not finish' : p === 'skipped' ? 'Analysis skipped' : 'Analyzing your session…';
         $('rv-banner-s').textContent = done
           ? analystSummary()
-          : p === 'failed' || p === 'skipped' ? (r.processing_note ?? '') : 'Analysis runs on this computer. Reports are shared only when you choose Upload report.';
+          : p === 'failed' || p === 'skipped' ? (r.processing_note ?? '') : cloud?.connected ? 'Analysis runs on this computer; the redacted report then goes to your company workspace, where the AI explains each stretch for you.' : 'Analysis runs on this computer. Reports are shared only when you choose Upload report.';
 
         const out = (k) => {
           if (!s) return '';
@@ -563,9 +563,11 @@
       function analystSummary() {
         const rv = vs?.review;
         if (!rv) return 'Working out the stretches of work…';
-        if (!rv.enabled) return 'Add an OpenAI key under Settings → AI explanations and the AI will explain each stretch for you to approve. Until then, describe them yourself below.';
+        if (!rv.enabled) return 'Connect your company workspace under Settings → Cloud workspace (or add an OpenAI key) and the AI will explain each stretch for you to approve. Until then, describe them yourself below.';
         const s = rv.summary;
-        if (rv.generating) return `The AI is explaining each stretch of work… ${s.total ? `${s.total} of ${vs.sections.length} done.` : ''}`;
+        const where = rv.source === 'cloud' ? 'Your workspace' : 'The AI';
+        if (rv.generating) return `${where} is explaining each stretch of work… ${s.total ? `${s.total} of ${vs.sections.length} done.` : ''}`;
+        if (rv.sync_error) return `Could not sync with your workspace: ${rv.sync_error}`;
         if (!s.total) return 'No explanations yet.';
         const parts = [`The AI explained ${s.total} stretch${s.total === 1 ? '' : 'es'} of work.`];
         if (s.awaiting) parts.push(`${s.awaiting} need${s.awaiting === 1 ? 's' : ''} your approval.`);

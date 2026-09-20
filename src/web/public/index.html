@@ -100,6 +100,28 @@
         </div>
         <div id="metrics" class="metrics"></div>
         <div class="card">
+          <h2>Employee review</h2>
+          <p class="muted" id="review-summary">
+            The AI explains each stretch of the session; the employee approves,
+            fixes or explains it. Stretches under the confidence threshold need
+            the employee's own words.
+          </p>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Stretch</th>
+                  <th>AI explanation</th>
+                  <th class="num">Confidence</th>
+                  <th>Status</th>
+                  <th>Final label / employee note</th>
+                </tr>
+              </thead>
+              <tbody id="review"></tbody>
+            </table>
+          </div>
+        </div>
+        <div class="card">
           <h2>Automation opportunities</h2>
           <p class="muted">
             Recommendations from local task analysis. Scores indicate candidates

@@ -8,11 +8,11 @@ import { fileURLToPath } from 'node:url';
 
 import { BrowserWindow, Menu, Tray, app, clipboard, desktopCapturer, ipcMain, nativeImage, screen, session, shell, systemPreferences, safeStorage } from 'electron';
 
-import { CONFIDENCE_THRESHOLD, RESOLVED_STATUSES, SESSION_ID, applyDecision, explainSection, openaiConfig, reviewSummary } from './explain.js';
+import { CONFIDENCE_THRESHOLD, RESOLVED_STATUSES, SESSION_ID, applyDecision, describeSection, explainSection, openaiConfig, reviewSummary } from './explain.js';
 import { DEMO_KEYS, DemoHook, demoActiveWindow, demoClipboard } from './demo.js';
 import { DEFAULT_SETTINGS, Recorder, keyNamesFrom, loadSettings } from './recorder.js';
 import { redactText } from './redact.js';
-import { cloudRequest, companyID, uploadReport, workspaceURL } from './cloud.js';
+import { cloudRequest, companyID, fetchReview, mergeReview, reviewItems, sendDecision, submitSections, uploadReport, workspaceURL } from './cloud.js';
 import { buildSections, parseEvents, recordingName } from './sections.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -125,6 +125,7 @@ function postProcess(manifest) {
       return write({ processing: 'failed', processing_note: `summary unreadable: ${e.message}` });
     }
     write({ processing: 'done', summary });
+    if (cloudSettings()) explainRecording(manifest.recording_id).catch(() => {});
   });
 }
 
@@ -191,7 +192,9 @@ function sectionsFor(recordingId) {
     sections,
     shots_dir: `file://${path.join(dir, 'shots')}`,
     review: {
-      enabled: !!openaiConfig(process.env, recorder.settings),
+      enabled: !!cloudSettings() || !!openaiConfig(process.env, recorder.settings),
+      source: cloudSettings() ? 'cloud' : 'local',
+      sync_error: review.sync_error ?? null,
       generating: !!review.generating,
       generated_at: review.generated_at,
       model: review.model,
@@ -209,24 +212,65 @@ function broadcastSections(recordingId) {
 // employee has already resolved are never redone; `force` redoes the open
 // ones. Runs after Stop when a key is configured, and on demand from the dashboard.
 const explaining = new Set();
+function reviewContext(dir) {
+  const m = readManifest(dir);
+  const events = readEvents(dir);
+  const sections = buildSections(events, m);
+  const ctx = { manifest: { ...m, annotations_preview: readAnnotations(dir).map((a) => `${a.label}${a.note ? ': ' + a.note : ''}`).slice(0, 8) }, sections, events };
+  return { m, sections, ctx, targets: [...sections, { whole: true, id: SESSION_ID, seconds: m.active_seconds ?? 0 }] };
+}
+
+const REVIEW_POLL_MS = 2500;
+const REVIEW_POLL_MAX_MS = 3 * 60 * 1000;
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+// Cloud-connected review: the section descriptions (redacted here, no
+// keystrokes/screenshots) go to the workspace, whose worker asks the model with
+// the company's key; results are mirrored into review.json for the dashboard.
+async function explainViaCloud(recordingId, dir, review, { force }) {
+  const cloud = cloudSettings();
+  const token = safeStorage.decryptString(Buffer.from(cloud.encryptedToken, 'base64'));
+  const config = { ...cloud, token };
+  const cloudId = await uploadToCloud(recordingId, config);
+  const { ctx, targets } = reviewContext(dir);
+  const items = reviewItems(targets, (s) => describeSection(s, ctx));
+  let remote = await submitSections(config, cloudId, items, force);
+  const started = Date.now();
+  while (remote.generating && Date.now() - started < REVIEW_POLL_MAX_MS) {
+    Object.assign(review, mergeReview(review, remote));
+    writeReview(dir, review);
+    broadcastSections(recordingId);
+    await sleep(REVIEW_POLL_MS);
+    remote = await fetchReview(config, cloudId);
+  }
+  Object.assign(review, mergeReview(review, remote));
+  if (remote.generating) review.sync_error = 'The workspace is still explaining this session; open it again in a minute.';
+}
+
 async function explainRecording(recordingId, { force = false } = {}) {
   const api = openaiConfig(process.env, recorder.settings);
-  if (!api) return { error: 'no_key', message: 'Add an OpenAI API key under Settings → AI explanations (or set OPENAI_API_KEY).' };
+  const cloud = cloudSettings();
+  if (!api && !cloud) return { error: 'no_key', message: 'Connect your company workspace under Settings → Cloud workspace (or add an OpenAI API key) and the AI will explain each stretch.' };
   if (explaining.has(recordingId)) return sectionsFor(recordingId);
   explaining.add(recordingId);
   const dir = path.join(RECORDINGS, recordingId);
   const review = readReview(dir);
   review.generating = true;
   review.threshold = CONFIDENCE_THRESHOLD;
-  review.model = api.model;
+  review.model = cloud ? review.model ?? null : api.model;
+  review.sync_error = null;
   writeReview(dir, review);
   broadcastSections(recordingId);
   try {
-    const m = readManifest(dir);
-    const events = readEvents(dir);
-    const sections = buildSections(events, m);
-    const ctx = { manifest: { ...m, annotations_preview: readAnnotations(dir).map((a) => `${a.label}${a.note ? ': ' + a.note : ''}`).slice(0, 8) }, sections, events };
-    const targets = [...sections, { whole: true, id: SESSION_ID }];
+    if (cloud) {
+      try {
+        await explainViaCloud(recordingId, dir, review, { force });
+      } catch (e) {
+        review.sync_error = e.message;
+      }
+      return sectionsFor(recordingId);
+    }
+    const { ctx, targets } = reviewContext(dir);
     for (const s of targets) {
       const prev = review.items[s.id];
       if (prev && (RESOLVED_STATUSES.has(prev.status) || (!force && prev.status !== 'failed'))) continue;
@@ -253,11 +297,22 @@ async function explainRecording(recordingId, { force = false } = {}) {
 // Employee decision on one explanation: approve / fix / explain. Writes the
 // annotation (with the AI's version kept alongside for provenance) and
 // updates review.json.
-function decide(recordingId, itemId, action, body = {}) {
+async function decide(recordingId, itemId, action, body = {}) {
   const dir = path.join(RECORDINGS, recordingId);
   const review = readReview(dir);
   const { item, annotation } = applyDecision(review.items[itemId], action, body);
   review.items[itemId] = item;
+  const cloud = cloudSettings();
+  const cloudId = uploadStates()[recordingId]?.recordingId;
+  if (cloud && review.source === 'cloud' && cloudId) {
+    try {
+      const token = safeStorage.decryptString(Buffer.from(cloud.encryptedToken, 'base64'));
+      Object.assign(review, mergeReview(review, await sendDecision({ ...cloud, token }, cloudId, itemId, action, body)));
+      review.sync_error = null;
+    } catch (e) {
+      review.sync_error = `Saved on this computer only: ${e.message}`;
+    }
+  }
   writeReview(dir, review);
   const whole = itemId === SESSION_ID;
   const m = readManifest(dir);
@@ -567,7 +622,8 @@ async function stopRecording() {
   setOverlayMode('orb');
   if (MAC) app.dock.show();
   openReview(status.recordingId);
-  if (openaiConfig(process.env, recorder.settings)) explainRecording(status.recordingId).catch(() => {});
+  // Cloud-connected: the review starts once the local analysis is done (postProcess).
+  if (!cloudSettings() && openaiConfig(process.env, recorder.settings)) explainRecording(status.recordingId).catch(() => {});
   return status;
 }
 
@@ -616,23 +672,29 @@ ipcMain.handle('cloud:disconnect', event => {
   fs.rmSync(CLOUD_FILE,{force:true});
   return cloudStatus();
 });
-ipcMain.handle('cloud:upload', async (event, id) => {
-  requireDashboard(event); requireKeyStorage();
+// Upload the local report (idempotent server-side) and return the workspace's
+// recording id, which the review endpoints key on.
+async function uploadToCloud(id, config) {
   if (typeof id !== 'string' || !/^[a-zA-Z0-9_-]{1,128}$/.test(id)) throw new Error('Invalid recording ID.');
-  const c = cloudSettings();
-  if (!c) throw new Error('Connect your cloud workspace in Settings first.');
   if (activeUploads.has(id)) throw new Error('This report is already uploading.');
   activeUploads.add(id);
-  const saveState = state => { const states = uploadStates(); states[id] = {...state,url:c.url,companyId:c.companyId}; writePrivate(UPLOADS_FILE,states); };
+  const saveState = state => { const states = uploadStates(); states[id] = {...state,url:config.url,companyId:config.companyId}; writePrivate(UPLOADS_FILE,states); };
   try {
-    const token = safeStorage.decryptString(Buffer.from(c.encryptedToken,'base64'));
-    const result = await uploadReport({...c,token},RECORDINGS,id);
+    const result = await uploadReport(config,RECORDINGS,id);
     saveState({status:'uploaded',uploadedAt:new Date().toISOString(),recordingId:result.id});
-    return cloudStatus();
+    return result.id;
   } catch (error) {
     saveState({status:'failed',error:error.message});
     throw error;
   } finally { activeUploads.delete(id); }
+}
+ipcMain.handle('cloud:upload', async (event, id) => {
+  requireDashboard(event); requireKeyStorage();
+  const c = cloudSettings();
+  if (!c) throw new Error('Connect your cloud workspace in Settings first.');
+  const token = safeStorage.decryptString(Buffer.from(c.encryptedToken,'base64'));
+  await uploadToCloud(id,{...c,token});
+  return cloudStatus();
 });
 
 // ---- IPC ----------------------------------------------------------------------

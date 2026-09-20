@@ -12,6 +12,8 @@ const date = (value) =>
     dateStyle: "medium",
     timeStyle: "short",
   });
+const time = (value) =>
+  new Date(value).toLocaleTimeString([], { timeStyle: "short" });
 const duration = (seconds) =>
   seconds < 60
     ? `${Math.round(seconds)} sec`
@@ -170,7 +172,49 @@ async function detail(id) {
     );
   view("detail");
   evidenceOffset = 0;
-  await evidence();
+  await Promise.all([review(id), evidence()]);
+}
+const REVIEW_BADGE = {
+  pending: ["", "Explaining…"],
+  proposed: ["agent", "Awaiting approval"],
+  unsure: ["warning", "Unclear · needs employee"],
+  failed: ["danger", "Failed · needs employee"],
+  approved: ["success", "Approved"],
+  fixed: ["human", "Fixed by employee"],
+  explained: ["human", "Explained by employee"],
+};
+function reviewSummaryText(rv) {
+  const s = rv.summary;
+  if (!s.total && !rv.session) return "No review yet — the employee has not submitted this session from the recorder.";
+  const parts = [`${s.total} stretch${s.total === 1 ? "" : "es"} explained at a ${Math.round(s.threshold * 100)}% confidence threshold.`];
+  if (rv.generating) parts.push("Explanations are still being generated.");
+  if (s.awaiting) parts.push(`${s.awaiting} awaiting approval.`);
+  if (s.unclear + s.failed) parts.push(`${s.unclear + s.failed} unclear and need${s.unclear + s.failed === 1 ? "s" : ""} the employee's explanation.`);
+  if (s.resolved) parts.push(`${s.resolved} confirmed.`);
+  if (s.total && !s.open) parts.push("Nothing left to review.");
+  return parts.join(" ");
+}
+async function review(id) {
+  $("review").innerHTML = '<tr><td colspan="5">Loading review…</td></tr>';
+  const rv = await api(`/recordings/${id}/review`);
+  if (current?.id !== id) return;
+  $("review-summary").textContent = reviewSummaryText(rv);
+  const rows = Object.values(rv.items).sort((a, b) =>
+    (a.section.whole ? 1 : 0) - (b.section.whole ? 1 : 0) || String(a.section.start ?? "").localeCompare(String(b.section.start ?? "")),
+  );
+  $("review").innerHTML = rows.length
+    ? rows
+        .map((it) => {
+          const [cls, text] = REVIEW_BADGE[it.status] ?? ["", it.status];
+          const sec = it.section;
+          const name = sec.whole ? "Whole session" : sec.name || sec.app || it.id;
+          const when = sec.whole ? duration(sec.seconds) : `${sec.start ? time(sec.start) : ""} · ${duration(sec.seconds)}`;
+          const ai = it.label ? `<strong>${esc(it.label)}</strong><br /><small>${esc(it.explanation)}</small>` : `<small class="muted">${esc(it.error ?? "—")}</small>`;
+          const final = it.final_label ? `<strong>${esc(it.final_label)}</strong>${it.final_note && it.final_note !== it.explanation ? `<br /><small>${esc(it.final_note)}</small>` : ""}` : `<small class="muted">${it.questions?.length ? esc(it.questions.join(" ")) : "—"}</small>`;
+          return `<tr><td><strong>${esc(name)}</strong><br /><small>${esc(when)}</small></td><td>${ai}</td><td class="num"><span class="mono-figure">${it.label ? Math.round(it.confidence * 100) + "%" : "—"}</span></td><td><span class="badge ${cls}">${esc(text)}</span></td><td>${final}</td></tr>`;
+        })
+        .join("")
+    : '<tr><td colspan="5">No stretches submitted for review.</td></tr>';
 }
 async function evidence() {
   const generation = ++requestGeneration;

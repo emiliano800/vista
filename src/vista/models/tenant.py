@@ -2,7 +2,7 @@ import uuid
 from datetime import datetime
 from decimal import Decimal
 
-from sqlalchemy import BigInteger, DateTime, ForeignKey, Integer, Numeric, String, Text, UniqueConstraint, func
+from sqlalchemy import BigInteger, DateTime, Float, ForeignKey, Integer, Numeric, String, Text, UniqueConstraint, func
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
@@ -152,5 +152,40 @@ class Recording(TenantBase):
     summary: Mapped[dict] = mapped_column(JSONB)
     s3_key: Mapped[str] = mapped_column(String(1024))
     content_hash: Mapped[str] = mapped_column(String(64))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class RecordingReviewItem(TenantBase):
+    """One AI explanation of a stretch of a recording (a video section, or the
+    whole session as item_id 'session') and what the employee decided about it."""
+
+    __tablename__ = "recording_review_items"
+    __table_args__ = (UniqueConstraint("recording_id", "item_id"),)
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    recording_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("recordings.id"), index=True)
+    item_id: Mapped[str] = mapped_column(String(64))
+    section: Mapped[dict] = mapped_column(JSONB, default=dict)  # name, app, title, start, end, seconds, counts
+    prompt: Mapped[str] = mapped_column(Text)  # what the recorder described to the model (already redacted)
+    # pending|proposed|unsure|approved|fixed|explained|failed
+    status: Mapped[str] = mapped_column(String(16), default="pending")
+    label: Mapped[str] = mapped_column(Text, default="")
+    explanation: Mapped[str] = mapped_column(Text, default="")
+    confidence: Mapped[float] = mapped_column(Float, default=0)
+    unclear: Mapped[list] = mapped_column(JSONB, default=list)
+    questions: Mapped[list] = mapped_column(JSONB, default=list)
+    threshold: Mapped[float] = mapped_column(Float)
+    model: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    input_tokens: Mapped[int] = mapped_column(Integer, default=0)
+    output_tokens: Mapped[int] = mapped_column(Integer, default=0)
+    error: Mapped[str | None] = mapped_column(Text, nullable=True)
+    explained_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    decision: Mapped[str | None] = mapped_column(String(16), nullable=True)  # approve|fix|explain
+    final_label: Mapped[str] = mapped_column(Text, default="")
+    final_note: Mapped[str] = mapped_column(Text, default="")
+    answers: Mapped[list] = mapped_column(JSONB, default=list)
+    resolved_by: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), nullable=True)
+    resolved_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())

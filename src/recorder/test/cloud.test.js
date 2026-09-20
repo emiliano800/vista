@@ -8,6 +8,11 @@ import {
   reportBundle,
   uploadReport,
   cloudRequest,
+  reviewItems,
+  submitSections,
+  fetchReview,
+  sendDecision,
+  mergeReview,
 } from "../src/cloud.js";
 
 test("workspace URLs require HTTPS or local HTTP and never accept credentials/paths", () => {
@@ -87,4 +92,41 @@ test("upload reports actionable server failures without following redirects", as
     ),
     /Invalid access key/,
   );
+});
+test("review calls: sections described on-device, decisions posted, pending items stay local", async () => {
+  const config = { url: "https://example.com", token: "key" };
+  const rid = "11111111-2222-4333-8444-555555555555";
+  const calls = [];
+  const fetchImpl = async (url, options) => {
+    calls.push({ url, options });
+    return Response.json({ ok: true });
+  };
+  const sections = [
+    { id: "S1", name: "QuickBooks", app: "QuickBooks", title: "Bills", start: "t0", end: "t1", seconds: 300, counts: { clicks: 4 } },
+    { id: "session", whole: true, seconds: 900 },
+  ];
+  const items = reviewItems(sections, (s) => `desc ${s.id}`);
+  assert.deepEqual(items[1], { id: "session", description: "desc session", section: { whole: true, seconds: 900 } });
+  assert.equal(items[0].section.counts.clicks, 4);
+  await submitSections(config, rid, items, false, fetchImpl);
+  await fetchReview(config, rid, fetchImpl);
+  await sendDecision(config, rid, "S1", "fix", { label: "Pay bills", answers: [{ q: "Why?", a: "Month end" }] }, fetchImpl);
+  assert.equal(calls[0].options.method, "PUT");
+  assert.ok(calls[0].url.endsWith(`/recordings/${rid}/review/sections`));
+  assert.ok(calls[1].url.endsWith(`/recordings/${rid}/review`));
+  assert.deepEqual(JSON.parse(calls[2].options.body), { action: "fix", label: "Pay bills", note: "", answers: [{ q: "Why?", a: "Month end" }] });
+  assert.throws(() => submitSections(config, "not-uploaded", items, false, fetchImpl), /not been uploaded/);
+  assert.throws(() => sendDecision(config, rid, "../x", "approve", {}, fetchImpl), /Invalid review item/);
+
+  const local = { threshold: 0.88, items: { S1: { id: "S1", status: "proposed", label: "old" } } };
+  const merged = mergeReview(local, {
+    threshold: 0.88,
+    model: "gpt",
+    generating: true,
+    items: { S1: { status: "approved", label: "Enter bills", final_label: "Enter bills" }, S2: { status: "pending" } },
+  });
+  assert.equal(merged.source, "cloud");
+  assert.equal(merged.items.S1.status, "approved");
+  assert.equal(merged.items.S2, undefined);
+  assert.equal(merged.generating, true);
 });

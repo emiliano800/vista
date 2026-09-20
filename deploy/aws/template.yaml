@@ -42,8 +42,9 @@ Parameters:
     MinValue: 0
     MaxValue: 4
     Description: >-
-      Number of job-worker tasks (agent runs). Recording reports do not need a worker;
-      set to 1 when agent runs should execute in AWS.
+      Number of job-worker tasks (agent runs, AI review of recordings). Report uploads
+      do not need a worker; set to 1 when agent runs or recording reviews should
+      execute in AWS.
   OpenAIApiKey:
     Type: String
     Default: ""
