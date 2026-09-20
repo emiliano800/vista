@@ -133,3 +133,50 @@ def test_synthetic_run_links_to_deal_of_same_name(client, tenant_factory):
     run = client.post("/synthetic/discovery", json={"company": "ridgeway", "division": "11_billing_ar"}, headers=headers).json()
     assert run["deal_id"] == deal["id"]
     assert [r["id"] for r in client.get(f"/runs?deal_id={deal['id']}", headers=headers).json()] == [run["id"]]
+
+
+def test_run_finding_usage_filters_and_grouping(client, tenant_factory):
+    headers, _, _ = tenant_factory()
+    disc = client.post("/synthetic/discovery", json={"company": "ridgeway", "division": "11_billing_ar"}, headers=headers).json()
+    ana = client.post("/synthetic/analyze", json={"sector": "industrial_goods", "kinds": ["software_overlap"]}, headers=headers).json()
+    _drain()
+
+    ids = lambda rows: {r["id"] for r in rows}  # noqa: E731
+    assert ids(client.get("/runs?agent_key=file_reviewer", headers=headers).json()) == {disc["id"]}
+    assert ids(client.get("/runs?run_type=synthetic_analyze&status=succeeded", headers=headers).json()) == {ana["id"]}
+    assert ids(client.get("/runs?company=Ridgeway", headers=headers).json()) == {disc["id"]}
+    assert client.get("/runs?since=2999-01-01T00:00:00Z", headers=headers).json() == []
+    assert len(client.get("/runs?limit=1", headers=headers).json()) == 1
+
+    findings = client.get(f"/findings?run_id={disc['id']}&kind=observed_fact", headers=headers).json()
+    assert findings and all(f["company"] == "Ridgeway" for f in findings)
+    assert client.get("/findings?agent_key=sector_merger&kind=observed_fact", headers=headers).json() == []
+    assert client.get(f"/findings?company=Ridgeway&run_id={ana['id']}", headers=headers).json() == []
+
+    usage = client.get("/usage?group_by=agent_key&group_by=company", headers=headers).json()
+    assert usage["runs"] == 2
+    keys = {(g["key"]["agent_key"], g["key"]["company"]) for g in usage["groups"]}
+    assert keys == {("file_reviewer", "Ridgeway"), ("sector_merger", None)}
+    assert sum(g["input_tokens"] for g in usage["groups"]) == usage["total_input_tokens"]
+    assert client.get("/usage?group_by=colour", headers=headers).status_code == 422
+    assert client.get("/usage?agent_key=sector_merger", headers=headers).json()["runs"] == 1
+
+
+def test_non_member_sees_only_portfolio_wide_runs(client, tenant_factory):
+    from tests.test_permissions import _add_user
+
+    headers, tenant_id, _ = tenant_factory()
+    client.post("/deals", json={"name": "Ridgeway Fasteners & Supply"}, headers=headers)
+    disc = client.post("/synthetic/discovery", json={"company": "ridgeway", "division": "11_billing_ar"}, headers=headers).json()
+    ana = client.post("/synthetic/analyze", json={"sector": "industrial_goods", "kinds": ["software_overlap"]}, headers=headers).json()
+    _drain()
+    assert disc["deal_id"]
+
+    outsider, _ = _add_user(tenant_id, "analyst@firm.example.com")
+    assert {r["id"] for r in client.get("/runs", headers=outsider).json()} == {ana["id"]}
+    assert client.get(f"/runs?deal_id={disc['deal_id']}", headers=outsider).status_code == 403
+    assert {f["run_id"] for f in client.get("/findings", headers=outsider).json()} <= {ana["id"]}
+    assert client.get("/usage", headers=outsider).json()["runs"] == 1
+    finding = client.get(f"/findings?run_id={disc['id']}", headers=headers).json()[0]
+    assert client.patch(f"/findings/{finding['id']}", json={"status": "reviewed"}, headers=outsider).status_code == 403
+    assert {r["id"] for r in client.get("/runs", headers=headers).json()} == {disc["id"], ana["id"]}

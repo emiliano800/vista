@@ -149,11 +149,20 @@ class RunOut(BaseModel):
     events: list[RunEventOut] = []
 
 
+class UsageGroupOut(BaseModel):
+    key: dict[str, str | None]  # one entry per group_by dimension
+    input_tokens: int
+    output_tokens: int
+    cost_usd: Decimal
+    runs: int
+
+
 class UsageOut(BaseModel):
     total_input_tokens: int
     total_output_tokens: int
     total_cost_usd: Decimal
     runs: int
+    groups: list[UsageGroupOut] = []
 
 
 class PortfolioCompanyOut(BaseModel):

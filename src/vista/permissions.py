@@ -1,7 +1,7 @@
 import uuid
 
 from fastapi import HTTPException
-from sqlalchemy import select
+from sqlalchemy import or_, select
 from sqlalchemy.orm import Session
 
 from vista.models.tenant import DealMembership
@@ -16,3 +16,10 @@ def require_deal_role(session: Session, deal_id: uuid.UUID, user_id: uuid.UUID, 
     if role is None or ROLE_RANK[role] < ROLE_RANK[minimum]:
         raise HTTPException(status_code=403, detail="insufficient permissions on deal")
     return role
+
+
+def visible_deal_clause(deal_column, user_id: uuid.UUID):
+    """Filter for list endpoints: rows without a deal (portfolio-wide runs such as the
+    Sector Merger) plus rows on deals the user belongs to. Admins skip this."""
+    member_of = select(DealMembership.deal_id).where(DealMembership.user_id == user_id)
+    return or_(deal_column.is_(None), deal_column.in_(member_of))
