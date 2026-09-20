@@ -75,8 +75,8 @@ function render() {
         .map((a) => `<li><time datetime="${esc(a.at)}">${esc(age(a.at))} ago</time><span class="who">${esc(companyName(a.companyId))}</span><span class="kind-${esc(a.kind)}">${esc(a.text)}</span></li>`)
         .join("")}</ul>`,
     )}`;
-  $("analyse").onclick = () => {
-    const found = runPortfolioAnalysis();
+  $("analyse").onclick = async () => {
+    const found = await runPortfolioAnalysis();
     render();
     message(
       found.length ? `Portfolio analysis complete — ${found.length} new opportunit${found.length === 1 ? "y" : "ies"} found (${found.map((o) => o.id).join(", ")}).` : "Portfolio analysis complete — no new opportunities beyond those already listed.",

@@ -43,7 +43,7 @@ function render() {
     wizard.step--;
     render();
   };
-  $("next").onclick = () => {
+  $("next").onclick = async () => {
     const error = validate[wizard.step]?.();
     if (error) return message(error, "");
     message();
@@ -325,10 +325,11 @@ const validate = {
   },
 };
 
-function approve() {
+async function approve() {
   const { job, datasets } = transformed();
-  const id = slug(wizard.profile.name);
-  const c = buildCompany({ id, profile: wizard.profile, datasets, exceptions: wizard.exceptions, job });
-  addCompany(c);
-  navigate(`/company/?id=${id}`);
+  const c = buildCompany({ id: slug(wizard.profile.name), profile: wizard.profile, datasets, exceptions: wizard.exceptions, job });
+  // The deal id comes from the backend, so navigate to the stored company
+  // rather than to the local slug.
+  const created = await addCompany(c);
+  navigate(`/company/?id=${created.id}`);
 }

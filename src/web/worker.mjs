@@ -8,10 +8,10 @@ const importRead =
 const importWrite =
   /^\/api\/(?:deals\/[0-9a-f-]+\/imports|imports\/[0-9a-f-]+\/(?:commit|findings\/[a-f0-9]{16}))$/i;
 const portfolioRead =
-  /^\/api\/portfolio\/(?:companies(?:\/[0-9a-f-]+)?|tasks|opportunities|activity)$/i;
-const portfolioCreate = /^\/api\/portfolio\/tasks$/i;
+  /^\/api\/(?:portfolio\/(?:companies(?:\/[0-9a-f-]+)?|tasks|opportunities|activity|analysis)|agents|runs|findings)$/i;
+const portfolioCreate = /^\/api\/portfolio\/(?:tasks|analysis)$/i;
 const portfolioPatch =
-  /^\/api\/portfolio\/(?:tasks|opportunities)\/[0-9a-f-]+$/i;
+  /^\/api\/(?:portfolio\/(?:tasks|opportunities)|agents|findings)\/[0-9a-f-]+$/i;
 const securityHeaders = {
   "X-Content-Type-Options": "nosniff",
   "Referrer-Policy": "no-referrer",

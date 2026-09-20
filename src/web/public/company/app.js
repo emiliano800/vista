@@ -147,8 +147,8 @@ function data() {
         : `<p class="empty">No open exceptions. ${job ? `Last import ${esc(date(job.createdAt))}.` : ""}</p>`,
     )}`;
   $("tab").querySelectorAll("[data-decide]").forEach((b) => {
-    b.onclick = () => {
-      resolveException(c.id, b.closest(".exception").dataset.id, b.dataset.decide);
+    b.onclick = async () => {
+      await resolveException(c.id, b.closest(".exception").dataset.id, b.dataset.decide);
       render();
       message(`Exception resolved: ${b.dataset.decide}.`, "success");
     };
@@ -301,8 +301,8 @@ function findingsTab() {
     { eyebrow: "A finding is something an agent discovered inside this company; opportunities live at portfolio level." },
   );
   $("tab").querySelectorAll("[data-status]").forEach((s) => {
-    s.onchange = () => {
-      setFindingStatus(s.dataset.status, s.value);
+    s.onchange = async () => {
+      await setFindingStatus(s.dataset.status, s.value);
       message(`Finding ${s.dataset.status} marked ${s.value.toLowerCase()}.`, "success");
     };
   });
@@ -396,10 +396,10 @@ function openTaskDialog(prefill = {}) {
     <div class="form-actions"><button class="primary" value="save">Create task</button></div>
   </form>`;
   dialog.querySelector("[data-close]").onclick = () => dialog.close("cancel");
-  dialog.onclose = () => {
+  dialog.onclose = async () => {
     if (dialog.returnValue !== "save") return;
     const f = new FormData(dialog.querySelector("form"));
-    const task = createTask({ ...prefill, title: f.get("title"), description: f.get("description"), category: f.get("category"), priority: f.get("priority"), assignee: f.get("assignee"), dueDate: f.get("dueDate") }, analyst.name);
+    const task = await createTask({ ...prefill, title: f.get("title"), description: f.get("description"), category: f.get("category"), priority: f.get("priority"), assignee: f.get("assignee"), dueDate: f.get("dueDate") }, analyst.name);
     render();
     message(`Task ${task.id} created.`, "success", { href: `/tasks/?id=${task.id}`, label: "Open in tracker →" });
   };

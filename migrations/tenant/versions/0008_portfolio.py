@@ -41,7 +41,7 @@ def upgrade():
         sa.Column("deal_ids", JSONB, nullable=False),
         sa.Column("confidence", sa.Float, nullable=False, server_default="0"),
         sa.Column("potential_value", sa.Numeric(14, 2), nullable=False, server_default="0"),
-        sa.Column("status", sa.String(16), nullable=False, server_default="Open"),
+        sa.Column("status", sa.String(16), nullable=False, server_default="New"),
         sa.Column("found_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False),
         sa.Column("fact", sa.Text, nullable=False, server_default=""),
         sa.Column("evidence", JSONB, nullable=False),

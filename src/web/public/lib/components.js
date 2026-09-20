@@ -2,7 +2,7 @@
 // inline scripts or styles so the same-origin CSP keeps holding).
 import { requireAnalyst, signOut } from "./auth.js";
 import { DEMO_NOTE } from "./format.js";
-import { companies, reset } from "./store.js";
+import { companies, hydrate, reset } from "./store.js";
 
 export const esc = (value) =>
   String(value ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
@@ -23,6 +23,12 @@ const NAV = [
 export async function mountShell() {
   const analyst = await requireAnalyst();
   if (!analyst) return null;
+  // One snapshot per page load, so every accessor below stays synchronous.
+  try {
+    await hydrate();
+  } catch {
+    message?.("The workspace could not be loaded. Refresh to try again.");
+  }
   const here = location.pathname.replace(/index\.html$/, "");
   const nav = $("sidebar");
   if (nav) {
@@ -39,13 +45,12 @@ export async function mountShell() {
       </ul>
       <div class="side-foot">
         <span class="side-user">${esc(analyst.name)}<small>${esc(analyst.role)} · ${esc(analyst.email)}</small></span>
-        <button id="reset-demo" class="link sm">Reset demo data</button>
+        <button id="reset-demo" class="link sm">Reload workspace</button>
       </div>`;
-    nav.querySelector("#reset-demo").onclick = () => {
-      if (confirm("Reset the demo portfolio to its seeded state? Imports, tasks and decisions made in this browser will be cleared.")) {
-        reset();
-        navigate("/portfolio/");
-      }
+    nav.querySelector("#reset-demo").onclick = async () => {
+      // Nothing is stored in the browser any more: this re-reads the workspace.
+      await reset();
+      navigate("/portfolio/");
     };
   }
   const out = $("signout");

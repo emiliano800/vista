@@ -43,13 +43,13 @@ function list() {
       ),
     )}`;
   $("view").querySelectorAll("[data-action]").forEach((b) => {
-    b.onclick = () => {
+    b.onclick = async () => {
       const [action, id] = b.dataset.action.split(":");
       const a = agents().find((x) => x.id === id);
-      if (action === "pause") setAgentStatus(id, "Paused");
-      if (action === "resume") setAgentStatus(id, "Active");
+      if (action === "pause") await setAgentStatus(id, "Paused");
+      if (action === "resume") await setAgentStatus(id, "Active");
       if (action === "run") {
-        const r = runAgentNow(id);
+        const r = await runAgentNow(id);
         list();
         return message(`${a.name} ran on ${companyName(a.companyId)}.`, "success", { href: `/agents/?run=${r.id}`, label: `Open ${r.id} →` });
       }
@@ -125,8 +125,8 @@ function runDetail() {
     )}`;
   const btn = $("task");
   if (btn)
-    btn.onclick = () => {
-      const t = createTask({ title: `Review ${a?.name ?? "agent"} run ${r.id}`, companyId: r.companyId, description: `${r.output}\n\nRun goal: ${r.goal}`, category: "Agent exception", sourceType: "run", sourceId: r.id, priority: "Medium", assignee: analyst.name, dueDate: "2026-09-26" }, analyst.name);
+    btn.onclick = async () => {
+      const t = await createTask({ title: `Review ${a?.name ?? "agent"} run ${r.id}`, companyId: r.companyId, description: `${r.output}\n\nRun goal: ${r.goal}`, category: "Agent exception", sourceType: "run", sourceId: r.id, priority: "Medium", assignee: analyst.name, dueDate: "2026-09-26" }, analyst.name);
       message(`Task ${t.id} created for this run.`, "success", { href: `/tasks/?id=${t.id}`, label: "Open task →" });
       btn.disabled = true;
     };

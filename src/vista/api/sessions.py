@@ -3,15 +3,31 @@ from datetime import UTC, datetime, timedelta
 
 from fastapi import APIRouter, Depends, Request, Response
 from pydantic import BaseModel, Field
-from sqlalchemy import delete
+from sqlalchemy import delete, select
 
 from vista.auth import COOKIE, Principal, check_browser_request, current_principal, principal_for_key
 from vista.config import settings
 from vista.db import platform_session
-from vista.models.platform import BrowserSession
+from vista.models.platform import BrowserSession, Tenant
 from vista.security import token_digest
 
 router = APIRouter(prefix="/auth", tags=["sessions"])
+
+
+def _identity(principal: Principal) -> dict:
+    """What the workspace header shows. The display name is derived from the
+    email because a user row carries no separate name."""
+    with platform_session() as session:
+        firm = session.scalar(select(Tenant.name).where(Tenant.id == principal.tenant_id))
+    local = principal.email.split("@", 1)[0].replace(".", " ").replace("_", " ")
+    return {
+        "email": principal.email,
+        "tenant_id": str(principal.tenant_id),
+        "user_id": str(principal.user_id),
+        "role": principal.role,
+        "firm": firm or "",
+        "name": local.title() or principal.email,
+    }
 
 
 class Login(BaseModel):
@@ -42,12 +58,12 @@ def login(body: Login, request: Request, response: Response):
         COOKIE, token, httponly=True, secure=settings.cookie_secure, samesite="lax", max_age=settings.session_hours * 3600, path="/"
     )
     response.headers["Cache-Control"] = "no-store"
-    return {"email": principal.email, "tenant_id": str(principal.tenant_id)}
+    return _identity(principal)
 
 
 @router.get("/me")
 def me(principal: Principal = Depends(current_principal)):
-    return {"email": principal.email, "tenant_id": str(principal.tenant_id), "user_id": str(principal.user_id)}
+    return _identity(principal)
 
 
 @router.delete("/session", status_code=204)

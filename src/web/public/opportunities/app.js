@@ -107,14 +107,14 @@ function detail() {
         ),
       )}
     </div>`;
-  $("status").onchange = (e) => {
-    setOpportunityStatus(o.id, e.target.value);
+  $("status").onchange = async (e) => {
+    await setOpportunityStatus(o.id, e.target.value);
     detail();
     message(`${o.id} marked ${e.target.value.toLowerCase()}.`, "success");
   };
-  $("create-task").onclick = () => {
+  $("create-task").onclick = async () => {
     const first = company(o.companyIds[0]);
-    const t = createTask(
+    const t = await createTask(
       {
         title: `Follow up: ${o.title}`,
         companyId: o.companyIds[0],

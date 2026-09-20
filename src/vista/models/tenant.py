@@ -17,6 +17,9 @@ class Deal(TenantBase):
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     name: Mapped[str] = mapped_column(String(255))
     created_by: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True))  # platform.users.id
+    # Portfolio company profile: industry, location, acquired, currency. Free-form
+    # because it is descriptive context, never an input to a calculated figure.
+    profile: Mapped[dict] = mapped_column(JSONB, default=dict)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
 
@@ -75,6 +78,8 @@ class EmployeeAgent(TenantBase):
 
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     employee_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("employees.id"), unique=True)
+    # Which portfolio company this agent works on; null for firm-wide agents.
+    deal_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("deals.id"), nullable=True, index=True)
     status: Mapped[str] = mapped_column(String(16), default="active")  # active|paused
     scopes: Mapped[list] = mapped_column(JSONB, default=list)  # e.g. ["documents", "email:ro"]
     schedule: Mapped[str] = mapped_column(String(16), default="daily")  # hourly|daily|weekly
@@ -219,7 +224,7 @@ class PortfolioTask(TenantBase):
     assignee: Mapped[str] = mapped_column(String(255), default="")
     priority: Mapped[str] = mapped_column(String(16), default="Medium")  # High|Medium|Low
     due_date: Mapped[str | None] = mapped_column(String(10), nullable=True)
-    status: Mapped[str] = mapped_column(String(16), default="Open")  # Open|In progress|Done
+    status: Mapped[str] = mapped_column(String(16), default="Open")  # Open|In progress|Complete|Dismissed
     created_by: Mapped[str] = mapped_column(String(255), default="")
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
@@ -240,7 +245,7 @@ class PortfolioOpportunity(TenantBase):
     deal_ids: Mapped[list] = mapped_column(JSONB, default=list)  # deals.id values this spans
     confidence: Mapped[float] = mapped_column(Float, default=0)
     potential_value: Mapped[Decimal] = mapped_column(Numeric(14, 2), default=0)
-    status: Mapped[str] = mapped_column(String(16), default="Open")  # Open|In review|Realized|Dismissed
+    status: Mapped[str] = mapped_column(String(16), default="New")  # New|Under review|Task created|Validated|Realized|Dismissed
     found_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     fact: Mapped[str] = mapped_column(Text, default="")
     evidence: Mapped[list] = mapped_column(JSONB, default=list)  # [{deal_id, entity, id}]

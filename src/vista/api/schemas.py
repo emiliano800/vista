@@ -72,6 +72,7 @@ class EmployeeOut(BaseModel):
 
 class AgentCreate(BaseModel):
     employee_id: uuid.UUID
+    deal_id: uuid.UUID | None = None
     scopes: list[str] = []
     schedule: str = "daily"  # hourly|daily|weekly
 
@@ -79,6 +80,7 @@ class AgentCreate(BaseModel):
 class AgentOut(BaseModel):
     id: uuid.UUID
     employee_id: uuid.UUID
+    deal_id: uuid.UUID | None = None
     employee_name: str
     role_title: str
     status: str
@@ -148,6 +150,7 @@ class UsageOut(BaseModel):
 class PortfolioCompanyOut(BaseModel):
     id: uuid.UUID
     name: str
+    profile: dict = {}
     created_at: datetime
     as_of: str | None = None
     records: int = 0
@@ -246,6 +249,7 @@ class PortfolioCompanyDetail(BaseModel):
 
     id: uuid.UUID
     name: str
+    profile: dict = {}
     as_of: str | None = None
     batch_id: uuid.UUID | None = None
     customers: list = []
@@ -258,3 +262,12 @@ class PortfolioCompanyDetail(BaseModel):
     unsourced: list[str] = []
     exceptions: list = []
     analysis: dict = {}
+
+
+class AnalysisRunOut(BaseModel):
+    """What a portfolio analysis pass found, in records rather than prose."""
+
+    companies: int
+    skus_compared: int
+    created: list[OpportunityOut]
+    updated: list[OpportunityOut]

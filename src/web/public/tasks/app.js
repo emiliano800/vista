@@ -102,8 +102,8 @@ function detail() {
     </div>
     ${opp ? section("Source opportunity", `<p class="fact">${esc(opp.fact)}</p><p><a href="/opportunities/?id=${esc(opp.id)}">Open ${esc(opp.id)} →</a> · potential ${esc(opp.potentialValue != null ? money(opp.potentialValue) : "not quantified")} · ${badge(opp.status)}</p>`) : ""}`;
   if (!done) {
-    $("status").onchange = (e) => {
-      updateTask(t.id, { status: e.target.value }, analyst.name);
+    $("status").onchange = async (e) => {
+      await updateTask(t.id, { status: e.target.value }, analyst.name);
       detail();
       message(`${t.id} moved to ${e.target.value.toLowerCase()}.`, "success");
     };
@@ -134,12 +134,12 @@ function openComplete(t, opp) {
   d.querySelector("[data-close]").onclick = () => d.close("cancel");
   const sel = d.querySelector("[name=outcome]");
   if (sel) sel.onchange = () => (d.querySelector("#realized-wrap").hidden = sel.value !== "Implemented");
-  d.onclose = () => {
+  d.onclose = async () => {
     if (d.returnValue !== "save") return;
     const f = new FormData(d.querySelector("form"));
     const outcome = f.get("outcome") ?? null;
     const realized = outcome === "Implemented" && f.get("realized") !== "" ? Number(f.get("realized")) : null;
-    updateTask(t.id, { status: outcome === "Needs further work" ? "In progress" : "Complete", outcome, outcomeNotes: f.get("notes"), realizedResult: realized }, analyst.name);
+    await updateTask(t.id, { status: outcome === "Needs further work" ? "In progress" : "Complete", outcome, outcomeNotes: f.get("notes"), realizedResult: realized }, analyst.name);
     detail();
     message(outcome === "Needs further work" ? `${t.id} kept in progress — needs further work.` : `${t.id} completed${outcome ? ` — ${outcome.toLowerCase()}` : ""}.`, "success");
   };
@@ -163,10 +163,10 @@ function openNewTask() {
     <div class="form-actions"><button class="primary" value="save">Create task</button></div>
   </form>`;
   d.querySelector("[data-close]").onclick = () => d.close("cancel");
-  d.onclose = () => {
+  d.onclose = async () => {
     if (d.returnValue !== "save") return;
     const f = Object.fromEntries(new FormData(d.querySelector("form")));
-    const t = createTask(f, analyst.name);
+    const t = await createTask(f, analyst.name);
     list();
     message(`Task ${t.id} created.`, "success", { href: `/tasks/?id=${t.id}`, label: "Open →" });
   };

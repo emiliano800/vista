@@ -74,8 +74,8 @@ function detail() {
     ${decided.length ? section(`Decided (${decided.length})`, decided.map(exceptionRow).join("")) : ""}
     ${section("Integration checklist", `<ul class="checklist">${integ.steps.map((s) => `<li><span>${esc(s.label)}</span>${badge(s.status)}</li>`).join("")}</ul>`)}`;
   $("view").querySelectorAll("[data-decide]").forEach((b) => {
-    b.onclick = () => {
-      resolveException(c.id, b.closest(".exception").dataset.id, b.dataset.decide);
+    b.onclick = async () => {
+      await resolveException(c.id, b.closest(".exception").dataset.id, b.dataset.decide);
       detail();
       message(`Decision recorded: ${b.dataset.decide}.`, "success");
     };

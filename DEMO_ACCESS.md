@@ -29,18 +29,27 @@ command center (`/portfolio/`) instead of a single company's workspace.
 
 - Sign in at **https://bumpsolutions.org/signin/analyst/**
 - Firm: Northstar HVAC Holdings (fictional) · analyst identity: `sarah@northstarhvac.com`
-- Analyst access key:
+
+The analyst access key is a **tenant API token**, not a demo string: signing in
+posts it to `/api/auth/session`, which returns an httpOnly session cookie, the
+same path the company workspace uses. Nothing about the key is checked or
+stored in the browser, so the key is not in this file — it is printed once by
+the provisioning script and belongs in a password manager.
+
+The firm is a tenant and each portfolio company is a deal inside it. Provision
+one with:
 
 ```
-88c4845687c36379be7086043bc646a37aedecd26b3f72a4f3fc842ec0a9ec95
+uv run python scripts/provision_portfolio_firm.py \
+    --name "Northstar HVAC Holdings" --analyst sarah@northstarhvac.com
 ```
 
-This side is currently **frontend-only**: the key is checked in the browser
-against a SHA-256 digest in `src/web/public/lib/auth.js`, the session lives in
-`localStorage`, and every figure comes from a deterministic synthetic model
-(Harbor Heating, Summit Mechanical, plus the Cedar Climate acquisition you can
-import through the wizard). "Reset demo data" in the sidebar restores the seed.
-It will move to backend authentication and real portfolio APIs later.
+Every figure the workspace shows is derived from stored records — import
+batches, findings, agents and runs. A company with no committed import shows
+"no source" rather than a zero, and cross-company purchasing opportunities come
+from `POST /api/portfolio/analysis`, which compares unit prices for the same SKU
+across deals. The earlier browser-side key check, and the SHA-256 digest that
+shipped in the JavaScript bundle, are gone.
 
 ## The acquired companies
 
