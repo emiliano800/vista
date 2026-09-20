@@ -2,7 +2,7 @@ import { mountShell, $, esc, badge, metricStrip, table, enableRowLinks, section,
 import { compactMoney, integer, monthYear, date, PERIOD, DEMO_NOTE, age } from "/lib/format.js";
 import { portfolioMetrics, companyMetrics, integrationSteps, agentStatus, attentionQueue, activity, companyName, runPortfolioAnalysis } from "/lib/store.js";
 
-const analyst = mountShell();
+const analyst = await mountShell();
 if (analyst) render();
 
 function render() {

@@ -4,7 +4,7 @@ import { opportunities, company, companyName, tasks, evidenceRows, setOpportunit
 
 const CATEGORIES = ["All", "Purchasing", "Software", "Cross-sell / revenue", "Working capital", "Process automation"];
 const STATUSES = ["New", "Under review", "Task created", "Validated", "Dismissed", "Realized"];
-const analyst = mountShell();
+const analyst = await mountShell();
 const showSource = mountSourceDialog();
 const id = qs().get("id");
 

@@ -4,7 +4,7 @@ import { companies, addCompany, nextId } from "/lib/store.js";
 import { parseCsv, DATASETS, detectDataset, proposeMappings, transformRows, previewTransforms, detectExceptions, cedarSampleFiles, CEDAR_PROFILE, buildCompany } from "/lib/importer.js";
 
 const STEPS = ["Create acquisition", "Upload files", "Detect datasets", "Map fields", "Preview transforms", "Review records", "Approve import"];
-const analyst = mountShell();
+const analyst = await mountShell();
 
 // Wizard state lives in memory until approval; only the approved company is
 // written to the store.

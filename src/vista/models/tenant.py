@@ -201,3 +201,65 @@ class RecordingReviewItem(TenantBase):
     resolved_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class PortfolioTask(TenantBase):
+    """Analyst follow-up on one portfolio company, raised from a finding,
+    an opportunity or an integration step."""
+
+    __tablename__ = "portfolio_tasks"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    deal_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("deals.id"), index=True)
+    title: Mapped[str] = mapped_column(String(512))
+    description: Mapped[str] = mapped_column(Text, default="")
+    category: Mapped[str] = mapped_column(String(64), default="Integration")
+    source_type: Mapped[str | None] = mapped_column(String(32), nullable=True)  # finding|opportunity|subscription|manual
+    source_id: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    assignee: Mapped[str] = mapped_column(String(255), default="")
+    priority: Mapped[str] = mapped_column(String(16), default="Medium")  # High|Medium|Low
+    due_date: Mapped[str | None] = mapped_column(String(10), nullable=True)
+    status: Mapped[str] = mapped_column(String(16), default="Open")  # Open|In progress|Done
+    created_by: Mapped[str] = mapped_column(String(255), default="")
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    outcome: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    outcome_notes: Mapped[str] = mapped_column(Text, default="")
+    realized_result: Mapped[Decimal | None] = mapped_column(Numeric(14, 2), nullable=True)
+
+
+class PortfolioOpportunity(TenantBase):
+    """A cross-company saving or working-capital opportunity. Spans deals, so
+    the companies it touches live in a JSONB list rather than a foreign key."""
+
+    __tablename__ = "portfolio_opportunities"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    title: Mapped[str] = mapped_column(String(512))
+    category: Mapped[str] = mapped_column(String(64), default="Software")
+    deal_ids: Mapped[list] = mapped_column(JSONB, default=list)  # deals.id values this spans
+    confidence: Mapped[float] = mapped_column(Float, default=0)
+    potential_value: Mapped[Decimal] = mapped_column(Numeric(14, 2), default=0)
+    status: Mapped[str] = mapped_column(String(16), default="Open")  # Open|In review|Realized|Dismissed
+    found_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    fact: Mapped[str] = mapped_column(Text, default="")
+    evidence: Mapped[list] = mapped_column(JSONB, default=list)  # [{deal_id, entity, id}]
+    calculation: Mapped[list] = mapped_column(JSONB, default=list)  # shown line by line
+    benefit: Mapped[str] = mapped_column(Text, default="")
+    assumptions: Mapped[list] = mapped_column(JSONB, default=list)
+    next_action: Mapped[str] = mapped_column(Text, default="")
+    realized_value: Mapped[Decimal | None] = mapped_column(Numeric(14, 2), nullable=True)
+
+
+class PortfolioActivity(TenantBase):
+    """Append-only audit of what the analyst and the agents did, per company."""
+
+    __tablename__ = "portfolio_activity"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    deal_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("deals.id"), nullable=True, index=True)
+    kind: Mapped[str] = mapped_column(String(32))  # task|finding|opportunity|agent|import
+    summary: Mapped[str] = mapped_column(Text)
+    actor: Mapped[str] = mapped_column(String(255), default="")
+    ref: Mapped[dict] = mapped_column(JSONB, default=dict)
+    at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), index=True)

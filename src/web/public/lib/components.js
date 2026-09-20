@@ -20,8 +20,8 @@ const NAV = [
 ];
 
 // Mounts the sidebar + header controls and returns the analyst session.
-export function mountShell() {
-  const analyst = requireAnalyst();
+export async function mountShell() {
+  const analyst = await requireAnalyst();
   if (!analyst) return null;
   const here = location.pathname.replace(/index\.html$/, "");
   const nav = $("sidebar");
@@ -51,8 +51,10 @@ export function mountShell() {
   const out = $("signout");
   if (out) {
     out.hidden = false;
-    out.onclick = () => {
-      signOut();
+    out.onclick = async () => {
+      // Await the DELETE: navigating first would abort it and leave the
+      // session row alive until it expires.
+      await signOut();
       navigate("/signin/analyst/");
     };
   }

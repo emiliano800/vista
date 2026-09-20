@@ -13,7 +13,7 @@ const TABS = [
   ["tasks", "Tasks"],
   ["agents", "Agents"],
 ];
-const analyst = mountShell();
+const analyst = await mountShell();
 const showSource = mountSourceDialog();
 const id = qs().get("id");
 const tab = qs().get("tab") ?? "overview";

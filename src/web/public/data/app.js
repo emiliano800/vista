@@ -74,7 +74,7 @@ const ENTITIES = {
   },
 };
 const PAGE = 100;
-const analyst = mountShell();
+const analyst = await mountShell();
 const showSource = mountSourceDialog();
 if (analyst) render();
 

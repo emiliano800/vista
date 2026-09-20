@@ -4,7 +4,7 @@ import { tasks, companies, company, companyName, opportunities, updateTask, crea
 
 const STATUSES = ["Open", "In progress", "Blocked", "Complete", "Dismissed"];
 const OUTCOMES = ["No benefit found", "Benefit validated", "Implemented", "Needs further work"];
-const analyst = mountShell();
+const analyst = await mountShell();
 const id = qs().get("id");
 
 const isOpen = (t) => !["Complete", "Dismissed"].includes(t.status);

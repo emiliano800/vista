@@ -2,7 +2,7 @@ import { mountShell, $, qs, esc, badge, table, enableRowLinks, section, message,
 import { money, integer, date, age, DEMO_NOTE } from "/lib/format.js";
 import { agents, runs, run, companies, companyName, findings, setAgentStatus, runAgentNow, createTask } from "/lib/store.js";
 
-const analyst = mountShell();
+const analyst = await mountShell();
 const runId = qs().get("run");
 if (analyst) (runId ? runDetail : list)();
 

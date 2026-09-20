@@ -1,36 +1,64 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import fs from "node:fs";
-import { sha256Hex, verifyAnalystKey, signIn, session, signOut, ANALYST } from "../public/lib/auth.js";
+import { signIn, session, signOut, requireAnalyst } from "../public/lib/auth.js";
 import { parseCsv, detectDataset, proposeMappings, transformRows, detectExceptions, cedarSampleFiles, buildCompany, CEDAR_PROFILE, normalizeDate, normalizeMoney, normalizePhone } from "../public/lib/importer.js";
 import * as store from "../public/lib/store.js";
 
 const DEMO_KEY = "88c4845687c36379be7086043bc646a37aedecd26b3f72a4f3fc842ec0a9ec95";
-const demoAccess = fs.readFileSync(new URL("../../../DEMO_ACCESS.md", import.meta.url), "utf8");
+const IDENTITY = { email: "sarah@northstarhvac.com", tenant_id: "9f1d0b6a-0000-4000-8000-000000000001" };
+// Records what auth.js sent so the tests assert on the request, not on a stub.
+function stubFetch(responses) {
+  const calls = [];
+  globalThis.fetch = async (url, options = {}) => {
+    calls.push({ url, method: options.method ?? "GET", body: options.body, headers: options.headers ?? {} });
+    const next = responses.shift() ?? { ok: true, status: 200, json: async () => IDENTITY };
+    return { ok: next.ok, status: next.status, json: next.json ?? (async () => IDENTITY) };
+  };
+  return calls;
+}
 const memoryStorage = () => {
   const m = new Map();
   return { getItem: (k) => m.get(k) ?? null, setItem: (k, v) => m.set(k, String(v)), removeItem: (k) => m.delete(k) };
 };
 
-test("analyst key: documented demo key verifies, anything else is rejected", async () => {
-  assert.match(demoAccess, new RegExp(DEMO_KEY));
-  assert.equal(await sha256Hex("abc"), "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad");
-  assert.equal(await verifyAnalystKey(DEMO_KEY), true);
-  assert.equal(await verifyAnalystKey(`  ${DEMO_KEY.toUpperCase()} `), true, "hex keys are case/whitespace tolerant");
-  assert.equal(await verifyAnalystKey(DEMO_KEY.slice(1)), false);
-  assert.equal(await verifyAnalystKey("k".repeat(64)), false);
-  assert.equal(await verifyAnalystKey(""), false);
+test("sign-in exchanges the access key for a backend session cookie", async () => {
+  const calls = stubFetch([{ ok: true, status: 200 }]);
+  const storage = memoryStorage();
+  const identity = await signIn(DEMO_KEY, storage);
+  assert.equal(calls.length, 1);
+  assert.equal(calls[0].url, "/api/auth/session");
+  assert.equal(calls[0].method, "POST");
+  assert.deepEqual(JSON.parse(calls[0].body), { token: DEMO_KEY });
+  assert.equal(calls[0].headers["X-Vista-Request"], "1", "the proxy requires the same-origin marker");
+  assert.equal(identity.email, IDENTITY.email);
+  assert.equal(session(storage).email, IDENTITY.email, "identity is cached for the header only");
 });
 
-test("analyst session persists in storage and clears on sign-out", async () => {
+test("sign-in rejects a key the backend refuses, and never stores an identity", async () => {
+  stubFetch([{ ok: false, status: 401 }]);
   const storage = memoryStorage();
+  await assert.rejects(signIn(DEMO_KEY, storage), /Invalid access key/);
   assert.equal(session(storage), null);
-  await assert.rejects(signIn("wrong-key", storage));
-  assert.equal(session(storage), null);
-  const s = await signIn(DEMO_KEY, storage);
-  assert.equal(s.email, ANALYST.email);
-  assert.equal(session(storage).firm, ANALYST.firm);
-  signOut(storage);
+  await assert.rejects(signIn("short", storage), /Invalid access key/);
+});
+
+test("requireAnalyst confirms the cookie with the backend and clears a dead session", async () => {
+  const storage = memoryStorage();
+  stubFetch([{ ok: true, status: 200 }]);
+  assert.equal((await requireAnalyst(storage)).email, IDENTITY.email);
+  assert.equal(session(storage).email, IDENTITY.email);
+
+  let redirected = null;
+  globalThis.window = { VISTA_NAVIGATE: (u) => (redirected = u) };
+  globalThis.location = { pathname: "/portfolio/", search: "" };
+  stubFetch([{ ok: false, status: 401 }]);
+  assert.equal(await requireAnalyst(storage), null);
+  assert.equal(session(storage), null, "a dead session drops the cached identity");
+  assert.equal(redirected, "/signin/analyst/?next=%2Fportfolio%2F");
+
+  stubFetch([{ ok: true, status: 204 }]);
+  storage.setItem("vista.analyst.identity", JSON.stringify(IDENTITY));
+  await signOut(storage);
   assert.equal(session(storage), null);
 });
 
