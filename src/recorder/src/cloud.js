@@ -108,3 +108,76 @@ export async function uploadReport(config, root, id, fetchImpl = fetch) {
     fetchImpl,
   );
 }
+
+// ---- employee review through the workspace -----------------------------------
+// The recorder describes each section (already redacted on this device, never
+// keystrokes or screenshots); the backend asks the model and stores what the
+// employee decides, so analysts see the same review in the web workspace.
+const RECORDING_ID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+function recordingPath(cloudRecordingId) {
+  if (!RECORDING_ID.test(String(cloudRecordingId)))
+    throw new Error("This session has not been uploaded yet.");
+  return `/recordings/${cloudRecordingId}`;
+}
+export function reviewItems(sections, describe) {
+  return sections.map((s) => ({
+    id: s.id,
+    description: describe(s),
+    section: s.whole
+      ? { whole: true, seconds: s.seconds ?? 0 }
+      : {
+          name: s.name ?? "",
+          app: s.app ?? "",
+          title: s.title ?? "",
+          start: s.start,
+          end: s.end,
+          seconds: s.seconds ?? 0,
+          counts: s.counts ?? {},
+        },
+  }));
+}
+export function submitSections(config, cloudRecordingId, items, force = false, fetchImpl = fetch) {
+  return cloudRequest(
+    config,
+    `${recordingPath(cloudRecordingId)}/review/sections`,
+    { method: "PUT", body: JSON.stringify({ items, force }) },
+    fetchImpl,
+  );
+}
+export function fetchReview(config, cloudRecordingId, fetchImpl = fetch) {
+  return cloudRequest(config, `${recordingPath(cloudRecordingId)}/review`, {}, fetchImpl);
+}
+export function sendDecision(config, cloudRecordingId, itemId, action, body = {}, fetchImpl = fetch) {
+  if (!/^[A-Za-z0-9_-]{1,64}$/.test(String(itemId))) throw new Error("Invalid review item.");
+  return cloudRequest(
+    config,
+    `${recordingPath(cloudRecordingId)}/review/${itemId}`,
+    {
+      method: "POST",
+      body: JSON.stringify({
+        action,
+        label: body.label ?? "",
+        note: body.note ?? "",
+        answers: (body.answers ?? []).map((a) => ({ q: String(a.q ?? ""), a: String(a.a ?? "") })),
+      }),
+    },
+    fetchImpl,
+  );
+}
+// Server review → the local review.json shape the dashboard already renders.
+export function mergeReview(local, remote) {
+  const items = { ...local.items };
+  for (const [id, r] of Object.entries(remote.items ?? {})) {
+    if (r.status === "pending") continue;
+    items[id] = { ...r, id, at: r.at ?? null };
+  }
+  return {
+    ...local,
+    source: "cloud",
+    threshold: remote.threshold ?? local.threshold,
+    model: remote.model ?? local.model,
+    generating: !!remote.generating,
+    generated_at: remote.generated_at ?? local.generated_at,
+    items,
+  };
+}

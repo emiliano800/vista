@@ -64,7 +64,11 @@ the instance/task IAM role), and `VISTA_ALLOWED_ORIGINS` (a JSON array of the tw
 origins). Set `VISTA_MIGRATE_ON_START=true` or run `.venv/bin/python -m vista.manage migrate`
 as the release command before starting the API. Use a private bucket and credentials scoped
 to that bucket. `VISTA_COOKIE_SECURE` defaults to true; only disable it for local HTTP
-development. OpenAI credentials and the job worker are not needed for recording reports.
+development. Recording reports upload without OpenAI credentials or the job worker; the
+AI review of a recording (`explain_recording` jobs, `GET /api/recordings/{id}/review`)
+needs both `VISTA_OPENAI_API_KEY` and a running worker (`python -m vista.jobs.worker`).
+Without a key the worker still runs and marks every stretch as needing the employee's own
+explanation.
 
 ## Connect Cloudflare
 

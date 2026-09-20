@@ -11,10 +11,19 @@ from sqlalchemy import select, text
 
 from vista.auth import Principal, current_principal
 from vista.config import settings
-from vista.db import tenant_session
-from vista.models.tenant import Recording
+from vista.db import platform_session, tenant_session
+from vista.jobs.queue import enqueue
+from vista.models.tenant import Recording, RecordingReviewItem
 from vista.permissions import require_deal_role
 from vista.recordings import RecordingUpload, parse_evidence
+from vista.review import (
+    CONFIDENCE_THRESHOLD,
+    RESOLVED_STATUSES,
+    DecisionIn,
+    SectionsIn,
+    apply_decision,
+    public_review,
+)
 from vista.storage import s3_client
 
 router = APIRouter(tags=["recordings"])
@@ -148,3 +157,83 @@ def download(
         media_type=media,
         headers={"Cache-Control": "no-store", "Content-Disposition": f'attachment; filename="vista-{recording_id}.{format}"'},
     )
+
+
+# ---- employee review: AI explanation per section, approve / fix / explain --------
+
+
+def review_items(session, recording_id):
+    return session.scalars(
+        select(RecordingReviewItem).where(RecordingReviewItem.recording_id == recording_id).order_by(RecordingReviewItem.created_at)
+    ).all()
+
+
+@router.put("/recordings/{recording_id}/review/sections")
+def submit_sections(recording_id: uuid.UUID, body: SectionsIn, principal: Principal = Depends(current_principal)):
+    """The recorder describes each video section (redacted on the device); the
+    worker asks the model to explain them. Resolved items are never redone."""
+    with tenant_session(principal.tenant_schema) as session:
+        record = session.get(Recording, recording_id)
+        if record is None:
+            raise HTTPException(404, "Recording not found")
+        require_deal_role(session, record.deal_id, principal.user_id, "member")
+        if record.uploaded_by != principal.user_id:
+            raise HTTPException(403, "Only the employee who recorded a session can submit it for review")
+        existing = {i.item_id: i for i in review_items(session, recording_id)}
+        now = datetime.now(UTC)
+        queued = 0
+        for sec in body.items:
+            item = existing.get(sec.id)
+            if item is None:
+                item = RecordingReviewItem(recording_id=recording_id, item_id=sec.id, threshold=CONFIDENCE_THRESHOLD)
+                session.add(item)
+            elif item.status in RESOLVED_STATUSES or (item.status not in {"pending", "failed"} and not body.force):
+                continue
+            item.section = sec.section.model_dump(mode="json")
+            item.prompt = sec.description
+            item.status = "pending"
+            item.error = None
+            item.updated_at = now
+            queued += 1
+        session.flush()
+        items = review_items(session, recording_id)
+        session.commit()
+    if queued:
+        with platform_session() as psession:
+            enqueue(
+                psession,
+                principal.tenant_id,
+                "explain_recording",
+                {"recording_id": str(recording_id)},
+                idempotency_key=f"{recording_id}:{now.isoformat()}",
+            )
+            psession.commit()
+    return public_review(items)
+
+
+@router.get("/recordings/{recording_id}/review")
+def get_review(recording_id: uuid.UUID, principal: Principal = Depends(current_principal)):
+    record = authorized_recording(recording_id, principal)
+    with tenant_session(principal.tenant_schema) as session:
+        return public_review(review_items(session, record.id))
+
+
+@router.post("/recordings/{recording_id}/review/{item_id}")
+def decide(recording_id: uuid.UUID, item_id: str, body: DecisionIn, principal: Principal = Depends(current_principal)):
+    with tenant_session(principal.tenant_schema) as session:
+        record = session.get(Recording, recording_id)
+        if record is None:
+            raise HTTPException(404, "Recording not found")
+        require_deal_role(session, record.deal_id, principal.user_id, "member")
+        item = session.scalar(
+            select(RecordingReviewItem).where(RecordingReviewItem.recording_id == recording_id, RecordingReviewItem.item_id == item_id)
+        )
+        if item is None:
+            raise HTTPException(404, "Review item not found")
+        try:
+            apply_decision(item, body, principal.user_id)
+        except ValueError as exc:
+            raise HTTPException(409, str(exc)) from exc
+        items = review_items(session, recording_id)
+        session.commit()
+        return public_review(items)

@@ -35,23 +35,30 @@ Each component has its own README: [`src/recorder`](src/recorder/README.md),
 │  → ~/Vista/recordings/<id>/events.jsonl           │
 │  on Stop: python -m taskmining run ──► processed/ │──► dashboard "Last session"
 └───────────────────────────────────────────────────┘
-                     │ (not wired yet)
+                     │ redacted report (manifest, summary, event_log.csv)
+                     │ + section metadata for review; decisions sync back
                      ▼
 ┌───────────────────────────────────────────────────┐
 │ vista backend (FastAPI + Postgres + S3)           │
-│  tenants · deals · employee agents · findings     │──► company portal / PE-fund views
+│  tenants · deals · recordings · review items      │──► web app (src/web) reports + review
+│  job queue → worker → OpenAI explanations        │
 └───────────────────────────────────────────────────┘
 ```
 
 * `recorder` writes `RawEvent` JSONL — the exact shape `taskmining` reads — and
-  runs the engine locally when a recording stops. Everything stays on the
-  employee's machine today.
+  runs the engine locally when a recording stops. Raw events and media stay on
+  the employee's machine.
 * `taskmining` is pure functions over event lists; it has no I/O beyond reading
   and writing files, so the same code will run as a queue worker later.
-* `vista` (backend) is **not connected to the recorder yet**. It has no
-  task-mining endpoints; the planned hand-off is batched JSONL upload →
-  ingest API → per-tenant event-log store → findings. Until then the backend
-  and the recorder/engine are developed independently.
+* `vista` (backend) receives the processed report when a cloud workspace is
+  configured in the recorder (`POST /api/deals/{deal}/recordings` → S3 +
+  Postgres). The recorder then submits the session's stretches
+  (`PUT /api/recordings/{id}/review/sections`); an `explain_recording` job
+  asks OpenAI server-side for a label, explanation and confidence per stretch,
+  the recorder polls `GET …/review` and the employee's Approve / Fix / Explain
+  goes to `POST …/review/{item}`. Raw events, screenshots and video never
+  leave the machine; without a workspace the recorder runs the same review
+  locally with its own key.
 
 ## Getting started
 

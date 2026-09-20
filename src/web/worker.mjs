@@ -1,5 +1,7 @@
 const apiRoutes =
-  /^\/api\/(?:auth\/(?:session|me)|deals(?:\/[0-9a-f-]+\/recordings)?|recordings\/[0-9a-f-]+(?:\/(?:evidence|download))?|health)$/i;
+  /^\/api\/(?:auth\/(?:session|me)|deals(?:\/[0-9a-f-]+\/recordings)?|recordings\/[0-9a-f-]+(?:\/(?:evidence|download|review(?:\/[a-z0-9_-]{1,64})?))?|health)$/i;
+const reviewSections = /^\/api\/recordings\/[0-9a-f-]+\/review\/sections$/i;
+const reviewDecision = /^\/api\/recordings\/[0-9a-f-]+\/review\/(?!sections$)[a-z0-9_-]{1,64}$/i;
 const securityHeaders = {
   "X-Content-Type-Options": "nosniff",
   "Referrer-Policy": "no-referrer",
@@ -13,12 +15,14 @@ async function handle(request, env) {
   if (url.pathname.startsWith("/api/")) {
     if (!apiRoutes.test(url.pathname))
       return new Response("Not found", { status: 404 });
-    // The public web surface only exposes sign-in and recording reports.
+    // The public web surface only exposes sign-in, recording reports and their review.
     if (
-      !["GET", "HEAD", "POST", "DELETE"].includes(request.method) ||
+      !["GET", "HEAD", "POST", "PUT", "DELETE"].includes(request.method) ||
       (request.method === "POST" &&
         !url.pathname.endsWith("/recordings") &&
+        !reviewDecision.test(url.pathname) &&
         url.pathname !== "/api/auth/session") ||
+      (request.method === "PUT" && !reviewSections.test(url.pathname)) ||
       (request.method === "DELETE" && url.pathname !== "/api/auth/session")
     )
       return new Response("Method not allowed", { status: 405 });

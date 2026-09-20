@@ -29,15 +29,23 @@ test("serves assets with a restrictive CSP and proxies only the report surface",
     ).status,
     405,
   );
-  assert.equal(
+  const status = async (path, method) =>
     (
       await worker.fetch(
-        new Request("https://bumpsolutions.org/api/auth/me"),
+        new Request(`https://bumpsolutions.org${path}`, { method }),
         {},
       )
-    ).status,
-    503,
-  );
+    ).status;
+  const rec = "/api/recordings/00000000-0000-0000-0000-000000000002/review";
+  assert.equal(await status("/api/auth/me", "GET"), 503);
+  assert.equal(await status(rec, "GET"), 503);
+  assert.equal(await status(`${rec}/sections`, "PUT"), 503);
+  assert.equal(await status(`${rec}/S1`, "POST"), 503);
+  assert.equal(await status(`${rec}/S1`, "PUT"), 405);
+  assert.equal(await status(`${rec}/sections`, "POST"), 405);
+  assert.equal(await status(rec, "PUT"), 405);
+  assert.equal(await status("/api/deals", "PUT"), 405);
+  assert.equal(await status(`${rec}/S1/x`, "GET"), 404);
 });
 test("proxy forwards sessions, preserves cookies, never caches data, rejects cross-origin writes", async () => {
   const original = globalThis.fetch;

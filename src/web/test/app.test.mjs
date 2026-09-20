@@ -80,6 +80,26 @@ function setup({ empty = false } = {}) {
           },
         ],
       });
+    if (path === `/api/recordings/${recordId}/review`)
+      return Response.json({
+        threshold: 0.88,
+        generating: false,
+        summary: { total: 1, threshold: 0.88, awaiting: 0, unclear: 1, failed: 0, resolved: 0, open: 1 },
+        session: null,
+        items: {
+          S1: {
+            id: "S1",
+            section: { name: "ERP", app: "ERP", start: record.started_at, seconds: 300, whole: false },
+            status: "unsure",
+            label: "<b>Enter</b> bills",
+            explanation: "Typing bills.",
+            confidence: 0.41,
+            questions: ["What for?"],
+            final_label: "",
+            final_note: "",
+          },
+        },
+      });
     throw new Error(`Unexpected request ${path}`);
   };
   dom.window.eval(`(async () => {${source}\n})()`);
@@ -102,6 +122,10 @@ test("sign in, view real report data, filter supporting evidence and sign out wi
     await settle(() => ui.$("evidence").textContent.includes("INV-1"));
     assert.equal(ui.dom.window.document.querySelectorAll("img").length, 0);
     assert.ok(ui.$("evidence").textContent.includes("<script>bad()</script>"));
+    await settle(() => ui.$("review").textContent.includes("Unclear"));
+    assert.ok(ui.$("review").textContent.includes("<b>Enter</b> bills"));
+    assert.equal(ui.$("review").querySelectorAll("b").length, 0);
+    assert.ok(ui.$("review-summary").textContent.includes("1 unclear"));
     ui.$("candidates").querySelector("button").click();
     await settle(() => ui.requests.some((r) => r.path.includes("activity=")));
     assert.equal(

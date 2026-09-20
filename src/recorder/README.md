@@ -69,15 +69,23 @@ pause intervals are stored in `manifest.json`.
 IPC surface (renderer → main, `preload.cjs`): `sections(id)` returns sections
 with their `review` item plus `review.summary`; `explain(id, {force})`
 (re)generates; `decide(id, itemId, action, {label, note, answers})` applies
-Approve/Fix/Explain; `onSections` streams updates while the model runs. The
-same calls are the seam for the backend later: `explainRecording` / `decide`
-in `main.js` can post to the Vista API instead of OpenAI and `review.json`
-directly.
+Approve/Fix/Explain; `onSections` streams updates while the model runs.
 
-AI explanations need `OPENAI_API_KEY` (or Settings → AI explanations);
-`VISTA_OPENAI_MODEL` (default `gpt-4o-mini`) and `VISTA_OPENAI_URL` (any
-OpenAI-compatible chat-completions endpoint) are optional. The key stays in
-the Electron main process.
+**Cloud review (`src/cloud.js`).** With Settings → Cloud workspace filled in
+(website URL, company ID, access key), Stop uploads the redacted report
+(`manifest.json`, `processed/summary.json`, `processed/event_log.csv` — never
+`events.jsonl`, shots or video) to `POST /api/deals/{company}/recordings`, then
+`PUT /api/recordings/{id}/review/sections` with each section's metadata and
+redacted description. The backend's job worker asks OpenAI and the recorder
+polls `GET …/review` (`REVIEW_POLL_MS`, up to `REVIEW_POLL_MAX_MS`), merging
+the result into `review.json` with `source: "cloud"`. Approve / Fix / Explain
+post to `POST …/review/{item}` and are kept locally if the workspace is
+unreachable (`sync_error`). Employees never hold an OpenAI key in this mode.
+
+Without a workspace, AI explanations run locally and need `OPENAI_API_KEY` (or
+Settings → AI explanations); `VISTA_OPENAI_MODEL` (default `gpt-4o-mini`) and
+`VISTA_OPENAI_URL` (any OpenAI-compatible chat-completions endpoint) are
+optional. The key stays in the Electron main process.
 
 Redaction (emails, phones, IBAN/card/SSN) runs on the device before a line is
 written; typed characters are not stored by default (only key counts and
