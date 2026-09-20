@@ -38,13 +38,19 @@ stored in the browser.
 - Analyst access key:
 
 ```
-062f895a98b207bc8537e3712018c3dbd492d1fbe04f121cd20b5eb727118cd1
+665650c5693f0c6f6b9a1c30288ebe64a17894e20ad241b8492af12c9114006c
 ```
 
-This key reaches synthetic demo data only, and this repository is private. It
-is a real credential to the Northstar tenant, so it does not belong in the
-public upstream repository — keep this file out of any upstream pull request.
-Rotate it with `manage.sh rotate-key --user 70e9c035-0c81-4abf-a3b0-ac99f7096585`.
+Everything this key reaches is synthetic: the Northstar tenant holds six demo
+companies and no imported records, and tenant isolation keeps it out of every
+other workspace. It is still a live write credential — it can commit imports
+to the reports bucket and trigger model calls — so rotate it if it is ever
+misused:
+
+```
+deploy/aws/manage.sh --output-file ./key.json rotate-key \
+    --user 70e9c035-0c81-4abf-a3b0-ac99f7096585
+```
 
 The firm is a tenant and each portfolio company is a deal inside it. Provision
 one with:
