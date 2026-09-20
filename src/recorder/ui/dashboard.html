@@ -250,6 +250,11 @@
       .ai-read .lbl svg { width: 12px; height: 12px; fill: var(--lime-ink); flex: none; }
       .ai-read .ex { color: var(--ink-secondary); }
       .ai-read .why { color: var(--warning); }
+      /* Highlights inside model-written text: apps/documents/numbers stand out, sensitive wording is amber. */
+      mark.hl { background: transparent; padding: 0; color: var(--ink); font-weight: 600; }
+      mark.hl-num { font-family: var(--font-mono); font-weight: 500; font-variant-numeric: tabular-nums; }
+      mark.hl-file { color: var(--periwinkle-ink); }
+      mark.hl-risk { color: var(--warning); }
       .conf { display: inline-flex; align-items: center; height: 20px; font-size: 12px; line-height: 16px; font-weight: 500; padding: 0 var(--space-2); border-radius: var(--radius-pill); white-space: nowrap; font-family: var(--font-mono); }
       .conf.hi { color: var(--agent-ink); border: 1px solid var(--agent); }
       .conf.lo { color: var(--warning); background: var(--warning-soft); }
@@ -554,10 +559,19 @@
       </div>
     </div>
 
+    <script src="highlight.js"></script>
     <script>
       const $ = (id) => document.getElementById(id);
       const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
       const short = (app) => app.replace(/^Microsoft /, '').replace(/ Desktop$/, '');
+      // Words worth spotting in the model's sentences: the apps, documents and sites of this session.
+      const aiTerms = () => [
+        ...(vs?.sections ?? []).flatMap((s) => (s.app ? [s.app, short(s.app)] : [])),
+        ...(vs?.insights?.input?.per_app ?? []).flatMap((a) => (a.app ? [a.app, short(a.app)] : [])),
+        ...(vs?.workflows?.environment?.documents ?? []).map((d) => d.name),
+        ...(vs?.workflows?.environment?.sites ?? []).map((s) => s.host),
+      ];
+      const hl = (text) => highlightHtml(text, aiTerms());
       const PALETTE = [1, 2, 3, 4, 5, 6, 7, 8].map((n) => `var(--chart-${n})`);
       const AI_ICON = '<svg viewBox="0 0 16 16"><path d="M8 1l1.6 4.4L14 7l-4.4 1.6L8 13l-1.6-4.4L2 7l4.4-1.6zM13 11l.7 1.8 1.8.7-1.8.7L13 16l-.7-1.8-1.8-.7 1.8-.7z"/></svg>';
       const QUICK = ['Phone call with a vendor', 'Phone call with a customer', 'Paper invoices / filing', 'Meeting', 'Helped a colleague', 'Break'];
@@ -867,7 +881,7 @@
         const t = inp.totals;
         const tr = ins.trends;
         const delta = (m) => (m.delta_pct == null ? '<span class="d">—</span>' : `<span class="d ${m.delta_pct > 10 ? 'up' : m.delta_pct < -10 ? 'down' : ''}">${m.delta_pct > 0 ? '+' : ''}${m.delta_pct}%</span>`);
-        const summary = ins.summary?.text ? `<p class="ins-sum">${AI_ICON} ${esc(ins.summary.text)}</p>` : ins.summary?.error ? `<p class="ins-sum muted">AI summary unavailable: ${esc(ins.summary.error)}</p>` : ins.running ? '<p class="ins-sum muted"><span class="thinking"><i></i>Writing the summary…</span></p>' : '';
+        const summary = ins.summary?.text ? `<p class="ins-sum">${AI_ICON} ${hl(ins.summary.text)}</p>` : ins.summary?.error ? `<p class="ins-sum muted">AI summary unavailable: ${esc(ins.summary.error)}</p>` : ins.running ? '<p class="ins-sum muted"><span class="thinking"><i></i>Writing the summary…</span></p>' : '';
         body.innerHTML = summary
           + `<div class="kv"><div><b>${inp.clicks_per_min}</b><span>clicks / min</span></div><div><b>${inp.keys_per_min}</b><span>keys / min</span></div><div><b>${inp.rekeyed_between_apps}</b><span>pastes from another app</span></div><div><b>${inp.typing_bursts}</b><span>typing bursts · longest ${inp.longest_burst_keys} keys</span></div><div><b>${t.shortcut}</b><span>shortcuts${inp.top_shortcuts.length ? ` · ${esc(inp.top_shortcuts.slice(0, 2).map((s) => s.combo).join(', '))}` : ''}</span></div><div><b>${hm(inp.idle_seconds)}</b><span>idle · ${inp.idle_gaps} gap${inp.idle_gaps === 1 ? '' : 's'}${inp.longest_idle_seconds ? `, longest ${hm(inp.longest_idle_seconds)}` : ''}</span></div></div>`
           + (tr?.metrics?.length ? `<div class="muted" style="font-size:11px;margin-bottom:4px">Versus your last ${tr.baseline} recording${tr.baseline === 1 ? '' : 's'}</div>${tr.metrics.map((m) => `<div class="trend"><span>${esc(m.label)}</span><span class="d muted">${m.now} vs ${m.baseline}</span>${delta(m)}</div>`).join('')}` : '<div class="muted" style="font-size:12px">Trends appear once you have more than one recording.</div>')
@@ -985,7 +999,7 @@
         const rv = vs.review;
         if (vs.submitted) {
           const lbl = item && RESOLVED.has(item.status) ? item.final_label : item?.label;
-          return { cls: 'resolved', read: lbl ? `<div class="ai-read"><div class="lbl">${esc(lbl)}${item && RESOLVED.has(item.status) ? ` <span class="conf done">${icon('check')} confirmed</span>` : ''}</div>${item?.final_note || item?.explanation ? `<div class="ex">${esc(item.final_note || item.explanation)}</div>` : ''}</div>` : '', act: '' };
+          return { cls: 'resolved', read: lbl ? `<div class="ai-read"><div class="lbl">${esc(lbl)}${item && RESOLVED.has(item.status) ? ` <span class="conf done">${icon('check')} confirmed</span>` : ''}</div>${item?.final_note || item?.explanation ? `<div class="ex">${hl(item.final_note || item.explanation)}</div>` : ''}</div>` : '', act: '' };
         }
         if (!rv.enabled) return { cls: '', read: '', act: key === 'w' ? `<button class="btn sm primary" data-ann="${key}">Describe</button>` : '' };
         if (!item) return { cls: '', read: '', act: rv.generating ? '<span class="thinking"><i></i>Explaining…</span>' : `<button class="btn sm primary" data-ann="${key}">Describe</button>` };
@@ -993,7 +1007,7 @@
           const how = { approved: 'AI explanation approved', fixed: 'You corrected the AI', explained: 'You explained it' }[item.status];
           return {
             cls: 'resolved',
-            read: `<div class="ai-read"><div class="lbl">${esc(item.final_label)} <span class="conf done">${icon('check')} ${how}</span></div>${item.final_note ? `<div class="ex">${esc(item.final_note)}</div>` : ''}</div>`,
+            read: `<div class="ai-read"><div class="lbl">${esc(item.final_label)} <span class="conf done">${icon('check')} ${how}</span></div>${item.final_note ? `<div class="ex">${hl(item.final_note)}</div>` : ''}</div>`,
             act: `<button class="btn sm" data-ann="${key}">Edit</button>`,
           };
         }
@@ -1007,13 +1021,13 @@
         if (item.status === 'unsure') {
           return {
             cls: 'unsure',
-            read: `<div class="ai-read"><div class="lbl">${AI_ICON} ${esc(item.label || 'Not sure what this was')} <span class="conf lo">${pct(item.confidence)} sure · needs you</span></div>${item.explanation ? `<div class="ex">${esc(item.explanation)}</div>` : ''}${item.unclear?.length ? `<div class="why">Unclear: ${esc(item.unclear.join('; '))}</div>` : ''}</div>`,
+            read: `<div class="ai-read"><div class="lbl">${AI_ICON} ${esc(item.label || 'Not sure what this was')} <span class="conf lo">${pct(item.confidence)} sure · needs you</span></div>${item.explanation ? `<div class="ex">${hl(item.explanation)}</div>` : ''}${item.unclear?.length ? `<div class="why">Unclear: ${esc(item.unclear.join('; '))}</div>` : ''}</div>`,
             act: `<button class="btn sm warn" data-explain="${key}">Explain what happened</button>`,
           };
         }
         return {
           cls: '',
-          read: `<div class="ai-read"><div class="lbl">${AI_ICON} ${esc(item.label)} <span class="conf hi">${pct(item.confidence)} sure</span></div><div class="ex">${esc(item.explanation)}</div></div>`,
+          read: `<div class="ai-read"><div class="lbl">${AI_ICON} ${esc(item.label)} <span class="conf hi">${pct(item.confidence)} sure</span></div><div class="ex">${hl(item.explanation)}</div></div>`,
           act: `<button class="btn sm ok" data-approve="${key}">Approve</button><button class="btn sm" data-fix="${key}">Fix</button>`,
         };
       }
@@ -1346,8 +1360,8 @@
         return (envLine ? `<p class="wf-env">Inferred environment — ${envLine}</p>` : '')
           + `<div class="wf-list">${wf.workflows.map((w) => `<div class="wf" data-kind="${esc(w.kind)}">
             <h3><span>${icon('workflow')} ${esc(w.title)}</span><span class="auto" title="How much of this could run without a person">${Math.round(w.automation * 100)}% automatable</span></h3>
-            <p class="why">${esc(w.why)}</p>
-            ${w.steps?.length ? `<ol>${w.steps.map((s) => `<li>${esc(s)}</li>`).join('')}</ol>` : ''}
+            <p class="why">${hl(w.why)}</p>
+            ${w.steps?.length ? `<ol>${w.steps.map((s) => `<li>${hl(s)}</li>`).join('')}</ol>` : ''}
             <div class="src"><span class="kind">${esc(KIND_LABEL_WF[w.kind] ?? w.kind)}</span>${w.generated ? '<span>AI-written</span>' : ''}${(w.apps ?? []).map((a) => `<span>${esc(short(a))}</span>`).join('')}${(w.sources ?? []).map((s) => `<span>from ${esc(SOURCE_LABEL[s] ?? s)}</span>`).join('')}</div>
           </div>`).join('')}</div>`;
       }
