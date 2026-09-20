@@ -2,6 +2,9 @@
 Model is stubbed (conftest clears the API key). Skips without Postgres."""
 
 import json
+import os
+import uuid
+from decimal import Decimal
 
 from tests.conftest import requires_db
 from vista.jobs.worker import process_one
@@ -29,11 +32,18 @@ def test_synthetic_discovery_run_writes_ledger_and_findings(client, tenant_facto
 
     run = client.post("/synthetic/discovery", json={"company": "ridgeway", "division": "11_billing_ar"}, headers=headers).json()
     assert run["status"] == "queued" and run["run_type"] == "synthetic_discovery"
+    assert (run["company"], run["division"], run["sector"], run["agent_key"]) == (
+        "Ridgeway",
+        "11_billing_ar",
+        "industrial_goods",
+        "file_reviewer",
+    )
 
     _drain()
 
     result = client.get(f"/runs/{run['id']}", headers=headers).json()
     assert result["status"] == "succeeded"
+    assert result["started_at"] and result["finished_at"] >= result["started_at"] and result["error"] is None
     types = [e["event_type"] for e in result["events"]]
     assert types[0] == "step" and types[-1] == "result"
     assert types.count("tool_call") == types.count("model_call") >= 1
@@ -44,6 +54,7 @@ def test_synthetic_discovery_run_writes_ledger_and_findings(client, tenant_facto
     ours = [f for f in findings if f["run_id"] == run["id"]]
     assert ours and all(f["kind"] == "observed_fact" for f in ours)
     assert all(f["evidence"]["file"].startswith("11_billing_ar/") and f["evidence"]["company"] == "Ridgeway" for f in ours)
+    assert all((f["company"], f["agent_key"]) == ("Ridgeway", "file_reviewer") for f in ours)
     assert any("mixed_date_formats" in f["title"] for f in ours)
 
     usage = client.get("/usage", headers=headers).json()
@@ -109,9 +120,186 @@ def test_synthetic_analyze_run_writes_cross_company_findings(client, tenant_fact
 
     ours = [f for f in client.get("/findings", headers=headers).json() if f["run_id"] == run["id"]]
     assert len(ours) == 1 and ours[0]["kind"] == "proposed_automation"
+    assert (ours[0]["company"], ours[0]["agent_key"]) == ("Keystone, Northfield", "sector_merger")
+    assert (result["sector"], result["agent_key"]) == ("industrial_goods", "sector_merger")
     assert ours[0]["title"] == "software_overlap: Zoom Workplace at two companies"
     assert ours[0]["evidence"]["companies"] == ["Keystone", "Northfield"]
     assert ours[0]["evidence"]["refs"] == [ref]
 
     usage = client.get("/usage", headers=headers).json()
     assert usage["runs"] == 1 and usage["total_input_tokens"] == 900
+
+
+def test_synthetic_run_links_to_deal_of_same_name(client, tenant_factory):
+    headers, _, _ = tenant_factory()
+    deal = client.post("/deals", json={"name": "Ridgeway Fasteners & Supply"}, headers=headers).json()
+    run = client.post("/synthetic/discovery", json={"company": "ridgeway", "division": "11_billing_ar"}, headers=headers).json()
+    assert run["deal_id"] == deal["id"]
+    assert [r["id"] for r in client.get(f"/runs?deal_id={deal['id']}", headers=headers).json()] == [run["id"]]
+    _drain()
+    assert client.get(f"/usage?deal_id={deal['id']}", headers=headers).json()["runs"] == 1
+    assert client.get(f"/usage?deal_id={uuid.uuid4()}", headers=headers).json()["runs"] == 0
+
+
+def test_run_finding_usage_filters_and_grouping(client, tenant_factory):
+    headers, _, _ = tenant_factory()
+    disc = client.post("/synthetic/discovery", json={"company": "ridgeway", "division": "11_billing_ar"}, headers=headers).json()
+    ana = client.post("/synthetic/analyze", json={"sector": "industrial_goods", "kinds": ["software_overlap"]}, headers=headers).json()
+    _drain()
+
+    ids = lambda rows: {r["id"] for r in rows}  # noqa: E731
+    assert ids(client.get("/runs?agent_key=file_reviewer", headers=headers).json()) == {disc["id"]}
+    assert ids(client.get("/runs?run_type=synthetic_analyze&status=succeeded", headers=headers).json()) == {ana["id"]}
+    assert ids(client.get("/runs?company=Ridgeway", headers=headers).json()) == {disc["id"]}
+    assert client.get("/runs?since=2999-01-01T00:00:00Z", headers=headers).json() == []
+    assert len(client.get("/runs?limit=1", headers=headers).json()) == 1
+
+    findings = client.get(f"/findings?run_id={disc['id']}&kind=observed_fact", headers=headers).json()
+    assert findings and all(f["company"] == "Ridgeway" for f in findings)
+    assert client.get("/findings?agent_key=sector_merger&kind=observed_fact", headers=headers).json() == []
+    assert client.get(f"/findings?company=Ridgeway&run_id={ana['id']}", headers=headers).json() == []
+
+    usage = client.get("/usage?group_by=agent_key&group_by=company", headers=headers).json()
+    assert usage["runs"] == 2
+    keys = {(g["key"]["agent_key"], g["key"]["company"]) for g in usage["groups"]}
+    assert keys == {("file_reviewer", "Ridgeway"), ("sector_merger", None)}
+    assert sum(g["input_tokens"] for g in usage["groups"]) == usage["total_input_tokens"]
+    assert client.get("/usage?group_by=colour", headers=headers).status_code == 422
+    assert client.get("/usage?agent_key=sector_merger", headers=headers).json()["runs"] == 1
+
+    fleet = client.get("/agents/analytics", headers=headers).json()
+    assert fleet["runs_total"] == 2 and fleet["runs_month"] == 2
+    by_key = {a["agent_key"]: a for a in fleet["agents"]}
+    assert set(by_key) == {"recording_reviewer", "file_reviewer", "report_generator", "sector_merger"}
+    assert by_key["file_reviewer"]["runs"] == 1 and by_key["file_reviewer"]["succeeded"] == 1
+    assert by_key["file_reviewer"]["findings_total"] == len(client.get(f"/findings?run_id={disc['id']}", headers=headers).json())
+    assert by_key["recording_reviewer"]["runs"] == 0 and by_key["recording_reviewer"]["last_run_at"] is None
+    assert Decimal(fleet["total_cost_usd"]) == Decimal(usage["total_cost_usd"])
+    assert len(fleet["by_day"]) == 30 and sum(d["runs"] for d in fleet["by_day"]) == 2
+    assert {c["key"] for c in fleet["by_company"]} == {"Ridgeway", None}
+    assert sum(k for k in fleet["findings_by_kind"].values()) == len(client.get("/findings", headers=headers).json())
+
+
+def test_non_member_sees_only_portfolio_wide_runs(client, tenant_factory):
+    from tests.test_permissions import _add_user
+
+    headers, tenant_id, _ = tenant_factory()
+    client.post("/deals", json={"name": "Ridgeway Fasteners & Supply"}, headers=headers)
+    disc = client.post("/synthetic/discovery", json={"company": "ridgeway", "division": "11_billing_ar"}, headers=headers).json()
+    ana = client.post("/synthetic/analyze", json={"sector": "industrial_goods", "kinds": ["software_overlap"]}, headers=headers).json()
+    _drain()
+    assert disc["deal_id"]
+
+    outsider, _ = _add_user(tenant_id, "analyst@firm.example.com")
+    assert {r["id"] for r in client.get("/runs", headers=outsider).json()} == {ana["id"]}
+    assert client.get(f"/runs?deal_id={disc['deal_id']}", headers=outsider).status_code == 403
+    assert client.get("/agents/analytics", headers=outsider).json()["runs_total"] == 1
+    assert {f["run_id"] for f in client.get("/findings", headers=outsider).json()} <= {ana["id"]}
+    assert client.get("/usage", headers=outsider).json()["runs"] == 1
+    finding = client.get(f"/findings?run_id={disc['id']}", headers=headers).json()[0]
+    assert client.patch(f"/findings/{finding['id']}", json={"status": "reviewed"}, headers=outsider).status_code == 403
+    assert {r["id"] for r in client.get("/runs", headers=headers).json()} == {disc["id"], ana["id"]}
+
+
+@requires_db
+def test_agent_runs_need_owner_role_unless_admin(client, tenant_factory):
+    from sqlalchemy import select
+
+    from tests.test_permissions import _add_user, _tenant_schema
+    from vista.db import tenant_session
+    from vista.models.tenant import DealMembership
+
+    headers, tenant_id, _ = tenant_factory()
+    deal = client.post("/deals", json={"name": "Ridgeway Fasteners & Supply"}, headers=headers).json()
+    outsider, outsider_id = _add_user(tenant_id, "analyst@firm.example.com")
+    body = {"company": "ridgeway", "division": "11_billing_ar"}
+
+    # No deal role at all: nothing may be started.
+    assert client.post("/synthetic/discovery", json=body, headers=outsider).status_code == 403
+    assert client.post("/synthetic/analyze", json={"sector": "industrial_goods"}, headers=outsider).status_code == 403
+    assert client.post("/summaries", headers=outsider).status_code == 403
+
+    with tenant_session(_tenant_schema(tenant_id)) as session:
+        session.add(DealMembership(deal_id=uuid.UUID(deal["id"]), user_id=outsider_id, role="member"))
+        session.commit()
+    assert client.post("/synthetic/discovery", json=body, headers=outsider).status_code == 403
+
+    with tenant_session(_tenant_schema(tenant_id)) as session:
+        m = session.scalar(select(DealMembership).where(DealMembership.user_id == outsider_id))
+        m.role = "owner"
+        session.commit()
+    run = client.post("/synthetic/discovery", json=body, headers=outsider).json()
+    assert run["deal_id"] == deal["id"] and run["status"] == "queued"
+    assert (
+        client.post("/synthetic/analyze", json={"sector": "industrial_goods", "kinds": ["software_overlap"]}, headers=outsider).status_code
+        == 201
+    )
+    assert client.post("/summaries", headers=outsider).status_code == 201
+    # A company the caller does not own is still off limits once the firm has it as a deal.
+    client.post("/deals", json={"name": "Keystone Bearing & Drive Co."}, headers=headers)
+    assert (
+        client.post("/synthetic/discovery", json={"company": "keystone", "division": "11_billing_ar"}, headers=outsider).status_code == 403
+    )
+
+
+@requires_db
+def test_eval_runs_recorded_and_latest_per_scope(client, tenant_factory, tmp_path, monkeypatch):
+    import subprocess
+    import sys
+
+    from tests.test_permissions import _add_user, _tenant_schema
+
+    headers, tenant_id, _ = tenant_factory()
+    body = {
+        "phase": "analyze",
+        "sector": "industrial_goods",
+        "model": "gpt-4o-mini",
+        "predictions": 8,
+        "calls": 5,
+        "cost_usd": "0.0021",
+        "score": {"tp": 8, "fp": 0, "fn": 25, "trap_hits": 0, "matched": [["IND-01", "x"]], "missed": ["IND-02"]},
+    }
+    first = client.post("/evals", json=body, headers=headers)
+    assert first.status_code == 201, first.text
+    assert first.json()["agent_key"] == "sector_merger"
+    assert first.json()["precision"] == 1.0 and round(first.json()["recall"], 3) == 0.242
+    second = client.post("/evals", json={**body, "score": {**body["score"], "tp": 10, "fn": 23}}, headers=headers).json()
+    client.post("/evals", json={"phase": "discover", "company": "Ridgeway", "score": {"tp": 1, "fp": 1, "fn": 0}}, headers=headers)
+    assert client.post("/evals", json={"phase": "analyze", "score": {}}, headers=headers).status_code == 422
+    assert client.post("/evals", json={"phase": "nope", "company": "x", "score": {}}, headers=headers).status_code == 422
+
+    assert len(client.get("/evals", headers=headers).json()) == 3
+    latest = client.get("/evals?latest=true", headers=headers).json()
+    assert [(e["phase"], e["id"] == second["id"]) for e in latest] == [("discover", False), ("analyze", True)]
+    assert [e["agent_key"] for e in client.get("/evals?phase=discover", headers=headers).json()] == ["file_reviewer"]
+
+    quality = client.get("/agents/analytics", headers=headers).json()["quality"]
+    assert {q["id"] for q in quality} == {e["id"] for e in latest}
+
+    outsider, _ = _add_user(tenant_id, "analyst@firm.example.com")
+    assert client.post("/evals", json=body, headers=outsider).status_code == 403
+    assert len(client.get("/evals", headers=outsider).json()) == 3  # evals carry no deal data
+
+    # The CLI records into eval_runs when --tenant is given (stub model, so ~0 score).
+    out = subprocess.run(
+        [
+            sys.executable,
+            "scripts/eval_agents.py",
+            "--phase",
+            "analyze",
+            "--sector",
+            "industrial_goods",
+            "--kinds",
+            "software_overlap",
+            "--tenant",
+            _tenant_schema(tenant_id),
+        ],
+        capture_output=True,
+        text=True,
+        check=True,
+        env={**os.environ, "VISTA_OPENAI_API_KEY": ""},  # never spend tokens from the test suite
+    )
+    report = json.loads(out.stdout)
+    assert report["eval_run_id"]
+    rows = client.get("/evals?phase=analyze", headers=headers).json()
+    assert rows[0]["id"] == report["eval_run_id"] and rows[0]["calls"] == 1 and rows[0]["model"] == "stub-model-v0"

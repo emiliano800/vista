@@ -13,7 +13,7 @@ import { DEMO_KEYS, DemoHook, demoActiveWindow, demoClipboard } from './demo.js'
 import { DEFAULT_SETTINGS, Recorder, keyNamesFrom, loadSettings } from './recorder.js';
 import { FILES_DIR, FILES_FILE, FileTracker, axDocuments, documentFromTitle, lsofDocuments, publicFile, readFiles, snapshotFiles, spotlightSweep, writeFiles } from './files.js';
 import { redactText } from './redact.js';
-import { cloudRequest, companyID, fetchReview, mergeReview, readSectionEdits, reviewItems, sendDecision, submitSections, uploadMedia, uploadReport, workspaceURL } from './cloud.js';
+import { cloudRequest, companyID, fetchReview, mergeReview, readSectionEdits, reviewItems, sendDecision, submitSections, uploadMedia, uploadReport, workspaceRecordingURL, workspaceRunState, workspaceURL } from './cloud.js';
 import { appSpans, buildSections, parseEvents, recordingName } from './sections.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -269,6 +269,16 @@ function readReview(dir) {
   }
 }
 
+// Just enough of review.json for the list: where it was explained, the workspace run, open count.
+function reviewStub(review) {
+  const stub = {
+    source: review.source ?? 'local',
+    run: review.run ?? null,
+    summary: { open: reviewSummary(review.items ?? {}, review.threshold ?? CONFIDENCE_THRESHOLD).open },
+  };
+  return { ...stub, workspace: workspaceRunState(stub) };
+}
+
 function writeReview(dir, review) {
   fs.writeFileSync(path.join(dir, REVIEW_FILE), JSON.stringify(review, null, 2));
 }
@@ -340,7 +350,11 @@ function sectionsFor(recordingId) {
       error: firstError(review.items),
       session: review.items[SESSION_ID] ?? null,
       summary: reviewSummary(review.items, review.threshold ?? CONFIDENCE_THRESHOLD),
+      source: review.source ?? 'local',
+      run: review.run ?? null,
+      workspace: workspaceRunState({ ...review, summary: reviewSummary(review.items, review.threshold ?? CONFIDENCE_THRESHOLD) }),
     },
+    workspace_url: workspaceRecordingURL(cloudSettings(), uploadStates()[recordingId]?.recordingId),
   };
 }
 
@@ -575,6 +589,7 @@ function listRecordings() {
           name: m.name ?? recordingName(m, { summary: m.summary_text ?? '' }),
           upload: uploads[id] ?? null,
           edits: Object.keys(readSectionEdits(path.join(root, id))).length,
+          review: reviewStub(readReview(path.join(root, id))),
         });
       } catch {
         /* corrupt manifest */
@@ -970,6 +985,12 @@ ipcMain.handle('rec:toggle', () => toggle());
 ipcMain.handle('rec:status', () => recorder.status());
 ipcMain.handle('recordings:list', () => listRecordings());
 ipcMain.handle('recordings:open', (_e, id) => shell.openPath(id ? recDir(id) : RECORDINGS));
+ipcMain.handle('recordings:open-workspace', (event, id) => {
+  requireDashboard(event);
+  const url = workspaceRecordingURL(cloudSettings(), uploadStates()[id]?.recordingId);
+  if (!url) throw new Error('This session is not in your workspace yet.');
+  return shell.openExternal(url);
+});
 ipcMain.handle('recordings:annotate', (_e, id, ann) => addAnnotation(id, ann));
 ipcMain.handle('recordings:sections', (_e, id) => sectionsFor(id));
 ipcMain.handle('recordings:explain', (_e, id, opts) => explainRecording(id, opts ?? {}));

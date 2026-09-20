@@ -107,6 +107,8 @@ class FindingOut(BaseModel):
     evidence: dict
     status: str
     created_at: datetime
+    company: str | None = None
+    agent_key: str | None = None
 
 
 class FindingPatch(BaseModel):
@@ -137,7 +139,22 @@ class RunOut(BaseModel):
     status: str
     created_at: datetime
     finished_at: datetime | None
+    started_at: datetime | None = None
+    company: str | None = None
+    division: str | None = None
+    sector: str | None = None
+    agent_key: str | None = None
+    recording_id: uuid.UUID | None = None
+    error: str | None = None
     events: list[RunEventOut] = []
+
+
+class UsageGroupOut(BaseModel):
+    key: dict[str, str | None]  # one entry per group_by dimension
+    input_tokens: int
+    output_tokens: int
+    cost_usd: Decimal
+    runs: int
 
 
 class UsageOut(BaseModel):
@@ -145,6 +162,7 @@ class UsageOut(BaseModel):
     total_output_tokens: int
     total_cost_usd: Decimal
     runs: int
+    groups: list[UsageGroupOut] = []
 
 
 class PortfolioCompanyOut(BaseModel):

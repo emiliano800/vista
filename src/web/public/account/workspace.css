@@ -370,6 +370,26 @@ footer {
   color: var(--warning);
   border-color: var(--warning);
 }
+.tag.danger {
+  color: var(--rust);
+  border-color: var(--rust);
+}
+.panel dl.small {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 4px 16px;
+  margin: 12px 0;
+}
+.panel dl.small dt {
+  color: var(--ink-secondary);
+}
+.panel dl.small dd {
+  margin: 0;
+}
+#run-body code,
+#tab-trace code {
+  word-break: break-all;
+}
 .intro {
   display: grid;
   grid-template-columns: 1.2fr 1fr;

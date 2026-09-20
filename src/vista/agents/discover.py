@@ -152,6 +152,10 @@ SYSTEM = (
     "flags. Report only what the evidence supports about what each column actually holds and how clean it is: "
     "mislabelled or swapped columns, truncated headers, mixed date formats, money stored as text, likely "
     "duplicates, missing datasets. Never recommend actions here; that is a later phase. "
+    "Calibrate words to the numbers: quote blank_ratio as a percentage and call it 'high' only above 20%, "
+    "'some' between 5% and 20%, and do not mention blanks under 5% unless the column is a key. A flag the "
+    "code did not raise is a hypothesis: say 'possibly' and keep confidence at or below 0.6; confidence above "
+    "0.85 is for things visible in the sample rows or flags. "
     'Respond with JSON only: {"facts": [{"subject": str, "predicate": str, "value": str, '
     '"confidence": 0..1, "columns": [str]}]}. At most 12 facts, highest confidence first.'
 )

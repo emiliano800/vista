@@ -27,7 +27,7 @@ llm-smoke:        ## tier 0: prove the configured provider/model works (spends a
 	uv run python scripts/llm_smoke.py
 
 eval:             ## tier 3: score a phase against synthetic_data/answer_key.json (make eval COMPANY=ridgeway PHASE=discover DIVISION=11_billing_ar)
-	uv run python scripts/eval_agents.py --phase $(PHASE) $(if $(filter analyze,$(PHASE)),--sector $(SECTOR),--company $(COMPANY) $(if $(DIVISION),--division $(DIVISION),))
+	uv run python scripts/eval_agents.py --phase $(PHASE) $(if $(filter analyze,$(PHASE)),--sector $(SECTOR),--company $(COMPANY) $(if $(DIVISION),--division $(DIVISION),)) $(if $(TENANT),--tenant $(TENANT),)
 
 db:               ## local Postgres + MinIO for the backend tests and scripts/demo.py
 	docker compose up -d

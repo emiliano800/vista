@@ -10,6 +10,8 @@ import {
   cloudRequest,
   reviewItems,
   submitSections,
+  workspaceRecordingURL,
+  workspaceRunState,
   fetchReview,
   sendDecision,
   mergeReview,
@@ -150,9 +152,12 @@ test("review calls: sections described on-device, decisions posted, pending item
     threshold: 0.88,
     model: "gpt",
     generating: true,
+    run: { id: "r1", status: "running", finished_at: null },
     items: { S1: { status: "approved", label: "Enter bills", final_label: "Enter bills" }, S2: { status: "pending" } },
   });
   assert.equal(merged.source, "cloud");
+  assert.deepEqual(merged.run, { id: "r1", status: "running", finished_at: null });
+  assert.equal(mergeReview(local, { items: {} }).run, null);
   assert.equal(merged.items.S1.status, "approved");
   assert.equal(merged.items.S2, undefined);
   assert.equal(merged.generating, true);
@@ -220,4 +225,25 @@ test("submit uploads every media file through signed URLs, in order, and stops o
   } finally {
     fs.rmSync(root, { recursive: true, force: true });
   }
+});
+
+test("workspaceRunState maps the review's run to a banner/pill state", () => {
+  assert.equal(workspaceRunState({ source: "local", run: null }), null, "local explanations have no workspace state");
+  assert.deepEqual(workspaceRunState({ source: "cloud", run: null }), { key: "none", label: "Explained on this computer", sub: "No workspace agent run." });
+  assert.equal(workspaceRunState({ source: "cloud", run: { status: "queued" } }).key, "queued");
+  assert.equal(workspaceRunState({ source: "cloud", run: { status: "running" }, summary: { open: 3 } }).label, "Agent explaining");
+  const ok = workspaceRunState({ source: "cloud", run: { status: "succeeded", finished_at: "2026-09-20T03:00:00Z" }, summary: { open: 2 } });
+  assert.equal(ok.key, "succeeded");
+  assert.match(ok.sub, /Recording Reviewer finished .* · 2 sections still open\.$/);
+  assert.match(workspaceRunState({ source: "cloud", run: { status: "succeeded" }, summary: { open: 0 } }).sub, /nothing left to review/);
+  const failed = workspaceRunState({ source: "cloud", run: { status: "failed", error: "model timed out" } });
+  assert.deepEqual([failed.key, failed.label, failed.sub], ["failed", "Agent run failed", "model timed out."]);
+  assert.equal(workspaceRunState({ run: { status: "cancelled" } }).label, "cancelled", "unknown statuses pass through");
+});
+
+test("workspaceRecordingURL points at the recording on the website", () => {
+  assert.equal(workspaceRecordingURL({ url: "https://vista.example" }, "11111111-1111-1111-1111-111111111111"), "https://vista.example/account/recordings/#11111111-1111-1111-1111-111111111111");
+  assert.equal(workspaceRecordingURL({ url: "https://vista.example" }, undefined), null, "not submitted yet");
+  assert.equal(workspaceRecordingURL(null, "x"), null, "not connected");
+  assert.throws(() => workspaceRecordingURL({ url: "http://vista.example" }, "x"), /https/i);
 });

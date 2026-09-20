@@ -18,6 +18,7 @@ contextBridge.exposeInMainWorld('vista', {
   recordings: () => ipcRenderer.invoke('recordings:list'),
   onRecordings: on('recordings:changed'),
   openRecording: (id) => ipcRenderer.invoke('recordings:open', id),
+  openWorkspace: (id) => ipcRenderer.invoke('recordings:open-workspace', id),
   annotate: (id, ann) => ipcRenderer.invoke('recordings:annotate', id, ann),
   sections: (id) => ipcRenderer.invoke('recordings:sections', id),
   onSections: on('recordings:sections'),

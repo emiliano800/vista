@@ -8,6 +8,7 @@ from sqlalchemy import select
 
 from vista import documents
 from vista.agents import analyze, discover, synthetic
+from vista.agents.keys import agent_key_for
 from vista.agents.llm import chat
 from vista.agents.runtime import pricing as _pricing
 from vista.agents.runtime import run_phase
@@ -18,6 +19,7 @@ from vista.models.tenant import (
     AgentRun,
     AgentRunEvent,
     CompanySummary,
+    Deal,
     Document,
     Employee,
     EmployeeAgent,
@@ -26,8 +28,8 @@ from vista.models.tenant import (
     RecordingReviewItem,
     UsageEvent,
 )
+from vista.review import SESSION_ID, status_for
 from vista.review import explain as explain_section
-from vista.review import status_for
 from vista.storage import s3_client
 
 FINDING_KINDS = {"observed_fact", "inefficiency", "proposed_automation"}
@@ -137,17 +139,34 @@ def _next_seq(session, run_id: uuid.UUID) -> int:
     )
 
 
-def _record_usage(session, run_id, model, input_tokens, output_tokens) -> None:
+def _record_usage(session, run: AgentRun, model, input_tokens, output_tokens) -> None:
     in_price, out_price = _pricing(model)
     session.add(
         UsageEvent(
-            run_id=run_id,
+            run_id=run.id,
             model=model,
             input_tokens=input_tokens,
             output_tokens=output_tokens,
             cost_usd=Decimal(input_tokens) * in_price + Decimal(output_tokens) * out_price,
+            agent_key=run.agent_key,
+            company=run.company,
         )
     )
+
+
+def _start_run(session, run_id: uuid.UUID, tenant_schema: str) -> AgentRun:
+    run = session.get(AgentRun, run_id)
+    if run is None:
+        raise RuntimeError(f"agent run {run_id} not found in {tenant_schema}")
+    run.status = "running"
+    run.started_at = run.started_at or datetime.now(UTC)
+    run.agent_key = run.agent_key or agent_key_for(run.run_type)
+    run.error = None
+    return run
+
+
+def _finding(run: AgentRun, **fields) -> Finding:
+    return Finding(run_id=run.id, agent_key=run.agent_key, company=fields.pop("company", run.company), **fields)
 
 
 def handle_employee_discovery(job: Job, tenant_schema: str) -> None:
@@ -158,12 +177,12 @@ def handle_employee_discovery(job: Job, tenant_schema: str) -> None:
     labeled as such in `evidence` — the frontend should render them as unverified."""
     run_id = uuid.UUID(job.payload["run_id"])
     with tenant_session(tenant_schema) as session:
-        run = session.get(AgentRun, run_id)
-        if run is None:
-            raise RuntimeError(f"agent run {run_id} not found in {tenant_schema}")
-        run.status = "running"
+        run = _start_run(session, run_id, tenant_schema)
         agent = session.get(EmployeeAgent, run.employee_agent_id)
         employee = session.get(Employee, agent.employee_id)
+        if agent.deal_id is not None and run.company is None:
+            run.deal_id = agent.deal_id
+            run.company = session.scalar(select(Deal.name).where(Deal.id == agent.deal_id))
         seq = _emit(
             session,
             run_id,
@@ -191,12 +210,12 @@ def handle_employee_discovery(job: Job, tenant_schema: str) -> None:
             "model_call",
             {"model": model, "input_tokens": itok, "output_tokens": otok},
         )
-        _record_usage(session, run_id, model, itok, otok)
+        _record_usage(session, run, model, itok, otok)
 
         findings_data = _parse_findings(text) if text else STUB_FINDINGS
         for f in findings_data:
-            finding = Finding(
-                run_id=run_id,
+            finding = _finding(
+                run,
                 employee_id=employee.id,
                 agent_id=agent.id,
                 kind=f["kind"],
@@ -222,15 +241,23 @@ def handle_employee_discovery(job: Job, tenant_schema: str) -> None:
         session.commit()
 
 
+def _provenance(evidence: dict | None) -> str:
+    """'observed: <file>' when a finding cites data; otherwise a hypothesis, however confident it sounds."""
+    ev = evidence or {}
+    refs = ev.get("evidence_refs") or ev.get("refs") or ([ev["source_ref"]] if ev.get("source_ref") else [])
+    files = [r.get("file") if isinstance(r, dict) else str(r) for r in refs]
+    if ev.get("file"):
+        files.append(str(ev["file"]))
+    files = [f for f in files if f]
+    return f"observed: {', '.join(sorted(set(files))[:3])}" if files else "hypothesis"
+
+
 def handle_company_summary(job: Job, tenant_schema: str) -> None:
     """Aggregate all open findings across the company's employee agents into one
     operational summary."""
     run_id = uuid.UUID(job.payload["run_id"])
     with tenant_session(tenant_schema) as session:
-        run = session.get(AgentRun, run_id)
-        if run is None:
-            raise RuntimeError(f"agent run {run_id} not found in {tenant_schema}")
-        run.status = "running"
+        run = _start_run(session, run_id, tenant_schema)
         seq = _emit(session, run_id, _next_seq(session, run_id), "step", {"message": "company summary started"})
 
         rows = session.execute(
@@ -246,7 +273,7 @@ def handle_company_summary(job: Job, tenant_schema: str) -> None:
             by_kind[finding.kind] = by_kind.get(finding.kind, 0) + 1
             if finding.employee_id:
                 employee_ids.add(finding.employee_id)
-            lines.append(f"- [{finding.kind}] ({role or 'company'}) {finding.title}: {finding.detail}")
+            lines.append(f"- [{finding.kind}] [{_provenance(finding.evidence)}] ({role or 'company'}) {finding.title}: {finding.detail}")
         stats = {
             "open_findings": len(rows),
             "by_kind": by_kind,
@@ -257,9 +284,12 @@ def handle_company_summary(job: Job, tenant_schema: str) -> None:
         if rows:
             system = (
                 "You are Vista, summarizing operational findings across one acquired "
-                "company for its private-equity owner. Group related findings, highlight "
-                "the highest-impact inefficiencies, and clearly separate verified facts "
-                "from unverified hypotheses. Be concise: a few short paragraphs or bullets."
+                "company for its private-equity owner. Each finding carries a provenance tag: "
+                "'observed' findings cite a file and may be reported as facts; 'hypothesis' "
+                "findings were inferred from a job title with no data behind them and must stay "
+                "under a heading such as 'Hypotheses (unverified)', worded as possibilities, never "
+                "as verified facts. Group related findings and highlight the highest-impact "
+                "inefficiencies. Be concise: a few short paragraphs or bullets."
             )
             model, text, itok, otok = _chat(system, "\n".join(lines), max_tokens=1000)
             if not text:
@@ -275,7 +305,7 @@ def handle_company_summary(job: Job, tenant_schema: str) -> None:
                 "model_call",
                 {"model": model, "input_tokens": itok, "output_tokens": otok},
             )
-            _record_usage(session, run_id, model, itok, otok)
+            _record_usage(session, run, model, itok, otok)
         else:
             text = "No open findings to summarize. Run employee-agent discovery first."
 
@@ -298,14 +328,8 @@ def handle_agent_run(job: Job, tenant_schema: str) -> None:
     Replace the model_call section with a real LLM call later."""
     run_id = uuid.UUID(job.payload["run_id"])
     with tenant_session(tenant_schema) as session:
-        run = session.get(AgentRun, run_id)
-        if run is None:
-            raise RuntimeError(f"agent run {run_id} not found in {tenant_schema}")
-        run.status = "running"
-        seq = 1 + (
-            session.scalar(select(AgentRunEvent.seq).where(AgentRunEvent.run_id == run_id).order_by(AgentRunEvent.seq.desc()).limit(1)) or 0
-        )
-        seq = _emit(session, run_id, seq, "step", {"message": "run started"})
+        run = _start_run(session, run_id, tenant_schema)
+        seq = _emit(session, run_id, _next_seq(session, run_id), "step", {"message": "run started"})
 
         document = session.get(Document, run.document_id) if run.document_id else None
         if document is not None:
@@ -318,8 +342,6 @@ def handle_agent_run(job: Job, tenant_schema: str) -> None:
             )
 
         model, output_text, input_tokens, output_tokens = _call_model(document)
-        in_price, out_price = _pricing(model)
-        cost = Decimal(input_tokens) * in_price + Decimal(output_tokens) * out_price
         seq = _emit(
             session,
             run_id,
@@ -327,15 +349,7 @@ def handle_agent_run(job: Job, tenant_schema: str) -> None:
             "model_call",
             {"model": model, "input_tokens": input_tokens, "output_tokens": output_tokens},
         )
-        session.add(
-            UsageEvent(
-                run_id=run_id,
-                model=model,
-                input_tokens=input_tokens,
-                output_tokens=output_tokens,
-                cost_usd=cost,
-            )
-        )
+        _record_usage(session, run, model, input_tokens, output_tokens)
 
         seq = _emit(session, run_id, seq, "result", {"summary": output_text})
         run.status = "succeeded"
@@ -345,31 +359,74 @@ def handle_agent_run(job: Job, tenant_schema: str) -> None:
 
 def handle_explain_recording(job: Job, tenant_schema: str) -> None:
     """Explain every pending review item of one recording. Each item is committed
-    on its own; a retry after a model outage redoes only the pending/failed ones."""
+    on its own; a retry after a model outage redoes only the pending/failed ones.
+    Every section is one model_call event + usage row on the recording_review run."""
     recording_id = uuid.UUID(job.payload["recording_id"])
+    run_id = uuid.UUID(job.payload["run_id"]) if "run_id" in job.payload else None
     with tenant_session(tenant_schema) as session:
         pending = session.scalars(
             select(RecordingReviewItem.id).where(
                 RecordingReviewItem.recording_id == recording_id, RecordingReviewItem.status.in_(("pending", "failed"))
             )
         ).all()
+        if run_id is not None:
+            run = _start_run(session, run_id, tenant_schema)
+            seq = _emit(session, run_id, _next_seq(session, run_id), "step", {"message": "explaining sections", "sections": len(pending)})
+            session.commit()
     failures = 0
     for item_id in pending:
         with tenant_session(tenant_schema) as session:
             item = session.get(RecordingReviewItem, item_id)
             if item is None or item.status not in ("pending", "failed"):
                 continue
+            run = session.get(AgentRun, run_id) if run_id is not None else None
             try:
                 model, parsed, in_tokens, out_tokens = explain_section(item.prompt)
             except Exception as exc:  # noqa: BLE001 — one bad section must not block the rest
                 failures += 1
                 item.status, item.error = "failed", repr(exc)[:2000]
+                if run is not None:
+                    seq = _emit(session, run_id, seq, "error", {"section": item.item_id, "error": repr(exc)[:2000]})
             else:
                 item.model, item.input_tokens, item.output_tokens = model, in_tokens, out_tokens
                 item.label, item.explanation = parsed["label"], parsed["explanation"]
                 item.confidence, item.unclear, item.questions = parsed["confidence"], parsed["unclear"], parsed["questions"]
                 item.status, item.error = status_for(parsed["confidence"], item.threshold), None
+                if run is not None:
+                    seq = _emit(
+                        session,
+                        run_id,
+                        seq,
+                        "model_call",
+                        {
+                            "section": item.item_id,
+                            "model": model,
+                            "input_tokens": in_tokens,
+                            "output_tokens": out_tokens,
+                            "confidence": parsed["confidence"],
+                            "status": item.status,
+                        },
+                    )
+                    _record_usage(session, run, model, in_tokens, out_tokens)
             item.explained_at = item.updated_at = datetime.now(UTC)
+            session.commit()
+    if run_id is not None:
+        with tenant_session(tenant_schema) as session:
+            run = session.get(AgentRun, run_id)
+            statuses = session.scalars(
+                select(RecordingReviewItem.status).where(
+                    RecordingReviewItem.recording_id == recording_id, RecordingReviewItem.item_id != SESSION_ID
+                )
+            ).all()
+            _emit(
+                session,
+                run_id,
+                seq,
+                "result",
+                {"sections": len(pending), "failed": failures, "open": sum(s in ("proposed", "unsure") for s in statuses)},
+            )
+            if not failures:
+                run.status, run.finished_at, run.error = "succeeded", datetime.now(UTC), None
             session.commit()
     if failures:
         raise RuntimeError(f"{failures} of {len(pending)} sections could not be explained")
@@ -383,10 +440,8 @@ def handle_synthetic_discovery(job: Job, tenant_schema: str) -> None:
     company = synthetic.company(job.payload["company"])
     division = job.payload["division"]
     with tenant_session(tenant_schema) as session:
-        run = session.get(AgentRun, run_id)
-        if run is None:
-            raise RuntimeError(f"agent run {run_id} not found in {tenant_schema}")
-        run.status = "running"
+        run = _start_run(session, run_id, tenant_schema)
+        run.company, run.division, run.sector = company.short, division, company.sector
         seq = _emit(
             session,
             run_id,
@@ -413,10 +468,10 @@ def handle_synthetic_discovery(job: Job, tenant_schema: str) -> None:
                 "model_call",
                 {"model": r.model, "input_tokens": r.input_tokens, "output_tokens": r.output_tokens, "source": r.source},
             )
-            _record_usage(session, run_id, r.model, r.input_tokens, r.output_tokens)
+            _record_usage(session, run, r.model, r.input_tokens, r.output_tokens)
             for fact in phase.rows:
-                finding = Finding(
-                    run_id=run_id,
+                finding = _finding(
+                    run,
                     kind="observed_fact",
                     title=f"{fact['subject']}: {fact['predicate']}"[:512],
                     detail=fact["value"],
@@ -443,10 +498,8 @@ def handle_synthetic_analyze(job: Job, tenant_schema: str) -> None:
     by_company = {c: synthetic.tables_for(c) for c in synthetic.companies() if c.sector == sector}
     shorts = {c.short for c in by_company}
     with tenant_session(tenant_schema) as session:
-        run = session.get(AgentRun, run_id)
-        if run is None:
-            raise RuntimeError(f"agent run {run_id} not found in {tenant_schema}")
-        run.status = "running"
+        run = _start_run(session, run_id, tenant_schema)
+        run.sector = sector
         seq = _emit(
             session,
             run_id,
@@ -460,7 +513,7 @@ def handle_synthetic_analyze(job: Job, tenant_schema: str) -> None:
             seq = _emit(session, run_id, seq, "tool_call", {"tool": "read_tables", "kind": kind, "refs": refs})
             phase = run_phase(
                 analyze.prepare(sector, by_company, kind),
-                analyze.parse,
+                lambda text, k=kind: analyze.parse(text, k),
                 lambda out, r=set(refs): analyze.apply(out, shorts, r),
                 llm=chat,
             )
@@ -472,10 +525,11 @@ def handle_synthetic_analyze(job: Job, tenant_schema: str) -> None:
                 "model_call",
                 {"model": r.model, "input_tokens": r.input_tokens, "output_tokens": r.output_tokens, "source": r.source},
             )
-            _record_usage(session, run_id, r.model, r.input_tokens, r.output_tokens)
+            _record_usage(session, run, r.model, r.input_tokens, r.output_tokens)
             for row in phase.rows:
-                finding = Finding(
-                    run_id=run_id,
+                finding = _finding(
+                    run,
+                    company=", ".join(row["companies"])[:64],
                     kind="proposed_automation",
                     title=f"{row['kind']}: {row['title']}"[:512],
                     detail=row["detail"],
@@ -563,6 +617,7 @@ def mark_run_failed(job: Job, tenant_schema: str, error: str, permanent: bool) -
             session.scalar(select(AgentRunEvent.seq).where(AgentRunEvent.run_id == run_id).order_by(AgentRunEvent.seq.desc()).limit(1)) or 0
         )
         _emit(session, run_id, seq, "error", {"error": error[:2000], "permanent": permanent})
+        run.error = error[:2000]
         if permanent:
             run.status = "failed"
             run.finished_at = datetime.now(UTC)

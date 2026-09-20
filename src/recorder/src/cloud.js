@@ -242,8 +242,32 @@ export function mergeReview(local, remote) {
     model: remote.model ?? local.model,
     generating: !!remote.generating,
     generated_at: remote.generated_at ?? local.generated_at,
+    run: remote.run ?? null,
     items,
   };
+}
+
+// Workspace agent state for a submitted recording, from the `run` field of the
+// review payload (the Recording Reviewer's AgentRun) plus how many sections are
+// still open. Pure so the dashboard's banner and list pill agree.
+export function workspaceRunState(review) {
+  const run = review?.run;
+  if (!run) return review?.source === "cloud" ? { key: "none", label: "Explained on this computer", sub: "No workspace agent run." } : null;
+  const open = review?.summary?.open ?? null;
+  const left = open == null ? "" : open === 0 ? " · nothing left to review" : ` · ${open} section${open === 1 ? "" : "s"} still open`;
+  const at = run.finished_at ? new Date(run.finished_at).toLocaleString() : "";
+  return {
+    queued: { key: "queued", label: "Agent queued", sub: "The Recording Reviewer will pick this up shortly." },
+    running: { key: "running", label: "Agent explaining", sub: "The Recording Reviewer is explaining the sections in your workspace." },
+    succeeded: { key: "succeeded", label: "Reviewed by agent", sub: `Recording Reviewer finished${at ? ` ${at}` : ""}${left}.` },
+    failed: { key: "failed", label: "Agent run failed", sub: `${run.error ?? "The Recording Reviewer could not finish"}${left}.` },
+  }[run.status] ?? { key: run.status, label: run.status, sub: left.replace(/^ · /, "") };
+}
+
+// Where the analyst sees this recording. Only for recordings the workspace knows about.
+export function workspaceRecordingURL(config, cloudRecordingId) {
+  if (!config?.url || !cloudRecordingId) return null;
+  return `${workspaceURL(config.url)}/account/recordings/#${encodeURIComponent(cloudRecordingId)}`;
 }
 
 // ---- media: everything else in the recording folder ---------------------------
