@@ -237,3 +237,38 @@ def test_request_limit_and_validation_does_not_echo_secrets():
             assert browser.get(page).status_code == 200, page
         assert browser.get("/account/app.js").status_code == 200
         assert browser.get("/nav.js").status_code == 200
+
+
+@requires_db
+def test_recording_sections_metadata_and_media_uploads(client, tenant_factory, bundle, objects, monkeypatch):
+    monkeypatch.setattr("vista.api.recordings.presigned_upload_url", lambda key, ct: f"https://s3.test/put/{key}")
+    monkeypatch.setattr("vista.api.recordings.presigned_download_url", lambda key: f"https://s3.test/get/{key}")
+    headers, _, _ = tenant_factory()
+    deal = company(client, headers)
+    sections = {"S1": {"name": "Enter bills", "note": "from the PDFs"}}
+    body = {**bundle, "name": "Morning AP run", "summary_text": "Bills", "sections": sections}
+    record = client.post(f"/api/deals/{deal}/recordings", headers=headers, json=body).json()
+    assert record["manifest"]["name"] == "Morning AP run" and record["sections"]["S1"]["note"] == "from the PDFs"
+    rid = record["id"]
+
+    files = [
+        {"name": "screen.webm", "content_type": "video/webm", "size_bytes": 12345},
+        {"name": "shots/000001.jpg", "content_type": "image/jpeg", "size_bytes": 100},
+    ]
+    signed = client.post(f"/api/recordings/{rid}/media", headers=headers, json={"files": files})
+    assert signed.status_code == 200, signed.text
+    urls = {u["name"]: u["url"] for u in signed.json()["uploads"]}
+    assert urls["screen.webm"].endswith(f"/recordings/{rid}/media/screen.webm")
+    bad = client.post(f"/api/recordings/{rid}/media", headers=headers, json={"files": [{**files[0], "name": "../etc/passwd"}]})
+    assert bad.status_code == 422
+
+    listed = client.get(f"/api/recordings/{rid}/media", headers=headers).json()
+    assert [m["name"] for m in listed] == ["screen.webm", "shots/000001.jpg"]
+    assert client.get(f"/api/recordings/{rid}", headers=headers).json()["media"] == ["screen.webm", "shots/000001.jpg"]
+    got = client.get(f"/api/recordings/{rid}/media/shots/000001.jpg", headers=headers, follow_redirects=False)
+    assert got.status_code == 307 and got.headers["location"].endswith("/media/shots/000001.jpg")
+    assert client.get(f"/api/recordings/{rid}/media/nope.jpg", headers=headers, follow_redirects=False).status_code == 404
+
+    # Another member of the company can view but not add files.
+    other, _, _ = tenant_factory()
+    assert client.post(f"/api/recordings/{rid}/media", headers=other, json={"files": files}).status_code in (403, 404)

@@ -116,12 +116,27 @@ def _parse_evidence(value: str) -> list[dict]:
     return rows
 
 
+class SectionEdit(BaseModel):
+    """What the employee typed over a video section: its name and a note."""
+
+    model_config = ConfigDict(extra="forbid")
+    name: Text = ""
+    note: Text = ""
+    edited_at: AwareDatetime | None = None
+
+
+SectionId = Annotated[str, Field(pattern=r"^[A-Za-z0-9_-]{1,64}$")]
+
+
 class RecordingUpload(BaseModel):
     model_config = ConfigDict(extra="forbid")
     version: Literal[1] = 1
     manifest: Manifest
     summary: Summary
     event_log_csv: str = Field(max_length=6_000_000)
+    name: Text = ""
+    summary_text: Text = ""
+    sections: dict[SectionId, SectionEdit] = Field(default_factory=dict, max_length=500)
 
     @model_validator(mode="after")
     def evidence_matches(self):

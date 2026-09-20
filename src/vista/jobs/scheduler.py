@@ -1,11 +1,12 @@
 """Enqueues recurring employee-agent discovery runs.
 
-    uv run python -m vista.jobs.scheduler   # loop; or call enqueue_due() from cron
+uv run python -m vista.jobs.scheduler   # loop; or call enqueue_due() from cron
 """
+
 import logging
 import time
 import uuid
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 from sqlalchemy import select
 
@@ -26,15 +27,13 @@ SCHEDULE_INTERVALS = {
 def enqueue_due(now: datetime | None = None) -> int:
     """Enqueue a discovery run for every active agent whose interval has elapsed.
     Returns the number of runs enqueued. Idempotent per (agent, due window)."""
-    now = now or datetime.now(timezone.utc)
+    now = now or datetime.now(UTC)
     enqueued = 0
     with platform_session() as psession:
         tenants = psession.execute(select(Tenant.id, Tenant.schema_name)).all()
     for tenant_id, schema in tenants:
         with tenant_session(schema) as session:
-            agents = session.scalars(
-                select(EmployeeAgent).where(EmployeeAgent.status == "active")
-            ).all()
+            agents = session.scalars(select(EmployeeAgent).where(EmployeeAgent.status == "active")).all()
             for agent in agents:
                 interval = SCHEDULE_INTERVALS.get(agent.schedule, SCHEDULE_INTERVALS["daily"])
                 if agent.last_run_at is not None and agent.last_run_at + interval > now:

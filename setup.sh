@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
-# One-shot local setup for Vista (engine + desktop recorder).
+# One-shot local setup for Vista (engine + desktop recorder + web app tooling).
 #   ./setup.sh          install + run both test suites
 #   ./setup.sh --check  only report what is installed / missing
 set -euo pipefail
 cd "$(dirname "$0")"
 
-MIN_NODE=18
+MIN_NODE=22   # matches package.json engines and CI; wrangler 4 needs a current Node
 MIN_PY="3.12"
 CHECK_ONLY=${1:-}
 ok()   { printf '  \033[32m✓\033[0m %s\n' "$*"; }
@@ -60,14 +60,17 @@ fi
 echo; echo "Installing Python engine (uv sync)"
 uv sync --group dev
 
+echo; echo "Installing web app tooling (npm install)"
+npm install --no-fund --no-audit
+
 echo; echo "Installing recorder (npm install)"
 (cd src/recorder && npm install --no-fund --no-audit)
 
 # --- Test ----------------------------------------------------------------------
 echo; echo "Running tests"
 uv run ruff check . && uv run ruff format --check .
-uv run pytest -q tests/test_pipeline.py
-(cd src/recorder && npm test)
+uv run pytest -q   # backend tests skip unless Postgres is running (make db)
+npm test
 uv run python -m taskmining run --synthetic 5 --out /tmp/vista-setup-check >/dev/null && ok "taskmining CLI"
 
 # --- Next steps ----------------------------------------------------------------
@@ -77,6 +80,7 @@ Done. Next:
 
   make demo     recorder with simulated Outlook/Acrobat/QuickBooks/Excel activity
   make start    real recording (hooks + screenshots + video)
+  make db       Postgres + MinIO in Docker, then \`make test\` also runs the backend tests
 
 EOF
 if [ "$OS" = Darwin ]; then

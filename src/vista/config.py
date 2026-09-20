@@ -23,9 +23,28 @@ class Settings(BaseSettings):
     s3_access_key: str | None = "vista"
     s3_secret_key: str | None = "vista-secret"
     s3_region: str | None = None
-    s3_bucket: str = "vista-documents"
+    s3_bucket: str = "vista-reports"
     openai_api_key: str | None = None
     openai_model: str = "gpt-4o-mini"
+    # Any OpenAI-compatible endpoint, e.g. https://openrouter.ai/api/v1
+    openai_base_url: str | None = None
+    # OpenRouter provider pinning: comma-separated ("nvidia" → only that provider, no fallbacks)
+    openai_provider_only: str = ""
+
+    def openai_client(self):
+        from openai import OpenAI
+
+        return OpenAI(api_key=self.openai_api_key, base_url=self.openai_base_url)
+
+    def openai_extra_body(self) -> dict:
+        body: dict = {}
+        if self.openai_base_url and "openrouter.ai" in self.openai_base_url:
+            body["reasoning"] = {"enabled": False}  # answers only; no thinking tokens
+        only = [p.strip() for p in self.openai_provider_only.split(",") if p.strip()]
+        if only:
+            body["provider"] = {"only": only, "allow_fallbacks": False}
+        return body
+
     provisioning_key: str | None = None  # /tenants disabled unless configured
     cookie_secure: bool = True
     allowed_origins: list[str] = []

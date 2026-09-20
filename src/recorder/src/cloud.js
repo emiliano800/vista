@@ -1,4 +1,7 @@
-// Report-only uploads. No raw events, desktop paths, screenshots or video.
+// Uploads to the company workspace: the report (summary + evidence + the
+// employee's names/notes as metadata) through the API, then the media files
+// (screenshots, screen video, raw events) straight to object storage via signed
+// URLs. Desktop paths never leave the machine.
 import fs from "node:fs";
 import path from "node:path";
 
@@ -61,11 +64,40 @@ export function reportBundle(root, id) {
   const event_log_csv = readBounded(
     path.join(dir, "processed", "event_log.csv"),
   );
-  const body = JSON.stringify({ version: 1, manifest, summary, event_log_csv });
+  const sections = readSectionEdits(dir);
+  const body = JSON.stringify({
+    version: 1,
+    manifest,
+    summary,
+    event_log_csv,
+    name: String(m.name ?? "").slice(0, 4096),
+    summary_text: String(m.summary_text ?? "").slice(0, 4096),
+    sections,
+  });
   if (Buffer.byteLength(body) > LIMIT)
     throw new Error("Report exceeds the 8 MiB upload limit.");
   return body;
 }
+// sections.json: what the employee typed over each video section ({id: {name, note, edited_at}}).
+export function readSectionEdits(dir) {
+  let raw;
+  try {
+    raw = JSON.parse(fs.readFileSync(path.join(dir, "sections.json"), "utf8"));
+  } catch {
+    return {};
+  }
+  const out = {};
+  for (const [id, e] of Object.entries(raw ?? {})) {
+    if (!/^[A-Za-z0-9_-]{1,64}$/.test(id) || !e || typeof e !== "object") continue;
+    out[id] = {
+      name: String(e.name ?? "").slice(0, 4096),
+      note: String(e.note ?? "").slice(0, 4096),
+      ...(e.edited_at ? { edited_at: e.edited_at } : {}),
+    };
+  }
+  return out;
+}
+
 export async function cloudRequest(
   config,
   endpoint,
@@ -180,4 +212,65 @@ export function mergeReview(local, remote) {
     generated_at: remote.generated_at ?? local.generated_at,
     items,
   };
+}
+
+// ---- media: everything else in the recording folder ---------------------------
+// The workspace signs one PUT URL per file; the recorder streams each file there
+// and afterwards the local copy can go. Names are relative to the recording dir.
+const MEDIA_TYPES = {
+  ".webm": "video/webm",
+  ".jpg": "image/jpeg",
+  ".jpeg": "image/jpeg",
+  ".png": "image/png",
+  ".jsonl": "application/x-ndjson",
+  ".json": "application/json",
+  ".csv": "text/csv",
+  ".xes": "application/xml",
+};
+export function mediaFiles(root, id) {
+  const dir = path.join(root, id);
+  const out = [];
+  const walk = (rel) => {
+    for (const ent of fs.readdirSync(path.join(dir, rel), { withFileTypes: true })) {
+      const r = rel ? `${rel}/${ent.name}` : ent.name;
+      if (ent.isSymbolicLink()) continue;
+      if (ent.isDirectory()) walk(r);
+      else if (ent.isFile()) {
+        const type = MEDIA_TYPES[path.extname(ent.name).toLowerCase()];
+        if (!type || ent.name.endsWith(".tmp")) continue;
+        out.push({ name: r, content_type: type, size_bytes: fs.statSync(path.join(dir, r)).size });
+      }
+    }
+  };
+  walk("");
+  return out.sort((a, b) => a.name.localeCompare(b.name));
+}
+export async function uploadMedia(config, root, id, cloudRecordingId, { fetchImpl = fetch, onProgress = () => {}, batch = 200 } = {}) {
+  const dir = path.join(root, id);
+  const files = mediaFiles(root, id);
+  let done = 0;
+  for (let i = 0; i < files.length; i += batch) {
+    const chunk = files.slice(i, i + batch);
+    const { uploads } = await cloudRequest(
+      config,
+      `${recordingPath(cloudRecordingId)}/media`,
+      { method: "POST", body: JSON.stringify({ files: chunk }) },
+      fetchImpl,
+    );
+    const byName = new Map(uploads.map((u) => [u.name, u.url]));
+    for (const f of chunk) {
+      const url = byName.get(f.name);
+      if (!url) throw new Error(`The workspace did not accept ${f.name}.`);
+      const res = await fetchImpl(url, {
+        method: "PUT",
+        headers: { "Content-Type": f.content_type },
+        body: fs.readFileSync(path.join(dir, f.name)),
+        signal: AbortSignal.timeout(10 * 60 * 1000),
+      });
+      if (!res.ok) throw new Error(`Uploading ${f.name} failed (${res.status}). Please retry.`);
+      done += 1;
+      onProgress({ done, total: files.length, name: f.name });
+    }
+  }
+  return files.map((f) => f.name);
 }

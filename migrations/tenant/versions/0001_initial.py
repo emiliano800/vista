@@ -3,6 +3,7 @@
 Revision ID: 0001
 Revises:
 """
+
 import sqlalchemy as sa
 from alembic import op
 from sqlalchemy.dialects.postgresql import JSONB, UUID

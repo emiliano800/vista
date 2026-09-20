@@ -8,7 +8,8 @@
   "scripts": {
     "start": "electron .",
     "start:demo": "electron . --demo",
-    "test": "node --test test/*.test.js"
+    "test": "node --test test/*.test.js",
+    "test:ui": "electron test/dashboard-smoke.mjs"
   },
   "dependencies": {
     "get-windows": "^9.3.0",

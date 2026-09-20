@@ -70,13 +70,9 @@ class AgentRun(TenantBase):
 
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     job_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True))  # platform.jobs.id
-    run_type: Mapped[str] = mapped_column(
-        String(32), default="deal_analysis"
-    )  # deal_analysis|employee_discovery|company_summary
+    run_type: Mapped[str] = mapped_column(String(32), default="deal_analysis")  # deal_analysis|employee_discovery|company_summary
     deal_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("deals.id"), nullable=True)
-    employee_agent_id: Mapped[uuid.UUID | None] = mapped_column(
-        ForeignKey("employee_agents.id"), nullable=True
-    )
+    employee_agent_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("employee_agents.id"), nullable=True)
     document_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("documents.id"), nullable=True)
     requested_by: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True))
     status: Mapped[str] = mapped_column(String(16), default="queued")  # queued|running|succeeded|failed
@@ -102,12 +98,8 @@ class Finding(TenantBase):
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     run_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("agent_runs.id"))
     employee_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("employees.id"), nullable=True)
-    agent_id: Mapped[uuid.UUID | None] = mapped_column(
-        ForeignKey("employee_agents.id"), nullable=True
-    )
-    kind: Mapped[str] = mapped_column(
-        String(32)
-    )  # observed_fact|inefficiency|proposed_automation
+    agent_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("employee_agents.id"), nullable=True)
+    kind: Mapped[str] = mapped_column(String(32))  # observed_fact|inefficiency|proposed_automation
     title: Mapped[str] = mapped_column(String(512))
     detail: Mapped[str] = mapped_column(Text, default="")
     evidence: Mapped[dict] = mapped_column(JSONB, default=dict)  # source refs / assumptions
@@ -152,6 +144,8 @@ class Recording(TenantBase):
     summary: Mapped[dict] = mapped_column(JSONB)
     s3_key: Mapped[str] = mapped_column(String(1024))
     content_hash: Mapped[str] = mapped_column(String(64))
+    media: Mapped[dict] = mapped_column(JSONB, default=dict)  # name -> {key, content_type, size_bytes}
+    sections: Mapped[dict] = mapped_column(JSONB, default=dict)  # section id -> employee edits {name, note}
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 

@@ -3,6 +3,7 @@
 Revision ID: 0002
 Revises: 0001
 """
+
 import sqlalchemy as sa
 from alembic import op
 from sqlalchemy.dialects.postgresql import JSONB, UUID
@@ -38,9 +39,7 @@ def upgrade() -> None:
     )
     op.add_column(
         "agent_runs",
-        sa.Column(
-            "employee_agent_id", UUID(as_uuid=True), sa.ForeignKey("employee_agents.id"), nullable=True
-        ),
+        sa.Column("employee_agent_id", UUID(as_uuid=True), sa.ForeignKey("employee_agents.id"), nullable=True),
     )
     op.alter_column("agent_runs", "deal_id", nullable=True)
     op.create_table(

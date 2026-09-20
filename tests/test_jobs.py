@@ -2,12 +2,11 @@ import uuid
 
 from sqlalchemy import select
 
+from tests.conftest import requires_db
 from vista.db import platform_session
 from vista.jobs.queue import enqueue
 from vista.jobs.worker import process_one
 from vista.models.platform import Job
-
-from tests.conftest import requires_db
 
 pytestmark = requires_db
 
@@ -21,12 +20,8 @@ def _drain(max_jobs: int = 20) -> None:
 def test_agent_run_end_to_end(client, tenant_factory):
     headers, _, _ = tenant_factory()
     deal = client.post("/deals", json={"name": "Project Kestrel"}, headers=headers).json()
-    doc = client.post(
-        f"/deals/{deal['id']}/documents", json={"filename": "cim.pdf"}, headers=headers
-    ).json()
-    run = client.post(
-        "/runs", json={"deal_id": deal["id"], "document_id": doc["id"]}, headers=headers
-    ).json()
+    doc = client.post(f"/deals/{deal['id']}/documents", json={"filename": "cim.pdf"}, headers=headers).json()
+    run = client.post("/runs", json={"deal_id": deal["id"], "document_id": doc["id"]}, headers=headers).json()
     assert run["status"] == "queued"
 
     _drain()
@@ -52,9 +47,7 @@ def test_idempotency_key_dedupes_jobs(client, tenant_factory):
     assert r1.status_code == r2.status_code == 201
 
     with platform_session() as session:
-        jobs = session.scalars(
-            select(Job).where(Job.tenant_id == tenant_id, Job.idempotency_key == key)
-        ).all()
+        jobs = session.scalars(select(Job).where(Job.tenant_id == tenant_id, Job.idempotency_key == key)).all()
     assert len(jobs) == 1
 
 

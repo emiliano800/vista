@@ -28,6 +28,7 @@ docker compose up -d
 uv run python -m vista.manage migrate
 uv run python -m vista.manage create-workspace --firm "Your firm" --company "Your company" --email "you@example.com"
 VISTA_COOKIE_SECURE=false uv run uvicorn vista.main:app --host 127.0.0.1 --port 8000
+uv run python -m vista.jobs.worker      # second terminal: AI review of recordings (needs VISTA_OPENAI_API_KEY)
 ```
 
 The provisioning command prints a personal access key once. Store it in your password
@@ -53,7 +54,9 @@ docker compose --env-file deploy/.env -f deploy/compose.yml exec api .venv/bin/p
 ```
 
 The migration service upgrades the shared and existing tenant schemas and creates the
-private report bucket before API startup. Caddy obtains/renews the HTTPS certificate.
+private report bucket before the `api` and `worker` services start. The worker processes
+the recording AI review; set `OPENAI_API_KEY` in `deploy/.env` for real explanations.
+Caddy obtains/renews the HTTPS certificate.
 Check `https://api.bumpsolutions.org/api/health`. Persist and back up the Postgres,
 report-storage and Caddy volumes. `down -v` deletes that data; do not use it for updates.
 
