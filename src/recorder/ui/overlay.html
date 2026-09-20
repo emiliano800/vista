@@ -8,11 +8,10 @@
       /* Always-on overlay. Tokens from tokens.css (DESIGN.md); panel is a floating
          surface so it may carry a shadow, unlike cards. */
       :root {
-        --glass: rgba(255, 255, 255, 0.94);
-        --glow: color-mix(in srgb, var(--brand) 45%, transparent);
-        --glow-strong: color-mix(in srgb, var(--brand) 70%, transparent);
+        --glass: rgba(251, 248, 242, 0.96);
+        --glow: color-mix(in srgb, var(--ink) 35%, transparent);
+        --glow-strong: color-mix(in srgb, var(--ink) 55%, transparent);
       }
-      @media (prefers-color-scheme: dark) { :root { --glass: rgba(23, 20, 31, 0.94); } }
       * { box-sizing: border-box; }
       html, body { margin: 0; background: transparent; overflow: hidden; height: 100%; }
       body {
@@ -54,7 +53,7 @@
       }
       .recording .dot { background: var(--danger); animation: pulse 1.4s ease-in-out infinite; }
       .paused .dot { background: var(--warning); }
-      .finishing .dot { background: var(--brand); animation: pulse 0.6s ease-in-out infinite; }
+      .finishing .dot { background: var(--moss); animation: pulse 0.6s ease-in-out infinite; }
       .private .dot { background: var(--warning); animation: none; }
       @keyframes pulse {
         0%, 100% { box-shadow: 0 0 0 0 var(--danger-soft); }
@@ -72,7 +71,7 @@
         display: inline-flex; align-items: center; gap: var(--space-1);
         transition: background 0.18s ease, transform 0.18s cubic-bezier(0.2, 0.8, 0.2, 1), color 0.18s;
       }
-      button:hover { transform: translateY(-1px); background: var(--surface-selected); }
+      button:hover { background: var(--surface-selected); }
       button:active { transform: scale(0.97); }
       button.primary { background: var(--brand); color: var(--on-brand); font-weight: 600; padding: 0 var(--space-4); }
       button.primary:hover { background: var(--brand-hover); }
@@ -91,22 +90,22 @@
       .label { color: var(--ink-muted); font-size: 11px; line-height: 16px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; }
       .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--space-2); }
       .stat { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-lg); padding: var(--space-2) var(--space-2); }
-      .stat b { display: block; font-family: var(--font-mono); font-size: 15px; line-height: 20px; font-weight: 500; font-variant-numeric: tabular-nums; }
+      .stat b { display: block; font-family: var(--font-display); font-size: 18px; line-height: 20px; font-weight: 400; font-variant-numeric: tabular-nums; }
       .stat span { color: var(--ink-muted); font-size: 11px; line-height: 16px; }
       #apps { display: grid; gap: 5px; }
       .app { display: grid; grid-template-columns: 1fr auto; gap: var(--space-2); font-size: 12px; line-height: 16px; align-items: center; }
       .app span:last-child { font-family: var(--font-mono); font-variant-numeric: tabular-nums; color: var(--ink-muted); }
       .bar { grid-column: 1 / -1; height: 3px; border-radius: 2px; background: var(--surface-sunken); overflow: hidden; }
-      .bar i { display: block; height: 100%; background: var(--brand); }
+      .bar i { display: block; height: 100%; background: var(--ink); }
       #feed { display: grid; gap: 4px; max-height: 64px; overflow: hidden; font-size: 11px; line-height: 16px; color: var(--ink-muted); }
       #feed div { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
       #feed b { color: var(--ink); font-weight: 500; }
       .privacy { font-size: 11px; line-height: 16px; color: var(--ink-muted); display: flex; gap: var(--space-1); align-items: center; }
-      .privacy i { width: 6px; height: 6px; border-radius: 50%; background: var(--brand); display: inline-block; }
+      .privacy i { width: 6px; height: 6px; border-radius: 50%; background: var(--moss); display: inline-block; }
       .privacy.on i { background: var(--warning); }
       .links { display: flex; gap: var(--space-3); }
-      .links a { color: var(--brand-ink); text-decoration: none; font-size: 12px; line-height: 16px; cursor: pointer; }
-      .links a:hover { text-decoration: underline; }
+      .links a { color: var(--ink-secondary); text-decoration: none; font-size: 12px; line-height: 16px; cursor: pointer; }
+      .links a:hover { color: var(--ink); text-decoration: underline; text-underline-offset: 3px; text-decoration-color: var(--rust); }
 
       /* ---------------- idle orb ---------------- */
       /* Orb and shell both stay in the DOM; the mode switch cross-fades them so
@@ -145,18 +144,17 @@
 
       #orb.a-orbit::before { inset: -6px; border: 1.5px solid var(--glow); opacity: 1; }
       #orb.a-orbit::after {
-        /* lime satellite riding the ring: orbit radius = 26 (orb) + 6 (ring) = 32px from centre */
+        /* rust satellite riding the ring: orbit radius = 26 (orb) + 6 (ring) = 32px from centre */
         opacity: 1; inset: auto; width: 8px; height: 8px; left: 22px; top: -10px;
-        transform-origin: 4px 36px; background: var(--lime);
-        box-shadow: 0 0 6px var(--lime);
+        transform-origin: 4px 36px; background: var(--rust);
         animation: orbit 2.6s linear infinite;
       }
       @keyframes orbit { to { transform: rotate(360deg); } }
 
-      /* "shimmer": a lime arc sweeping around the rim */
+      /* "shimmer": a rust arc sweeping around the rim */
       #orb.a-shimmer::before {
         opacity: 1; inset: -3px;
-        border: 3px solid transparent; border-top-color: var(--lime); border-right-color: var(--lime);
+        border: 3px solid transparent; border-top-color: var(--rust); border-right-color: var(--rust);
         animation: sweep 1.8s cubic-bezier(0.4, 0, 0.2, 1) infinite;
       }
       @keyframes sweep { to { transform: rotate(360deg); } }
@@ -168,14 +166,12 @@
         70% { transform: translateY(2px) rotate(3deg); }
       }
 
-      /* "hue": brand green leans toward lime and back */
+      /* "hue": ink leans toward rust and back */
       #orb.a-hue { animation: hue 4s ease-in-out infinite; }
       @keyframes hue {
-        0%, 100% { background: var(--brand); box-shadow: 0 6px 22px var(--glow); }
-        50% { background: var(--lime); box-shadow: 0 6px 28px color-mix(in srgb, var(--lime) 60%, transparent); }
+        0%, 100% { background: var(--ink); box-shadow: 0 6px 22px var(--glow); }
+        50% { background: var(--rust); box-shadow: 0 6px 28px color-mix(in srgb, var(--rust) 50%, transparent); }
       }
-      #orb.a-hue svg { animation: hue-ink 4s ease-in-out infinite; }
-      @keyframes hue-ink { 0%, 100% { fill: var(--on-brand); } 50% { fill: var(--on-lime); } }
 
       body.orb #shell { opacity: 0; transform: scaleX(0.16) scaleY(0.8); pointer-events: none; }
       body:not(.orb) #orb { opacity: 0; transform: scale(0.5); pointer-events: none; }

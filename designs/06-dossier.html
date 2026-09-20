@@ -1,0 +1,188 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Vista — Operational diligence, from observed work</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,500;8..60,600&family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --navy: #0e1f3d; --navy-2: #16305c; --ink: #142033; --ink-2: #4a5568; --ink-3: #8a94a6;
+    --paper: #f7f6f2; --white: #fff; --line: #d8dbe2; --gold: #c39a4a; --green: #1f7a4d; --red: #b23a3a;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--paper); color: var(--ink); font: 16px/1.55 "Geist", system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+  ::selection { background: #f1e3c2; }
+  a { color: inherit; text-decoration: none; }
+  .wrap { max-width: 1160px; margin: 0 auto; padding: 0 28px; }
+  .serif { font-family: "Source Serif 4", Georgia, serif; }
+  .mono { font-family: "Geist Mono", monospace; font-variant-numeric: tabular-nums; }
+
+  nav { background: var(--navy); color: #fff; }
+  nav .wrap { display: flex; align-items: center; height: 64px; gap: 28px; }
+  .logo { font: 600 21px "Source Serif 4", serif; letter-spacing: .01em; }
+  nav ul { list-style: none; display: flex; gap: 24px; margin: 0 0 0 auto; padding: 0; font-size: 14.5px; color: #c5cfe2; }
+  nav ul a:hover { color: #fff; }
+  .btn { display: inline-flex; align-items: center; height: 42px; padding: 0 18px; border-radius: 4px; font-weight: 500; font-size: 15px; border: 1px solid var(--navy); background: var(--navy); color: #fff; transition: background .15s; }
+  .btn:hover { background: var(--navy-2); }
+  .btn.outline { background: transparent; color: var(--navy); }
+  .btn.outline:hover { background: #e9ecf3; }
+  nav .btn { background: var(--gold); border-color: var(--gold); color: var(--navy); }
+  nav .btn:hover { background: #d3ab5c; }
+  .btn:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+
+  .hero { padding: 80px 0 64px; }
+  .hero .wrap { display: grid; grid-template-columns: 1fr 1fr; gap: 56px; align-items: start; }
+  h1 { font: 500 clamp(40px, 4.8vw, 64px)/1.05 "Source Serif 4", serif; letter-spacing: -.015em; margin: 0 0 22px; text-wrap: balance; }
+  .lede { font-size: 19px; color: var(--ink-2); max-width: 50ch; margin: 0 0 30px; }
+  .cta { display: flex; gap: 12px; flex-wrap: wrap; }
+
+  /* the memo */
+  .memo { background: var(--white); border: 1px solid var(--line); box-shadow: 0 30px 60px -40px rgba(14,31,61,.45); padding: 34px 36px 30px; position: relative; }
+  .memo::before { content: ""; position: absolute; inset: 0 0 auto 0; height: 4px; background: var(--navy); }
+  .memo .head { display: grid; gap: 4px; border-bottom: 1px solid var(--line); padding-bottom: 14px; margin-bottom: 18px; padding-right: 130px; }
+  .memo .head h3 { margin: 0; font: 600 20px "Source Serif 4", serif; }
+  .memo .head span { font-size: 12.5px; color: var(--ink-3); }
+  .memo dl { display: grid; grid-template-columns: auto 1fr; gap: 6px 18px; margin: 0 0 20px; font-size: 14px; }
+  .memo dt { color: var(--ink-3); } .memo dd { margin: 0; }
+  .memo table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  .memo th { text-align: left; font-weight: 500; color: var(--ink-3); font-size: 12.5px; padding: 8px 0; border-bottom: 1px solid var(--line); }
+  .memo th.r, .memo td.r { text-align: right; padding-left: 18px; white-space: nowrap; }
+  .memo td { padding: 10px 0; border-bottom: 1px solid #edeff3; }
+  .memo td .src { display: inline-block; margin-left: 6px; font: 500 11px "Geist Mono", monospace; color: var(--ink-3); border: 1px solid var(--line); border-radius: 3px; padding: 1px 5px; vertical-align: 1px; }
+  .memo tfoot td { border: 0; padding-top: 14px; font-size: 12.5px; color: var(--ink-3); }
+  .stamp { position: absolute; right: 30px; top: 34px; transform: rotate(-6deg); border: 2px solid var(--green); color: var(--green); font: 600 11px/1 "Geist Mono", monospace; letter-spacing: .12em; padding: 6px 8px; text-transform: uppercase; }
+
+  section { padding: 96px 0; }
+  h2 { font: 500 clamp(30px, 3.4vw, 44px)/1.08 "Source Serif 4", serif; letter-spacing: -.012em; margin: 0 0 16px; text-wrap: balance; }
+  .sub { color: var(--ink-2); font-size: 18px; max-width: 58ch; margin: 0 0 44px; }
+
+  .compare { display: grid; grid-template-columns: 1fr 1fr; border: 1px solid var(--line); background: var(--white); }
+  .compare > div { padding: 30px 32px; }
+  .compare > div:first-child { border-right: 1px solid var(--line); background: #f1f2f5; }
+  .compare h3 { margin: 0 0 18px; font: 600 18px "Source Serif 4", serif; display: flex; align-items: center; gap: 10px; }
+  .compare h3 i { width: 10px; height: 10px; border-radius: 50%; background: var(--red); }
+  .compare > div:last-child h3 i { background: var(--green); }
+  .compare ul { margin: 0; padding: 0; list-style: none; display: grid; gap: 12px; font-size: 15.5px; color: var(--ink-2); }
+  .compare li { padding-left: 18px; position: relative; }
+  .compare li::before { content: "—"; position: absolute; left: 0; color: var(--ink-3); }
+  .compare li b { color: var(--ink); font-weight: 500; }
+
+  .method { background: var(--navy); color: #fff; }
+  .method h2 { color: #fff; }
+  .method .sub { color: #b8c3d9; }
+  .method ol { list-style: none; margin: 0; padding: 0; counter-reset: n; display: grid; grid-template-columns: repeat(4, 1fr); gap: 0; border-top: 1px solid #2a4574; }
+  .method li { padding: 24px 22px 28px 0; border-right: 1px solid #2a4574; margin-right: 22px; }
+  .method li:last-child { border-right: 0; margin-right: 0; }
+  .method li h4 { margin: 0 0 8px; font: 600 19px "Source Serif 4", serif; }
+  .method li p { margin: 0; font-size: 14.5px; color: #b8c3d9; }
+  .method li .mono { display: block; font-size: 12px; color: var(--gold); margin-bottom: 14px; }
+
+  .flows { display: grid; grid-template-columns: 1fr 1fr; gap: 56px; align-items: center; }
+  table.df { width: 100%; border-collapse: collapse; background: var(--white); border: 1px solid var(--line); font-size: 15px; }
+  table.df th { text-align: left; font-weight: 500; color: var(--ink-3); font-size: 12.5px; padding: 10px 14px; border-bottom: 1px solid var(--line); }
+  table.df td { padding: 12px 14px; border-bottom: 1px solid #edeff3; }
+  table.df td.r, table.df th.r { text-align: right; }
+  table.df tr:last-child td { border-bottom: 0; }
+
+  .close { text-align: center; padding: 110px 0; }
+  .close h2 { max-width: 22ch; margin: 0 auto 26px; }
+  footer { border-top: 1px solid var(--line); padding: 26px 0; font-size: 13.5px; color: var(--ink-3); }
+  footer .wrap { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px; }
+
+  @media (max-width: 920px) {
+    .hero .wrap, .compare, .flows { grid-template-columns: 1fr; }
+    .compare > div:first-child { border-right: 0; border-bottom: 1px solid var(--line); }
+    .method ol { grid-template-columns: 1fr 1fr; }
+    .method li:nth-child(2) { border-right: 0; }
+    nav ul { display: none; }
+    section { padding: 64px 0; }
+    .stamp { display: none; }
+    .memo { padding: 24px 22px; }
+  }
+</style>
+</head>
+<body>
+<nav><div class="wrap">
+  <a class="logo" href="#">Vista</a>
+  <ul><li><a href="#compare">Why observed</a></li><li><a href="#method">Method</a></li><li><a href="#flows">Data flows</a></li><li><a href="#">Security</a></li></ul>
+  <a class="btn" href="#">Request a pilot</a>
+</div></nav>
+
+<header class="hero"><div class="wrap">
+  <div>
+    <h1>Operational diligence built on observed work, not interviews.</h1>
+    <p class="lede">Vista records how a portfolio company's back office actually runs, discovers the process from the evidence, and delivers a ranked automation memo where every hour cites the steps behind it.</p>
+    <div class="cta"><a class="btn" href="#">Request a pilot</a><a class="btn outline" href="#method">Read the method</a></div>
+  </div>
+  <article class="memo" aria-label="Sample automation memo">
+    <span class="stamp">evidence-linked</span>
+    <div class="head"><h3>Automation memo · Accounts payable</h3><span>Northwind Fasteners · 2-week recording</span></div>
+    <dl><dt>Desks recorded</dt><dd>3 (pseudonymised)</dd><dt>Cases observed</dt><dd class="mono">40 invoices</dd><dt>Steps · provenance</dt><dd class="mono">1,284 · 100%</dd></dl>
+    <table>
+      <thead><tr><th>Candidate</th><th class="r">Observed h/wk</th><th class="r">Score</th></tr></thead>
+      <tbody>
+        <tr><td>Enter invoice (QuickBooks)<span class="src">42 cross-app pastes</span></td><td class="r mono">3.1</td><td class="r mono">0.82</td></tr>
+        <tr><td>Match PO (Excel)<span class="src">6 rework loops</span></td><td class="r mono">1.9</td><td class="r mono">0.71</td></tr>
+        <tr><td>Read email (Outlook)<span class="src">31 pastes → Excel</span></td><td class="r mono">1.2</td><td class="r mono">0.54</td></tr>
+        <tr><td>Supplier calls<span class="src">human · off-screen</span></td><td class="r mono">2.3</td><td class="r mono">—</td></tr>
+      </tbody>
+      <tfoot><tr><td colspan="3">Hours are observed activity time, not projected savings. Scores rank candidates for review.</td></tr></tfoot>
+    </table>
+  </article>
+</div></header>
+
+<section id="compare"><div class="wrap">
+  <h2>The whiteboard version versus the recorded version.</h2>
+  <p class="sub">Most process maps in a diligence deck come from a two-hour interview with the controller. They are honest, and they are wrong in the places that matter.</p>
+  <div class="compare">
+    <div><h3><i></i>From interviews</h3><ul>
+      <li><b>“We enter invoices in QuickBooks.”</b> No count of how many come from PDFs by hand.</li>
+      <li><b>“Matching is quick.”</b> Rework loops are invisible in memory.</li>
+      <li><b>“Approvals take a day.”</b> An average nobody measured.</li>
+      <li>Savings estimated from headcount and a benchmark.</li>
+    </ul></div>
+    <div><h3><i></i>From recorded work</h3><ul>
+      <li><b>42 cross-app pastes, Acrobat → QuickBooks,</b> 3.1 observed hours a week.</li>
+      <li><b>Match PO reworked 6 times in 40 cases,</b> each loop timestamped.</li>
+      <li><b>Mean wait Enter invoice → Match PO: 1 h 12 m,</b> per edge, per variant.</li>
+      <li>Every figure resolves to steps with a stated source: observed, rule, filled, human.</li>
+    </ul></div>
+  </div>
+</div></section>
+
+<section class="method" id="method"><div class="wrap">
+  <h2>A short, auditable method.</h2>
+  <p class="sub">Two weeks at a handful of desks. Redaction on device. A stdlib-only engine you can read in an afternoon.</p>
+  <ol>
+    <li><span class="mono">week 0</span><h4>Consent and scope</h4><p>Employees see the recorder, the overlay, and the mute list. Private apps and keywords are excluded before recording starts.</p></li>
+    <li><span class="mono">weeks 1–2</span><h4>Record and annotate</h4><p>Clicks, focus, copy-paste links and window titles are logged and redacted locally. Employees note phone, paper and meetings.</p></li>
+    <li><span class="mono">on stop</span><h4>Discover</h4><p>Steps, cases, a directly-follows graph with waits and rework, exported as CSV and XES for any process-mining tool.</p></li>
+    <li><span class="mono">week 3</span><h4>Memo and interview</h4><p>Ranked candidates with observed hours, plus the open questions for the parts screens cannot see.</p></li>
+  </ol>
+</div></section>
+
+<section id="flows"><div class="wrap flows">
+  <div>
+    <h2>Where the re-keying actually is.</h2>
+    <p class="sub" style="margin-bottom:0">Copy and paste are linked across applications by a salted clipboard hash. The data-flow table is the integration backlog, ordered by evidence.</p>
+  </div>
+  <table class="df">
+    <thead><tr><th>From</th><th>To</th><th class="r">Transfers</th><th class="r">Median gap</th></tr></thead>
+    <tbody>
+      <tr><td>Acrobat</td><td>QuickBooks</td><td class="r mono">42</td><td class="r mono">11 s</td></tr>
+      <tr><td>Outlook</td><td>Excel</td><td class="r mono">31</td><td class="r mono">19 s</td></tr>
+      <tr><td>Excel</td><td>QuickBooks</td><td class="r mono">19</td><td class="r mono">8 s</td></tr>
+      <tr><td>Browser (portal)</td><td>Outlook</td><td class="r mono">8</td><td class="r mono">44 s</td></tr>
+    </tbody>
+  </table>
+</div></section>
+
+<section class="close"><div class="wrap">
+  <h2>Put the recorded process in the deck, not the remembered one.</h2>
+  <div class="cta" style="justify-content:center"><a class="btn" href="#">Request a pilot</a><a class="btn outline" href="#">Read the security model</a></div>
+</div></section>
+<footer><div class="wrap"><span>Vista · Process intelligence for the lower middle market</span><span>Security · Method · Contact</span></div></footer>
+</body>
+</html>
