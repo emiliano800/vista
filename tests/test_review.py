@@ -1,5 +1,3 @@
-import pytest
-
 from tests.conftest import requires_db
 from tests.test_web import bundle, company, objects  # noqa: F401 — fixtures
 from vista.jobs import handlers

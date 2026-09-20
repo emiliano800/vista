@@ -14,11 +14,14 @@ clicks → steps → cases → process map → dollars
 src/
   recorder/     Electron desktop app the employee runs (one button, always-on overlay)
   taskmining/   Python engine: redact → sessionise → abstract → annotate → correlate → log → discover → score
-  vista/        FastAPI backend: tenants, deals, employee agents, findings (Postgres + S3)
-tests/          pytest (test_pipeline.py = engine; the rest need Postgres)
+  vista/        FastAPI backend: tenants, deals, recordings + review, employee agents, findings (Postgres + S3)
+  web/          analyst web app: static HTML/JS + Cloudflare Worker that serves it and proxies /api
+tests/          pytest (test_pipeline.py = engine; backend tests skip unless Postgres is reachable)
 migrations/     Alembic, platform + per-tenant schemas
-synthetic_data/ generated company datasets for the backend agents
+deploy/         production: deploy/aws (ECS + RDS + S3 CloudFormation) or deploy/compose.yml (single VM)
+synthetic_data/ generated company datasets for the backend agents (excluded from ruff)
 scripts/        demo.py — backend end-to-end smoke run
+docker-compose.yml   local Postgres + MinIO for development only (`make db`)
 setup.sh, Makefile   one-command local setup and day-to-day commands
 ```
 
@@ -62,24 +65,26 @@ Each component has its own README: [`src/recorder`](src/recorder/README.md),
 
 ## Getting started
 
-Needs [uv](https://docs.astral.sh/uv/) and Node 18+ (`brew install uv node`).
+Needs [uv](https://docs.astral.sh/uv/) and Node 22+ (`brew install uv node`).
 `./setup.sh --check` tells you what is missing and how to install it.
 
 ```bash
 git clone https://github.com/ylemiesa57/vista.git && cd vista
-./setup.sh          # uv sync + npm install + ruff/pytest/node tests
+./setup.sh          # uv sync + npm install (root + recorder) + ruff/pytest/node tests
 make demo           # recorder with simulated apps, no OS permissions needed
 make start          # real recorder (macOS asks for Accessibility/Input Monitoring/Screen Recording)
 ```
 
 | Command | What |
 |---|---|
-| `make test` | ruff + engine pytest + recorder node tests |
+| `make test` | ruff + pytest + node tests (recorder, web app, worker) |
+| `make db` | Postgres + MinIO in Docker so `make test` also covers the backend |
 | `make run` | engine on 40 synthetic cases → `out/` |
 | `make demo` / `make start` | recorder |
 | `make lint` / `make fmt` | ruff |
 
 No Docker for the recorder/engine: the recorder has to run on the employee's
-own desktop and the engine is stdlib-only. The backend does use
-`docker compose up -d` for Postgres and MinIO (`.env.example`), then
-`uv run pytest` runs its tests and `uv run python scripts/demo.py` a smoke run.
+own desktop and the engine is stdlib-only. The backend uses `make db`
+(`docker compose up -d`, credentials in `.env.example`) for Postgres and MinIO;
+`uv run pytest` then runs its tests and `uv run python scripts/demo.py` a smoke
+run. Production deployment is documented in [`deploy/`](deploy/README.md).

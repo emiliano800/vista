@@ -15,9 +15,16 @@ FINDING_STATUSES = {"open", "reviewed", "dismissed", "actioned"}
 
 def _out(f: Finding) -> FindingOut:
     return FindingOut(
-        id=f.id, run_id=f.run_id, employee_id=f.employee_id, agent_id=f.agent_id,
-        kind=f.kind, title=f.title, detail=f.detail, evidence=f.evidence,
-        status=f.status, created_at=f.created_at,
+        id=f.id,
+        run_id=f.run_id,
+        employee_id=f.employee_id,
+        agent_id=f.agent_id,
+        kind=f.kind,
+        title=f.title,
+        detail=f.detail,
+        evidence=f.evidence,
+        status=f.status,
+        created_at=f.created_at,
     )
 
 
@@ -37,9 +44,7 @@ def list_findings(
 
 
 @router.patch("/findings/{finding_id}", response_model=FindingOut)
-def update_finding(
-    finding_id: uuid.UUID, body: FindingPatch, principal: Principal = Depends(current_principal)
-) -> FindingOut:
+def update_finding(finding_id: uuid.UUID, body: FindingPatch, principal: Principal = Depends(current_principal)) -> FindingOut:
     if body.status not in FINDING_STATUSES:
         raise HTTPException(status_code=422, detail=f"status must be one of {sorted(FINDING_STATUSES)}")
     with tenant_session(principal.tenant_schema) as session:

@@ -51,9 +51,7 @@ def get_run(run_id: uuid.UUID, principal: Principal = Depends(current_principal)
             raise HTTPException(status_code=404, detail="run not found")
         if run.deal_id is not None:
             require_deal_role(session, run.deal_id, principal.user_id, "viewer")
-        events = session.scalars(
-            select(AgentRunEvent).where(AgentRunEvent.run_id == run_id).order_by(AgentRunEvent.seq)
-        ).all()
+        events = session.scalars(select(AgentRunEvent).where(AgentRunEvent.run_id == run_id).order_by(AgentRunEvent.seq)).all()
         return _run_out(run, events)
 
 
@@ -67,8 +65,5 @@ def _run_out(run: AgentRun, events: list[AgentRunEvent]) -> RunOut:
         status=run.status,
         created_at=run.created_at,
         finished_at=run.finished_at,
-        events=[
-            RunEventOut(seq=e.seq, event_type=e.event_type, data=e.data, created_at=e.created_at)
-            for e in events
-        ],
+        events=[RunEventOut(seq=e.seq, event_type=e.event_type, data=e.data, created_at=e.created_at) for e in events],
     )

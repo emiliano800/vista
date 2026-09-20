@@ -1,6 +1,6 @@
 import json
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from decimal import Decimal
 
 from sqlalchemy import select
@@ -19,8 +19,8 @@ from vista.models.tenant import (
     RecordingReviewItem,
     UsageEvent,
 )
-from vista.review import status_for
 from vista.review import explain as explain_section
+from vista.review import status_for
 
 FINDING_KINDS = {"observed_fact", "inefficiency", "proposed_automation"}
 
@@ -44,9 +44,7 @@ def _call_model(document: Document | None) -> tuple[str, str, int, int]:
     a key is configured, otherwise a deterministic stub."""
     if settings.openai_api_key:
         client = settings.openai_client()
-        subject = (
-            f"a document named {document.filename!r}" if document else "a deal with no document"
-        )
+        subject = f"a document named {document.filename!r}" if document else "a deal with no document"
         resp = client.chat.completions.create(
             model=settings.openai_model,
             max_tokens=200,
@@ -141,13 +139,7 @@ STUB_FINDINGS = [
 def _next_seq(session, run_id: uuid.UUID) -> int:
     """First unused event seq for a run (safe across retries)."""
     return 1 + (
-        session.scalar(
-            select(AgentRunEvent.seq)
-            .where(AgentRunEvent.run_id == run_id)
-            .order_by(AgentRunEvent.seq.desc())
-            .limit(1)
-        )
-        or 0
+        session.scalar(select(AgentRunEvent.seq).where(AgentRunEvent.run_id == run_id).order_by(AgentRunEvent.seq.desc()).limit(1)) or 0
     )
 
 
@@ -179,9 +171,11 @@ def handle_employee_discovery(job: Job, tenant_schema: str) -> None:
         agent = session.get(EmployeeAgent, run.employee_agent_id)
         employee = session.get(Employee, agent.employee_id)
         seq = _emit(
-            session, run_id, _next_seq(session, run_id), "step",
-            {"message": "discovery started", "employee_role": employee.role_title,
-             "scopes": agent.scopes},
+            session,
+            run_id,
+            _next_seq(session, run_id),
+            "step",
+            {"message": "discovery started", "employee_role": employee.role_title, "scopes": agent.scopes},
         )
 
         system = (
@@ -189,15 +183,18 @@ def handle_employee_discovery(job: Job, tenant_schema: str) -> None:
             "by a private-equity firm. You are assigned to one employee and must infer "
             "how their job likely works and where inefficiencies typically hide. "
             "You have NOT yet observed real data, so every finding is a hypothesis to "
-            "verify. Respond with JSON only: {\"findings\": [{\"kind\": "
-            "\"observed_fact\"|\"inefficiency\"|\"proposed_automation\", \"title\": str, "
-            "\"detail\": str, \"evidence\": {\"source\": str, \"confidence\": "
-            "\"low\"|\"medium\"|\"high\", \"verify_by\": str}}]}. 2-4 findings."
+            'verify. Respond with JSON only: {"findings": [{"kind": '
+            '"observed_fact"|"inefficiency"|"proposed_automation", "title": str, '
+            '"detail": str, "evidence": {"source": str, "confidence": '
+            '"low"|"medium"|"high", "verify_by": str}}]}. 2-4 findings.'
         )
         user = f"Employee role: {employee.role_title}. Accessible scopes: {agent.scopes or ['none yet']}."
         model, text, itok, otok = _chat(system, user)
         seq = _emit(
-            session, run_id, seq, "model_call",
+            session,
+            run_id,
+            seq,
+            "model_call",
             {"model": model, "input_tokens": itok, "output_tokens": otok},
         )
         _record_usage(session, run_id, model, itok, otok)
@@ -205,18 +202,26 @@ def handle_employee_discovery(job: Job, tenant_schema: str) -> None:
         findings_data = _parse_findings(text) if text else STUB_FINDINGS
         for f in findings_data:
             finding = Finding(
-                run_id=run_id, employee_id=employee.id, agent_id=agent.id,
-                kind=f["kind"], title=f["title"], detail=f["detail"], evidence=f["evidence"],
+                run_id=run_id,
+                employee_id=employee.id,
+                agent_id=agent.id,
+                kind=f["kind"],
+                title=f["title"],
+                detail=f["detail"],
+                evidence=f["evidence"],
             )
             session.add(finding)
             session.flush()
             seq = _emit(
-                session, run_id, seq, "finding",
+                session,
+                run_id,
+                seq,
+                "finding",
                 {"finding_id": str(finding.id), "kind": finding.kind, "title": finding.title},
             )
 
         _emit(session, run_id, seq, "result", {"findings_created": len(findings_data)})
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         run.status = "succeeded"
         run.finished_at = now
         agent.last_run_at = now
@@ -270,7 +275,10 @@ def handle_company_summary(job: Job, tenant_schema: str) -> None:
                     + ". (stub summary)"
                 )
             seq = _emit(
-                session, run_id, seq, "model_call",
+                session,
+                run_id,
+                seq,
+                "model_call",
                 {"model": model, "input_tokens": itok, "output_tokens": otok},
             )
             _record_usage(session, run_id, model, itok, otok)
@@ -282,7 +290,7 @@ def handle_company_summary(job: Job, tenant_schema: str) -> None:
         session.flush()
         _emit(session, run_id, seq, "result", {"summary_id": str(summary.id), **stats})
         run.status = "succeeded"
-        run.finished_at = datetime.now(timezone.utc)
+        run.finished_at = datetime.now(UTC)
         session.commit()
 
 
@@ -301,20 +309,17 @@ def handle_agent_run(job: Job, tenant_schema: str) -> None:
             raise RuntimeError(f"agent run {run_id} not found in {tenant_schema}")
         run.status = "running"
         seq = 1 + (
-            session.scalar(
-                select(AgentRunEvent.seq)
-                .where(AgentRunEvent.run_id == run_id)
-                .order_by(AgentRunEvent.seq.desc())
-                .limit(1)
-            )
-            or 0
+            session.scalar(select(AgentRunEvent.seq).where(AgentRunEvent.run_id == run_id).order_by(AgentRunEvent.seq.desc()).limit(1)) or 0
         )
         seq = _emit(session, run_id, seq, "step", {"message": "run started"})
 
         document = session.get(Document, run.document_id) if run.document_id else None
         if document is not None:
             seq = _emit(
-                session, run_id, seq, "tool_call",
+                session,
+                run_id,
+                seq,
+                "tool_call",
                 {"tool": "read_document", "s3_key": document.s3_key, "filename": document.filename},
             )
 
@@ -322,7 +327,10 @@ def handle_agent_run(job: Job, tenant_schema: str) -> None:
         in_price, out_price = _pricing(model)
         cost = Decimal(input_tokens) * in_price + Decimal(output_tokens) * out_price
         seq = _emit(
-            session, run_id, seq, "model_call",
+            session,
+            run_id,
+            seq,
+            "model_call",
             {"model": model, "input_tokens": input_tokens, "output_tokens": output_tokens},
         )
         session.add(
@@ -337,7 +345,7 @@ def handle_agent_run(job: Job, tenant_schema: str) -> None:
 
         seq = _emit(session, run_id, seq, "result", {"summary": output_text})
         run.status = "succeeded"
-        run.finished_at = datetime.now(timezone.utc)
+        run.finished_at = datetime.now(UTC)
         session.commit()
 
 
@@ -367,7 +375,7 @@ def handle_explain_recording(job: Job, tenant_schema: str) -> None:
                 item.label, item.explanation = parsed["label"], parsed["explanation"]
                 item.confidence, item.unclear, item.questions = parsed["confidence"], parsed["unclear"], parsed["questions"]
                 item.status, item.error = status_for(parsed["confidence"], item.threshold), None
-            item.explained_at = item.updated_at = datetime.now(timezone.utc)
+            item.explained_at = item.updated_at = datetime.now(UTC)
             session.commit()
     if failures:
         raise RuntimeError(f"{failures} of {len(pending)} sections could not be explained")
@@ -382,18 +390,12 @@ def mark_run_failed(job: Job, tenant_schema: str, error: str, permanent: bool) -
         if run is None:
             return
         seq = 1 + (
-            session.scalar(
-                select(AgentRunEvent.seq)
-                .where(AgentRunEvent.run_id == run_id)
-                .order_by(AgentRunEvent.seq.desc())
-                .limit(1)
-            )
-            or 0
+            session.scalar(select(AgentRunEvent.seq).where(AgentRunEvent.run_id == run_id).order_by(AgentRunEvent.seq.desc()).limit(1)) or 0
         )
         _emit(session, run_id, seq, "error", {"error": error[:2000], "permanent": permanent})
         if permanent:
             run.status = "failed"
-            run.finished_at = datetime.now(timezone.utc)
+            run.finished_at = datetime.now(UTC)
         else:
             run.status = "queued"
         session.commit()
