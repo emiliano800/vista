@@ -5,6 +5,10 @@ from decimal import Decimal
 
 from sqlalchemy import select
 
+from vista.agents import discover, synthetic
+from vista.agents.llm import chat
+from vista.agents.runtime import pricing as _pricing
+from vista.agents.runtime import run_phase
 from vista.config import settings
 from vista.db import tenant_session
 from vista.models.platform import Job
@@ -23,20 +27,6 @@ from vista.review import explain as explain_section
 from vista.review import status_for
 
 FINDING_KINDS = {"observed_fact", "inefficiency", "proposed_automation"}
-
-# USD per token: (input, output). Extend as models are adopted.
-MODEL_PRICING = {
-    "gpt-4o-mini": (Decimal("0.00000015"), Decimal("0.00000060")),
-    "gpt-4o": (Decimal("0.0000025"), Decimal("0.00001")),
-}
-DEFAULT_PRICING = (Decimal("0.000003"), Decimal("0.000015"))
-
-
-def _pricing(model: str) -> tuple[Decimal, Decimal]:
-    for prefix, prices in sorted(MODEL_PRICING.items(), key=lambda kv: -len(kv[0])):
-        if model.startswith(prefix):
-            return prices
-    return DEFAULT_PRICING
 
 
 def _call_model(document: Document | None) -> tuple[str, str, int, int]:
@@ -381,6 +371,63 @@ def handle_explain_recording(job: Job, tenant_schema: str) -> None:
         raise RuntimeError(f"{failures} of {len(pending)} sections could not be explained")
 
 
+def handle_synthetic_discovery(job: Job, tenant_schema: str) -> None:
+    """File Reviewer over one division of one synthetic company: each table is
+    profiled in code, interpreted by the model, and every fact becomes an
+    observed_fact finding with a file/column source_ref."""
+    run_id = uuid.UUID(job.payload["run_id"])
+    company = synthetic.company(job.payload["company"])
+    division = job.payload["division"]
+    with tenant_session(tenant_schema) as session:
+        run = session.get(AgentRun, run_id)
+        if run is None:
+            raise RuntimeError(f"agent run {run_id} not found in {tenant_schema}")
+        run.status = "running"
+        seq = _emit(
+            session,
+            run_id,
+            _next_seq(session, run_id),
+            "step",
+            {"message": "discovery started", "company": company.short, "division": division},
+        )
+        created = 0
+        for table in synthetic.tables_for(company, division):
+            profile = discover.profile_table(table)
+            seq = _emit(
+                session,
+                run_id,
+                seq,
+                "tool_call",
+                {"tool": "read_table", "ref": table.ref, "rows": profile.row_count, "flags": profile.flags},
+            )
+            phase = run_phase(discover.prepare(company, profile), discover.parse, lambda out, p=profile: discover.apply(out, p), llm=chat)
+            r = phase.result
+            seq = _emit(
+                session,
+                run_id,
+                seq,
+                "model_call",
+                {"model": r.model, "input_tokens": r.input_tokens, "output_tokens": r.output_tokens, "source": r.source},
+            )
+            _record_usage(session, run_id, r.model, r.input_tokens, r.output_tokens)
+            for fact in phase.rows:
+                finding = Finding(
+                    run_id=run_id,
+                    kind="observed_fact",
+                    title=f"{fact['subject']}: {fact['predicate']}"[:512],
+                    detail=fact["value"],
+                    evidence={**fact["source_ref"], "confidence": fact["confidence"], "company": company.short},
+                )
+                session.add(finding)
+                session.flush()
+                seq = _emit(session, run_id, seq, "finding", {"finding_id": str(finding.id), "title": finding.title})
+                created += 1
+        _emit(session, run_id, seq, "result", {"findings_created": created})
+        run.status = "succeeded"
+        run.finished_at = datetime.now(UTC)
+        session.commit()
+
+
 def mark_run_failed(job: Job, tenant_schema: str, error: str, permanent: bool) -> None:
     if "run_id" not in job.payload:
         return
@@ -406,4 +453,5 @@ HANDLERS = {
     "employee_discovery": handle_employee_discovery,
     "company_summary": handle_company_summary,
     "explain_recording": handle_explain_recording,
+    "synthetic_discovery": handle_synthetic_discovery,
 }

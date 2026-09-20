@@ -13,6 +13,7 @@ dependencies = [
     "pydantic-settings>=2.4",
     "email-validator>=2.0",
     "openai>=3.16.2",
+    "openpyxl>=3.1",
 ]
 
 [dependency-groups]
@@ -34,6 +35,8 @@ packages = ["src/vista", "src/taskmining"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+markers = ["live: calls a real model provider (needs VISTA_OPENAI_API_KEY); deselected by default"]
+addopts = "-m 'not live'"
 
 [tool.ruff]
 line-length = 140
