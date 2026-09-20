@@ -1,234 +1,250 @@
-# Vista Design System
+# Vista Design System — "Field Notes"
 
-Vista is process intelligence for private-equity operating teams. It mines what back-office staff do across a portfolio, draws the process pipelines, and hands repeatable steps to agents.
+The visual system for every Vista surface: the marketing site, the company
+workspace (`src/web/public`), the employee dashboard and the always-on
+overlay (`src/recorder/ui`). Tokens live in `src/web/public/tokens.css`;
+every surface links that file and uses `var(--token)`. No raw hex outside it.
 
-This README is for engineers who build Vista screens. It tells you which colours, type styles and components to use, and the rules that keep every screen looking like one product.
-
-The living source of truth is the Vista design system artifact in Claude. This file is a copy for the repo. When the artifact changes, regenerate this file.
+Reference mockup: `designs/02-field-notes.html`.
 
 ---
 
 ## 1. The idea in three lines
 
-1. **Three neons, ink on top.** Neon green is the brand. Neon lime means "an agent did this". Electric periwinkle means "a person owns this". Text never sits inside a neon; dark ink sits on the neon.
-2. **Slight purple ground, white panels.** The page is a pale purple. Cards, rows and inputs are white. That contrast makes the greens pop.
-3. **Dense product, open marketing.** In the app: 13px table text, 36px rows, 32px controls. On the site: 56px headlines, big gaps, one loud lime button.
+Vista's claim is that process maps should be drawn from evidence, not memory.
+The design behaves like a well-kept field notebook: warm paper, one serif
+voice for what we say, one sans voice for what we measured, ruled ledgers for
+data, and a single rust accent for the one thing on the page that matters.
+Nothing glows, nothing floats, nothing is a gradient.
+
+Tone words: honest, unhurried, editorial, ruled, warm.
 
 ---
 
 ## 2. Colour tokens
 
-All colours are CSS custom properties. Use `var(--token)`. Never type a hex value in a component.
+### Palette
 
-### Grounds
+| Token       | Hex       | Role                                                              |
+| ----------- | --------- | ----------------------------------------------------------------- |
+| `--cream`   | `#f4efe6` | Page background                                                   |
+| `--cream-2` | `#ebe4d6` | Hover fills, sunken panels, status tint                           |
+| `--paper`   | `#fbf8f2` | Cards, tables, anything "written on"                              |
+| `--ink`     | `#1f1c18` | Text, primary button fill, dark bands                             |
+| `--ink-2`   | `#57514a` | Supporting copy, nav links                                        |
+| `--ink-3`   | `#8b8377` | Captions, axis labels, metadata                                   |
+| `--rust`    | `#b3471f` | The accent: emphasis word, focus ring, attention / rework, people |
+| `--moss`    | `#4d6b4a` | Approval, success, agent / rule work                              |
 
-| Token | Light | Dark | Use |
-|---|---|---|---|
-| `--surface` | `#f3f0ff` | `#0d0b14` | Page background. Slight purple. |
-| `--surface-raised` | `#ffffff` | `#17141f` | Cards, table rows, menus, popovers. |
-| `--surface-sunken` | `#e9e4ff` | `#08070f` | Table headers, sidebar, input wells. |
-| `--surface-hover` | `#f4f2ff` | `#1d1a2b` | Row and menu hover. |
-| `--surface-selected` | `#e0dcff` | `#2a2470` | Selected rows, active nav items. |
-| `--line` | `#ddd8f0` | `#2a2638` | Hairlines. Decorative only. |
-| `--line-strong` | `#877fa8` | `#6f6a85` | Input borders and any border that carries meaning. 3:1. |
+### Semantic grounds and text
 
-### Text
+| Token                                             | Value                     | Use                                             |
+| ------------------------------------------------- | ------------------------- | ----------------------------------------------- |
+| `--surface`                                       | cream                     | App background                                  |
+| `--surface-raised`                                | paper                     | Cards, inputs, sidebar active item              |
+| `--surface-sunken` / `--surface-hover`            | cream-2                   | Bars, quiet buttons, hover                      |
+| `--surface-selected`                              | `#e3d9c6`                 | Selected row / chip                             |
+| `--line`                                          | `#d9d1c2`                 | Every rule, border and divider                  |
+| `--line-strong`                                   | `#b9ae9b`                 | Input borders, idle dots, dashed placeholders   |
+| `--ink-secondary` / `--ink-muted` / `--ink-faint` | ink-2 / ink-3 / `#a69d8f` | Descending emphasis; faint is placeholders only |
+| `--ink-inverse`                                   | cream                     | Text on `--ink`                                 |
 
-| Token | Light | Dark | Use |
-|---|---|---|---|
-| `--ink` | `#120f24` | `#f3f1fa` | Primary text. |
-| `--ink-secondary` | `#3f3a55` | `#c6c2d6` | Cell values, nav items at rest. |
-| `--ink-muted` | `#605a78` | `#9b96ad` | Metadata, helper text, column headers. |
-| `--ink-faint` | `#8b86a0` | `#736e88` | Placeholders and disabled labels only. 3:1, not 4.5:1. |
-| `--ink-inverse` | `#f3f0ff` | `#0d0b14` | Text on an ink fill (tooltips). |
+### Brand and accent
 
-### Brand (neon green)
+| Token                      | Value       | Use                                               |
+| -------------------------- | ----------- | ------------------------------------------------- |
+| `--brand` / `--on-brand`   | ink / cream | Primary button, orb, filled marks                 |
+| `--brand-hover`            | `#3a342c`   | Primary hover                                     |
+| `--brand-ink` / `--accent` | rust        | Accent text, active nav marker                    |
+| `--accent-soft`            | `#f0d5c3`   | `::selection`, rust tint                          |
+| `--link`                   | ink         | Links (underline on hover, rust underline colour) |
 
-| Token | Light | Dark | Use |
-|---|---|---|---|
-| `--brand` | `#00d26a` | `#00e676` | A **fill**: primary button, logo dot, progress. |
-| `--on-brand` | `#04261a` | `#04261a` | Text on a brand fill. Dark ink, never white. |
-| `--brand-ink` | `#00743a` | `#5cff9d` | Green as **text**: links, active tab labels. |
-| `--brand-hover` | `#00bd5f` | `#33ff8f` | Primary button hover. |
-| `--brand-soft` | `#d6ffe8` | `#0f3d26` | Pale ground behind brand-ink text. |
-| `--link` | alias of `--brand-ink` | | Inline links. |
+### Provenance
 
-### Lime (agents)
+Who did the work is the product's central distinction, so it gets its own pair.
 
-| Token | Light | Dark | Use |
-|---|---|---|---|
-| `--lime` | `#d8ff00` | `#d8ff00` | A **fill**: accent button, agent badge, progress, the tick on section rules, 2px border on agent nodes, 3px top rule on tables. |
-| `--on-lime` | `#0c1f15` | `#0c1f15` | Text on a lime fill. |
-| `--lime-ink` | `#3d6200` | `#e2ff5c` | "Agent" as text on a pale ground. |
-| `--lime-soft` | `#eaff8a` | `#2c3d08` | Ground of an agent-owned pipeline node. |
+| Token                                    | Value                   | Use                                              |
+| ---------------------------------------- | ----------------------- | ------------------------------------------------ |
+| `--agent`, `--agent-ink`, `--agent-soft` | moss, moss, `#dfe6da`   | Agent-run, rule-derived, inferred labels         |
+| `--human`, `--human-ink`, `--human-soft` | rust, rust, accent-soft | The employee's own word: notes, confirmed labels |
 
-### Periwinkle (people)
-
-| Token | Light | Dark | Use |
-|---|---|---|---|
-| `--periwinkle` | `#5b5bff` | `#8f8fff` | A **fill**: secondary button, human badge, 2px border on human nodes. |
-| `--on-periwinkle` | `#ffffff` | `#0b0b3d` | Text on a periwinkle fill. |
-| `--periwinkle-ink` | `#3f3fe0` | `#b3b3ff` | "Person" as text on a pale ground. Also the focus ring. |
-| `--periwinkle-soft` | `#e0dcff` | `#2a2470` | Ground of a human-owned pipeline node. |
-| `--focus-ring` | alias of `--periwinkle-ink` | | 2px solid ring, 2px outside the control. |
+`--lime-*` and `--periwinkle-*` remain as aliases of agent / human for older
+screens; do not use them in new code.
 
 ### Status
 
-| Token | Light | Dark |
-|---|---|---|
-| `--success` / `--success-soft` | `#0f7a3a` / `#d6ffe8` | `#33ff8f` / `#0f3d26` |
-| `--warning` / `--warning-soft` | `#9a4a00` / `#fff0b3` | `#ffc02e` / `#3f2e05` |
-| `--danger` / `--danger-soft` | `#c41c08` / `#ffe0da` | `#ff6a55` / `#47150c` |
-| `--on-danger` | `#ffffff` | `#2a0d0b` |
+| Token                                        | Value                      |
+| -------------------------------------------- | -------------------------- |
+| `--success` / `--success-soft`               | moss / agent-soft          |
+| `--warning` / `--warning-soft`               | `#8a5a12` / `#f3e4c4`      |
+| `--danger` / `--danger-soft` / `--on-danger` | rust / accent-soft / cream |
 
-Status always carries a word or an icon. Never colour alone.
+Categorical series (`--chart-1…8`) for timelines and app bars: ink, rust,
+moss, ochre `#c9a227`, slate `#6b7fa3`, plum `#8b6f8e`, tan `#a3826b`,
+line-strong.
 
 ### Contrast rules
 
-- Every text token meets 4.5:1 on the grounds its row names, in both themes.
-- `--line-strong`, `--ink-faint` and `--focus-ring` meet 3:1.
-- The neon fills are lighter than 3:1 against white. So a neon element always carries ink text, or sits inside a bordered card. Never signal meaning with a neon fill alone.
+- Body text on cream is `--ink` (≈ 15:1); supporting copy `--ink-2` (≈ 7:1);
+  `--ink-3` only for ≥ 12px captions.
+- Rust and moss on cream pass AA for text at 12.5px+ when used as text or
+  border, never as a fill behind text. Meaning is carried by border + text
+  colour + the word itself, never a fill alone.
+- Dark bands invert: `--ink` ground, `--cream` text, muted `#c9bfae`, buttons
+  filled cream with ink text.
 
 ---
 
 ## 3. Type
 
-Fonts load from Google Fonts. No font files in the repo.
+Fonts are self-hosted WOFF2 in `src/web/public/fonts/` and declared in
+`tokens.css` (the Worker CSP is `'self'` only; the Electron UI shares the file).
 
-```html
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600&family=Instrument+Serif:ital@1&family=JetBrains+Mono:wght@400;500&display=swap">
-```
+| Family var                   | Stack               | Use                                                                                                                   |
+| ---------------------------- | ------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| `--font-display` (`--serif`) | Newsreader, Georgia | Headlines, ledes, KPI figures, quotes, the logo. 400 display, 300 italic for the accent word, 500 for small headings. |
+| `--font-sans` (`--sans`)     | Inter, system-ui    | Everything UI: nav, buttons, labels, tables, forms. 400 / 500 / 600 only.                                             |
+| `--font-mono`                | ui-monospace stack  | IDs, captured actions, timestamps.                                                                                    |
 
-| Family var | Stack | Use |
-|---|---|---|
-| `--font-sans` | Instrument Sans | Everything. |
-| `--font-display` | Instrument Serif italic | One emphasised word in a hero headline. Never a sentence. |
-| `--font-mono` | JetBrains Mono | Identifiers, captured actions, figures. |
+| Class            | Size / line                   | Family / weight               | Use                                                          |
+| ---------------- | ----------------------------- | ----------------------------- | ------------------------------------------------------------ |
+| `.display-xl`    | `clamp(46, 6.4vw, 92)` / 0.98 | Newsreader 400, -0.025em      | Marketing hero. One per page.                                |
+| `.display`       | `clamp(32, 3.6vw, 48)` / 1.05 | Newsreader 400, -0.02em       | Marketing section headlines.                                 |
+| `.display-serif` | inherit                       | Newsreader 300 italic, rust   | The one emphasised word in a headline.                       |
+| `.h1`            | 28 / 34                       | Newsreader 400                | Product page title (dashboard uses 34 / 40).                 |
+| `.h2`            | 22 / 28                       | Newsreader 500                | Card titles.                                                 |
+| `.h3`            | 15 / 22                       | Inter 600                     | Group titles.                                                |
+| `.body-lg`       | 17 / 27                       | Inter 400                     | Marketing paragraphs; page default in the workspace.         |
+| `.body`          | 14 / 20                       | Inter 400                     | Forms, dialogs, dashboard default.                           |
+| `.body-dense`    | 13 / 18                       | Inter 400                     | Table cells, list rows, sidebar.                             |
+| `.small`         | 12.5 / 16                     | Inter 400                     | Metadata, helper text.                                       |
+| `.label`         | 11 / 16                       | Inter 600, +0.06em, uppercase | Column headers, eyebrows (marketing eyebrow: 12px, +0.12em). |
+| `.mono`          | 13 / 20                       | mono 400                      | IDs, captured actions.                                       |
+| `.mono-figure`   | 13 / 18                       | Inter 500, tabular-nums       | Numbers in tables and lists. Right-align in tables.          |
 
-| Class | Size / line | Weight | Use |
-|---|---|---|---|
-| `.display-xl` | 56 / 60 | 600, -0.025em | Marketing hero. One per page. |
-| `.display` | 40 / 44 | 600, -0.02em | Marketing section headlines. |
-| `.display-serif` | 56 / 60 | 400 italic | The one emphasised word inside `.display-xl`. |
-| `.h1` | 28 / 34 | 600 | Product page title. |
-| `.h2` | 20 / 26 | 600 | Card titles. |
-| `.h3` | 15 / 22 | 600 | Group titles, pipeline steps. |
-| `.body-lg` | 16 / 24 | 400 | Marketing paragraphs. |
-| `.body` | 14 / 20 | 400 | Forms, dialogs. |
-| `.body-dense` | 13 / 18 | 400 | Table cells, list rows, sidebar. |
-| `.small` | 12 / 16 | 400 | Metadata, helper text. |
-| `.label` | 11 / 16 | 600, +0.06em, uppercase | Column headers, eyebrows. Uppercase via CSS. |
-| `.mono` | 13 / 20 | 400 | Captured actions, IDs. |
-| `.mono-figure` | 13 / 18 | 500, tabular-nums | Numbers in tables. Right-align. |
+Rules: at most one italic rust word per headline. Never gradient text.
+`text-wrap: balance` on headings. Tabular numerals on every number.
 
 ---
 
 ## 4. Spacing, radius, elevation, size
 
-| Spacing | Value | Use |
-|---|---|---|
-| `--space-1` | 4px | Icon-to-label gap. |
-| `--space-2` | 8px | Between inline controls. |
-| `--space-3` | 12px | Table cell padding, input padding. |
-| `--space-4` | 16px | Card padding. |
-| `--space-5` | 20px | Panel padding. |
-| `--space-6` | 24px | Between cards; dialog padding. |
-| `--space-8` | 32px | Between sections in a page. |
-| `--space-10` | 40px | Page gutter. |
-| `--space-12` | 48px | Marketing block padding. |
-| `--space-16` | 64px | Between marketing sections. |
-| `--space-24` | 96px | Hero padding. |
+| Spacing                                   | Value                       | Use                                     |
+| ----------------------------------------- | --------------------------- | --------------------------------------- |
+| `--space-1` … `--space-6`                 | 4 / 8 / 12 / 16 / 20 / 24px | Icon gap → between cards                |
+| `--space-8` / `--space-10` / `--space-12` | 32 / 40 / 48px              | Section gap, page gutter, block padding |
+| `--space-16` / `--space-24`               | 64 / 96px                   | Marketing section rhythm, hero padding  |
 
-| Radius | Value | Use |
-|---|---|---|
-| `--radius-sm` | 4px | Checkboxes, cell highlights. |
-| `--radius-md` | 6px | Inputs, quiet buttons, pipeline nodes. |
-| `--radius-lg` | 10px | Cards, popovers. |
-| `--radius-xl` | 16px | Marketing cards and image frames. |
-| `--radius-pill` | 999px | Primary, accent and secondary buttons; badges. |
+Content column `max-width: 1120px`; side padding 28px (18px under 700px).
+Grids are asymmetric editorial splits (`4fr 8fr`, `6fr 5fr`) that collapse to
+one column at 900px. Always `min-width: 0` on grid children.
 
-| Shadow | Use |
-|---|---|
-| `--shadow-sm` | Sticky table header. |
-| `--shadow-md` | Menus, popovers. |
-| `--shadow-lg` | Dialogs, command palette. |
+| Radius                        | Value | Use                                               |
+| ----------------------------- | ----- | ------------------------------------------------- |
+| `--radius-sm`                 | 3px   | Swatches, cell highlights                         |
+| `--radius-md` / `--radius-lg` | 4px   | Inputs, buttons, cards — this is paper, not glass |
+| `--radius-xl`                 | 6px   | Floating overlay panel                            |
+| `--radius-pill`               | 999px | Pill buttons, badges, chips                       |
+
+| Shadow        | Use                       |
+| ------------- | ------------------------- |
+| `--shadow-sm` | Sticky table header       |
+| `--shadow-md` | Overlay panel, menus      |
+| `--shadow-lg` | Dialogs, the sign-in card |
 
 Cards do **not** cast shadows. Structure comes from a 1px `--line` border.
 
-| Size | Value | Use |
-|---|---|---|
-| `--control-sm` | 28px | Buttons and inputs in tables and toolbars. |
-| `--control-md` | 32px | Default product controls. |
-| `--control-lg` | 40px | Marketing CTAs, login form. |
-| `--row` | 36px | Table row height. |
-| `--sidebar` | 240px | Left nav width. |
+| Size                                             | Value          |
+| ------------------------------------------------ | -------------- |
+| `--control-sm` / `--control-md` / `--control-lg` | 28 / 36 / 44px |
+| `--row`                                          | 40px           |
+| `--sidebar`                                      | 240px          |
 
 ---
 
 ## 5. Components
 
-The bundle exposes `window.Vista` and expects React 18 on the page. Styles are in `bundle.css` and read the tokens above.
+**Buttons** — pill. Primary: `--brand` fill, `--on-brand` text, hover
+`--brand-hover`; one per view. Ghost (default): transparent with an inset 1px
+`--ink` ring, hover `--cream-2`. Dashboard quiet button: paper fill, 1px
+`--line-strong`, 4px radius. Danger / warning: soft tint fill with matching
+text. Disabled `opacity: .45`.
 
-| Component | Key props | Rule |
-|---|---|---|
-| `Button` | `variant`: `primary` \| `accent` \| `secondary` \| `quiet` \| `danger`; `size`: `sm` \| `md` \| `lg` | Quiet is the default. One `primary` per view. `accent` (lime) is the loudest thing on the page: one per view, for "Get started" or "Automate". |
-| `Input` | `label` (required), `hideLabel`, `helper`, `error`, `size` | Never rely on placeholder as the label. |
-| `Badge` | `tone`: `neutral` \| `brand` \| `agent` \| `human` \| `success` \| `warning` \| `danger`; `dot` | Solid neon fills. `agent` = lime, `human` = periwinkle. Pass `dot` so the tone is not colour alone. |
-| `Card` | `title`, `meta`, `actions`, `size`, `padding: 'none'` | One idea per card. `padding="none"` for a table. |
-| `Table` | `columns`, `rows`, `selectable`, `selected`, `onSelect` | 36px rows, 13px cells, `label` headers, mono figures right-aligned. Truncate, never wrap. |
-| `Nav` | `items`, `breadcrumb`, `actions`, `variant: 'product' \| 'marketing'` | Active tab: `brand-ink` text, 4px lime underline. |
-| `ProcessNode` | `stage`, `step`, `duration`, `volume`, `owner: 'agent' \| 'human' \| 'none'`, `ownerName`, `status`, `connector` | Agent nodes: lime-soft ground, 2px lime border. Human nodes: periwinkle-soft, 2px periwinkle border. Unassigned: dashed `line-strong`. |
+**Inputs / selects** — `--paper` ground, 1px `--line` (workspace) or
+`--line-strong` (dashboard) border, radius 4px, Inter 15px / 13px. Labels
+Inter 13px 600 `--ink-2`, 6px above. Never rely on placeholder as label.
 
-### Example
+**Badges / pills** (`.badge`, dashboard `.pill`, `.conf`) — `height: 22px`,
+`padding: 0 9px`, 1px `--line` border, transparent ground, 12.5px 500.
+Tone changes border + text only: `.agent` moss, `.human` rust, `.success`,
+`.warning`, `.danger`.
 
-```jsx
-const { Card, Table, Badge, Button } = window.Vista;
+**Cards** — `--paper`, 1px `--line`, radius 4px, padding 28px (workspace) /
+16px (dashboard). One idea per card.
 
-<Card title="Tasks" meta="4 of 12" padding="none"
-      actions={<Button variant="accent" size="sm">Automate selected</Button>}>
-  <Table
-    columns={[
-      { key: 'task', label: 'Task' },
-      { key: 'owner', label: 'Owner' },
-      { key: 'time', label: 'Median time', align: 'right' },
-    ]}
-    rows={[
-      { id: 1, task: 'Match PO to invoice', owner: <Badge tone="agent" dot>Agent 07</Badge>, time: '38 s' },
-      { id: 2, task: 'Approve over $50k', owner: <Badge tone="human" dot>Priya</Badge>, time: '2 d 4 h' },
-    ]}
-    selectable
-  />
-</Card>
-```
+**Metrics** — a ruled row, not four cards: eyebrow label, figure in
+Newsreader 400 (40px workspace, 30px dashboard), separated by `--line`.
+
+**Tables** — paper ground, 13–14px Inter, header row `.label` in `--ink-3`
+with no fill, rows ruled with `--line`, numbers `.num` right-aligned and
+`nowrap`. Wrap in `overflow-x: auto` with a `min-width` so mobile scrolls.
+
+**Report / ledger lists** — one ruled row per item: serif title, figures in
+`.mono-figure`, a small ghost button at the right.
+
+**Messages / banners** — `--cream-2` or paper tint with a 3px `--rust` left
+border, radius 4px.
+
+**Empty states** — dashed `--line` border, centred Newsreader 19px `--ink-3`.
+
+**Navigation** — 72px header, logo "Vista" in Newsreader 500 26px with the
+`.logo-dot` ink square; links Inter 15px `--ink-2`, rust underline on hover.
+Dashboard sidebar: active item has a paper ground and a 3px rust left bar.
+
+**Overlay** — paper glass panel (`rgba(251,248,242,.96)` + blur), radius 6px,
+`--shadow-md`. Idle orb is an `--ink` disc with a rust satellite / arc; the
+recording dot is `--danger`, finishing is `--moss`.
 
 ---
 
 ## 6. Writing rules
 
-- Plain, direct, operator-to-operator. Short sentences.
-- Sentence case everywhere. Column headers are uppercased by CSS, never typed in caps.
-- "You" is the reader. "Your portfolio" is the fund. "The company" is the target. Vista is "Vista", never "we".
-- Numbers are the product. Show them in `.mono-figure` with units: `4.2 FTE`, `$1.28M/yr`, `18 min → 40 s`.
-- Name the human and the agent: "Assigned to Priya", "Run by Agent 07". Never "the system".
-- No emoji. No exclamation marks.
+- Plain, direct, operator-to-operator. Prefer a number to an adjective:
+  "Acrobat → QuickBooks, 42 times, 3.1 hours a week."
+- Sentence case everywhere; column headers are uppercased by CSS.
+- Say what stays on the device. Separate observed facts, inferred labels and
+  the employee's own word — and label which is which.
+- Headlines are sentences with at most one italic word.
+- No emoji, no exclamation marks, Vista is "Vista", never "we".
 
 ---
 
 ## 7. Signature motifs
 
-- **The section rule.** A 4px `--ink` rule with a short `--lime` segment at its right end. Divides the hero from the first section.
-- **The CTA bar.** A pill-shaped outline bar on white. One line of copy on the left, a periwinkle secondary and a lime accent button on the right.
-- **The pipeline.** Process nodes joined left to right by 1.5px `--line-strong` connectors with a small arrowhead. Agent nodes lime, human nodes periwinkle.
+- **The ruled ledger.** Timelines, tables and lists drawn as rows under
+  hairline `--line` rules; illustration is data, never stock imagery.
+- **The italic word.** One Newsreader 300 italic rust word in a headline.
+- **The dark closing band.** `--ink` ground, centred serif h2, cream button.
+- **Q / A.** A rust "Q." and a moss "A." in serif, provenance as a pill.
 
 ---
 
 ## 8. Icons and logo
 
-- Icons: [Lucide](https://lucide.dev) is the standard — the only icon set in the product. 16px in the product (14px inside `sm` controls), 20px on marketing, stroke 1.75, round caps and joins, `currentColor`, no fill.
-  - Web (React): `lucide-react`, import icons by name. Static/Electron pages: inline the icon's SVG paths from lucide.dev in a 24-unit `viewBox`, `aria-hidden` when next to a label.
-  - Icon + label: `--space-1` gap, icon before the word. Icon-only buttons need a `title`. Never draw ad-hoc glyphs or use emoji/unicode symbols (✓, →, ⚠) where a Lucide icon exists.
-  - Status pairs: submitted `cloud-check`, uploading `loader-circle`, failed `circle-alert`, edit `pencil`, confirm `check`, folder `folder`, upload `cloud-upload`.
-- Logo: none yet. Set "Vista" in Instrument Sans 600 with -0.02em tracking. The nav dot is a `--brand` circle with a `--lime` satellite top-right and a `--periwinkle` satellite bottom-left.
+- Icons: [Lucide](https://lucide.dev) is the standard — the only icon set in the
+  product. Line only, `stroke: currentColor`, `stroke-width: 1.4–1.75`, round
+  caps and joins, no fill. 14–16px in the product, 40px on marketing.
+  - Web (React): `lucide-react`, import icons by name. Static/Electron pages:
+    inline the icon's SVG paths from lucide.dev in a 24-unit `viewBox`,
+    `aria-hidden` when next to a label.
+  - Icon + label: `--space-1` gap, icon before the word. Icon-only buttons need
+    a `title`. Never draw ad-hoc glyphs or use emoji/unicode symbols (✓, →, ⚠)
+    where a Lucide icon exists.
+  - Status pairs: submitted `cloud-check`, uploading `loader-circle`, failed
+    `circle-alert`, edit `pencil`, confirm `check`, folder `folder`, upload
+    `cloud-upload`.
+- Logo: "Vista" in Newsreader 500 with `.logo-dot` — a 10px `--ink` square
+  with 2px radius (the "observed" swatch from the ledger legend).
 
 ---
 
@@ -236,15 +252,16 @@ const { Card, Table, Badge, Button } = window.Vista;
 
 **Do**
 
-- Put ink on neon. Put neon on purple or white.
-- Use one lime button per view.
-- Keep tables dense: 13px, 36px rows, hairline rules.
-- Use `--brand-ink` for green text, `--brand` for green fills.
+- Draw structure with 1px rules, not fills or shadows.
+- Keep one rust accent per view; use moss only for approval / agent work.
+- Set headlines and figures in Newsreader, everything measured in Inter.
+- Keep tables dense and ruled; right-align numbers.
 
 **Don't**
 
-- Don't use white text on green or lime.
-- Don't tint whole panels green or lime.
-- Don't use lime for anything that is not an agent, or periwinkle for anything that is not a person.
-- Don't add shadows to cards.
-- Don't use gradients.
+- Don't fill panels with rust or moss; tone lives in borders and text.
+- Don't use radii over 6px, glass over content, or shadows on cards.
+- Don't use gradients, gradient text, or neon.
+- Don't load fonts from a third-party origin.
+- Don't animate anything that does not fall back under
+  `prefers-reduced-motion: reduce`.

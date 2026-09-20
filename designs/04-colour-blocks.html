@@ -1,0 +1,162 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Vista — clicks → steps → cases → dollars</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;800&family=Fraunces:opsz,wght@9..144,300;9..144,400&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --ink: #17171a; --bone: #f3f1ec; --sand: #e8dfcf; --coral: #ff6b4a; --lilac: #c9b8ff; --pine: #1f5a45; --mint: #b9e6c9; --butter: #ffd166;
+    --line: #17171a;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bone); color: var(--ink); font: 17px/1.5 "Manrope", system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+  ::selection { background: var(--butter); }
+  a { color: inherit; text-decoration: none; }
+  .wrap { max-width: 1280px; margin: 0 auto; padding: 0 24px; }
+
+  nav { border-bottom: 2px solid var(--line); background: var(--bone); position: sticky; top: 0; z-index: 5; }
+  nav .wrap { display: flex; align-items: center; height: 64px; gap: 28px; }
+  .logo { font-weight: 800; font-size: 22px; letter-spacing: -.03em; }
+  nav ul { list-style: none; display: flex; gap: 24px; margin: 0 0 0 auto; padding: 0; font-weight: 600; font-size: 15px; }
+  .btn { display: inline-flex; align-items: center; height: 46px; padding: 0 20px; border: 2px solid var(--line); border-radius: 999px; font-weight: 700; font-size: 15px; background: var(--ink); color: var(--bone); transition: transform .18s cubic-bezier(.2,.8,.2,1), background .18s; }
+  .btn:hover { transform: translateY(-2px); }
+  .btn.light { background: transparent; color: var(--ink); }
+  .btn.light:hover { background: var(--sand); }
+  .btn:focus-visible { outline: 3px solid var(--coral); outline-offset: 2px; }
+
+  /* hero: the formula as a row of blocks */
+  .hero { padding: 64px 0 0; }
+  h1 { font-size: clamp(44px, 6.6vw, 104px); line-height: .96; letter-spacing: -.045em; font-weight: 800; margin: 0 0 28px; max-width: 14ch; text-wrap: balance; }
+  .hero .top { display: grid; grid-template-columns: 1.3fr .7fr; gap: 40px; align-items: end; margin-bottom: 40px; }
+  .hero .top p { font-size: 20px; line-height: 1.45; max-width: 36ch; margin: 0 0 24px; }
+  .formula { display: grid; grid-template-columns: repeat(5, 1fr); gap: 0; border: 2px solid var(--line); border-radius: 22px; overflow: hidden; }
+  .cell { position: relative; min-height: 300px; padding: 22px; border-right: 2px solid var(--line); display: flex; flex-direction: column; justify-content: space-between; overflow: hidden; }
+  .cell:last-child { border-right: 0; }
+  .cell h3 { margin: 0; font-size: clamp(22px, 2.2vw, 34px); letter-spacing: -.03em; font-weight: 800; line-height: 1; }
+  .cell small { font-weight: 600; font-size: 13px; opacity: .8; }
+  .cell .art { position: absolute; top: 56px; right: -8%; bottom: 72px; width: 62%; margin: auto 0; aspect-ratio: 1; max-height: calc(100% - 140px); }
+  .cell h3 { position: relative; z-index: 1; padding-right: 40px; }
+  .c1 { background: var(--sand); } .c2 { background: var(--lilac); } .c3 { background: var(--butter); } .c4 { background: var(--mint); } .c5 { background: var(--coral); color: var(--ink); }
+  .cell .art.dots { background: radial-gradient(circle, var(--ink) 1.6px, transparent 1.8px) 0 0 / 14px 14px; border-radius: 50%; opacity: .55; }
+  .cell .art.bars { display: grid; grid-template-columns: repeat(4,1fr); gap: 10px; align-items: end; }
+  .cell .art.bars i { background: var(--ink); border-radius: 6px 6px 0 0; }
+  .cell .art.stack i { position: absolute; inset: 0; border: 2px solid var(--ink); border-radius: 12px; background: var(--butter); }
+  .cell .art.stack { top: 76px; } .cell .art.stack i:nth-child(2) { transform: translate(12px,-10px); } .cell .art.stack i:nth-child(3) { transform: translate(24px,-20px); }
+  .cell .art.graph { border-radius: 50%; border: 2px solid var(--ink); }
+  .cell .art.graph::before, .cell .art.graph::after { content: ""; position: absolute; width: 2px; height: 100%; background: var(--ink); left: 50%; top: 0; transform: rotate(35deg); }
+  .cell .art.graph::after { transform: rotate(-55deg); }
+  .cell .art.coin { border-radius: 50%; background: var(--ink); color: var(--coral); display: grid; place-items: center; font: 300 72px/1 "Fraunces", serif; }
+  .arrow { position: absolute; right: 18px; bottom: 26px; z-index: 2; width: 30px; height: 30px; background: var(--bone); border: 2px solid var(--line); border-radius: 50%; display: grid; place-items: center; font-weight: 800; font-size: 15px; }
+
+  section { padding: 110px 0; }
+  h2 { font-size: clamp(36px, 4.6vw, 68px); letter-spacing: -.04em; line-height: .98; font-weight: 800; margin: 0 0 22px; text-wrap: balance; }
+  .lede { font-size: 20px; max-width: 54ch; margin: 0; }
+
+  .two { display: grid; grid-template-columns: 1fr 1fr; gap: 56px; align-items: center; }
+  .plate { border: 2px solid var(--line); border-radius: 22px; padding: 28px; }
+  .plate.lilac { background: var(--lilac); } .plate.mint { background: var(--mint); } .plate.pine { background: var(--pine); color: var(--bone); border-color: var(--pine); }
+  .rank { list-style: none; margin: 0; padding: 0; }
+  .rank li { display: grid; grid-template-columns: 1fr auto; gap: 14px; align-items: center; padding: 14px 0; border-bottom: 2px solid rgba(23,23,26,.2); font-weight: 600; }
+  .rank li:last-child { border-bottom: 0; }
+  .rank li span { display: block; font-weight: 500; font-size: 14px; opacity: .75; }
+  .rank li b { font: 400 40px/1 "Fraunces", serif; letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
+  .quote { font: 300 clamp(28px, 3.6vw, 52px)/1.08 "Fraunces", serif; letter-spacing: -.02em; margin: 0; }
+  .quote + p { margin: 22px 0 0; font-weight: 600; opacity: .8; }
+
+  .stripe { background: var(--ink); color: var(--bone); }
+  .stripe h2 { max-width: 20ch; }
+  .facts { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2px; margin-top: 56px; border: 2px solid var(--bone); border-radius: 22px; overflow: hidden; }
+  .facts div { padding: 26px 26px 30px; background: var(--ink); }
+  .facts div:nth-child(2) { border-left: 2px solid var(--bone); border-right: 2px solid var(--bone); }
+  .facts h3 { margin: 0 0 8px; font-size: 22px; letter-spacing: -.02em; }
+  .facts p { margin: 0; opacity: .8; font-size: 15.5px; }
+
+  .close { text-align: center; }
+  .close h2 { margin: 0 auto 30px; max-width: 16ch; }
+  footer { border-top: 2px solid var(--line); padding: 26px 0; font-weight: 600; font-size: 14px; }
+  footer .wrap { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px; }
+
+  @media (max-width: 960px) {
+    .hero .top, .two { grid-template-columns: 1fr; gap: 28px; }
+    .formula { grid-template-columns: 1fr 1fr; }
+    .cell { border-bottom: 2px solid var(--line); min-height: 220px; }
+    .cell:nth-child(2n) { border-right: 0; }
+    .cell:last-child { grid-column: 1 / -1; border-bottom: 0; }
+    .arrow { display: none; }
+    .facts { grid-template-columns: 1fr; }
+    .facts div:nth-child(2) { border: 0; border-top: 2px solid var(--bone); border-bottom: 2px solid var(--bone); }
+    nav ul { display: none; }
+    section { padding: 64px 0; }
+  }
+</style>
+</head>
+<body>
+<nav><div class="wrap">
+  <a class="logo" href="#">Vista</a>
+  <ul><li><a href="#rank">What to automate</a></li><li><a href="#trust">Trust</a></li><li><a href="#">Recorder</a></li></ul>
+  <a class="btn" href="#">Get a demo</a>
+</div></nav>
+
+<header class="hero"><div class="wrap">
+  <div class="top">
+    <h1>Clicks in. Dollars out. Evidence all the way through.</h1>
+    <div>
+      <p>Vista records how a company really works on its desktops and turns it into a ranked automation plan you can defend line by line.</p>
+      <a class="btn" href="#">Get a demo</a> <a class="btn light" href="#rank">See a result</a>
+    </div>
+  </div>
+  <div class="formula" aria-label="clicks to steps to cases to process map to dollars">
+    <div class="cell c1"><small>Recorded on device</small><div class="art dots"></div><h3>Clicks</h3><span class="arrow">→</span></div>
+    <div class="cell c2"><small>Abstracted by rules + people</small><div class="art bars"><i style="height:40%"></i><i style="height:70%"></i><i style="height:55%"></i><i style="height:90%"></i></div><h3>Steps</h3><span class="arrow">→</span></div>
+    <div class="cell c3"><small>Correlated by INV / PO / ticket</small><div class="art stack"><i></i><i></i><i></i></div><h3>Cases</h3><span class="arrow">→</span></div>
+    <div class="cell c4"><small>Discovered, with rework counted</small><div class="art graph"></div><h3>Process map</h3><span class="arrow">→</span></div>
+    <div class="cell c5"><small>Ranked by observed hours</small><div class="art coin">$</div><h3>Dollars</h3></div>
+  </div>
+</div></header>
+
+<section id="rank"><div class="wrap two">
+  <div>
+    <h2>Automate this first. Here's why.</h2>
+    <p class="lede">Each activity is scored on frequency, regularity, data transfer and app switching. Cross-app pastes count double, because that's where the re-keying lives. Hours are observed time, not a promise.</p>
+  </div>
+  <div class="plate lilac">
+    <ol class="rank">
+      <li><div>Enter invoice (QuickBooks)<span>40 cases · 42 pastes from Acrobat · 3.1 h/week</span></div><b>0.82</b></li>
+      <li><div>Match PO (Excel)<span>46 steps · 6 rework loops · 1.9 h/week</span></div><b>0.71</b></li>
+      <li><div>Read email (Outlook)<span>238 focus events · 31 pastes to Excel</span></div><b>0.54</b></li>
+      <li><div>Approve (Outlook)<span>40 steps · short, irregular</span></div><b>0.22</b></li>
+    </ol>
+  </div>
+</div></section>
+
+<section class="stripe" id="trust"><div class="wrap">
+  <h2>Nothing leaves the laptop that a person hasn't seen.</h2>
+  <p class="lede" style="opacity:.8">The recorder redacts on device, the engine has no I/O beyond files, and the only thing uploaded is a report summary plus the activity log. Screenshots and video stay put.</p>
+  <div class="facts">
+    <div><h3>Redacted before written</h3><p>Emails, phones, IBANs and cards are replaced in titles and clipboard text before a line hits disk. Typed characters are never stored.</p></div>
+    <div><h3>Provenance on every step</h3><p>observed, rule, filled, episode or human. Facts, inference and testimony never blend.</p></div>
+    <div><h3>People outrank rules</h3><p>An employee's annotation splits and relabels our steps. Their case IDs are never overwritten.</p></div>
+  </div>
+</div></section>
+
+<section><div class="wrap two">
+  <div class="plate mint">
+    <p class="quote">“The map had our AP clerk's Tuesday on it. Nobody could argue with Tuesday.”</p>
+    <p>Controller, distribution business · illustrative</p>
+  </div>
+  <div>
+    <h2>Whiteboards lie. Tuesdays don't.</h2>
+    <p class="lede">Process maps are usually drawn from interviews. Vista draws them from two weeks of real work at a handful of desks, then hands you the question list for the parts screens can't see: phone, paper, meetings.</p>
+  </div>
+</div></section>
+
+<section class="close"><div class="wrap">
+  <h2>Know the work before you buy the software.</h2>
+  <a class="btn" href="#">Get a demo</a> <a class="btn light" href="#">Download the recorder</a>
+</div></section>
+<footer><div class="wrap"><span>Vista</span><span>Method · Privacy · Contact</span></div></footer>
+</body>
+</html>
