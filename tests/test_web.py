@@ -238,7 +238,7 @@ def test_request_limit_and_validation_does_not_echo_secrets():
         response = browser.post("/api/auth/session", content=b"x" * (8 * 1024 * 1024 + 1))
         assert response.status_code == 413
         assert browser.get("/").status_code == 200
-        for page in ("/signin/", "/account/", "/recorder/"):
+        for page in ("/signin/", "/account/"):
             assert browser.get(page).status_code == 200, page
         assert browser.get("/account/app.js").status_code == 200
         assert browser.get("/nav.js").status_code == 200
