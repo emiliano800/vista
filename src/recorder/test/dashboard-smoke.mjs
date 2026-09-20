@@ -17,7 +17,7 @@ const rec = (id, n, extra = {}) => ({
   annotations: 1, edits: 1, upload: null, dir: '/x', ...extra,
 });
 const recordings = [
-  rec('a', 0),
+  rec('a', 0, { thumb: 'file:///x/shots/000001.jpg' }),
   rec('b', 1, { upload: { status: 'uploading', progress: { done: 3, total: 10 } } }),
   rec('c', 1, { upload: { status: 'failed', error: 'boom' } }),
   rec('d', 3, { submitted: { at: day(3, 1) }, upload: { status: 'submitted', submittedAt: day(3, 1) }, review: { source: 'cloud', run: { status: 'running' }, summary: { open: 2 }, workspace: { key: 'running', label: 'Agent explaining', sub: 'The Recording Reviewer is explaining the sections in your workspace.' } } }),
@@ -100,6 +100,13 @@ app.whenReady().then(async () => {
         docNow: document.getElementById('doc-now').textContent.trim(), secFiles: t('Q3 budget.xlsx'),
         ...list, whatRecorded: t('What is recorded'), edited: t('edited by you'),
         wsBanner: !document.getElementById('rv-ws').classList.contains('hidden') && !!document.querySelector('#rv-ws .pill.ws-succeeded') && !!document.getElementById('rv-open-ws'),
+        thumbs: document.querySelectorAll('#rec-rows img.rec-thumb').length,
+        dayRows: document.querySelectorAll('#rec-rows tr.day').length,
+        closedDays: document.querySelectorAll('#rec-rows tr.day.closed').length,
+        hiddenRecs: document.querySelectorAll('#rec-rows tr:not(.day).hidden').length,
+        foldToggle: (() => { const d = document.querySelector('#rec-rows tr.day:not(.closed)'); d.click(); const after = document.querySelectorAll('#rec-rows tr:not(.day).hidden').length; document.querySelector('#rec-rows tr.day.closed').click(); return after; })(),
+        demoHidden: document.getElementById('demo-settings').classList.contains('hidden'),
+        demoReveal: (() => { for (let i = 0; i < 5; i++) document.getElementById('settings-title').click(); return !document.getElementById('demo-settings').classList.contains('hidden'); })(),
         flagRows: document.querySelectorAll('#flags .flag').length, flagOpen: document.querySelectorAll('#flags .flag:not(.dismissed)').length,
         flagBtns: !!document.querySelector('#flags [data-flag][data-decision="confirmed"]'), timelineFlag: !!document.querySelector('.strip i.flagged'),
         secChip: !!document.querySelector('#secs .fchip'), excludeBtn: !!document.querySelector('#flags [data-excl]'),
@@ -110,7 +117,7 @@ app.whenReady().then(async () => {
     console.log(JSON.stringify({ errors, ...out }, null, 1));
     const docsOk = out.docRows === 2 && out.docBars === 1 && out.docTicks === 1 && out.fileRows === 2 && out.fileOff === 1 && out.filesSub.startsWith('1 of 2') && out.secFiles;
     const appsOk = out.appRows === 3 && out.appBars === 4 && out.appFirst === 'Outlook' && out.secsScroll === 'auto' && out.secCards === 2;
-    const insightsOk = out.flagRows === 2 && out.flagOpen === 1 && out.flagBtns && out.timelineFlag && out.secChip && out.excludeBtn && out.inputBody && out.trendRow && out.appTable && out.aiSummary && out.approveBtn && out.fileAi;
+    const insightsOk = out.thumbs === 1 && out.dayRows === 3 && out.closedDays === 2 && out.hiddenRecs === 3 && out.foldToggle === 4 && out.demoReveal && out.flagRows === 2 && out.flagOpen === 1 && out.flagBtns && out.timelineFlag && out.secChip && out.excludeBtn && out.inputBody && out.trendRow && out.appTable && out.aiSummary && out.approveBtn && out.fileAi;
     app.exit(errors.length || !insightsOk || !out.wsPill || !out.wsBanner || !out.hasWeek || out.days < 3 || !out.adminHidden || !out.editForm || out.electron || out.other || out.whatRecorded || !docsOk || !appsOk ? 1 : 0);
   });
   w.loadFile(path.join(here, '..', 'ui', 'dashboard.html'));

@@ -47,6 +47,7 @@ export const DEFAULT_SETTINGS = {
   openaiApiKey: '',           // AI explanations after a session; OPENAI_API_KEY / VISTA_OPENAI_API_KEY env overrides
   openaiModel: '', // empty → provider default (explain.js); VISTA_OPENAI_MODEL env overrides
   clarifyScreenshots: false,  // also send up to 3 low-res frames per section to OpenAI
+  demoMode: false,            // simulated apps/input instead of real hooks (same as --demo); needs a restart
 };
 
 export function loadSettings(file) {
