@@ -435,7 +435,7 @@
             <div style="display:grid;gap:14px">
               <div class="card" id="flags-card">
                 <h2 style="display:flex;justify-content:space-between;align-items:baseline"><span>Sensitive content</span><span class="muted" style="text-transform:none;letter-spacing:0;font-weight:500" id="flags-sub"></span></h2>
-                <p class="muted" style="margin:-4px 0 10px;font-size:12px;line-height:16px">Flagged on this computer from window titles, redactions, clipboard and typing patterns — nothing typed is read. <b>Confirm</b> what is real, <b>Dismiss</b> what is not, or keep a section out of the submission.</p>
+                <p class="muted" style="margin:-4px 0 10px;font-size:12px;line-height:16px">Flagged on this computer from window titles, redactions, clipboard and typing patterns — typed text is only kept if you turned it on, never on sign-in or private windows. <b>Confirm</b> what is real, <b>Dismiss</b> what is not, or keep a section out of the submission.</p>
                 <div class="flags" id="flags"><div class="empty">Checking…</div></div>
               </div>
               <div class="card" id="input-card">
@@ -854,6 +854,14 @@
         }
 
         const body = $('input-body'), act = $('input-act'), isub = $('input-sub');
+        // Typed text only exists when "Typed characters" is on in Settings; sign-in,
+        // payment and private windows are masked at capture.
+        const typedBlock = (ty) => {
+          if (!ty?.entries) return '';
+          const head = `<div class="muted" style="font-size:11px;margin:8px 0 4px">Typed text · ${ty.captured} line${ty.captured === 1 ? '' : 's'}, ${ty.chars.toLocaleString()} characters${ty.masked ? ` · ${ty.masked} dropped on sign-in, payment or private windows` : ''}</div>`;
+          if (!ty.enabled) return `${head}<div class="muted" style="font-size:12px">Nothing readable was kept — "Typed characters" is off, or every entry was on a protected window.</div>`;
+          return head + ty.lines.map((l) => `<div class="trend"><span title="${esc(l.title ?? '')}">${clock(l.at)} · ${esc(String(l.app ?? '').replace(/\.(exe|app)$/i, ''))}</span><span class="d muted" style="flex:1;text-align:left;font-family:ui-monospace,Menlo,monospace">${esc(l.text)}</span>${l.kinds?.length ? `<span class="fchip">${esc(l.kinds[0].replace(/_/g, ' '))}</span>` : ''}</div>`).join('');
+        };
         const inp = ins?.input;
         if (!inp) { body.innerHTML = `<div class="empty">${ins?.running ? 'Measuring clicks, keys and idle time…' : 'No analysis for this session yet.'}</div>`; act.innerHTML = ''; isub.textContent = ''; return; }
         const t = inp.totals;
@@ -864,6 +872,7 @@
           + `<div class="kv"><div><b>${inp.clicks_per_min}</b><span>clicks / min</span></div><div><b>${inp.keys_per_min}</b><span>keys / min</span></div><div><b>${inp.rekeyed_between_apps}</b><span>pastes from another app</span></div><div><b>${inp.typing_bursts}</b><span>typing bursts · longest ${inp.longest_burst_keys} keys</span></div><div><b>${t.shortcut}</b><span>shortcuts${inp.top_shortcuts.length ? ` · ${esc(inp.top_shortcuts.slice(0, 2).map((s) => s.combo).join(', '))}` : ''}</span></div><div><b>${hm(inp.idle_seconds)}</b><span>idle · ${inp.idle_gaps} gap${inp.idle_gaps === 1 ? '' : 's'}${inp.longest_idle_seconds ? `, longest ${hm(inp.longest_idle_seconds)}` : ''}</span></div></div>`
           + (tr?.metrics?.length ? `<div class="muted" style="font-size:11px;margin-bottom:4px">Versus your last ${tr.baseline} recording${tr.baseline === 1 ? '' : 's'}</div>${tr.metrics.map((m) => `<div class="trend"><span>${esc(m.label)}</span><span class="d muted">${m.now} vs ${m.baseline}</span>${delta(m)}</div>`).join('')}` : '<div class="muted" style="font-size:12px">Trends appear once you have more than one recording.</div>')
           + (tr?.workflow?.baseline ? `<div class="muted" style="font-size:11px;margin:8px 0 4px">Workflows, versus your last ${tr.workflow.baseline} recording${tr.workflow.baseline === 1 ? '' : 's'}</div>${tr.workflow.metrics.map((m) => `<div class="trend"><span>${esc(m.label)}</span><span class="d muted">${m.now} vs ${m.baseline}</span>${delta(m)}</div>`).join('')}${tr.workflow.recurring?.some((r) => r.seen_before) ? `<div class="muted" style="font-size:12px;margin-top:4px">Seen before: ${tr.workflow.recurring.filter((r) => r.seen_before).map((r) => `${esc(r.title)} (${r.seen_before}×)`).join(' · ')}</div>` : ''}` : '')
+          + typedBlock(ins.typing)
           + (inp.per_app.length ? `<table class="apps-tbl"><tr><th>App</th><th>min</th><th>clicks</th><th>keys</th><th>copy/paste</th></tr>${inp.per_app.slice(0, 6).map((a) => `<tr><td>${esc(a.short)}</td><td>${a.minutes}</td><td>${a.clicks}</td><td>${a.keys}</td><td>${a.copies}/${a.pastes}</td></tr>`).join('')}</table>` : '');
         isub.textContent = ins.approved_at ? `approved ${clock(ins.approved_at)}` : `${(t.click + t.key + t.shortcut + t.copy + t.paste).toLocaleString()} interactions`;
         act.innerHTML = vs.submitted ? '' : ins.approved_at
@@ -1462,7 +1471,7 @@
         ['changeDetect', 'Screenshot when the screen changes', 'Compares a tiny thumbnail twice a second; shoots when at least 4% of it moves (a new email, sheet or dialog).'],
         ['video', 'Screen video', 'Low frame-rate recording of the screen, saved next to the events.'],
         ['clipboard', 'Copied text', 'Shows where information is re-typed between systems.'],
-        ['keyContent', 'Typed characters', 'Off: only the number of keys is stored. Usually left off.'],
+        ['keyContent', 'Typed characters', 'Off: only the number of keys is stored. On: what you type is kept in the log and shown in the review — never on sign-in, payment or private windows, and card, account and contact details are masked. Usually left off.'],
         ['redact', 'Redact sensitive text', 'Off by default. On: emails, phone, card and account numbers become [EMAIL], [PHONE], [CARD] before saving, and your name becomes a code in the analysis.'],
       ];
       function renderSettings() {
