@@ -53,8 +53,10 @@ export const isDocument = (p) => !!FILE_TYPES[path.extname(String(p ?? '')).toLo
 // A file name the workspace accepts (see MEDIA_NAME on the server): ASCII letters,
 // digits, dot, dash, underscore; never starting with a dot.
 export function safeName(name) {
-  const cleaned = String(name).normalize('NFKD').replace(/[^A-Za-z0-9._-]+/g, '_').replace(/^[._-]+/, '');
-  return (cleaned || 'file').slice(0, 120);
+  const clean = (s) => s.normalize('NFKD').replace(/[^A-Za-z0-9._-]+/g, '_');
+  const ext = clean(path.extname(String(name))).toLowerCase().slice(0, 16);
+  const base = clean(path.basename(String(name), path.extname(String(name)))).replace(/^[._-]+/, '');
+  return (base || 'file').slice(0, 120 - ext.length) + ext;
 }
 
 export const sha256 = (buf) => createHash('sha256').update(buf).digest('hex');

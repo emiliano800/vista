@@ -84,11 +84,25 @@ def upload_recording(deal_id: uuid.UUID, body: RecordingUpload, principal: Princ
         record.summary = payload["summary"]
         record.sections = payload["sections"]
         prev = {f.get("id"): f for f in record.files or []}
-        record.files = [{**f, "extraction": (prev.get(f["id"]) or {}).get("extraction")} for f in payload["files"]]
+        record.files = [{**f, "extraction": _kept_extraction(prev.get(f["id"]), f)} for f in payload["files"]]
         record.s3_key, record.content_hash = key, digest
         record.updated_at = datetime.now(UTC)
         session.commit()
         return public_recording(record)
+
+
+def _kept_extraction(old: dict | None, new: dict) -> dict | None:
+    """Extraction is only valid for the exact bytes it ran on: same snapshot key and sha256."""
+    if not old or old.get("sha256") != new.get("sha256") or old.get("snapshot") != new.get("snapshot"):
+        return None
+    return old.get("extraction")
+
+
+def _uploaded_size(key: str) -> int | None:
+    try:
+        return int(s3_client().head_object(Bucket=settings.s3_bucket, Key=key)["ContentLength"])
+    except (BotoCoreError, ClientError, KeyError, ValueError):
+        return None
 
 
 @router.get("/deals/{deal_id}/recordings")
@@ -234,7 +248,8 @@ def media_complete(recording_id: uuid.UUID, principal: Principal = Depends(curre
         files, queued = [], 0
         for f in record.files or []:
             f = dict(f)
-            if f.get("snapshot") and f["snapshot"] in media:
+            item = media.get(f["snapshot"]) if f.get("snapshot") else None
+            if item and _uploaded_size(item["key"]) == item.get("size_bytes"):
                 if not (f.get("extraction") or {}).get("status") == "done":
                     f["extraction"] = {"status": "queued"}
                     queued += 1

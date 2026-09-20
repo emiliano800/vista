@@ -57,7 +57,7 @@ def extract(data: bytes, ext: str) -> dict:
             return _pdf(data)
         if ext in (".txt", ".md", ".json", ".xml"):
             return {"kind": "text", "text": _clip(data.decode("utf-8", "replace"), MAX_TEXT)}
-    except (zipfile.BadZipFile, ET.ParseError, KeyError, ValueError, zlib.error, UnicodeDecodeError) as exc:
+    except (zipfile.BadZipFile, ET.ParseError, KeyError, ValueError, zlib.error, UnicodeDecodeError, csv.Error) as exc:
         return {"kind": "failed", "error": f"{type(exc).__name__}: {exc}"[:500]}
     return {"kind": "unsupported"}
 
@@ -92,7 +92,25 @@ def _open_zip(data: bytes) -> zipfile.ZipFile:
 
 
 def _xml(zf: zipfile.ZipFile, name: str) -> ET.Element:
-    return ET.fromstring(zf.read(name))
+    # Untrusted OOXML part: bound its size and refuse DTDs (no entity expansion) so a
+    # crafted part cannot blow up the worker. Office never writes a DOCTYPE.
+    if zf.getinfo(name).file_size > MAX_BYTES:
+        raise ValueError(f"{name} is too large to parse")
+    raw = zf.read(name)
+    if b"<!DOCTYPE" in raw or b"<!ENTITY" in raw:
+        raise ValueError(f"{name} declares a DTD")
+    return ET.fromstring(raw)
+
+
+def _col_index(ref: str | None) -> int | None:
+    """'C7' -> 2; None when the cell has no coordinate."""
+    letters = "".join(ch for ch in (ref or "") if ch.isalpha()).upper()
+    if not letters:
+        return None
+    n = 0
+    for ch in letters:
+        n = n * 26 + (ord(ch) - 64)
+    return n - 1
 
 
 def _text_of(el: ET.Element) -> str:
@@ -117,11 +135,14 @@ def _xlsx(data: bytes) -> dict:
             if len(rows) >= MAX_ROWS:
                 truncated = True
                 break
-            cells = []
+            cells: list[str] = []
             for c in row.findall("s:c", NS):
-                if len(cells) >= MAX_COLS:
+                col = _col_index(c.get("r"))
+                col = len(cells) if col is None else col
+                if col >= MAX_COLS:
                     truncated = True
                     break
+                cells.extend("" for _ in range(col - len(cells)))
                 cells.append(_cell(c, shared))
             rows.append(cells)
         sheets.append({"name": sh.get("name", ""), "rows": rows, "row_count": len(rows), "truncated": truncated})

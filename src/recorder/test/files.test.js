@@ -30,6 +30,8 @@ test("only allowlisted document types outside system folders count", () => {
   assert.ok(!isDocument(null));
   assert.equal(safeName("Q3 budget (final) ✓.xlsx"), "Q3_budget_final_.xlsx");
   assert.equal(safeName(".hidden"), "hidden");
+  const long = safeName(`${"a".repeat(150)}.xlsx`);
+  assert.ok(long.endsWith(".xlsx") && long.length === 120);
   assert.equal(safeName("###"), "file");
 });
 

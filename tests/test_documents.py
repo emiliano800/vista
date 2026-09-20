@@ -108,6 +108,19 @@ def test_extract_is_bounded_and_never_raises():
     assert sheet["row_count"] == documents.MAX_ROWS and sheet["truncated"]
     wide = documents.extract(",".join(["c"] * (documents.MAX_COLS + 3)).encode(), ".csv")
     assert len(wide["rows"][0]) == documents.MAX_COLS
+    row = '<row r="2"><c r="A2"><v>1</v></c><c r="C2"><v>3</v></c></row>'
+    rel = '<Relationship Id="rId1" Target="worksheets/s.xml"/>'
+    sparse = zipped(
+        {
+            "xl/workbook.xml": f'{XML}<workbook xmlns="{S}" xmlns:r="{R}"><sheets><sheet name="S" r:id="rId1"/></sheets></workbook>',
+            "xl/_rels/workbook.xml.rels": f'{XML}<Relationships xmlns="{REL}">{rel}</Relationships>',
+            "xl/worksheets/s.xml": f'{XML}<worksheet xmlns="{S}"><sheetData>{row}</sheetData></worksheet>',
+        }
+    )
+    assert documents.extract(sparse, ".xlsx")["sheets"][0]["rows"] == [["1", "", "3"]]
+    assert documents.extract(b'a,"' + b"x" * 200_000 + b'"\n', ".csv")["kind"] == "failed"
+    dtd = zipped({"word/document.xml": '<!DOCTYPE d [<!ENTITY a "aaaa">]><w:document xmlns:w="x"><w:p>&a;</w:p></w:document>'})
+    assert documents.extract(dtd, ".docx")["kind"] == "failed"
     assert documents.extract(b"not a zip", ".docx")["kind"] == "failed"
     assert documents.extract(zipped({"other.xml": "<a/>"}), ".xlsx")["kind"] == "failed"
     assert documents.extract(zipped({"word/document.xml": "<broken"}), ".docx")["kind"] == "failed"
@@ -174,11 +187,16 @@ def test_files_travel_with_the_recording_and_are_extracted_after_media_completes
     assert {f["extraction"]["status"] for f in done.json()["files"]} == {"missing"}
     assert client.get(f"/api/recordings/{rid}/files/a1b2c3d4e5f6/text", headers=headers, follow_redirects=False).status_code == 409
 
-    # Sign + "upload" the workbook only, then complete.
-    media = [{"name": "files/a1b2c3d4e5f6/Q3_budget.xlsx", "content_type": files[0]["content_type"], "size_bytes": 2048}]
+    # Sign the workbook only. Registering media is not enough: the object must really be there,
+    # at the declared size, before anything is queued.
+    book = xlsx({"Ledger": [["Vendor", "Amount"], ["Acme", "120.5"]]})
+    media = [{"name": "files/a1b2c3d4e5f6/Q3_budget.xlsx", "content_type": files[0]["content_type"], "size_bytes": len(book)}]
     signed = client.post(f"/api/recordings/{rid}/media", headers=headers, json={"files": media}).json()
     key = signed["uploads"][0]["url"].split("/put/", 1)[1]
-    objects.data[key] = xlsx({"Ledger": [["Vendor", "Amount"], ["Acme", "120.5"]]})
+    assert client.post(f"/api/recordings/{rid}/media/complete", headers=headers).json()["queued"] == 0
+    objects.data[key] = book[:-1]
+    assert client.post(f"/api/recordings/{rid}/media/complete", headers=headers).json()["queued"] == 0
+    objects.data[key] = book
     done = client.post(f"/api/recordings/{rid}/media/complete", headers=headers).json()
     assert done["queued"] == 1
     by_id = {f["id"]: f["extraction"]["status"] for f in done["files"]}
@@ -197,6 +215,12 @@ def test_files_travel_with_the_recording_and_are_extracted_after_media_completes
     # Re-submitting the report (retry) keeps the extraction state; completing again queues nothing new.
     client.post(f"/api/deals/{deal}/recordings", headers=headers, json={**bundle, "files": files})
     assert client.post(f"/api/recordings/{rid}/media/complete", headers=headers).json()["queued"] == 0
+
+    # A changed file (new sha256) drops the stale extraction and is queued again once uploaded.
+    changed = [document(sha256="cd" * 32, size_bytes=len(book)), csv_doc]
+    resub = client.post(f"/api/deals/{deal}/recordings", headers=headers, json={**bundle, "files": changed}).json()
+    assert resub["files"][0]["extraction"] is None
+    assert client.post(f"/api/recordings/{rid}/media/complete", headers=headers).json()["queued"] == 1
 
     # Another company member may read files but not complete the upload.
     other, _, _ = tenant_factory()
