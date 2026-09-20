@@ -4,14 +4,27 @@ import argparse
 import json
 import secrets
 import uuid
+from datetime import date
 
-from sqlalchemy import delete, text
+from sqlalchemy import delete, select, text
 
 from vista.db import engine, platform_session, tenant_session
 from vista.models.platform import BrowserSession, Tenant, User
 from vista.models.tenant import Deal, DealMembership
 from vista.storage import ensure_bucket
 from vista.tenancy import migrate_all_tenants, migrate_platform, provision_tenant
+
+# The acquiring firm's portfolio: the six synthetic back-office companies that
+# already have data in the repo. Profile is descriptive context for the
+# workspace header and the integration checklist, never a calculated figure.
+PORTFOLIO_COMPANIES = [
+    ("Meridian Risk Partners, LLC", "Insurance broking", "Hartford, CT"),
+    ("Harborline Insurance Brokers, Inc.", "Insurance broking", "Providence, RI"),
+    ("Castlebrook Agency", "Insurance broking", "Albany, NY"),
+    ("Northfield Industrial Components, Inc.", "Industrial goods", "Akron, OH"),
+    ("Keystone Bearing & Drive Co.", "Industrial goods", "Erie, PA"),
+    ("Ridgeway Fasteners & Supply", "Industrial goods", "Toledo, OH"),
+]
 
 # Arbitrary constant; serialises `migrate` across containers that start together.
 MIGRATION_LOCK_ID = 7_310_552_001
@@ -48,9 +61,45 @@ def main():
     add.add_argument("--role", choices=["member", "viewer"], default="member")
     rotate = commands.add_parser("rotate-key")
     rotate.add_argument("--user", required=True, type=uuid.UUID)
+    firm = commands.add_parser("provision-firm")
+    firm.add_argument("--name", required=True, help="the acquiring firm; becomes the tenant")
+    firm.add_argument("--analyst", required=True, help="analyst login email")
+    firm.add_argument("--acquired", default=date.today().isoformat())
     args = parser.parse_args()
     if args.command == "migrate":
         migrate()
+        return
+    if args.command == "provision-firm":
+        with platform_session() as session:
+            if session.scalar(select(Tenant).where(Tenant.name == args.name)) is not None:
+                parser.error(f"Firm {args.name!r} already exists")
+        tenant, user, token = provision_tenant(args.name, args.analyst)
+        companies = []
+        with tenant_session(tenant.schema_name) as session:
+            for name, industry, location in PORTFOLIO_COMPANIES:
+                deal = Deal(
+                    name=name,
+                    created_by=user.id,
+                    profile={"industry": industry, "location": location, "acquired": args.acquired},
+                )
+                session.add(deal)
+                session.flush()
+                session.add(DealMembership(deal_id=deal.id, user_id=user.id, role="owner"))
+                companies.append({"name": name, "deal_id": str(deal.id)})
+            session.commit()
+        print(
+            json.dumps(
+                {
+                    "tenant_id": str(tenant.id),
+                    "firm": tenant.name,
+                    "user_id": str(user.id),
+                    "email": user.email,
+                    "access_key": token,
+                    "companies": companies,
+                },
+                indent=2,
+            )
+        )
         return
     if args.command == "create-workspace":
         tenant, user, token = provision_tenant(args.firm, args.email)

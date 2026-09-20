@@ -43,6 +43,23 @@ def create_run(body: RunCreate, principal: Principal = Depends(current_principal
         return _run_out(run, [])
 
 
+@router.get("/runs", response_model=list[RunOut])
+def list_runs(
+    deal_id: uuid.UUID | None = None,
+    limit: int = 50,
+    principal: Principal = Depends(current_principal),
+) -> list[RunOut]:
+    """Recent runs, newest first. Events are omitted here; fetch one run for those."""
+    limit = max(1, min(limit, 200))
+    query = select(AgentRun).order_by(AgentRun.created_at.desc()).limit(limit)
+    if deal_id is not None:
+        query = query.where(AgentRun.deal_id == deal_id)
+    with tenant_session(principal.tenant_schema) as session:
+        if deal_id is not None:
+            require_deal_role(session, deal_id, principal.user_id, "viewer")
+        return [_run_out(run, []) for run in session.scalars(query).all()]
+
+
 @router.get("/runs/{run_id}", response_model=RunOut)
 def get_run(run_id: uuid.UUID, principal: Principal = Depends(current_principal)) -> RunOut:
     with tenant_session(principal.tenant_schema) as session:

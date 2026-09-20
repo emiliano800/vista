@@ -202,3 +202,81 @@ def test_storage_failure_does_not_create_partial_import(client, tenant_factory, 
     response = client.post(url, headers=headers, json={"files": demo_files(), "as_of": "2026-03-31"})
     assert response.status_code == 503
     assert client.get(url, headers=headers).json()["imports"] == []
+
+
+def _csv(rows):
+    return "\n".join(",".join(str(c) for c in row) for row in rows) + "\n"
+
+
+def test_idle_subscription_seats_are_priced_from_the_seat_count():
+    files = [
+        file(
+            "software.csv",
+            _csv(
+                [
+                    ["product", "monthly_cost", "seats", "active_seats", "renews_on"],
+                    ["Microsoft 365", "336.00", "28", "20", "2027-06-01"],
+                ]
+            ),
+        )
+    ]
+    result = analyze(mapped(files), date(2026, 9, 20))
+    finding = next(f for f in result["findings"] if f["title"] == "Subscription seats are paid for but unused")
+    # 336.00 / 28 = 12.00 a seat; 8 idle seats for 12 months.
+    assert finding["amount"] == "1152.00"
+    assert finding["calculation"] == [
+        "336.00 / 28 seats = 12.00 per seat per month",
+        "12.00 x 8 idle seats x 12 months = 1152.00 a year",
+    ]
+    assert result["summary"]["subscriptions"] == 1
+
+
+@pytest.mark.parametrize(
+    ("renewal", "flagged"),
+    [("2026-10-15", True), ("2026-09-20", True), ("2027-06-01", False), ("2026-09-19", False)],
+)
+def test_renewals_are_flagged_only_inside_the_notice_window(renewal, flagged):
+    files = [file("software.csv", _csv([["product", "monthly_cost", "renews_on"], ["ServiceTitan", "410.00", renewal]]))]
+    result = analyze(mapped(files), date(2026, 9, 20))
+    titles = [f["title"] for f in result["findings"]]
+    assert ("Subscription renews inside the notice window" in titles) is flagged
+
+
+def test_same_sku_at_two_prices_is_flagged_against_the_higher_paying_volume():
+    files = [
+        file(
+            "purchases.csv",
+            _csv(
+                [
+                    ["part_number", "qty", "unit_cost", "supplier_name"],
+                    ["BRG-204", "100", "12.50", "Acme"],
+                    ["BRG-204", "80", "15.00", "Globex"],
+                    ["FAS-991", "10", "3.00", "Acme"],
+                ]
+            ),
+        )
+    ]
+    result = analyze(mapped(files), date(2026, 9, 20))
+    findings = [f for f in result["findings"] if f["category"] == "purchasing"]
+    assert len(findings) == 1, "only the SKU with more than one price is flagged"
+    # (15.00 - 12.50) x the 80 units bought at the higher price.
+    assert findings[0]["amount"] == "200.00"
+    assert result["summary"]["purchases"] == 3
+
+
+def test_unreadable_purchase_and_subscription_values_are_not_coerced_to_zero():
+    files = [
+        file("purchases.csv", _csv([["part_number", "qty", "unit_cost"], ["BRG-204", "100", "n/a"]])),
+        file("software.csv", _csv([["product", "monthly_cost"], ["Slack", "see contract"]])),
+    ]
+    result = analyze(mapped(files), date(2026, 9, 20))
+    titles = {f["title"] for f in result["findings"]}
+    assert "Purchase line has no readable price or quantity" in titles
+    assert "Subscription cost is not a readable amount" in titles
+    assert all(f["category"] == "data_quality" for f in result["findings"])
+
+
+def test_new_kinds_do_not_reclassify_the_existing_broking_exports():
+    kinds = {t["kind"] for t in mapped(demo_files())}
+    assert {"clients", "policies", "commissions"} <= kinds
+    assert not {"purchases", "subscriptions"} & kinds

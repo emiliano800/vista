@@ -15,7 +15,7 @@ from vista.auth import Principal, admin_principal, current_principal
 from vista.db import platform_session, tenant_session
 from vista.jobs.queue import enqueue
 from vista.jobs.scheduler import SCHEDULE_INTERVALS
-from vista.models.tenant import AgentRun, Employee, EmployeeAgent
+from vista.models.tenant import AgentRun, Deal, Employee, EmployeeAgent
 
 router = APIRouter(tags=["employees"])
 
@@ -30,6 +30,7 @@ def _agent_out(a: EmployeeAgent, e: Employee) -> AgentOut:
     return AgentOut(
         id=a.id,
         employee_id=e.id,
+        deal_id=a.deal_id,
         employee_name=e.name,
         role_title=e.role_title,
         status=a.status,
@@ -66,17 +67,24 @@ def create_agent(body: AgentCreate, principal: Principal = Depends(admin_princip
         existing = session.scalar(select(EmployeeAgent).where(EmployeeAgent.employee_id == body.employee_id))
         if existing is not None:
             raise HTTPException(status_code=409, detail="employee already has an agent")
-        agent = EmployeeAgent(employee_id=body.employee_id, scopes=body.scopes, schedule=body.schedule)
+        if body.deal_id is not None and session.get(Deal, body.deal_id) is None:
+            raise HTTPException(status_code=404, detail="company not found")
+        agent = EmployeeAgent(employee_id=body.employee_id, deal_id=body.deal_id, scopes=body.scopes, schedule=body.schedule)
         session.add(agent)
         session.commit()
         return _agent_out(agent, employee)
 
 
 @router.get("/agents", response_model=list[AgentOut])
-def list_agents(principal: Principal = Depends(current_principal)) -> list[AgentOut]:
+def list_agents(
+    deal_id: uuid.UUID | None = None,
+    principal: Principal = Depends(current_principal),
+) -> list[AgentOut]:
+    query = select(EmployeeAgent, Employee).join(Employee, Employee.id == EmployeeAgent.employee_id)
+    if deal_id is not None:
+        query = query.where(EmployeeAgent.deal_id == deal_id)
     with tenant_session(principal.tenant_schema) as session:
-        rows = session.execute(select(EmployeeAgent, Employee).join(Employee, Employee.id == EmployeeAgent.employee_id)).all()
-        return [_agent_out(a, e) for a, e in rows]
+        return [_agent_out(a, e) for a, e in session.execute(query).all()]
 
 
 @router.patch("/agents/{agent_id}", response_model=AgentOut)
