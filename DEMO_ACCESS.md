@@ -22,6 +22,26 @@ placeholder verification data from nowhere) has been revoked: the key was
 rotated and the replacement destroyed unread, so no working credential exists
 for it.
 
+## PE analyst workspace (portfolio side)
+
+The acquiring firm's analysts have a separate login that opens the portfolio
+command center (`/portfolio/`) instead of a single company's workspace.
+
+- Sign in at **https://bumpsolutions.org/signin/analyst/**
+- Firm: Northstar HVAC Holdings (fictional) · analyst identity: `sarah@northstarhvac.com`
+- Analyst access key:
+
+```
+88c4845687c36379be7086043bc646a37aedecd26b3f72a4f3fc842ec0a9ec95
+```
+
+This side is currently **frontend-only**: the key is checked in the browser
+against a SHA-256 digest in `src/web/public/lib/auth.js`, the session lives in
+`localStorage`, and every figure comes from a deterministic synthetic model
+(Harbor Heating, Summit Mechanical, plus the Cedar Climate acquisition you can
+import through the wizard). "Reset demo data" in the sidebar restores the seed.
+It will move to backend authentication and real portfolio APIs later.
+
 ## The acquired companies
 
 ### Meridian Risk Partners, LLC
