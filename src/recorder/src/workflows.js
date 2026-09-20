@@ -102,40 +102,61 @@ export function suggestWorkflows({ manifest = {}, events = [], files = [], summa
     if (e.payload.source_title) t.docs.add(e.payload.source_title);
     transfers.set(k, t);
   }
-  for (const t of [...transfers.values()].filter((t) => t.n >= 2).sort((a, b) => b.n - a.n)) {
+  for (const t of [...transfers.values()].sort((a, b) => b.n - a.n)) {
     const toRole = roleOf.get(t.to);
     add({
       id: `rekey-${slug(t.from)}-${slug(t.to)}`,
       title: `Re-key ${shortApp(t.from)} data into ${shortApp(t.to)}`,
       kind: 'data_transfer',
       apps: [t.from, t.to],
-      steps: [`Open the source in ${shortApp(t.from)}`, 'Copy one field at a time', `Switch to ${shortApp(t.to)} and paste it`, `Repeat for each field (${t.n} pastes this session)`],
+      steps: [`Open the source in ${shortApp(t.from)}`, 'Copy one field at a time', `Switch to ${shortApp(t.to)} and paste it`, `Repeat for each field (${t.n} paste${t.n === 1 ? '' : 's'} this session)`],
       evidence: { pastes: t.n, chars: t.chars, mean_transfer_s: r1(t.ms / t.n / 1000), sources: [...t.docs].slice(0, 3) },
       automation: toRole === 'accounting' || toRole === 'spreadsheet' || toRole === 'crm' ? 0.85 : 0.6,
       sources: ['events'],
-      why: `${t.n} values were copied from ${roleName(t.from)} and pasted into ${roleName(t.to)}; a document extractor or import could fill these fields directly.`,
+      why: `${t.n} value${t.n === 1 ? ' was' : 's were'} copied from ${roleName(t.from)} and pasted into ${roleName(t.to)}; a document extractor or import could fill these fields directly.`,
+    });
+  }
+  // 1b. Switching back and forth between two recognised systems without a
+  // recorded paste still looks like carrying data across by hand.
+  const { pairs: switchPairs } = orderedSwitches(events);
+  for (const [k, n] of [...switchPairs.entries()].sort((a, b) => b[1] - a[1]).slice(0, 4)) {
+    const [from, to] = k.split('→');
+    if ((roleOf.get(from) ?? 'other') === 'other' || (roleOf.get(to) ?? 'other') === 'other') continue;
+    if (out.some((w) => w.kind === 'data_transfer' && w.apps.includes(from) && w.apps.includes(to))) continue;
+    add({
+      id: `carry-${slug(from)}-${slug(to)}`,
+      title: `Carry ${shortApp(from)} data over to ${shortApp(to)}`,
+      kind: 'data_transfer',
+      apps: [from, to],
+      steps: [`Read the value in ${shortApp(from)}`, `Switch to ${shortApp(to)}`, 'Type it in', 'Switch back for the next one'],
+      evidence: { switches: n },
+      automation: 0.5,
+      sources: ['events'],
+      why: `${n} switch${n === 1 ? '' : 'es'} from ${roleName(from)} to ${roleName(to)} with no paste in between suggests values re-typed by hand.`,
     });
   }
 
   // 2. Document intake (documents + focus titles): PDFs read next to an accounting/CRM system.
   const pdfs = env.documents.filter((d) => d.ext === '.pdf');
   const systems = pick(roleOf, 'accounting').concat(pick(roleOf, 'crm'));
-  if (pdfs.length && systems.length) {
+  if (pdfs.length) {
+    const target = systems[0] ?? pick(roleOf, 'spreadsheet')[0] ?? null;
+    const invoice = /invoice|inv-|bill/i.test(pdfs.map((d) => d.name).join(' '));
     add({
-      id: `intake-${slug(systems[0])}`,
-      title: `${/invoice|inv-|bill/i.test(pdfs.map((d) => d.name).join(' ')) ? 'Invoice' : 'Document'} intake into ${shortApp(systems[0])}`,
+      id: target ? `intake-${slug(target)}` : 'intake-pdf',
+      title: target ? `${invoice ? 'Invoice' : 'Document'} intake into ${shortApp(target)}` : `Read ${invoice ? 'invoice' : 'document'} PDFs`,
       kind: 'document_processing',
-      apps: [...new Set([...pdfs.map((d) => d.app).filter(Boolean), ...pick(roleOf, 'pdf'), systems[0]])],
-      steps: ['Open the PDF', 'Read vendor, amount and reference', `Enter it in ${shortApp(systems[0])}`, 'File or close the PDF'],
+      apps: [...new Set([...pdfs.map((d) => d.app).filter(Boolean), ...pick(roleOf, 'pdf'), ...(target ? [target] : [])])],
+      steps: ['Open the PDF', 'Read vendor, amount and reference', ...(target ? [`Enter it in ${shortApp(target)}`] : ['Act on it']), 'File or close the PDF'],
       evidence: { documents: pdfs.map((d) => d.name).slice(0, 5), count: pdfs.length },
-      automation: 0.8,
+      automation: target ? 0.8 : 0.6,
       sources: ['documents', 'events'],
-      why: `${pdfs.length} PDF${pdfs.length === 1 ? '' : 's'} were open while ${roleName(systems[0])} was used; OCR plus a posting rule would remove the manual read-and-type step.`,
+      why: `${pdfs.length} PDF${pdfs.length === 1 ? ' was' : 's were'} open${target ? ` while ${roleName(target)} was used` : ''}; OCR plus a posting rule would remove the manual read-and-type step.`,
     });
   }
 
   // 3. Tracker upkeep (documents): spreadsheets edited during the session.
-  const sheets = env.documents.filter((d) => ['.xlsx', '.xls', '.csv'].includes(d.ext) && (d.edited || d.parsed));
+  const sheets = env.documents.filter((d) => ['.xlsx', '.xls', '.csv'].includes(d.ext));
   for (const d of sheets.slice(0, 3)) {
     add({
       id: `tracker-${slug(d.name)}`,
@@ -149,14 +170,28 @@ export function suggestWorkflows({ manifest = {}, events = [], files = [], summa
       why: `${d.name} was ${d.edited ? 'edited' : 'open'} during the session; the same rows exist in the systems the data came from and could be exported automatically.`,
     });
   }
+  // 3b. Any other document (Word, text, slides) handled during the session.
+  const others = env.documents.filter((d) => d.ext !== '.pdf' && !['.xlsx', '.xls', '.csv'].includes(d.ext));
+  for (const d of others.slice(0, 3)) {
+    add({
+      id: `document-${slug(d.name)}`,
+      title: `${d.edited ? 'Update' : 'Work from'} the “${d.name}” document`,
+      kind: 'document_processing',
+      apps: [d.app].filter(Boolean),
+      steps: ['Open the document', d.edited ? 'Make the changes' : 'Read what is needed', d.edited ? 'Save and share' : 'Carry it into the next step'],
+      evidence: { document: d.name, edited: d.edited, flags: d.flags },
+      automation: d.edited ? 0.5 : 0.4,
+      sources: ['documents'],
+      why: `${d.name} was ${d.edited ? 'edited' : 'open'} during the session; documents handled every time are a candidate for a template or extractor.`,
+    });
+  }
 
   // 4. Inbox handling (taskmining activities + email focus).
   const acts = summary?.top_activities ?? [];
   const emailApps = pick(roleOf, 'email');
   const emailActs = acts.filter((a) => /email|mail|reply/i.test(a.activity));
-  if (emailApps.length && (emailActs.length || (manifest.apps ?? []).some((a) => emailApps.includes(a.app)))) {
-    const { pairs } = orderedSwitches(events);
-    const lookups = [...pairs.entries()].filter(([k]) => emailApps.some((a) => k.startsWith(`${a}→`))).map(([k, n]) => ({ to: k.split('→')[1], n })).sort((a, b) => b.n - a.n);
+  if (emailApps.length) {
+    const lookups = [...switchPairs.entries()].filter(([k]) => emailApps.some((a) => k.startsWith(`${a}→`))).map(([k, n]) => ({ to: k.split('→')[1], n })).sort((a, b) => b.n - a.n);
     add({
       id: 'inbox-triage',
       title: `Answer ${shortApp(emailApps[0])} requests with lookups in ${lookups[0] ? shortApp(lookups[0].to) : 'other systems'}`,
@@ -172,7 +207,7 @@ export function suggestWorkflows({ manifest = {}, events = [], files = [], summa
 
   // 5. Web lookups (events: URLs / browser focus).
   const browsers = pick(roleOf, 'browser');
-  if (browsers.length && (env.sites.length || (manifest.apps ?? []).some((a) => browsers.includes(a.app)))) {
+  if (browsers.length) {
     add({
       id: 'web-lookup',
       title: env.sites[0] ? `Look up ${env.sites[0].host} during the work` : `Look things up in ${shortApp(browsers[0])} mid-task`,
@@ -203,7 +238,7 @@ export function suggestWorkflows({ manifest = {}, events = [], files = [], summa
   }
 
   // 7. Remaining taskmining automation candidates not covered above.
-  for (const a of (summary?.automation ?? []).filter((a) => a.score >= 0.5)) {
+  for (const a of (summary?.automation ?? []).filter((a) => a.activity)) {
     if (out.some((w) => w.apps.some((app) => a.activity.includes(shortApp(app))) || w.title.toLowerCase().includes(a.activity.toLowerCase()))) continue;
     add({
       id: `activity-${slug(a.activity)}`,
@@ -212,15 +247,33 @@ export function suggestWorkflows({ manifest = {}, events = [], files = [], summa
       apps: (manifest.apps ?? []).filter((x) => a.activity.includes(shortApp(x.app))).map((x) => x.app),
       steps: (summary?.top_variant?.activities ?? []).filter((x) => x === a.activity).length ? ['Part of the main case path'] : [],
       evidence: { score: a.score, hours_total: a.hours_total },
-      automation: a.score,
+      automation: a.score ?? 0.3,
       sources: ['taskmining'],
-      why: `Task mining scored this activity ${Math.round(a.score * 100)}% automatable from its repetition and structure.`,
+      why: `Task mining scored this activity ${Math.round((a.score ?? 0.3) * 100)}% automatable from its repetition and structure.`,
     });
+  }
+
+  // 8. Nothing matched: every app that was actually used is still a piece of
+  // work worth naming, so the card is never empty for a real session.
+  if (!out.length) {
+    for (const a of [...(manifest.apps ?? [])].sort((x, y) => (y.seconds ?? 0) - (x.seconds ?? 0)).slice(0, 3)) {
+      add({
+        id: `work-${slug(a.app)}`,
+        title: `Work in ${shortApp(a.app)}`,
+        kind: 'activity',
+        apps: [a.app],
+        steps: [`Open ${shortApp(a.app)}`, 'Do the task', 'Move on'],
+        evidence: { seconds: a.seconds ?? 0 },
+        automation: 0.3,
+        sources: ['events'],
+        why: `${shortApp(a.app)} took ${Math.round((a.seconds ?? 0) / 60)} min this session; time spent in one place is where a repeatable step usually hides.`,
+      });
+    }
   }
 
   out.sort((a, b) => b.automation - a.automation);
   const { _roleOf, ...environment } = env;
-  return { version: 1, generated_at: new Date().toISOString(), environment, workflows: out.slice(0, 8) };
+  return { version: 1, generated_at: new Date().toISOString(), environment, workflows: out.slice(0, 12) };
 }
 
 // Compact form kept on the manifest so later sessions can compare.
