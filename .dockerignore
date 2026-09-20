@@ -15,6 +15,7 @@
 !src/web/public/
 !src/web/public/**
 !synthetic_data/
+synthetic_data/**
 !synthetic_data/manifest.json
 !synthetic_data/insurance_broking/
 !synthetic_data/insurance_broking/**
