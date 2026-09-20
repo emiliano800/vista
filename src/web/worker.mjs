@@ -11,6 +11,9 @@ const importWrite =
 const portfolioRead =
   /^\/api\/(?:portfolio\/(?:companies(?:\/[0-9a-f-]+)?|tasks|opportunities|activity|analysis)|agents|runs|findings)$/i;
 const portfolioCreate = /^\/api\/portfolio\/(?:tasks|analysis)$/i;
+const syntheticRead = /^\/api\/synthetic\/companies$/i;
+const syntheticWrite = /^\/api\/synthetic\/(?:discovery|analyze)$/i;
+const runRead = /^\/api\/runs\/[0-9a-f-]+$/i;
 const portfolioPatch =
   /^\/api\/(?:portfolio\/(?:tasks|opportunities)|agents|findings)\/[0-9a-f-]+$/i;
 const securityHeaders = {
@@ -29,7 +32,10 @@ async function handle(request, env) {
       !importRead.test(url.pathname) &&
       !importWrite.test(url.pathname) &&
       !portfolioRead.test(url.pathname) &&
-      !portfolioPatch.test(url.pathname)
+      !portfolioPatch.test(url.pathname) &&
+      !syntheticRead.test(url.pathname) &&
+      !syntheticWrite.test(url.pathname) &&
+      !runRead.test(url.pathname)
     )
       return new Response("Not found", { status: 404 });
     // Only explicitly allowed workspace operations reach the backend.
@@ -37,12 +43,14 @@ async function handle(request, env) {
       !["GET", "HEAD", "POST", "PUT", "PATCH", "DELETE"].includes(
         request.method,
       ) ||
+      (syntheticWrite.test(url.pathname) && request.method !== "POST") ||
       (request.method === "POST" &&
         !url.pathname.endsWith("/recordings") &&
         !mediaUpload.test(url.pathname) &&
         !reviewDecision.test(url.pathname) &&
         !importWrite.test(url.pathname) &&
         !portfolioCreate.test(url.pathname) &&
+        !syntheticWrite.test(url.pathname) &&
         url.pathname !== "/api/auth/session") ||
       (request.method === "PUT" && !reviewSections.test(url.pathname)) ||
       (request.method === "PATCH" && !portfolioPatch.test(url.pathname)) ||

@@ -141,3 +141,22 @@ test("ingestion proxy allows only scoped import operations", async () => {
   assert.equal(await status(`/imports/${id}`, "DELETE"), 405);
   assert.equal(await status(`/imports/${id}/commit`, "PUT"), 405);
 });
+
+test("synthetic agent proxy allows discovery, analysis, and run polling only", async () => {
+  const status = async (path, method) =>
+    (await worker.fetch(new Request(`https://vista.test/api${path}`, { method }), {})).status;
+  const run = "/runs/00000000-0000-0000-0000-000000000001";
+  for (const path of ["/synthetic/companies", run]) {
+    assert.equal(await status(path, "GET"), 503);
+    assert.equal(await status(path, "HEAD"), 503);
+    for (const method of ["POST", "PUT", "PATCH", "DELETE"])
+      assert.equal(await status(path, method), 405);
+  }
+  for (const path of ["/synthetic/discovery", "/synthetic/analyze"]) {
+    assert.equal(await status(path, "POST"), 503);
+    for (const method of ["GET", "HEAD", "PUT", "PATCH", "DELETE"])
+      assert.equal(await status(path, method), 405);
+  }
+  for (const path of ["/synthetic/answer_key", "/synthetic/discovery/extra", `${run}/delete`])
+    assert.equal(await status(path, "GET"), 404);
+});
