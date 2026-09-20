@@ -62,6 +62,13 @@ class Table:
     columns: list[str]
     rows: list[dict] = field(default_factory=list)
 
+    @property
+    def name(self) -> str:
+        """Table type independent of container: 'items' for both 01_master_data/items.csv and legacy.xlsx#items."""
+        if "#" in self.ref:
+            return self.ref.rsplit("#", 1)[1].lower()
+        return Path(self.ref).stem.lower()
+
     def column(self, name: str) -> list:
         return [r.get(name) for r in self.rows]
 

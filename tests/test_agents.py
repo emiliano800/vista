@@ -286,6 +286,59 @@ def test_analyze_prompt_groups_by_company():
     assert all(len(t["rows"]) <= analyze.MAX_ROWS_PER_TABLE for c in body["companies"] for t in c["tables"])
 
 
+def test_analyze_parse_is_item_tolerant_and_apply_normalises_evidence():
+    ref = "14_finance_gl/software_subscriptions.csv"
+    text = json.dumps(
+        {
+            "opportunities": [
+                {
+                    "kind": "policy_overlap",
+                    "title": "bad kind",
+                    "companies": ["Meridian", "Harborline"],
+                    "shared_key": "x",
+                    "confidence": 1,
+                },
+                {
+                    "kind": "software_overlap",
+                    "title": "Zoom",
+                    "companies": ["Northfield", "Keystone"],
+                    "shared_key": "Zoom Workplace",
+                    "evidence": [f"Northfield:{ref}", "Keystone has Zoom too"],
+                    "confidence": 0.8,
+                },
+            ],
+            "rejected": ["Salesforce vs Slack", 3],
+        }
+    )
+    out = analyze.parse(text)
+    assert [o.title for o in out.opportunities] == ["Zoom"] and out.rejected == ["Salesforce vs Slack", "3"]
+    rows = analyze.apply(out, known_shorts={"Northfield", "Keystone"}, known_refs={ref})
+    assert rows[0]["evidence"] == [ref] and rows[0]["notes"] == ["Keystone has Zoom too"]
+    # free-text evidence only: fall back to every table the analyst was shown
+    out2 = analyze.parse(text.replace(f"Northfield:{ref}", "see above"))
+    assert analyze.apply(out2, {"Northfield", "Keystone"}, known_refs={ref})[0]["evidence"] == [ref]
+
+
+def test_analyze_prepare_per_kind_selects_tables_and_compacts_rows():
+    cs = [c for c in synthetic.companies() if c.sector == "industrial_goods"]
+    by = {c: synthetic.tables_for(c) for c in cs}
+    body = json.loads(analyze.prepare("industrial_goods", by, "purchasing_price_gap").user)
+    names = {synthetic.Table(ref=t["ref"], columns=[]).name for c in body["companies"] for t in c["tables"]}
+    assert names == {"items", "quickbooks_item_list_export"}  # csv for two companies, legacy xlsx sheet for Ridgeway
+    assert body["look_for"] == "purchasing_price_gap"
+    for c in body["companies"]:
+        for t in c["tables"]:
+            assert len(t["rows"]) <= analyze.MAX_ROWS_PER_TABLE and set(t["columns"]) <= set(t["rows"][0])
+    assert synthetic.Table(ref="00_legacy_exports/X.xlsx#Items", columns=[]).name == "items"
+
+
+def test_analyze_compact_drops_duplicate_projections():
+    t = synthetic.Table(ref="a/items.csv", columns=["item_id", "manufacturer_part_number", "unit_cost", "noise_col"])
+    t.rows = [{"item_id": "1", "manufacturer_part_number": "6205", "unit_cost": 4, "noise_col": i} for i in range(5)]
+    c = analyze.compact(t)
+    assert c["columns"] == ["item_id", "manufacturer_part_number", "unit_cost"] and len(c["rows"]) == 1 and c["total_rows"] == 5
+
+
 # ---------- Eval scorer (tier 3 logic, deterministic) ----------
 
 
@@ -347,11 +400,27 @@ def test_scorer_finding_matches_xlsx_sheet_evidence():
 
 @pytest.mark.live
 @pytest.mark.skipif(not os.environ.get("VISTA_OPENAI_API_KEY"), reason="needs VISTA_OPENAI_API_KEY")
-def test_live_provider_smoke():
+def test_live_provider_smoke(monkeypatch):
     from vista.agents.llm import live_chat
     from vista.config import settings
 
-    settings.openai_api_key = os.environ["VISTA_OPENAI_API_KEY"]
+    monkeypatch.setattr(settings, "openai_api_key", os.environ["VISTA_OPENAI_API_KEY"])
     r = live_chat(Prompt(system='Respond with JSON only: {"ok": true}', user="ping", max_tokens=20))
     assert json.loads(r.text)["ok"] is True
     assert r.input_tokens > 0 and r.output_tokens > 0 and r.model
+
+
+def test_scorer_tie_with_trap_goes_to_real_item():
+    items = synthetic.answer_key()
+    pred = Prediction.from_opportunity(
+        {
+            "kind": "software_overlap",
+            "title": "Dropbox Business",
+            "companies": ["Northfield", "Keystone"],
+            "shared_key": "File Storage",
+            "detail": "Both companies are using Dropbox Business for file storage.",
+            "evidence": ["14_finance_gl/software_subscriptions.csv"],
+        }
+    )
+    s = score([pred], items, companies={"Northfield", "Keystone"}, kinds={"software_overlap"})
+    assert s.trap_hits == 0 and s.tp == 1 and ("PORT-SW-FILE", "Dropbox Business") in s.matched

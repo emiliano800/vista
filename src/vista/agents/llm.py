@@ -9,7 +9,7 @@ Three modes, chosen without code changes:
 import hashlib
 import json
 import os
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, fields
 from pathlib import Path
 
 from vista.config import settings
@@ -56,7 +56,8 @@ class Cassette:
             self.misses += 1
             return None
         self.hits += 1
-        return ChatResult(**{**entry, "source": "cassette"})
+        known = {f.name for f in fields(ChatResult)}
+        return ChatResult(**{**{k: v for k, v in entry.items() if k in known}, "source": "cassette"})
 
     def put(self, key: str, result: ChatResult) -> None:
         self.entries[key] = {k: v for k, v in asdict(result).items() if k != "source"}

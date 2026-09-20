@@ -24,7 +24,7 @@ tests can assert on any stage.
 | Discover | `file_reviewer`      | one table (csv / xlsx sheet) + deterministic profile  | `observed_facts` (dataset, column refs) |
 | Propose  | `config_proposer`    | facts for a company + company profile                | `proposals` (column_mapping, dedupe_merge, workflow_change) |
 | Execute  | `division_executor`  | approved proposals + one division's tables           | `findings`, `tasks` only — scope-checked |
-| Analyze  | `portfolio_analyst`  | one table type across 2–3 companies of a sector      | `opportunities`; must skip TRAP items |
+| Analyze  | `portfolio_analyst`  | one opportunity kind at a time, that kind's table types across a sector | `opportunities` → `proposed_automation` findings via `POST /synthetic/analyze`; must skip TRAP items |
 
 ## Test tiers (cheapest runs on every save; only tier 0 and 3 spend tokens)
 

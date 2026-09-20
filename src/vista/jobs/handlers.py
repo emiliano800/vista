@@ -7,7 +7,7 @@ from botocore.exceptions import BotoCoreError, ClientError
 from sqlalchemy import select
 
 from vista import documents
-from vista.agents import discover, synthetic
+from vista.agents import analyze, discover, synthetic
 from vista.agents.llm import chat
 from vista.agents.runtime import pricing as _pricing
 from vista.agents.runtime import run_phase
@@ -432,6 +432,78 @@ def handle_synthetic_discovery(job: Job, tenant_schema: str) -> None:
         session.commit()
 
 
+def handle_synthetic_analyze(job: Job, tenant_schema: str) -> None:
+    """Sector Merger / Portfolio Analyst over every synthetic company in one sector:
+    one model call per opportunity kind, each seeing only that kind's table types;
+    every cross-company opportunity becomes a proposed_automation finding whose
+    evidence names the companies, shared key and table refs it rests on."""
+    run_id = uuid.UUID(job.payload["run_id"])
+    sector = job.payload["sector"]
+    kinds = job.payload.get("kinds") or analyze.SECTOR_KINDS[sector]
+    by_company = {c: synthetic.tables_for(c) for c in synthetic.companies() if c.sector == sector}
+    shorts = {c.short for c in by_company}
+    with tenant_session(tenant_schema) as session:
+        run = session.get(AgentRun, run_id)
+        if run is None:
+            raise RuntimeError(f"agent run {run_id} not found in {tenant_schema}")
+        run.status = "running"
+        seq = _emit(
+            session,
+            run_id,
+            _next_seq(session, run_id),
+            "step",
+            {"message": "analyze started", "sector": sector, "companies": sorted(shorts), "kinds": kinds},
+        )
+        created = 0
+        for kind in kinds:
+            refs = sorted(t.ref for tables in by_company.values() for t in analyze.tables_for_kind(kind, tables))
+            seq = _emit(session, run_id, seq, "tool_call", {"tool": "read_tables", "kind": kind, "refs": refs})
+            phase = run_phase(
+                analyze.prepare(sector, by_company, kind),
+                analyze.parse,
+                lambda out, r=set(refs): analyze.apply(out, shorts, r),
+                llm=chat,
+            )
+            r = phase.result
+            seq = _emit(
+                session,
+                run_id,
+                seq,
+                "model_call",
+                {"model": r.model, "input_tokens": r.input_tokens, "output_tokens": r.output_tokens, "source": r.source},
+            )
+            _record_usage(session, run_id, r.model, r.input_tokens, r.output_tokens)
+            for row in phase.rows:
+                finding = Finding(
+                    run_id=run_id,
+                    kind="proposed_automation",
+                    title=f"{row['kind']}: {row['title']}"[:512],
+                    detail=row["detail"],
+                    evidence={
+                        "sector": sector,
+                        "opportunity_kind": row["kind"],
+                        "companies": row["companies"],
+                        "shared_key": row["shared_key"],
+                        "refs": row["evidence"],
+                        "notes": row["notes"],
+                        "estimated_annual_value": row["estimated_annual_value"],
+                        "confidence": row["confidence"],
+                    },
+                )
+                session.add(finding)
+                session.flush()
+                seq = _emit(session, run_id, seq, "finding", {"finding_id": str(finding.id), "title": finding.title})
+                created += 1
+            if phase.output.rejected:
+                seq = _emit(
+                    session, run_id, seq, "step", {"message": "look-alikes rejected", "kind": kind, "rejected": phase.output.rejected}
+                )
+        _emit(session, run_id, seq, "result", {"findings_created": created})
+        run.status = "succeeded"
+        run.finished_at = datetime.now(UTC)
+        session.commit()
+
+
 def handle_extract_recording_files(job: Job, tenant_schema: str) -> None:
     """Pull every queued document snapshot of a recording from object storage,
     extract bounded text/tables (vista.documents) and store the JSON next to the
@@ -505,5 +577,6 @@ HANDLERS = {
     "company_summary": handle_company_summary,
     "explain_recording": handle_explain_recording,
     "synthetic_discovery": handle_synthetic_discovery,
+    "synthetic_analyze": handle_synthetic_analyze,
     "extract_recording_files": handle_extract_recording_files,
 }
