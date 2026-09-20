@@ -25,6 +25,14 @@
           window.vista.videoDone();
         }
       });
+      // Paused together with the input hooks, so the webm timeline skips the break
+      // (sections.js subtracts paused time when it computes seek offsets).
+      window.vista.onVideoPause(() => {
+        if (rec && rec.state === 'recording') rec.pause();
+      });
+      window.vista.onVideoResume(() => {
+        if (rec && rec.state === 'paused') rec.resume();
+      });
       window.vista.onVideoStop(() => {
         if (rec && rec.state !== 'inactive') rec.stop();
         else window.vista.videoDone();

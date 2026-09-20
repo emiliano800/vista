@@ -1,0 +1,214 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Vista — Every click, mapped</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --bg: #07090c; --bg-2: #0d1117; --panel: #10161d; --line: #1e2731;
+    --fg: #e8edf2; --fg-2: #9aa7b4; --fg-3: #5e6b78;
+    --signal: #7cff6b; --signal-ink: #0b2a07; --amber: #ffb547;
+  }
+  * { box-sizing: border-box; }
+  html { background: var(--bg); }
+  body { margin: 0; color: var(--fg); font: 16px/1.55 "Space Grotesk", system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+  ::selection { background: var(--signal); color: var(--signal-ink); }
+  a { color: inherit; text-decoration: none; }
+  .mono { font-family: "IBM Plex Mono", monospace; }
+  .wrap { max-width: 1240px; margin: 0 auto; padding: 0 28px; }
+
+  nav { position: fixed; inset: 0 0 auto 0; z-index: 10; mix-blend-mode: difference; color: #fff; }
+  nav .wrap { display: flex; align-items: center; height: 68px; gap: 28px; }
+  .logo { font-weight: 700; letter-spacing: -.02em; font-size: 20px; display: flex; gap: 10px; align-items: center; }
+  .logo b { width: 10px; height: 10px; background: currentColor; border-radius: 50%; box-shadow: 0 0 0 4px rgba(255,255,255,.18); }
+  nav ul { list-style: none; display: flex; gap: 26px; margin: 0 0 0 auto; padding: 0; font-size: 14.5px; }
+  .btn { display: inline-flex; align-items: center; gap: 10px; height: 44px; padding: 0 18px; border-radius: 4px; font-weight: 600; font-size: 15px; border: 1px solid var(--line); color: var(--fg); background: var(--panel); transition: transform .2s cubic-bezier(.2,.8,.2,1), background .2s; }
+  .btn:hover { background: #172029; transform: translateY(-1px); }
+  .btn.signal { background: var(--signal); color: var(--signal-ink); border-color: var(--signal); }
+  .btn.signal:hover { background: #9dff8f; }
+  .btn:focus-visible { outline: 2px solid var(--signal); outline-offset: 3px; }
+
+  .hero { position: relative; min-height: min(100svh, 960px); display: grid; align-items: end; padding: 140px 0 56px; overflow: clip; }
+  canvas#field { position: absolute; inset: 0; width: 100%; height: 100%; }
+  .hero::after { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(7,9,12,.1) 30%, rgba(7,9,12,.92) 85%); pointer-events: none; }
+  .hero .wrap { position: relative; z-index: 1; display: grid; grid-template-columns: 1.2fr .8fr; gap: 48px; align-items: end; }
+  h1 { font-size: clamp(48px, 7.2vw, 108px); line-height: .94; letter-spacing: -.035em; font-weight: 600; margin: 0 0 26px; text-wrap: balance; }
+  h1 span { color: var(--signal); }
+  .lede { font-size: 19px; color: var(--fg-2); max-width: 50ch; margin: 0 0 30px; }
+  .cta { display: flex; gap: 12px; flex-wrap: wrap; }
+  .readout { border: 1px solid var(--line); background: rgba(16,22,29,.7); backdrop-filter: blur(6px); border-radius: 6px; padding: 18px 20px; font-size: 13px; }
+  .readout h4 { margin: 0 0 12px; font: 500 12px "IBM Plex Mono", monospace; color: var(--fg-3); letter-spacing: .06em; text-transform: uppercase; display: flex; justify-content: space-between; }
+  .readout h4 i { color: var(--signal); font-style: normal; }
+  .readout dl { display: grid; grid-template-columns: 1fr auto; gap: 8px 16px; margin: 0; }
+  .readout dt { color: var(--fg-2); }
+  .readout dd { margin: 0; font-family: "IBM Plex Mono", monospace; font-variant-numeric: tabular-nums; text-align: right; }
+  .readout dd.hot { color: var(--signal); }
+
+  .band { border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); background: var(--bg-2); overflow: hidden; }
+  .ticker { display: flex; gap: 48px; white-space: nowrap; padding: 14px 0; font: 500 13px "IBM Plex Mono", monospace; color: var(--fg-2); animation: tick 40s linear infinite; width: max-content; }
+  .ticker span b { color: var(--signal); font-weight: 500; }
+  @keyframes tick { to { transform: translateX(-50%); } }
+
+  section { padding: 120px 0; }
+  h2 { font-size: clamp(34px, 4.2vw, 60px); letter-spacing: -.03em; line-height: 1; margin: 0 0 20px; font-weight: 600; text-wrap: balance; }
+  .sub { color: var(--fg-2); font-size: 18px; max-width: 56ch; margin: 0 0 56px; }
+
+  .stages { display: grid; grid-template-columns: 300px 1fr; gap: 56px; }
+  .stages ul { list-style: none; margin: 0; padding: 0; position: sticky; top: 100px; align-self: start; }
+  .stages li { padding: 14px 0; border-bottom: 1px solid var(--line); display: flex; justify-content: space-between; font-size: 15px; color: var(--fg-2); cursor: default; }
+  .stages li.on { color: var(--fg); }
+  .stages li.on::after { content: "●"; color: var(--signal); }
+  .term { background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 22px 24px; font: 13.5px/1.7 "IBM Plex Mono", monospace; color: var(--fg-2); overflow: auto; }
+  .term .k { color: var(--fg); } .term .s { color: var(--signal); } .term .a { color: var(--amber); } .term .c { color: var(--fg-3); }
+  .term p { margin: 0 0 18px; }
+  .term p:last-child { margin: 0; }
+
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 64px; align-items: center; }
+  .flowmap { border: 1px solid var(--line); border-radius: 6px; background: var(--panel); padding: 8px; }
+  .flowmap svg { width: 100%; height: auto; display: block; }
+  .fm-app { fill: var(--bg-2); stroke: var(--line); }
+  .fm-lbl { font: 500 13px "Space Grotesk", sans-serif; fill: var(--fg); }
+  .fm-n { font: 500 11px "IBM Plex Mono", monospace; fill: var(--fg-2); }
+  .fm-edge { fill: none; stroke: var(--fg-3); }
+  .fm-edge.hot { stroke: var(--signal); stroke-dasharray: 4 8; animation: dash 1.2s linear infinite; }
+  @keyframes dash { to { stroke-dashoffset: -12; } }
+
+  .close { text-align: center; padding: 160px 0; position: relative; overflow: clip; }
+  .close h2 { font-size: clamp(40px, 6vw, 92px); }
+  .close .cta { justify-content: center; margin-top: 36px; }
+  footer { border-top: 1px solid var(--line); padding: 26px 0; font-size: 13.5px; color: var(--fg-3); }
+  footer .wrap { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px; }
+
+  @media (max-width: 900px) {
+    .hero .wrap, .grid2, .stages { grid-template-columns: 1fr; }
+    .stages ul { position: static; display: flex; flex-wrap: wrap; gap: 8px 18px; }
+    .stages li { border: 0; padding: 4px 0; }
+    nav ul { display: none; }
+    section { padding: 72px 0; }
+    .hero { padding-top: 110px; }
+  }
+</style>
+</head>
+<body>
+<nav><div class="wrap">
+  <a class="logo" href="#"><b></b>Vista</a>
+  <ul><li><a href="#pipeline">Pipeline</a></li><li><a href="#flows">Data flows</a></li><li><a href="#">Recorder</a></li><li><a href="#">Security</a></li></ul>
+  <a class="btn" href="#">Request access</a>
+</div></nav>
+
+<header class="hero">
+  <canvas id="field" aria-hidden="true"></canvas>
+  <div class="wrap">
+    <div>
+      <h1>Every click, <span>mapped.</span> Every hour, priced.</h1>
+      <p class="lede">Vista records real desktop work, discovers the process underneath it, and ranks what to automate first. Evidence-linked, on-device, no ERP integration.</p>
+      <div class="cta"><a class="btn signal" href="#">Request access</a><a class="btn" href="#pipeline">See the pipeline</a></div>
+    </div>
+    <aside class="readout" aria-label="Live summary">
+      <h4>summary.json <i>● processed</i></h4>
+      <dl>
+        <dt>cases</dt><dd>40</dd>
+        <dt>steps</dt><dd>1,284</dd>
+        <dt>rework loops · Match PO</dt><dd class="hot">6</dd>
+        <dt>cross-app pastes</dt><dd class="hot">42</dd>
+        <dt>off-screen hours</dt><dd>4.5</dd>
+        <dt>top candidate</dt><dd>Enter invoice · 0.82</dd>
+      </dl>
+    </aside>
+  </div>
+</header>
+
+<div class="band"><div class="ticker" aria-hidden="true">
+  <span>Acrobat → QuickBooks <b>42×</b></span><span>Outlook → Excel <b>31×</b></span><span>Excel → QuickBooks <b>19×</b></span><span>mean wait Enter invoice → Match PO <b>1h 12m</b></span><span>variants <b>7</b></span><span>steps with provenance <b>100%</b></span><span>redacted fields <b>318</b></span>
+  <span>Acrobat → QuickBooks <b>42×</b></span><span>Outlook → Excel <b>31×</b></span><span>Excel → QuickBooks <b>19×</b></span><span>mean wait Enter invoice → Match PO <b>1h 12m</b></span><span>variants <b>7</b></span><span>steps with provenance <b>100%</b></span><span>redacted fields <b>318</b></span>
+</div></div>
+
+<section id="pipeline"><div class="wrap">
+  <h2>From raw events to a ranked plan, in eight pure functions.</h2>
+  <p class="sub">No I/O between stages. The same code that runs on the employee's laptop on Stop runs as a queue worker later. Auditable end to end.</p>
+  <div class="stages">
+    <ul>
+      <li>capture<span class="mono">RawEvent</span></li>
+      <li class="on">redact<span class="mono">preprocess</span></li>
+      <li>sessionise<span class="mono">idle gap</span></li>
+      <li>abstract<span class="mono">ActivityRule</span></li>
+      <li>annotate<span class="mono">human</span></li>
+      <li>correlate<span class="mono">case_id</span></li>
+      <li>discover<span class="mono">DFG</span></li>
+      <li>score<span class="mono">summary</span></li>
+    </ul>
+    <div class="term" role="img" aria-label="Redaction example">
+      <p><span class="c"># raw event, on device, before write</span><br><span class="k">{</span>"type": "paste", "app": "QuickBooks", "title": "Bill · <span class="a">jane.doe@northwind.com</span> · INV-20419",<br>&nbsp;"payload": {"source_app": "Acrobat", "transfer_ms": 11200, "cross_app": true}<span class="k">}</span></p>
+      <p><span class="c"># after taskmining.preprocess.redact()</span><br><span class="k">{</span>"type": "paste", "app": "QuickBooks", "title": "Bill · <span class="s">&lt;EMAIL&gt;</span> · INV-20419",<br>&nbsp;"user": "<span class="s">u-7f3a</span>", "payload": {"source_app": "Acrobat", "transfer_ms": 11200, "cross_app": true}<span class="k">}</span></p>
+      <p><span class="c"># after abstraction + correlation</span><br><span class="k">Step(</span>activity="Enter invoice (QuickBooks)", case_id="INV-20419", n_transfers=1,<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;activity_source=<span class="s">rule</span>, case_source=<span class="s">observed</span><span class="k">)</span></p>
+    </div>
+  </div>
+</div></section>
+
+<section id="flows" style="padding-top:0"><div class="wrap grid2">
+  <div class="flowmap">
+    <svg viewBox="0 0 560 320">
+      <path class="fm-edge hot" d="M130 70 C 250 70, 300 160, 430 160" stroke-width="3"/>
+      <path class="fm-edge" d="M130 160 C 220 160, 260 250, 430 250" stroke-width="2"/>
+      <path class="fm-edge" d="M130 250 C 250 250, 300 170, 430 160" stroke-width="1.5"/>
+      <path class="fm-edge" d="M130 70 C 200 70, 220 160, 130 160" stroke-width="1"/>
+      <g><rect class="fm-app" x="30" y="48" width="100" height="44" rx="4"/><text class="fm-lbl" x="44" y="67">Acrobat</text><text class="fm-n" x="44" y="83">pdf · 40 files</text></g>
+      <g><rect class="fm-app" x="30" y="138" width="100" height="44" rx="4"/><text class="fm-lbl" x="44" y="157">Outlook</text><text class="fm-n" x="44" y="173">238 focus</text></g>
+      <g><rect class="fm-app" x="30" y="228" width="100" height="44" rx="4"/><text class="fm-lbl" x="44" y="247">Excel</text><text class="fm-n" x="44" y="263">PO_match.xlsx</text></g>
+      <g><rect class="fm-app" x="430" y="138" width="110" height="44" rx="4"/><text class="fm-lbl" x="444" y="157">QuickBooks</text><text class="fm-n" x="444" y="173">61 pastes in</text></g>
+      <g><rect class="fm-app" x="430" y="228" width="110" height="44" rx="4"/><text class="fm-lbl" x="444" y="247">Excel</text><text class="fm-n" x="444" y="263">31 pastes in</text></g>
+      <text class="fm-n" x="250" y="100" fill="#7cff6b" style="fill:#7cff6b">42× · 3.1 h/week</text>
+      <text class="fm-n" x="250" y="228">31×</text>
+      <text class="fm-n" x="280" y="200">19×</text>
+    </svg>
+  </div>
+  <div>
+    <h2>The swivel chair, quantified.</h2>
+    <p class="sub" style="margin-bottom:20px">Copy and paste are linked across apps by a salted clipboard hash. A paste into QuickBooks knows it came from Acrobat 11 seconds earlier. Cross-app transfers count double in the automation score and roll up into the data-flow map.</p>
+    <p style="color:var(--fg-2)">This is the map integrators draw on a whiteboard. Vista draws it from 1,284 observed steps and tells you which edge is worth 3.1 hours a week.</p>
+  </div>
+</div></section>
+
+<section class="close"><div class="wrap">
+  <h2>Stop guessing how the work gets done.</h2>
+  <div class="cta"><a class="btn signal" href="#">Request access</a><a class="btn" href="#">Read the security model</a></div>
+</div></section>
+<footer><div class="wrap"><span>Vista · process intelligence for the lower middle market</span><span class="mono">recorder v0.1 · engine stdlib-only · on-device redaction</span></div></footer>
+
+<script>
+// Hero: a drifting field of "events" that condense into a directly-follows graph. One authored motion.
+const c = document.getElementById('field'), ctx = c.getContext('2d');
+let W, H, pts = [], t0 = performance.now();
+const nodes = [[.18,.32],[.36,.22],[.52,.36],[.68,.24],[.84,.34],[.44,.56],[.62,.6]];
+const edges = [[0,1],[1,2],[2,3],[3,4],[1,5],[5,2],[2,6],[6,3]];
+function resize(){ W = c.width = c.clientWidth * devicePixelRatio; H = c.height = c.clientHeight * devicePixelRatio; }
+function seed(){ pts = Array.from({length: 320}, () => { const e = edges[Math.floor(Math.random()*edges.length)]; return { e, s: Math.random(), v: .0006 + Math.random()*.0012, jx: (Math.random()-.5)*60, jy: (Math.random()-.5)*60 }; }); }
+function frame(now){
+  const t = Math.min(1, (now - t0) / 2600), ease = 1 - Math.pow(1 - t, 3);
+  ctx.clearRect(0,0,W,H);
+  ctx.lineWidth = devicePixelRatio;
+  for (const [a,b] of edges) {
+    ctx.strokeStyle = `rgba(124,255,107,${.08 + ease*.18})`;
+    ctx.beginPath(); ctx.moveTo(nodes[a][0]*W, nodes[a][1]*H); ctx.lineTo(nodes[b][0]*W, nodes[b][1]*H); ctx.stroke();
+  }
+  for (const p of pts) {
+    p.s = (p.s + p.v) % 1;
+    const [a,b] = p.e, ax = nodes[a][0]*W, ay = nodes[a][1]*H, bx = nodes[b][0]*W, by = nodes[b][1]*H;
+    const x = ax + (bx-ax)*p.s + p.jx*devicePixelRatio*(1-ease), y = ay + (by-ay)*p.s + p.jy*devicePixelRatio*(1-ease);
+    ctx.fillStyle = `rgba(232,237,242,${.35 + .4*Math.sin(p.s*Math.PI)})`;
+    ctx.fillRect(x, y, 1.6*devicePixelRatio, 1.6*devicePixelRatio);
+  }
+  for (const [nx,ny] of nodes) {
+    ctx.fillStyle = '#7cff6b'; ctx.beginPath(); ctx.arc(nx*W, ny*H, 3*devicePixelRatio*ease, 0, 7); ctx.fill();
+    ctx.strokeStyle = 'rgba(124,255,107,.35)'; ctx.beginPath(); ctx.arc(nx*W, ny*H, 9*devicePixelRatio*ease, 0, 7); ctx.stroke();
+  }
+  requestAnimationFrame(frame);
+}
+addEventListener('resize', resize); resize(); seed();
+if (!matchMedia('(prefers-reduced-motion: reduce)').matches) requestAnimationFrame(frame); else { t0 = -1e9; frame(0); }
+</script>
+</body>
+</html>

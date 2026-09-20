@@ -191,6 +191,17 @@ def test_apply_annotations_relabels_and_splits_steps():
     assert out[1].n_keys == 30 and out[1].note == "fix <EMAIL>"
 
 
+def test_session_summary_annotation_does_not_relabel_steps():
+    steps = [step(0, 100, "Enter Invoice"), step(100, 100, "Other (Excel)", app="Excel")]
+    whole = ann(0, 200, "Month-end AP run", scope="session")
+    section = ann(100, 100, "Reconcile tracker", scope="section")
+    out = annotations.apply_annotations(steps, [whole, section])
+    assert [s.activity for s in out] == ["Enter Invoice", "Reconcile tracker"]
+    assert all(s.app != OFF_SCREEN_APP for s in out)
+    [rt] = annotations.read_annotations(io.StringIO(whole.to_json() + "\n"))
+    assert rt.scope == "session"
+
+
 def test_apply_annotations_creates_off_screen_steps_and_human_case():
     steps = [step(0, 60, "Send Email", app="Outlook"), step(3600, 60, "Read Email", app="Outlook")]
     a = ann(120, 3000, "Phone: chase overdue invoices", case_id="INV-9")

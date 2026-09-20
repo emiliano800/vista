@@ -16,8 +16,11 @@ from vista.models.tenant import (
     Employee,
     EmployeeAgent,
     Finding,
+    RecordingReviewItem,
     UsageEvent,
 )
+from vista.review import status_for
+from vista.review import explain as explain_section
 
 FINDING_KINDS = {"observed_fact", "inefficiency", "proposed_automation"}
 
@@ -341,7 +344,41 @@ def handle_agent_run(job: Job, tenant_schema: str) -> None:
         session.commit()
 
 
+def handle_explain_recording(job: Job, tenant_schema: str) -> None:
+    """Explain every pending review item of one recording. Each item is committed
+    on its own; a retry after a model outage redoes only the pending/failed ones."""
+    recording_id = uuid.UUID(job.payload["recording_id"])
+    with tenant_session(tenant_schema) as session:
+        pending = session.scalars(
+            select(RecordingReviewItem.id).where(
+                RecordingReviewItem.recording_id == recording_id, RecordingReviewItem.status.in_(("pending", "failed"))
+            )
+        ).all()
+    failures = 0
+    for item_id in pending:
+        with tenant_session(tenant_schema) as session:
+            item = session.get(RecordingReviewItem, item_id)
+            if item is None or item.status not in ("pending", "failed"):
+                continue
+            try:
+                model, parsed, in_tokens, out_tokens = explain_section(item.prompt)
+            except Exception as exc:  # noqa: BLE001 — one bad section must not block the rest
+                failures += 1
+                item.status, item.error = "failed", repr(exc)[:2000]
+            else:
+                item.model, item.input_tokens, item.output_tokens = model, in_tokens, out_tokens
+                item.label, item.explanation = parsed["label"], parsed["explanation"]
+                item.confidence, item.unclear, item.questions = parsed["confidence"], parsed["unclear"], parsed["questions"]
+                item.status, item.error = status_for(parsed["confidence"], item.threshold), None
+            item.explained_at = item.updated_at = datetime.now(timezone.utc)
+            session.commit()
+    if failures:
+        raise RuntimeError(f"{failures} of {len(pending)} sections could not be explained")
+
+
 def mark_run_failed(job: Job, tenant_schema: str, error: str, permanent: bool) -> None:
+    if "run_id" not in job.payload:
+        return
     run_id = uuid.UUID(job.payload["run_id"])
     with tenant_session(tenant_schema) as session:
         run = session.get(AgentRun, run_id)
@@ -369,4 +406,5 @@ HANDLERS = {
     "agent_run": handle_agent_run,
     "employee_discovery": handle_employee_discovery,
     "company_summary": handle_company_summary,
+    "explain_recording": handle_explain_recording,
 }

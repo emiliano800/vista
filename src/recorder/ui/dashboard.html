@@ -3,143 +3,212 @@
   <head>
     <meta charset="utf-8" />
     <title>Vista — my recordings</title>
+    <link rel="stylesheet" href="../../web/public/tokens.css" />
     <style>
-      :root {
-        --accent: #3d63dd; --accent-soft: #e8edfb; --bg: #f4f4f1; --card: #fff; --line: #e7e6e0;
-        --fg: #1f1e1b; --muted: #6f6d66; --rec: #e5484d; --ok: #2f9e6a; --warn: #d9a120;
-      }
+      /* Employee dashboard. Tokens/type from tokens.css (DESIGN.md); no raw hex below. */
       * { box-sizing: border-box; }
       body {
-        margin: 0; background: var(--bg); color: var(--fg);
-        font-family: 'Instrument Sans', -apple-system, 'Segoe UI', system-ui, sans-serif; font-size: 14px; line-height: 1.45;
+        margin: 0; background: var(--surface); color: var(--ink);
+        font-family: var(--font-sans); font-size: 14px; line-height: 20px; -webkit-font-smoothing: antialiased;
       }
-      a { color: var(--accent); cursor: pointer; text-decoration: none; }
-      .shell { display: grid; grid-template-columns: 220px 1fr; min-height: 100vh; }
+      a { color: var(--link); cursor: pointer; text-decoration: none; }
+      a:hover { text-decoration: underline; }
+      .shell { display: grid; grid-template-columns: var(--sidebar) 1fr; min-height: 100vh; }
       /* ---- sidebar ---- */
-      nav { border-right: 1px solid var(--line); padding: 22px 18px; background: #faFaf8; display: flex; flex-direction: column; gap: 6px; }
-      .brand { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 17px; margin-bottom: 18px; letter-spacing: -0.01em; }
-      .brand i { width: 22px; height: 22px; border-radius: 7px; background: var(--accent); display: inline-block; }
+      nav { border-right: 1px solid var(--line); padding: var(--space-5) var(--space-3); background: var(--surface); display: flex; flex-direction: column; gap: 2px; }
+      .brand { display: flex; align-items: center; gap: var(--space-2); font-family: var(--font-display); font-weight: 500; font-size: 22px; letter-spacing: -0.01em; padding: 0 var(--space-3); margin-bottom: var(--space-5); }
       nav button {
-        text-align: left; background: transparent; border: 0; padding: 9px 12px; border-radius: 8px; font: inherit; color: var(--muted); cursor: pointer;
+        text-align: left; background: transparent; border: 0; border-left: 3px solid transparent; height: var(--control-md); padding: 0 var(--space-3); border-radius: var(--radius-md); font: inherit; font-size: 13px; line-height: 18px; color: var(--ink-secondary); cursor: pointer;
         display: flex; justify-content: space-between; align-items: center;
       }
-      nav button.active, nav button:hover { background: #fff; color: var(--fg); box-shadow: 0 1px 0 var(--line); }
+      nav button:hover { background: var(--surface-hover); color: var(--ink); }
+      nav button.active { background: var(--surface-raised); color: var(--ink); font-weight: 600; border-left-color: var(--rust); border-radius: 0 var(--radius-md) var(--radius-md) 0; }
       nav .spacer { flex: 1; }
-      .who { font-size: 12px; color: var(--muted); padding: 10px 12px; border-top: 1px solid var(--line); }
-      .who b { display: block; color: var(--fg); font-weight: 600; }
+      .who { font-size: 12px; line-height: 16px; color: var(--ink-muted); padding: var(--space-3); border-top: 1px solid var(--line); }
+      .who b { display: block; color: var(--ink); font-weight: 600; }
       /* ---- main ---- */
-      main { padding: 28px 34px 48px; max-width: 1080px; }
-      h1 { font-size: 24px; margin: 0 0 4px; letter-spacing: -0.02em; }
-      .lede { color: var(--muted); margin: 0 0 22px; }
-      .card { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 18px 20px; }
-      .grid { display: grid; gap: 14px; }
+      main { padding: var(--space-8) var(--space-10) var(--space-12); max-width: 1120px; }
+      h1 { font-family: var(--font-display); font-size: 34px; line-height: 40px; font-weight: 400; letter-spacing: -0.02em; margin: 0 0 var(--space-1); }
+      .lede { font-family: var(--font-display); font-size: 17px; line-height: 24px; color: var(--ink-secondary); margin: 0 0 var(--space-6); }
+      .card { background: var(--surface-raised); border: 1px solid var(--line); border-radius: var(--radius-lg); padding: var(--space-4); }
+      .grid { display: grid; gap: var(--space-4); }
       .cols-3 { grid-template-columns: repeat(3, 1fr); }
       .cols-2 { grid-template-columns: 1.4fr 1fr; }
-      .kpi b { display: block; font-size: 28px; font-weight: 600; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
-      .kpi span { color: var(--muted); font-size: 13px; }
-      .kpi small { display: block; color: var(--muted); font-size: 12px; margin-top: 4px; }
-      h2 { font-size: 13px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); margin: 0 0 12px; font-weight: 600; }
-      section { margin-top: 18px; }
+      .kpi b { display: block; font-family: var(--font-display); font-size: 30px; line-height: 34px; font-weight: 400; letter-spacing: -0.01em; font-variant-numeric: tabular-nums; }
+      .kpi span { color: var(--ink-muted); font-size: 11px; line-height: 16px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; }
+      .kpi small { display: block; color: var(--ink-muted); font-size: 12px; line-height: 16px; margin-top: var(--space-1); }
+      h2 { font-size: 11px; line-height: 16px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--ink-muted); margin: 0 0 var(--space-3); font-weight: 600; }
+      h3 { font-family: var(--font-display); font-size: 18px; line-height: 24px; font-weight: 500; }
+      section { margin-top: var(--space-4); }
       .hidden { display: none !important; }
       /* hero */
-      .hero { display: grid; grid-template-columns: auto 1fr auto; gap: 18px; align-items: center; }
-      .hero .dot { width: 14px; height: 14px; border-radius: 50%; background: #c9c8c1; }
-      .hero.recording .dot { background: var(--rec); box-shadow: 0 0 0 5px rgba(229, 72, 77, 0.15); }
-      .hero.paused .dot { background: var(--warn); }
-      .hero .t { font-weight: 600; font-size: 16px; }
-      .hero .s { color: var(--muted); font-size: 13px; }
-      .btn { appearance: none; border: 1px solid var(--line); background: #fff; color: var(--fg); border-radius: 999px; padding: 9px 16px; font: inherit; font-weight: 600; cursor: pointer; }
-      .btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
-      .btn.danger { color: var(--rec); }
-      .btn.sm { padding: 5px 11px; font-size: 12.5px; font-weight: 500; }
-      .btn:hover { filter: brightness(0.97); }
+      .hero { display: grid; grid-template-columns: auto 1fr auto; gap: var(--space-4); align-items: center; }
+      .hero .dot { width: 12px; height: 12px; border-radius: 50%; background: var(--line-strong); }
+      .hero.recording .dot { background: var(--danger); box-shadow: 0 0 0 4px var(--danger-soft); }
+      .hero.paused .dot { background: var(--warning); }
+      .hero .t { font-weight: 600; font-size: 15px; line-height: 22px; }
+      .hero .s { color: var(--ink-muted); font-size: 13px; line-height: 18px; }
+      .btn { appearance: none; border: 1px solid var(--line-strong); background: var(--surface-raised); color: var(--ink); border-radius: var(--radius-md); height: var(--control-md); padding: 0 var(--space-3); font: inherit; font-size: 13px; line-height: 18px; font-weight: 500; cursor: pointer; display: inline-flex; align-items: center; gap: var(--space-1); white-space: nowrap; }
+      .btn:hover { background: var(--surface-hover); }
+      .btn:disabled { color: var(--ink-faint); border-color: var(--line); cursor: default; background: var(--surface-raised); }
+      .btn.primary { background: var(--brand); border-color: var(--brand); color: var(--on-brand); border-radius: var(--radius-pill); font-weight: 600; }
+      .btn.primary:hover { background: var(--brand-hover); }
+      .btn.danger { background: var(--danger-soft); border-color: var(--danger-soft); color: var(--danger); }
+      .btn.sm { height: var(--control-sm); padding: 0 var(--space-2); font-size: 12px; }
+      .btn.ai { color: var(--lime-ink); border-color: var(--lime-soft); background: var(--lime-soft); }
+      .btn.ai svg { width: 12px; height: 12px; fill: currentColor; flex: none; }
       /* apps */
-      .apps { display: grid; gap: 10px; }
-      .apps .row { display: grid; grid-template-columns: 1fr auto; gap: 8px; font-size: 13.5px; }
-      .apps .bar { grid-column: 1 / -1; height: 6px; border-radius: 3px; background: #eeede8; overflow: hidden; }
-      .apps .bar i { display: block; height: 100%; background: var(--accent); border-radius: 3px; }
+      .apps { display: grid; gap: var(--space-2); }
+      .apps .row { display: grid; grid-template-columns: 1fr auto; gap: var(--space-2); font-size: 13px; line-height: 18px; }
+      .apps .row .muted { font-family: var(--font-mono); font-size: 12px; font-variant-numeric: tabular-nums; }
+      .apps .bar { grid-column: 1 / -1; height: 6px; border-radius: 3px; background: var(--surface-sunken); overflow: hidden; }
+      .apps .bar i { display: block; height: 100%; background: var(--brand); border-radius: 3px; }
       /* timeline */
-      .tl { display: flex; height: 26px; border-radius: 6px; overflow: hidden; background: #eeede8; }
+      .tl { display: flex; height: 24px; border-radius: var(--radius-sm); overflow: hidden; background: var(--surface-sunken); }
       .tl i { display: block; height: 100%; }
-      .tl-axis { display: flex; justify-content: space-between; color: var(--muted); font-size: 11px; margin-top: 4px; }
-      .legend { display: flex; gap: 14px; flex-wrap: wrap; font-size: 12px; color: var(--muted); margin-top: 10px; }
+      .tl-axis { display: flex; justify-content: space-between; color: var(--ink-muted); font-family: var(--font-mono); font-size: 11px; margin-top: var(--space-1); }
+      .legend { display: flex; gap: var(--space-3); flex-wrap: wrap; font-size: 12px; line-height: 16px; color: var(--ink-muted); margin-top: var(--space-2); }
       .legend i { width: 9px; height: 9px; border-radius: 2px; display: inline-block; margin-right: 5px; vertical-align: -1px; }
       /* recordings list */
-      table { width: 100%; border-collapse: collapse; }
-      th { text-align: left; font-size: 11.5px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); font-weight: 600; padding: 0 10px 10px; border-bottom: 1px solid var(--line); }
-      td { padding: 12px 10px; border-bottom: 1px solid var(--line); vertical-align: top; font-variant-numeric: tabular-nums; }
+      table { width: 100%; border-collapse: collapse; font-size: 13px; line-height: 18px; }
+      th { text-align: left; font-size: 11px; line-height: 16px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--ink-muted); font-weight: 600; height: var(--row); padding: 0 var(--space-3); border-bottom: 1px solid var(--line); white-space: nowrap; }
+      td { height: var(--row); padding: var(--space-2) var(--space-3); border-bottom: 1px solid var(--line); vertical-align: middle; font-variant-numeric: tabular-nums; color: var(--ink-secondary); }
+      tr:hover td { background: var(--surface-hover); }
       tr:last-child td { border-bottom: 0; }
-      .pill { display: inline-block; padding: 2px 9px; border-radius: 999px; font-size: 12px; font-weight: 600; background: #eeede8; color: var(--muted); }
-      .pill.done { background: #e3f4ea; color: var(--ok); }
-      .pill.running, .pill.pending { background: var(--accent-soft); color: var(--accent); }
-      .pill.failed { background: #fbe4e5; color: var(--rec); }
-      .pill.skipped { background: #f7efd8; color: #8a6a10; }
-      .muted { color: var(--muted); }
-      .mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; }
+      .pill { display: inline-flex; align-items: center; gap: var(--space-1); height: 22px; padding: 0 9px; border-radius: var(--radius-pill); font-size: 12px; line-height: 16px; font-weight: 500; border: 1px solid var(--line); color: var(--ink-secondary); white-space: nowrap; }
+      .pill.done { border-color: var(--success); color: var(--success); }
+      .pill.running, .pill.pending { border-color: var(--agent); color: var(--agent-ink); }
+      .pill.failed { border-color: var(--danger); color: var(--danger); }
+      .pill.skipped { border-color: var(--warning); color: var(--warning); }
+      .muted { color: var(--ink-muted); }
+      .mono { font-family: var(--font-mono); font-size: 12px; }
       /* privacy */
-      .pv { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
-      .pv ul { margin: 6px 0 0; padding-left: 18px; color: var(--muted); }
-      .pv h3 { margin: 0; font-size: 14px; }
-      .pv .yes h3::before { content: '●'; color: var(--ok); margin-right: 8px; }
-      .pv .no h3::before { content: '●'; color: var(--rec); margin-right: 8px; }
+      .pv { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-4); }
+      .pv ul { margin: var(--space-2) 0 0; padding-left: 18px; color: var(--ink-secondary); font-size: 13px; line-height: 18px; }
+      .pv li { margin-bottom: var(--space-1); }
+      .pv h3 { margin: 0; }
+      .pv .yes h3::before { content: '■'; color: var(--moss); margin-right: var(--space-2); font-size: 11px; vertical-align: 2px; }
+      .pv .no h3::before { content: '■'; color: var(--rust); margin-right: var(--space-2); font-size: 11px; vertical-align: 2px; }
       /* settings */
-      .set { display: grid; gap: 10px; }
-      .set label { display: grid; grid-template-columns: 1fr auto; gap: 12px; align-items: center; padding: 12px 0; border-bottom: 1px solid var(--line); }
+      .set { display: grid; gap: 0; }
+      .set label { display: grid; grid-template-columns: 1fr auto; gap: var(--space-3); align-items: center; padding: var(--space-3) 0; border-bottom: 1px solid var(--line); font-size: 13px; line-height: 18px; }
       .set label:last-child { border-bottom: 0; }
-      .set label span { color: var(--muted); font-size: 12.5px; display: block; }
-      .set input[type='checkbox'] { width: 38px; height: 22px; appearance: none; background: #d9d8d1; border-radius: 999px; position: relative; cursor: pointer; transition: background 0.15s; }
-      .set input[type='checkbox']::after { content: ''; position: absolute; top: 2px; left: 2px; width: 18px; height: 18px; border-radius: 50%; background: #fff; transition: left 0.15s; box-shadow: 0 1px 2px rgba(0,0,0,.2); }
-      .set input[type='checkbox']:checked { background: var(--accent); }
+      .set label span { color: var(--ink-muted); font-size: 12px; line-height: 16px; display: block; }
+      .set input[type='checkbox'] { width: 36px; height: 20px; appearance: none; background: var(--line-strong); border-radius: var(--radius-pill); position: relative; cursor: pointer; transition: background 0.15s; margin: 0; }
+      .set input[type='checkbox']::after { content: ''; position: absolute; top: 2px; left: 2px; width: 16px; height: 16px; border-radius: 50%; background: var(--surface-raised); transition: left 0.15s; }
+      .set input[type='checkbox']:checked { background: var(--moss); }
       .set input[type='checkbox']:checked::after { left: 18px; }
-      textarea, input[type='text'] { width: 100%; font: inherit; padding: 9px 11px; border: 1px solid var(--line); border-radius: 8px; background: #fff; color: var(--fg); }
+      label[for] { display: block; font-size: 12px; line-height: 16px; font-weight: 500; color: var(--ink-secondary); margin: var(--space-3) 0 var(--space-1); }
+      textarea, input[type='text'], input[type='url'], input[type='password'], input[type='time'] { width: 100%; font: inherit; font-size: 13px; line-height: 18px; height: var(--control-md); padding: 0 var(--space-3); border: 1px solid var(--line-strong); border-radius: var(--radius-md); background: var(--surface-raised); color: var(--ink); }
+      textarea { height: auto; padding: var(--space-2) var(--space-3); resize: vertical; }
+      input::placeholder, textarea::placeholder { color: var(--ink-faint); }
       /* modal */
-      .modal { position: fixed; inset: 0; background: rgba(31, 30, 27, 0.35); display: grid; place-items: center; }
-      .modal .card { width: 460px; display: grid; gap: 12px; }
-      .modal .actions { display: flex; justify-content: flex-end; gap: 8px; }
-      .modal .when { display: flex; align-items: center; gap: 8px; }
+      .modal { position: fixed; inset: 0; background: rgba(31, 28, 24, 0.4); display: grid; place-items: center; }
+      .modal .card { width: 460px; display: grid; gap: var(--space-3); box-shadow: var(--shadow-lg); }
+      .modal .actions { display: flex; justify-content: flex-end; gap: var(--space-2); }
+      .modal .when { display: flex; align-items: center; gap: var(--space-2); }
       .modal .when input { width: auto; }
-      .chips { display: flex; gap: 6px; flex-wrap: wrap; }
-      .chip { border: 1px solid var(--line); border-radius: 999px; padding: 4px 10px; font-size: 12.5px; cursor: pointer; background: #fff; }
-      .chip:hover, .chip.on { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); }
-      .empty { color: var(--muted); text-align: center; padding: 30px 0; }
+      .chips { display: flex; gap: var(--space-2); flex-wrap: wrap; }
+      .chip { border: 1px solid var(--line-strong); border-radius: var(--radius-pill); height: var(--control-sm); padding: 0 var(--space-3); font-size: 12px; line-height: 16px; cursor: pointer; background: var(--surface-raised); color: var(--ink); display: inline-flex; align-items: center; }
+      .chip:hover { background: var(--surface-hover); }
+      .chip.on { background: var(--periwinkle-soft); border-color: var(--periwinkle); color: var(--periwinkle-ink); }
+      .empty { color: var(--ink-muted); text-align: center; padding: var(--space-8) 0; font-size: 13px; line-height: 18px; }
       /* review / agent */
-      .agent { display: grid; grid-template-columns: 1fr 1.3fr; gap: 14px; }
+      .agent { display: grid; grid-template-columns: 1fr 1.3fr; gap: var(--space-4); margin-top: var(--space-4); }
       .stages { display: grid; gap: 0; }
-      .stage { display: grid; grid-template-columns: 22px 1fr auto; gap: 12px; align-items: center; padding: 11px 0; border-bottom: 1px solid var(--line); color: var(--muted); }
+      .stage { display: grid; grid-template-columns: 20px 1fr auto; gap: var(--space-3); align-items: center; padding: var(--space-3) 0; border-bottom: 1px solid var(--line); color: var(--ink-muted); font-size: 13px; line-height: 18px; }
       .stage:last-child { border-bottom: 0; }
-      .stage i { width: 18px; height: 18px; border-radius: 50%; border: 2px solid #d9d8d1; display: inline-block; position: relative; }
-      .stage.active { color: var(--fg); }
-      .stage.active i { border-color: var(--accent); border-top-color: transparent; animation: spin 0.8s linear infinite; }
-      .stage.done { color: var(--fg); }
-      .stage.done i { border-color: var(--ok); background: var(--ok); }
-      .stage.done i::after { content: ''; position: absolute; left: 5px; top: 1px; width: 4px; height: 8px; border: solid #fff; border-width: 0 2px 2px 0; transform: rotate(45deg); }
-      .stage.failed i { border-color: var(--rec); background: var(--rec); }
-      .stage small { color: var(--muted); font-size: 12px; display: block; }
-      .stage .out { font-size: 12.5px; color: var(--muted); font-variant-numeric: tabular-nums; }
+      .stage i { width: 16px; height: 16px; border-radius: 50%; border: 2px solid var(--line); display: inline-block; position: relative; }
+      .stage.active { color: var(--ink); }
+      .stage.active i { border-color: var(--lime-ink); border-top-color: transparent; animation: spin 0.8s linear infinite; }
+      .stage.done { color: var(--ink); }
+      .stage.done i { border-color: var(--brand); background: var(--brand); }
+      .stage.done i::after { content: ''; position: absolute; left: 4px; top: 0; width: 3px; height: 7px; border: solid var(--on-brand); border-width: 0 2px 2px 0; transform: rotate(45deg); }
+      .stage.failed i { border-color: var(--danger); background: var(--danger); }
+      .stage small { color: var(--ink-muted); font-size: 12px; line-height: 16px; display: block; }
+      .stage .out { font-family: var(--font-mono); font-size: 12px; color: var(--ink-muted); font-variant-numeric: tabular-nums; }
       @keyframes spin { to { transform: rotate(360deg); } }
-      .rank { display: grid; gap: 10px; }
-      .rank .row { display: grid; grid-template-columns: 26px 1fr auto; gap: 10px; align-items: center; }
-      .rank .n { width: 26px; height: 26px; border-radius: 8px; background: var(--accent-soft); color: var(--accent); font-weight: 700; display: grid; place-items: center; font-size: 12.5px; }
-      .rank .bar { grid-column: 2 / -1; height: 6px; border-radius: 3px; background: #eeede8; overflow: hidden; }
-      .rank .bar i { display: block; height: 100%; background: var(--accent); }
-      .path { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; font-size: 13px; }
-      .path span { background: #f1f0eb; border-radius: 6px; padding: 4px 9px; }
-      .path em { color: var(--muted); font-style: normal; }
-      .banner { display: flex; align-items: center; gap: 14px; padding: 14px 18px; border-radius: 12px; background: var(--accent-soft); color: #22397f; margin-bottom: 16px; }
-      .banner b { font-size: 15px; }
+      .rank { display: grid; gap: var(--space-2); }
+      .rank .row { display: grid; grid-template-columns: 26px 1fr auto; gap: var(--space-2); align-items: center; font-size: 13px; line-height: 18px; }
+      .rank .row .muted { font-family: var(--font-mono); font-size: 12px; font-variant-numeric: tabular-nums; }
+      .rank .n { width: 26px; height: 26px; border-radius: var(--radius-md); border: 1px solid var(--line); color: var(--ink); font-weight: 500; display: grid; place-items: center; font-family: var(--font-display); font-size: 14px; }
+      .rank .bar { grid-column: 2 / -1; height: 6px; border-radius: 3px; background: var(--surface-sunken); overflow: hidden; }
+      .rank .bar i { display: block; height: 100%; background: var(--brand); }
+      .path { display: flex; flex-wrap: wrap; gap: var(--space-2); align-items: center; font-size: 13px; line-height: 18px; }
+      .path span { background: var(--surface-sunken); border-radius: var(--radius-sm); padding: 2px var(--space-2); }
+      .path em { color: var(--ink-muted); font-style: normal; }
+      .banner { display: flex; align-items: center; gap: var(--space-3); padding: var(--space-3) var(--space-4); border-radius: var(--radius-lg); background: var(--surface-raised); border: 1px solid var(--line); border-left: 3px solid var(--rust); color: var(--ink); margin-bottom: var(--space-4); font-size: 13px; line-height: 18px; }
+      .banner b { font-family: var(--font-display); font-size: 17px; line-height: 22px; font-weight: 500; }
       .banner .sp { flex: 1; }
-      .banner.warn { background: #fff4e0; color: #6b4300; }
-      .perms { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; }
-      .perm { display: flex; align-items: center; gap: 10px; font-size: 13px; }
-      .perm i { width: 8px; height: 8px; border-radius: 50%; background: #d18f00; flex: none; }
-      .perm.ok i { background: #1f9d55; }
+      .banner.warn { background: var(--warning-soft); border-color: var(--warning-soft); border-left-color: var(--warning); color: var(--warning); }
+      .perms { display: flex; flex-direction: column; gap: var(--space-2); margin-top: var(--space-2); }
+      .perm { display: flex; align-items: center; gap: var(--space-2); font-size: 13px; line-height: 18px; }
+      .perm i { width: 8px; height: 8px; border-radius: 50%; background: var(--warning); flex: none; }
+      .perm.ok i { background: var(--moss); }
       .perm .sp { flex: 1; }
+      /* video sections */
+      .vid { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(260px, 1fr); gap: var(--space-4); }
+      .vid > * { min-width: 0; }
+      @media (max-width: 980px) { .vid { grid-template-columns: minmax(0, 1fr); } .secs { max-height: none; } }
+      .player { background: var(--ink); border-radius: var(--radius-lg); overflow: hidden; aspect-ratio: 16 / 9; display: grid; place-items: center; color: var(--ink-faint); font-size: 13px; position: relative; }
+      .player video { width: 100%; height: 100%; object-fit: contain; display: block; background: var(--ink); }
+      .player .nov { position: absolute; inset: 0; display: grid; place-items: center; padding: var(--space-5); text-align: center; color: var(--ink-inverse); }
+      .ctl { display: flex; align-items: center; gap: var(--space-2); margin-top: var(--space-2); }
+      .ctl .time { font-family: var(--font-mono); font-variant-numeric: tabular-nums; color: var(--ink-muted); font-size: 12px; min-width: 96px; }
+      .ctl .sp { flex: 1; }
+      .btn.icon { width: var(--control-md); padding: 0; display: inline-grid; place-items: center; }
+      .btn.icon svg { width: 14px; height: 14px; fill: currentColor; }
+      .strip { display: flex; height: 20px; border-radius: var(--radius-sm); overflow: hidden; background: var(--surface-sunken); margin-top: var(--space-3); position: relative; }
+      .strip i { display: block; height: 100%; cursor: pointer; opacity: 0.85; transition: opacity 0.15s, transform 0.15s; border-right: 1px solid var(--surface-raised); }
+      .strip i:hover, .strip i.on { opacity: 1; transform: scaleY(1.15); }
+      .strip .gap { background: transparent; cursor: default; border: 0; }
+      .strip .head { position: absolute; top: -3px; bottom: -3px; width: 2px; background: var(--ink); pointer-events: none; transition: left 0.25s linear; }
+      .secs { display: grid; gap: var(--space-2); max-height: 420px; overflow: auto; }
+      .sec { display: grid; grid-template-columns: 6px minmax(0, 1fr); gap: var(--space-3); align-items: start; padding: var(--space-2) var(--space-3); border: 1px solid var(--line); border-radius: var(--radius-lg); cursor: pointer; transition: background 0.15s, border-color 0.15s; background: var(--surface-raised); }
+      .sec:hover { background: var(--surface-hover); }
+      .sec.on { background: var(--surface-selected); border-color: var(--periwinkle); }
+      .sec i.sw { width: 6px; height: 100%; min-height: 34px; border-radius: 3px; display: block; }
+      .sec .nm { font-weight: 600; font-size: 13px; line-height: 18px; overflow-wrap: anywhere; }
+      .sec .st { color: var(--ink-muted); font-size: 12px; line-height: 16px; }
+      .sec .st b { color: var(--periwinkle-ink); font-weight: 600; }
+      .sec.whole { border-style: dashed; }
+      .sec.unsure { border-color: var(--warning); background: var(--warning-soft); }
+      .sec.resolved { opacity: 0.85; }
+      .ai-read { margin-top: var(--space-2); display: grid; gap: var(--space-1); font-size: 12px; line-height: 16px; }
+      .ai-read .lbl { font-weight: 600; display: flex; align-items: center; gap: var(--space-2); flex-wrap: wrap; font-size: 13px; line-height: 18px; }
+      .ai-read .lbl svg { width: 12px; height: 12px; fill: var(--lime-ink); flex: none; }
+      .ai-read .ex { color: var(--ink-secondary); }
+      .ai-read .why { color: var(--warning); }
+      .conf { display: inline-flex; align-items: center; height: 20px; font-size: 12px; line-height: 16px; font-weight: 500; padding: 0 var(--space-2); border-radius: var(--radius-pill); white-space: nowrap; font-family: var(--font-mono); }
+      .conf.hi { color: var(--agent-ink); border: 1px solid var(--agent); }
+      .conf.lo { color: var(--warning); background: var(--warning-soft); }
+      .conf.done { color: var(--success); background: var(--success-soft); font-family: var(--font-sans); }
+      .conf.fail { color: var(--danger); background: var(--danger-soft); font-family: var(--font-sans); }
+      .sec .act { display: flex; gap: var(--space-2); margin-top: var(--space-2); flex-wrap: wrap; align-items: center; }
+      .thinking { color: var(--ink-muted); font-size: 12px; line-height: 16px; display: inline-flex; align-items: center; gap: var(--space-2); }
+      .thinking i { width: 11px; height: 11px; border-radius: 50%; border: 2px solid var(--line); border-top-color: var(--lime-ink); animation: spin 0.8s linear infinite; display: inline-block; }
+      .btn.ok { background: var(--brand); border-color: var(--brand); color: var(--on-brand); font-weight: 600; }
+      .btn.ok:hover { background: var(--brand-hover); }
+      .btn.warn { background: var(--warning-soft); border-color: var(--warning-soft); color: var(--warning); }
+      .rv-sum { display: flex; gap: var(--space-4); flex-wrap: wrap; font-size: 12px; line-height: 16px; margin: 0 0 var(--space-3); align-items: center; color: var(--ink-secondary); }
+      .rv-sum span b { font-family: var(--font-mono); font-weight: 500; color: var(--ink); }
+      .rv-sum .warn-t { color: var(--warning); }
+      .rv-sum .ok-t { color: var(--success); }
+      .qa { display: grid; gap: var(--space-2); background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-lg); padding: var(--space-3); }
+      .qa .q { font-weight: 600; font-size: 13px; line-height: 18px; }
+      .qa .sum { color: var(--ink-muted); font-size: 12px; line-height: 16px; }
+      .qa input { margin-top: var(--space-1); }
+      .qa .thinking { display: flex; }
+      .qa .err { color: var(--danger); font-size: 12px; line-height: 16px; }
+      .modal .card.wide { width: 560px; }
+      .modal .autoname { font-size: 12px; line-height: 16px; color: var(--ink-muted); }
+      .modal .autoname b { color: var(--ink); font-weight: 600; }
     </style>
   </head>
   <body>
     <div class="shell">
       <nav>
-        <div class="brand"><i></i> Vista</div>
+        <div class="brand"><i class="logo-dot"></i> Vista</div>
         <button data-view="today" class="active">Today</button>
         <button data-view="review" id="nav-review" class="hidden">Last session</button>
         <button data-view="recordings">My recordings <span id="n-rec" class="pill">0</span></button>
@@ -154,6 +223,7 @@
         <div id="view-today">
           <h1>Good day.</h1>
           <p class="lede">One button. Press it when you start working, stop it when you leave. Everything else is automatic.</p>
+          <div class="rule" style="margin:0 0 var(--space-6)"></div>
 
           <div class="banner warn hidden" id="perm-banner">
             <div style="flex:1">
@@ -207,12 +277,38 @@
           <p class="lede" id="rv-lede">Your recording is on this computer. The analysis agent is turning clicks into steps.</p>
 
           <div class="banner" id="rv-banner">
-            <div class="dot" style="width:10px;height:10px;border-radius:50%;background:var(--accent)"></div>
-            <div><b id="rv-banner-t">Analyzing your session…</b><div id="rv-banner-s" style="font-size:12.5px">Analysis runs on this computer. Reports are shared only when you choose Upload report.</div></div>
+            <span class="badge agent">Agent</span>
+            <div><b id="rv-banner-t">Analyzing your session…</b><div id="rv-banner-s" style="font-size:12px;line-height:16px">Analysis runs on this computer. Reports are shared only when you choose Upload report.</div></div>
             <div class="sp"></div>
-            <button class="btn sm" id="rv-note">Add what the screen didn't see</button>
+            <button class="btn sm" id="rv-note">Add a general summary</button>
             <button class="btn sm primary" id="rv-done">Back to today</button>
           </div>
+
+          <section class="card" style="margin:0 0 14px">
+            <h2 style="display:flex;justify-content:space-between;align-items:baseline"><span>Session video, by task</span><span class="muted" style="text-transform:none;letter-spacing:0;font-weight:500" id="vs-sub">Split where you switched windows for a while</span></h2>
+            <div class="rv-sum" id="rv-sum"></div>
+            <p class="muted" style="margin:-4px 0 10px;font-size:12px;line-height:16px" id="rv-how">The AI (OpenAI) reads each stretch's activity data — apps, window titles, click/copy/paste counts, never keystrokes or, by default, screenshots — and explains what it thinks you were doing. <b>Approve</b> if it's right, <b>Fix</b> if not. Where it is less than <span id="rv-thr">88</span>% sure, it asks you to explain instead.</p>
+            <div class="vid">
+              <div>
+                <div class="player" id="player">
+                  <video id="video" preload="metadata"></video>
+                  <div class="nov hidden" id="novideo">Screen video was off for this session. Sections below still work from the interaction log.</div>
+                </div>
+                <div class="ctl">
+                  <button class="btn icon" id="v-play" title="Play"><svg viewBox="0 0 16 16"><path d="M4 2.5v11l9-5.5z"/></svg></button>
+                  <button class="btn icon hidden" id="v-pause" title="Pause"><svg viewBox="0 0 16 16"><rect x="3" y="2" width="4" height="12" rx="1"/><rect x="9" y="2" width="4" height="12" rx="1"/></svg></button>
+                  <button class="btn icon" id="v-stop" title="Stop"><svg viewBox="0 0 16 16"><rect x="3" y="3" width="10" height="10" rx="2"/></svg></button>
+                  <span class="time" id="v-time">00:00 / 00:00</span>
+                  <span class="muted" id="v-now" style="font-size:12px;line-height:16px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis"></span>
+                  <span class="sp"></span>
+                  <button class="btn sm" id="v-open">Open file</button>
+                </div>
+                <div class="strip" id="strip"><span class="head" id="head" style="left:0"></span></div>
+                <div class="tl-axis"><span id="vs-a">—</span><span id="vs-b">—</span></div>
+              </div>
+              <div class="secs" id="secs"><div class="empty">Working out the sections…</div></div>
+            </div>
+          </section>
 
           <div class="agent">
             <div class="card">
@@ -249,9 +345,9 @@
         <div id="view-recordings" class="hidden">
           <h1>My recordings</h1>
           <p class="lede">Every session lives in a folder on this computer. Use Upload report to share a completed analysis with your company. Screenshots, video and raw interaction logs stay here.</p>
-          <div class="card" style="padding:6px 0 0;overflow-x:auto">
+          <div class="card" style="padding:0;overflow-x:auto;border-top:3px solid var(--lime)">
             <table>
-              <thead><tr><th>When</th><th>Length</th><th>Interactions</th><th>Screens</th><th>Redacted</th><th>Processing</th><th>Notes</th><th></th></tr></thead>
+              <thead><tr><th>Session</th><th>Length</th><th>Interactions</th><th>Screens</th><th>Redacted</th><th>Processing</th><th>Notes</th><th></th></tr></thead>
               <tbody id="rec-rows"></tbody>
             </table>
             <div id="rec-empty" class="empty">No recordings yet — press Start on the overlay.</div>
@@ -313,20 +409,31 @@
             <input type="text" id="private-titles" placeholder="password, bank, incognito" />
             <div style="margin-top:10px"><button class="btn sm" id="save-private">Save</button> <span class="muted" id="saved-msg"></span></div>
           </section>
+          <section class="card">
+            <h2>AI explanations (OpenAI)</h2>
+            <p class="muted" style="margin:0 0 8px">After a session, the AI explains each stretch of work for you to approve or fix; where it is under 88% sure it asks you to explain instead. Uses your company's OpenAI key; only window names, counts and your notes are sent — never keystrokes. <span class="mono">OPENAI_API_KEY</span> in the environment overrides this.</p>
+            <input type="text" id="openai-key" placeholder="sk-…" autocomplete="off" />
+            <div style="height:8px"></div>
+            <input type="text" id="openai-model" placeholder="gpt-4o-mini" />
+            <div class="set" style="margin-top:6px"><label><div>Also send up to 3 screenshots per section<span>Off: text only. On: low-resolution frames go to OpenAI so it can see what was on screen.</span></div><input type="checkbox" id="openai-shots"></label></div>
+            <div style="margin-top:10px"><button class="btn sm" id="save-openai">Save</button> <span class="muted" id="saved-openai"></span></div>
+          </section>
         </div>
       </main>
     </div>
 
     <!-- annotation modal -->
     <div id="modal" class="modal hidden">
-      <div class="card">
-        <h2 style="margin:0">What the screen didn't see</h2>
+      <div class="card wide">
+        <h2 style="margin:0" id="modal-title">What the screen didn't see</h2>
         <div class="muted" id="modal-sub"></div>
         <div class="chips" id="modal-chips"></div>
         <input type="text" id="ann-label" placeholder="e.g. Phone: chased 3 overdue vendors" />
         <div class="when"><span class="muted">From</span><input type="time" id="ann-from" /><span class="muted">to</span><input type="time" id="ann-to" /></div>
-        <textarea id="ann-note" rows="2" placeholder="Anything else (optional). Emails and numbers are redacted."></textarea>
-        <div class="actions"><button class="btn" id="ann-cancel">Cancel</button><button class="btn primary" id="ann-save">Save note</button></div>
+        <textarea id="ann-note" rows="2" placeholder="What were you doing, and why? Emails and numbers are redacted."></textarea>
+        <div class="qa hidden" id="qa"></div>
+        <div class="autoname" id="autoname"></div>
+        <div class="actions"><span style="flex:1"></span><button class="btn" id="ann-cancel">Cancel</button><button class="btn primary" id="ann-save">Save note</button></div>
       </div>
     </div>
 
@@ -334,7 +441,8 @@
       const $ = (id) => document.getElementById(id);
       const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
       const short = (app) => app.replace(/^Microsoft /, '').replace(/ Desktop$/, '');
-      const PALETTE = ['#3d63dd', '#2f9e6a', '#d9a120', '#e5484d', '#8e5cd9', '#1f9fb5', '#c96b2b', '#7a7a72'];
+      const PALETTE = [1, 2, 3, 4, 5, 6, 7, 8].map((n) => `var(--chart-${n})`);
+      const AI_ICON = '<svg viewBox="0 0 16 16"><path d="M8 1l1.6 4.4L14 7l-4.4 1.6L8 13l-1.6-4.4L2 7l4.4-1.6zM13 11l.7 1.8 1.8.7-1.8.7L13 16l-.7-1.8-1.8-.7 1.8-.7z"/></svg>';
       const QUICK = ['Phone call with a vendor', 'Phone call with a customer', 'Paper invoices / filing', 'Meeting', 'Helped a colleague', 'Break'];
       const colorOf = (() => { const m = new Map(); return (app) => { if (!m.has(app)) m.set(app, PALETTE[m.size % PALETTE.length]); return m.get(app); }; })();
 
@@ -366,12 +474,13 @@
       ];
       let reviewing = null, stageIdx = -1, stageTimer = null;
 
-      function openReview(id) {
+      function openReview(id, instant = false) {
         reviewing = id;
-        stageIdx = 0;
+        stageIdx = instant ? STAGES.length - 1 : 0;
         clearInterval(stageTimer);
         $('nav-review').classList.remove('hidden');
         show('review');
+        loadSections(id);
         // pace the stage list so the employee can follow it even when taskmining finishes in <1s
         stageTimer = setInterval(() => {
           const r = recordings.find((x) => x.recording_id === reviewing);
@@ -393,12 +502,12 @@
         const done = finished && allShown && p === 'done';
         const s = r.summary;
         const when = `${clock(r.started_at)}–${r.ended_at ? clock(r.ended_at) : '…'}`;
-        $('rv-title').textContent = done ? 'Session analyzed' : 'Session saved';
+        $('rv-title').textContent = r.name ?? (done ? 'Session analyzed' : 'Session saved');
         $('rv-lede').textContent = `${when} · ${hm(r.active_seconds ?? 0)} · ${(r.counts?.total ?? 0).toLocaleString()} interactions · ${(r.counts?.redactions ?? 0)} redacted on this device`;
         $('rv-banner-t').textContent = done ? 'Analysis complete' : p === 'failed' ? 'Analysis could not finish' : p === 'skipped' ? 'Analysis skipped' : 'Analyzing your session…';
         $('rv-banner-s').textContent = done
-          ? 'Add a note for anything the screen could not see — calls, paper, a chat at a desk — and the agent re-runs.'
-          : p === 'failed' || p === 'skipped' ? (r.processing_note ?? '') : 'Analysis runs on this computer. Reports are shared only when you choose Upload report.';
+          ? analystSummary()
+          : p === 'failed' || p === 'skipped' ? (r.processing_note ?? '') : cloud?.connected ? 'Analysis runs on this computer; the redacted report then goes to your company workspace, where the AI explains each stretch for you.' : 'Analysis runs on this computer. Reports are shared only when you choose Upload report.';
 
         const out = (k) => {
           if (!s) return '';
@@ -444,7 +553,198 @@
           : '<div class="empty">No copy → paste between apps seen</div>';
       }
       $('rv-done').onclick = () => show('today');
-      $('rv-note').onclick = () => openAnnotate(reviewing);
+      $('rv-note').onclick = () => openAnnotate(reviewing, '', { whole: true });
+
+      // One line for the analyst (and the employee) on where the review stands:
+      // how many stretches the AI explained, how many still need approval, how many it found unclear.
+      function analystSummary() {
+        const rv = vs?.review;
+        if (!rv) return 'Working out the stretches of work…';
+        if (!rv.enabled) return 'Connect your company workspace under Settings → Cloud workspace (or add an OpenAI key) and the AI will explain each stretch for you to approve. Until then, describe them yourself below.';
+        const s = rv.summary;
+        const where = rv.source === 'cloud' ? 'Your workspace' : 'The AI';
+        if (rv.generating) return `${where} is explaining each stretch of work… ${s.total ? `${s.total} of ${vs.sections.length} done.` : ''}`;
+        if (rv.sync_error) return `Could not sync with your workspace: ${rv.sync_error}`;
+        if (!s.total) return 'No explanations yet.';
+        const parts = [`The AI explained ${s.total} stretch${s.total === 1 ? '' : 'es'} of work.`];
+        if (s.awaiting) parts.push(`${s.awaiting} need${s.awaiting === 1 ? 's' : ''} your approval.`);
+        if (s.unclear + s.failed) parts.push(`${s.unclear + s.failed} ${s.unclear + s.failed === 1 ? 'was' : 'were'} unclear (under ${Math.round(s.threshold * 100)}% sure) and need${s.unclear + s.failed === 1 ? 's' : ''} your explanation.`);
+        if (!s.open) parts.push('All confirmed — nothing left to review.');
+        if (rv.session && rv.session.status !== 'approved' && rv.session.status !== 'fixed' && rv.session.status !== 'explained') parts.push('The whole-session summary is waiting for you too.');
+        return parts.join(' ');
+      }
+
+      function renderReviewSummary() {
+        const rv = vs?.review, s = rv?.summary;
+        $('rv-thr').textContent = Math.round((s?.threshold ?? 0.88) * 100);
+        $('rv-how').classList.toggle('hidden', !rv?.enabled);
+        if (!rv?.enabled || !s?.total) { $('rv-sum').innerHTML = ''; return; }
+        $('rv-sum').innerHTML = [
+          `<span><b>${s.total}</b> explained by AI</span>`,
+          `<span class="${s.awaiting ? '' : 'ok-t'}"><b>${s.awaiting}</b> awaiting approval</span>`,
+          `<span class="${s.unclear + s.failed ? 'warn-t' : 'ok-t'}"><b>${s.unclear + s.failed}</b> unclear — need your explanation</span>`,
+          `<span class="ok-t"><b>${s.resolved}</b> confirmed</span>`,
+          rv.generating ? '<span class="thinking"><i></i> still explaining…</span>' : `<button class="btn sm" id="rv-regen" title="Ask the AI again for anything not yet confirmed">Re-run AI</button>`,
+        ].join('');
+        const b = $('rv-regen');
+        if (b) b.onclick = () => window.vista.explain(reviewing, { force: true });
+      }
+
+      // ---- session video, split into task sections --------------------------------
+      const video = $('video');
+      let vs = null, activeSec = null, stopAt = null;
+      const mmss = (s) => { s = Math.max(0, Math.floor(s || 0)); const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), r = s % 60; return (h ? h + ':' : '') + String(m).padStart(2, '0') + ':' + String(r).padStart(2, '0'); };
+
+      async function loadSections(id) {
+        vs = null; activeSec = null; stopAt = null;
+        $('secs').innerHTML = '<div class="empty">Working out the sections…</div>';
+        try { vs = await window.vista.sections(id); } catch (e) { $('secs').innerHTML = `<div class="empty">${esc(e.message)}</div>`; return; }
+        if (reviewing !== id) return;
+        const hasVideo = !!vs.video_url;
+        $('novideo').classList.toggle('hidden', hasVideo);
+        $('v-open').classList.toggle('hidden', !hasVideo);
+        video.classList.toggle('hidden', !hasVideo);
+        if (hasVideo && video.src !== vs.video_url) { video.src = vs.video_url; video.load(); }
+        $('vs-a').textContent = clock(vs.started_at);
+        $('vs-b').textContent = vs.ended_at ? clock(vs.ended_at) : '…';
+        $('vs-sub').textContent = vs.sections.length ? `${vs.sections.length} stretches of work · short hops folded in` : 'No window switches recorded';
+        renderSections();
+        // key added after the session ended, or the app was closed mid-way: pick the explanations up now
+        if (vs.review.enabled && vs.ended_at && !vs.review.generating && !vs.review.summary.total && !vs.review.session) window.vista.explain(id).catch(() => {});
+      }
+      // main pushes fresh sections while the AI is explaining and after each decision
+      window.vista.onSections((next) => {
+        if (!reviewing || next.recording_id !== reviewing) return;
+        vs = next;
+        renderSections();
+        renderReview();
+      });
+
+      const RESOLVED = new Set(['approved', 'fixed', 'explained']);
+      const pct = (c) => `${Math.round((c ?? 0) * 100)}%`;
+      // The AI's read of a stretch + the one decision the employee has to make about it.
+      function aiBlock(item, key) {
+        const rv = vs.review;
+        if (!rv.enabled) return { cls: '', read: '', act: `<button class="btn sm primary" data-ann="${key}">Describe</button>` };
+        if (!item) return { cls: '', read: '', act: rv.generating ? '<span class="thinking"><i></i>AI is explaining…</span>' : `<button class="btn sm primary" data-ann="${key}">Describe</button>` };
+        if (RESOLVED.has(item.status)) {
+          const how = { approved: 'AI explanation approved', fixed: 'You corrected the AI', explained: 'You explained it' }[item.status];
+          return {
+            cls: 'resolved',
+            read: `<div class="ai-read"><div class="lbl">${esc(item.final_label)} <span class="conf done">✓ ${how}</span></div>${item.final_note ? `<div class="ex">${esc(item.final_note)}</div>` : ''}</div>`,
+            act: `<button class="btn sm" data-ann="${key}">Edit</button>`,
+          };
+        }
+        if (item.status === 'failed') {
+          return {
+            cls: 'unsure',
+            read: `<div class="ai-read"><div class="lbl">${AI_ICON} AI could not explain this <span class="conf fail">error</span></div><div class="why">${esc(item.error ?? '')}</div></div>`,
+            act: `<button class="btn sm warn" data-explain="${key}">Explain what happened</button>`,
+          };
+        }
+        if (item.status === 'unsure') {
+          return {
+            cls: 'unsure',
+            read: `<div class="ai-read"><div class="lbl">${AI_ICON} ${esc(item.label || 'Not sure what this was')} <span class="conf lo">${pct(item.confidence)} sure · needs you</span></div>${item.explanation ? `<div class="ex">${esc(item.explanation)}</div>` : ''}${item.unclear?.length ? `<div class="why">Unclear: ${esc(item.unclear.join('; '))}</div>` : ''}</div>`,
+            act: `<button class="btn sm warn" data-explain="${key}">Explain what happened</button>`,
+          };
+        }
+        return {
+          cls: '',
+          read: `<div class="ai-read"><div class="lbl">${AI_ICON} ${esc(item.label)} <span class="conf hi">${pct(item.confidence)} sure</span></div><div class="ex">${esc(item.explanation)}</div></div>`,
+          act: `<button class="btn sm ok" data-approve="${key}">Approve</button><button class="btn sm" data-fix="${key}">Fix</button>`,
+        };
+      }
+
+      function renderSections() {
+        if (!vs) return;
+        const t0 = Date.parse(vs.started_at), t1 = (vs.ended_at ? Date.parse(vs.ended_at) : Date.now()) || t0 + 1;
+        const span = Math.max(1, t1 - t0);
+        // strip: sections in place over the whole session, gaps transparent
+        let cursor = t0, html = '';
+        for (const s of vs.sections) {
+          const a = Date.parse(s.start), b = Date.parse(s.end);
+          if (a > cursor) html += `<i class="gap" style="width:${((a - cursor) / span) * 100}%"></i>`;
+          html += `<i data-sec="${s.index}" class="${activeSec === s.index ? 'on' : ''}" title="${esc(s.name)}" style="width:${((b - a) / span) * 100}%;background:${colorOf(s.app)}"></i>`;
+          cursor = b;
+        }
+        $('strip').innerHTML = html + '<span class="head" id="head" style="left:0"></span>';
+        $('strip').querySelectorAll('[data-sec]').forEach((el) => (el.onclick = () => playSection(+el.dataset.sec)));
+        // list: whole session first, then the sections
+        const whole = { whole: true, name: 'Whole session', seconds: Math.round(span / 1000) };
+        const manual = (s) => (!vs.review.enabled && s.annotations?.length ? ` · <b>✓ ${esc(s.annotations[0].label)}</b>` : '');
+        const w = aiBlock(vs.review.session, 'w');
+        $('secs').innerHTML = [
+          `<div class="sec whole ${w.cls}" data-w="1"><i class="sw" style="background:var(--line-strong)"></i><div><div class="nm">${esc(recordings.find((r) => r.recording_id === reviewing)?.name ?? 'Whole session')}</div><div class="st">${hm(whole.seconds)} · ${vs.sections.length} stretches · general summary of the whole recording</div>${w.read}<div class="act">${w.act}</div></div></div>`,
+          ...vs.sections.map((s) => {
+            const a = aiBlock(s.review, s.index);
+            return `<div class="sec ${activeSec === s.index ? 'on' : ''} ${a.cls}" data-sec="${s.index}"><i class="sw" style="background:${colorOf(s.app)}"></i><div><div class="nm">${esc(s.name)}</div><div class="st">${hm(s.seconds)} · ${(s.counts.click ?? 0)} clicks · ${(s.counts.copy ?? 0) + (s.counts.paste ?? 0)} copy/paste${manual(s)}</div>${a.read}<div class="act">${a.act}</div></div></div>`;
+          }),
+        ].join('');
+        if (!vs.sections.length) $('secs').insertAdjacentHTML('beforeend', '<div class="empty">No long stretches found — the session may be very short.</div>');
+        renderReviewSummary();
+        const target = (k) => (k === 'w' ? { whole: true } : vs.sections[+k]);
+        $('secs').querySelectorAll('.sec[data-sec]').forEach((el) => (el.onclick = (e) => { if (!e.target.closest('button')) playSection(+el.dataset.sec); }));
+        $('secs').querySelectorAll('[data-ann]').forEach((b) => (b.onclick = (e) => { e.stopPropagation(); openAnnotate(reviewing, '', target(b.dataset.ann)); }));
+        $('secs').querySelectorAll('[data-approve]').forEach((b) => (b.onclick = async (e) => { e.stopPropagation(); b.disabled = true; await decide(target(b.dataset.approve), 'approve'); }));
+        $('secs').querySelectorAll('[data-fix]').forEach((b) => (b.onclick = (e) => { e.stopPropagation(); openAnnotate(reviewing, '', target(b.dataset.fix), 'fix'); }));
+        $('secs').querySelectorAll('[data-explain]').forEach((b) => (b.onclick = (e) => { e.stopPropagation(); openAnnotate(reviewing, '', target(b.dataset.explain), 'explain'); }));
+      }
+
+      const reviewItemOf = (section) => (section?.whole ? vs?.review?.session : section?.review) ?? null;
+      const reviewKeyOf = (section) => (section?.whole ? 'session' : section?.id);
+      async function decide(section, action, body = {}) {
+        try {
+          vs = await window.vista.decide(reviewing, reviewKeyOf(section), action, body);
+        } catch (e) {
+          alert(e.message);
+        }
+        renderSections();
+        recordings = await window.vista.recordings();
+        renderRecordings();
+        renderReview();
+      }
+
+      function playSection(i) {
+        const s = vs?.sections[i];
+        if (!s) return;
+        activeSec = i;
+        stopAt = s.offset_s + s.seconds;
+        $('v-now').textContent = s.name;
+        renderSections();
+        if (!vs.video_url) return;
+        seekTo(s.offset_s).then(() => video.play().catch(() => {}));
+      }
+
+      // MediaRecorder webm has no duration index; nudge Chromium into computing one so seeking works.
+      let durationReady = false;
+      video.addEventListener('loadedmetadata', () => {
+        durationReady = Number.isFinite(video.duration);
+        if (!durationReady) { video.currentTime = 1e9; }
+      });
+      video.addEventListener('durationchange', () => { if (Number.isFinite(video.duration) && !durationReady) { durationReady = true; video.currentTime = 0; } });
+      async function seekTo(sec) {
+        if (!durationReady) await new Promise((res) => { const h = () => { if (Number.isFinite(video.duration)) { video.removeEventListener('durationchange', h); res(); } }; video.addEventListener('durationchange', h); setTimeout(res, 1500); });
+        video.currentTime = Math.min(sec, Math.max(0, (video.duration || sec) - 0.5));
+      }
+      video.addEventListener('timeupdate', () => {
+        if (!vs) return;
+        const d = Number.isFinite(video.duration) ? video.duration : 0;
+        $('v-time').textContent = `${mmss(video.currentTime)} / ${mmss(d)}`;
+        const t0 = Date.parse(vs.started_at), t1 = vs.ended_at ? Date.parse(vs.ended_at) : Date.now();
+        const head = document.getElementById('head');
+        if (head) head.style.left = `${Math.min(100, (video.currentTime * 1000 / Math.max(1, t1 - t0)) * 100)}%`;
+        if (stopAt != null && video.currentTime >= stopAt) { video.pause(); stopAt = null; }
+        const cur = vs.sections.find((s) => video.currentTime >= s.offset_s && video.currentTime < s.offset_s + s.seconds);
+        if (cur && cur.index !== activeSec) { activeSec = cur.index; $('v-now').textContent = cur.name; renderSections(); }
+      });
+      const syncPlayBtns = () => { $('v-play').classList.toggle('hidden', !video.paused); $('v-pause').classList.toggle('hidden', video.paused); };
+      video.addEventListener('play', syncPlayBtns); video.addEventListener('pause', syncPlayBtns);
+      $('v-play').onclick = () => { stopAt = null; video.play().catch(() => {}); };
+      $('v-pause').onclick = () => video.pause();
+      $('v-stop').onclick = () => { video.pause(); stopAt = null; seekTo(activeSec != null && vs ? vs.sections[activeSec].offset_s : 0); };
+      $('v-open').onclick = () => vs?.video && window.vista.openRecording(reviewing);
+      video.onclick = () => (video.paused ? video.play().catch(() => {}) : video.pause());
 
       // ---- today ----
       function renderHero(st) {
@@ -552,16 +852,17 @@
           const d = new Date(r.started_at);
           const when = `${d.toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' })} · ${clock(r.started_at)}${r.ended_at ? '–' + clock(r.ended_at) : ''}`;
           const p = r.processing ?? 'pending';
+          const title = r.name ? `<div style="font-weight:600;color:var(--ink)">${esc(r.name)}</div>` : '';
           const sum = r.summary ? `<div class="muted" style="font-size:12px;margin-top:3px">${r.summary.steps} steps · ${r.summary.cases} case${r.summary.cases === 1 ? '' : 's'} · ${r.summary.open_questions} question${r.summary.open_questions === 1 ? '' : 's'}</div>` : (r.processing_note ? `<div class="muted" style="font-size:12px;margin-top:3px">${esc(r.processing_note)}</div>` : '');
           return `<tr>
-            <td>${esc(when)}<div class="muted" style="font-size:12px">${(r.apps ?? []).slice(0, 3).map((a) => esc(short(a.app))).join(' · ')}</div></td>
+            <td>${title}<div class="muted" style="font-size:12px">${esc(when)}</div></td>
             <td>${r.active_seconds != null ? hm(r.active_seconds) : '<span class="muted">live</span>'}</td>
             <td>${(r.counts?.total ?? 0).toLocaleString()}</td>
             <td>${(r.counts?.screen ?? 0).toLocaleString()}</td>
             <td>${(r.counts?.redactions ?? 0).toLocaleString()}</td>
             <td><span class="pill ${p}">${p}</span>${sum}</td>
             <td>${r.annotations ? `${r.annotations} note${r.annotations === 1 ? '' : 's'}` : '<span class="muted">—</span>'}</td>
-            <td style="white-space:nowrap"><button class="btn sm" data-ann="${esc(r.recording_id)}">Add note</button> <button class="btn sm" data-open="${esc(r.recording_id)}">Folder</button> <button class="btn sm" data-upload="${esc(r.recording_id)}" ${p !== 'done' ? 'disabled' : ''}>Upload report</button><div class="muted" style="font-size:11px;white-space:normal">${uploadLabel(r.recording_id)}</div></td>
+            <td style="white-space:nowrap"><button class="btn sm primary" data-review="${esc(r.recording_id)}">Review</button> <button class="btn sm" data-ann="${esc(r.recording_id)}">Add note</button> <button class="btn sm" data-open="${esc(r.recording_id)}">Folder</button> <button class="btn sm" data-upload="${esc(r.recording_id)}" ${p !== 'done' ? 'disabled' : ''}>Upload report</button><div class="muted" style="font-size:11px;white-space:normal">${uploadLabel(r.recording_id)}</div></td>
           </tr>`;
         }).join('');
         $('rec-rows').querySelectorAll('[data-upload]').forEach(b => b.onclick = async () => {
@@ -571,43 +872,108 @@
           finally { renderRecordings(); }
         });
         $('rec-rows').querySelectorAll('[data-ann]').forEach((b) => (b.onclick = () => openAnnotate(b.dataset.ann)));
+        $('rec-rows').querySelectorAll('[data-review]').forEach((b) => (b.onclick = () => openReview(b.dataset.review, true)));
         $('rec-rows').querySelectorAll('[data-open]').forEach((b) => (b.onclick = () => window.vista.openRecording(b.dataset.open)));
       }
 
-      // ---- annotate ----
-      function openAnnotate(id, preset = '') {
+      // ---- annotate / fix / explain ----
+      // `section` is a video section ({index, name, start, end, review, ...}) or {whole:true}; omitted = free note.
+      // `mode`: 'fix' (correct a confident AI explanation), 'explain' (AI was unsure — the employee must say
+      // what happened, optionally answering the AI's questions), or null (own note / edit).
+      let annSection = null, annMode = null;
+      function openAnnotate(id, preset = '', section = null, mode = null) {
         if (!id) return alert('Start a recording first — notes attach to a session.');
         annotating = id;
+        annSection = section;
+        const item = reviewItemOf(section);
+        annMode = mode ?? (!item ? null : item.status === 'unsure' || item.status === 'failed' ? 'explain' : 'fix');
         const r = recordings.find((x) => x.recording_id === id);
-        $('modal-sub').textContent = r ? `Attached to your ${clock(r.started_at)} session (${r.active_seconds != null ? hm(r.active_seconds) : 'in progress'}).` : '';
+        const whole = section?.whole;
+        const what = whole ? 'this session' : 'this stretch of work';
+        $('modal-title').textContent = annMode === 'fix' ? `Fix the AI's explanation of ${what}`
+          : annMode === 'explain' ? `Explain ${what} — the AI wasn't sure`
+          : whole ? 'General summary — what was this session about?' : section ? 'Describe this stretch of work' : 'Add a note';
+        $('modal-sub').textContent = whole
+          ? 'A line or two on what you were trying to get done and why. It names the recording and frames the analysis.'
+          : section ? `${section.name} · ${hm(section.seconds)}. What were you doing here, and why?`
+          : r ? `Attached to your ${clock(r.started_at)} session (${r.active_seconds != null ? hm(r.active_seconds) : 'in progress'}).` : '';
+        $('modal-chips').classList.toggle('hidden', !!section);
+        $('ann-save').textContent = annMode === 'fix' ? 'Save correction' : annMode === 'explain' ? 'Save explanation' : whole ? 'Save summary' : 'Save note';
         $('modal-chips').innerHTML = QUICK.map((q) => `<span class="chip ${q === preset ? 'on' : ''}" data-q="${esc(q)}">${esc(q)}</span>`).join('');
         $('modal-chips').querySelectorAll('.chip').forEach((c) => (c.onclick = () => { $('ann-label').value = c.dataset.q; $('modal-chips').querySelectorAll('.chip').forEach((x) => x.classList.toggle('on', x === c)); }));
-        $('ann-label').value = preset;
-        $('ann-note').value = '';
-        $('ann-from').value = r ? hhmm(r.started_at) : '';
-        $('ann-to').value = r ? hhmm(r.ended_at ?? new Date().toISOString()) : '';
+        // start from the AI's label when fixing (or editing a resolved item) so the employee only edits what's wrong
+        $('ann-label').value = preset || item?.final_label || (annMode === 'fix' ? item?.label ?? '' : '');
+        $('ann-label').placeholder = whole ? 'e.g. Month-end AP run for March — entering vendor bills and reconciling the tracker' : section ? `e.g. Matching vendor invoices to POs` : 'e.g. Phone: chased 3 overdue vendors';
+        $('ann-note').value = item?.final_note ?? '';
+        $('ann-note').placeholder = annMode === 'explain'
+          ? 'What was actually going on here? Phone calls, paper, meetings and anything off-screen count. Emails and numbers are redacted.'
+          : whole
+          ? 'Anything that explains the session: what triggered it, what happened off-screen, what was hard. Emails and numbers are redacted.'
+          : 'What were you doing, and why? Emails and numbers are redacted.';
+        const from = section && !whole ? section.start : r?.started_at;
+        const to = section && !whole ? section.end : (r?.ended_at ?? new Date().toISOString());
+        $('ann-from').value = from ? hhmm(from) : '';
+        $('ann-to').value = to ? hhmm(to) : '';
+        $('ann-from').disabled = $('ann-to').disabled = !!section;
+        renderAiContext(item);
+        updateAutoName();
         $('modal').classList.remove('hidden');
         $('ann-label').focus();
       }
+      // Auto-name preview: "09:12–09:48 · Excel — AP tracker" + what the employee typed.
+      function updateAutoName() {
+        const r = recordings.find((x) => x.recording_id === annotating);
+        const typed = $('ann-label').value.trim();
+        let base;
+        if (annSection?.whole) base = r?.name?.split(' — ')[0] ?? 'Session';
+        else if (annSection) base = annSection.name;
+        else base = r ? `${hhmm(r.started_at)}–${hhmm(r.ended_at ?? new Date().toISOString())}` : '';
+        $('autoname').innerHTML = `Saved as <b>${esc(base)}${typed ? ' — ' + esc(typed) : ''}</b>`;
+      }
+      $('ann-label').oninput = updateAutoName;
+
+      // What the AI thought, shown above the form so the employee corrects rather than starts from scratch.
+      // For unsure items its questions become optional inputs; answers are saved with the explanation.
+      function renderAiContext(item) {
+        const box = $('qa');
+        if (!item || (annMode !== 'fix' && annMode !== 'explain')) { box.classList.add('hidden'); box.innerHTML = ''; return; }
+        box.classList.remove('hidden');
+        const head = item.status === 'failed'
+          ? `<div class="err">The AI could not explain this stretch${item.error ? ': ' + esc(item.error) : ''}.</div>`
+          : `<div class="sum"><b>AI read (${pct(item.confidence)} sure):</b> ${esc(item.label)}${item.explanation ? ' — ' + esc(item.explanation) : ''}</div>`;
+        const unclear = item.unclear?.length ? `<div class="sum">Unclear to it: ${esc(item.unclear.join('; '))}</div>` : '';
+        const qs = (item.questions ?? []).map((q, i) => `<label><div class="q">${esc(q)}</div><input type="text" data-q="${esc(q)}" id="qa-${i}" placeholder="Optional" /></label>`).join('');
+        box.innerHTML = head + unclear + qs;
+      }
+      const collectAnswers = () => [...$('qa').querySelectorAll('input[data-q]')].map((el) => ({ q: el.dataset.q, a: el.value.trim() })).filter((x) => x.a);
+
       $('ann-cancel').onclick = () => $('modal').classList.add('hidden');
+      $('modal').onclick = (e) => { if (e.target === $('modal')) $('modal').classList.add('hidden'); };
       $('ann-save').onclick = async () => {
         const label = $('ann-label').value.trim();
-        if (!label) return $('ann-label').focus();
-        const r = recordings.find((x) => x.recording_id === annotating);
-        const at = (t, fallback) => {
-          if (!t || !r || (fallback && t === hhmm(fallback))) return fallback;
-          const d = new Date(r.started_at);
-          const [h, m] = t.split(':').map(Number);
-          d.setHours(h, m, 0, 0);
-          return d.toISOString();
-        };
-        const start = at($('ann-from').value, r?.started_at);
-        const end = at($('ann-to').value, r?.ended_at);
-        await window.vista.annotate(annotating, { label, note: $('ann-note').value.trim(), start, end });
+        const note = $('ann-note').value.trim();
+        if (!label && !note) return $('ann-label').focus();
         $('modal').classList.add('hidden');
+        if (annMode === 'fix' || annMode === 'explain') {
+          await decide(annSection, annMode, { label, note, answers: collectAnswers() });
+          return;
+        }
+        const r = recordings.find((x) => x.recording_id === annotating);
+        const day = (r?.started_at ?? new Date().toISOString()).slice(0, 10);
+        const at = (v, fallback) => (v ? new Date(`${day}T${v}:00`).toISOString() : fallback);
+        const whole = annSection?.whole;
+        await window.vista.annotate(annotating, {
+          label: label || note.slice(0, 60),
+          note,
+          start: annSection && !whole ? annSection.start : at($('ann-from').value, r?.started_at),
+          end: annSection && !whole ? annSection.end : at($('ann-to').value, r?.ended_at),
+          scope: whole ? 'session' : annSection ? 'section' : 'manual',
+          section_id: annSection && !whole ? annSection.id : null,
+        });
         recordings = await window.vista.recordings();
         renderRecordings();
         renderReview();
+        if (reviewing === annotating) loadSections(reviewing);
       };
 
       // ---- settings ----
@@ -624,7 +990,16 @@
         $('settings').querySelectorAll('input').forEach((i) => (i.onchange = async () => { settings = await window.vista.setSettings({ [i.dataset.k]: i.checked }); }));
         $('private-apps').value = settings.privateApps.join(', ');
         $('private-titles').value = settings.privateTitles.join(', ');
+        $('openai-key').value = settings.openaiApiKey ?? '';
+        $('openai-model').value = settings.openaiModel ?? '';
+        $('openai-shots').checked = !!settings.clarifyScreenshots;
       }
+      $('save-openai').onclick = async () => {
+        settings = await window.vista.setSettings({ openaiApiKey: $('openai-key').value.trim(), openaiModel: $('openai-model').value.trim(), clarifyScreenshots: $('openai-shots').checked });
+        info = await window.vista.info();
+        $('saved-openai').textContent = info.openai ? 'Saved — AI explanations are on' : 'Saved — no key, AI explanations are off';
+        setTimeout(() => ($('saved-openai').textContent = ''), 2500);
+      };
       $('save-private').onclick = async () => {
         const split = (v) => v.split(',').map((s) => s.trim()).filter(Boolean);
         settings = await window.vista.setSettings({ privateApps: split($('private-apps').value), privateTitles: split($('private-titles').value) });

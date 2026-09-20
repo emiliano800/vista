@@ -4,24 +4,39 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
     <title>Vista · Company workspace</title>
+    <link rel="stylesheet" href="/tokens.css" />
     <link rel="stylesheet" href="/style.css" />
     <script type="module" src="/app.js"></script>
   </head>
   <body>
     <header>
-      <a class="brand" href="/">V<span>Vista</span></a
+      <a class="brand" href="/">Vista</a
       ><span class="muted">Company workspace</span
-      ><button id="signout" hidden>Sign out</button>
+      ><button id="signout" class="ghost" hidden>Sign out</button>
     </header>
     <main>
       <div id="message" role="status" aria-live="polite"></div>
       <section id="login" class="login" hidden>
-        <p class="eyebrow">WORK, UNDERSTOOD</p>
-        <h1>A clearer picture<br />of everyday work.</h1>
-        <p class="muted">
-          Review your company’s recording reports, explore the evidence, and
-          find opportunities to improve.
-        </p>
+        <div class="login-copy">
+          <p class="eyebrow">Work, understood</p>
+          <h1>A clearer picture of <i>everyday</i> work.</h1>
+          <p class="lede">
+            Review your company’s recording reports, read the evidence behind
+            every step, and find the work worth changing.
+          </p>
+          <ul class="facts">
+            <li>
+              Reports are analysed on the recorder before anything is shared.
+            </li>
+            <li>
+              Screenshots, video and raw interaction logs never leave the
+              device.
+            </li>
+            <li>
+              Observed facts, inferred labels and employee notes stay separable.
+            </li>
+          </ul>
+        </div>
         <form id="login-form" class="card">
           <h2>Sign in to your workspace</h2>
           <label for="key">Your access key</label
@@ -46,14 +61,14 @@
             <p class="eyebrow" id="identity"></p>
             <h1>Recording reports</h1>
             <p class="muted">
-              Completed sessions, analyzed on the recorder and shared with your
+              Completed sessions, analysed on the recorder and shared with your
               company.
             </p>
           </div>
           <label>Company<select id="company"></select></label>
         </div>
         <div class="card instructions">
-          <strong>Share a completed session</strong>
+          <h2>Share a completed session</h2>
           <p>
             In the Vista desktop app, open Settings → Cloud workspace, connect
             using this website address, the company ID below, and your personal
@@ -77,10 +92,10 @@
         </div>
       </section>
       <section id="detail" hidden>
-        <button id="back">← All recordings</button>
+        <button id="back" class="link">← All recordings</button>
         <div class="heading">
           <div>
-            <p class="eyebrow">SESSION REPORT</p>
+            <p class="eyebrow">Session report</p>
             <h1 id="detail-title"></h1>
             <p class="muted" id="detail-sub"></p>
           </div>
@@ -90,6 +105,28 @@
           </div>
         </div>
         <div id="metrics" class="metrics"></div>
+        <div class="card">
+          <h2>Employee review</h2>
+          <p class="muted" id="review-summary">
+            The AI explains each stretch of the session; the employee approves,
+            fixes or explains it. Stretches under the confidence threshold need
+            the employee's own words.
+          </p>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Stretch</th>
+                  <th>AI explanation</th>
+                  <th class="num">Confidence</th>
+                  <th>Status</th>
+                  <th>Final label / employee note</th>
+                </tr>
+              </thead>
+              <tbody id="review"></tbody>
+            </table>
+          </div>
+        </div>
         <div class="card">
           <h2>Automation opportunities</h2>
           <p class="muted">
@@ -103,7 +140,7 @@
           <h2>Activity evidence</h2>
           <p class="muted">
             Each row is a source step from the uploaded event log. Labels and
-            case groupings may be inferred; provenance shows how each was
+            case groupings may be inferred; the source column shows how each was
             assigned.
           </p>
           <label
@@ -115,9 +152,10 @@
             <table>
               <thead>
                 <tr>
-                  <th>Row</th>
+                  <th class="num">Row</th>
                   <th>Activity / note</th>
                   <th>Time</th>
+                  <th class="num">Duration</th>
                   <th>App</th>
                   <th>Case</th>
                   <th>Label / case source</th>
@@ -134,6 +172,9 @@
         </div>
       </section>
     </main>
-    <footer>Vista · Evidence before decisions</footer>
+    <footer>
+      <span>Vista · Evidence before decisions</span
+      ><span>Screens stay on the device. Reports come to you.</span>
+    </footer>
   </body>
 </html>

@@ -1,0 +1,284 @@
+/* Vista design tokens — "Field Notes". See DESIGN.md at the repo root.
+   Components use var(--token); no raw hex outside this file.
+   Fonts are self-hosted (CSP is 'self'); URLs are relative to this file so
+   the Electron recorder UI can share it. */
+@font-face {
+  font-family: "Newsreader";
+  font-style: normal;
+  font-weight: 300 500;
+  font-display: swap;
+  src: url("fonts/newsreader-latin.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Newsreader";
+  font-style: italic;
+  font-weight: 300 400;
+  font-display: swap;
+  src: url("fonts/newsreader-italic-latin.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Inter";
+  font-style: normal;
+  font-weight: 400 600;
+  font-display: swap;
+  src: url("fonts/inter-latin.woff2") format("woff2");
+}
+
+:root {
+  /* ---- palette ---- */
+  --cream: #f4efe6;
+  --cream-2: #ebe4d6;
+  --paper: #fbf8f2;
+  --ink: #1f1c18;
+  --ink-2: #57514a;
+  --ink-3: #8b8377;
+  --rust: #b3471f;
+  --moss: #4d6b4a;
+
+  /* ---- grounds ---- */
+  --surface: var(--cream);
+  --surface-raised: var(--paper);
+  --surface-sunken: var(--cream-2);
+  --surface-hover: var(--cream-2);
+  --surface-selected: #e3d9c6;
+  --line: #d9d1c2;
+  --line-strong: #b9ae9b;
+
+  /* ---- text ---- */
+  --ink-secondary: var(--ink-2);
+  --ink-muted: var(--ink-3);
+  --ink-faint: #a69d8f;
+  --ink-inverse: var(--cream);
+
+  /* ---- brand: ink is the fill, rust is the accent ---- */
+  --brand: var(--ink);
+  --on-brand: var(--cream);
+  --brand-ink: var(--rust);
+  --brand-hover: #3a342c;
+  --brand-soft: var(--cream-2);
+  --link: var(--ink);
+  --accent: var(--rust);
+  --accent-soft: #f0d5c3;
+
+  /* ---- provenance: agent / rule work is moss, human word is rust ---- */
+  --agent: var(--moss);
+  --on-agent: var(--cream);
+  --agent-ink: var(--moss);
+  --agent-soft: #dfe6da;
+  --human: var(--rust);
+  --on-human: var(--cream);
+  --human-ink: var(--rust);
+  --human-soft: var(--accent-soft);
+  /* legacy aliases kept for older screens */
+  --lime: var(--agent);
+  --on-lime: var(--on-agent);
+  --lime-ink: var(--agent-ink);
+  --lime-soft: var(--agent-soft);
+  --periwinkle: var(--human);
+  --on-periwinkle: var(--on-human);
+  --periwinkle-ink: var(--human-ink);
+  --periwinkle-soft: var(--human-soft);
+  --focus-ring: var(--rust);
+
+  /* ---- status ---- */
+  --success: var(--moss);
+  --success-soft: var(--agent-soft);
+  --warning: #8a5a12;
+  --warning-soft: #f3e4c4;
+  --danger: var(--rust);
+  --danger-soft: var(--accent-soft);
+  --on-danger: var(--cream);
+
+  /* Categorical series (timelines, app bars). */
+  --chart-1: var(--ink);
+  --chart-2: var(--rust);
+  --chart-3: var(--moss);
+  --chart-4: #c9a227;
+  --chart-5: #6b7fa3;
+  --chart-6: #8b6f8e;
+  --chart-7: #a3826b;
+  --chart-8: var(--line-strong);
+
+  --font-sans: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-display: "Newsreader", Georgia, serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  --serif: var(--font-display);
+  --sans: var(--font-sans);
+
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+  --space-16: 64px;
+  --space-24: 96px;
+
+  --radius-sm: 3px;
+  --radius-md: 4px;
+  --radius-lg: 4px;
+  --radius-xl: 6px;
+  --radius-pill: 999px;
+
+  --shadow-sm: 0 1px 2px rgba(31, 28, 24, 0.08);
+  --shadow-md: 0 12px 28px -18px rgba(31, 28, 24, 0.45);
+  --shadow-lg: 0 30px 50px -40px rgba(31, 28, 24, 0.5);
+
+  --control-sm: 28px;
+  --control-md: 36px;
+  --control-lg: 44px;
+  --row: 40px;
+  --sidebar: 240px;
+}
+
+::selection {
+  background: var(--accent-soft);
+}
+
+/* ---- type scale ---- */
+.display-xl {
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: clamp(46px, 6.4vw, 92px);
+  line-height: 0.98;
+  letter-spacing: -0.025em;
+}
+.display {
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: clamp(32px, 3.6vw, 48px);
+  line-height: 1.05;
+  letter-spacing: -0.02em;
+}
+.display-serif {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-weight: 300;
+  color: var(--rust);
+}
+.h1 {
+  font-family: var(--font-display);
+  font-size: 28px;
+  line-height: 34px;
+  font-weight: 400;
+  letter-spacing: -0.01em;
+}
+.h2 {
+  font-family: var(--font-display);
+  font-size: 22px;
+  line-height: 28px;
+  font-weight: 500;
+}
+.h3 {
+  font-size: 15px;
+  line-height: 22px;
+  font-weight: 600;
+}
+.body-lg {
+  font-size: 17px;
+  line-height: 27px;
+  font-weight: 400;
+}
+.body {
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 400;
+}
+.body-dense {
+  font-size: 13px;
+  line-height: 18px;
+  font-weight: 400;
+}
+.small {
+  font-size: 12.5px;
+  line-height: 16px;
+  font-weight: 400;
+}
+.label {
+  font-size: 11px;
+  line-height: 16px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+}
+.mono {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  line-height: 20px;
+  font-weight: 400;
+}
+.mono-figure {
+  font-family: var(--font-sans);
+  font-size: 13px;
+  line-height: 18px;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+/* ---- shared primitives ---- */
+:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 3px;
+}
+
+/* Provenance / status pill: bordered, paper-coloured. Meaning comes from the
+   border and text colour, never a loud fill. */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  height: 22px;
+  padding: 0 9px;
+  border-radius: var(--radius-pill);
+  font-size: 12.5px;
+  line-height: 16px;
+  font-weight: 500;
+  white-space: nowrap;
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--ink-secondary);
+}
+.badge.brand {
+  border-color: var(--ink);
+  color: var(--ink);
+}
+.badge.agent {
+  border-color: var(--agent);
+  color: var(--agent-ink);
+}
+.badge.human {
+  border-color: var(--human);
+  color: var(--human-ink);
+}
+.badge.success {
+  border-color: var(--success);
+  color: var(--success);
+}
+.badge.warning {
+  border-color: var(--warning);
+  color: var(--warning);
+}
+.badge.danger {
+  border-color: var(--danger);
+  color: var(--danger);
+}
+
+/* Section rule: a single hairline. */
+.rule {
+  height: 1px;
+  background: var(--line);
+}
+
+/* Logo mark: a small ink square, the "observed" swatch from the ledger legend. */
+.logo-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  background: var(--ink);
+  flex: none;
+}

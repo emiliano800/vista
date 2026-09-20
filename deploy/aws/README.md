@@ -78,6 +78,11 @@ AWS; nothing else in Cloudflare changes.
 
 In the recorder's Settings → Cloud workspace, enter the website URL
 (`https://bumpsolutions.org`), the company ID from `create-workspace` and the access key.
+With a workspace connected, Stop uploads the redacted report and submits the session's
+stretches for AI review; the worker (`WORKER_DESIRED_COUNT=1` + `OPENAI_API_KEY`) writes the
+explanations, the recorder polls them back, and Approve / Fix / Explain decisions sync to the
+workspace. Employees never need an OpenAI key. Without a worker the review stays
+"Explaining…" until one runs.
 
 ## Day-to-day
 
@@ -88,7 +93,7 @@ In the recorder's Settings → Cloud workspace, enter the website URL
 | Stack outputs | `deploy/aws/deploy.sh --outputs` |
 | Add a user | `deploy/aws/manage.sh add-user --tenant TENANT_UUID --company COMPANY_UUID --email employee@example.com --role member` |
 | Rotate a key | `deploy/aws/manage.sh rotate-key --user USER_UUID` |
-| Run agent jobs in AWS | set `WORKER_DESIRED_COUNT=1` (and `OPENAI_API_KEY`) in `deploy/aws/.env`, redeploy |
+| Run agent jobs and recording AI review in AWS | set `WORKER_DESIRED_COUNT=1` (and `OPENAI_API_KEY`) in `deploy/aws/.env`, redeploy |
 | API logs | `aws logs tail /vista/vista/api --follow` |
 | Shell into a running API task | `aws ecs execute-command --cluster vista --task <task-id> --container Main --interactive --command /bin/sh` (needs the Session Manager plugin) |
 | Scale | change `ApiMinTasks` / `ApiMaxTasks` / `ApiCpu` / `ApiMemory` parameters and redeploy |

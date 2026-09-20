@@ -8,10 +8,12 @@ import { fileURLToPath } from 'node:url';
 
 import { BrowserWindow, Menu, Tray, app, clipboard, desktopCapturer, ipcMain, nativeImage, screen, session, shell, systemPreferences, safeStorage } from 'electron';
 
+import { CONFIDENCE_THRESHOLD, RESOLVED_STATUSES, SESSION_ID, applyDecision, describeSection, explainSection, openaiConfig, reviewSummary } from './explain.js';
 import { DEMO_KEYS, DemoHook, demoActiveWindow, demoClipboard } from './demo.js';
 import { DEFAULT_SETTINGS, Recorder, keyNamesFrom, loadSettings } from './recorder.js';
 import { redactText } from './redact.js';
-import { cloudRequest, companyID, uploadReport, workspaceURL } from './cloud.js';
+import { cloudRequest, companyID, fetchReview, mergeReview, reviewItems, sendDecision, submitSections, uploadReport, workspaceURL } from './cloud.js';
+import { buildSections, parseEvents, recordingName } from './sections.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const UI = path.join(__dirname, '..', 'ui');
@@ -123,7 +125,206 @@ function postProcess(manifest) {
       return write({ processing: 'failed', processing_note: `summary unreadable: ${e.message}` });
     }
     write({ processing: 'done', summary });
+    if (cloudSettings()) explainRecording(manifest.recording_id).catch(() => {});
   });
+}
+
+// Video sections: the long single-window stretches of a recording, computed
+// once after Stop (and again when the employee asks) from events.jsonl.
+function readEvents(dir) {
+  try {
+    return parseEvents(fs.readFileSync(path.join(dir, 'events.jsonl'), 'utf8'));
+  } catch {
+    return [];
+  }
+}
+
+function readManifest(dir) {
+  return JSON.parse(fs.readFileSync(path.join(dir, 'manifest.json'), 'utf8'));
+}
+
+function readAnnotations(dir) {
+  try {
+    return parseEvents(fs.readFileSync(path.join(dir, 'annotations.jsonl'), 'utf8'));
+  } catch {
+    return [];
+  }
+}
+
+// review.json: the AI's explanation per section (+ the whole session) and
+// what the employee decided about each. Shape: { threshold, model, generated_at, items: { S1: {...}, session: {...} } }
+const REVIEW_FILE = 'review.json';
+
+function readReview(dir) {
+  try {
+    return JSON.parse(fs.readFileSync(path.join(dir, REVIEW_FILE), 'utf8'));
+  } catch {
+    return { threshold: CONFIDENCE_THRESHOLD, model: null, generated_at: null, generating: false, items: {} };
+  }
+}
+
+function writeReview(dir, review) {
+  fs.writeFileSync(path.join(dir, REVIEW_FILE), JSON.stringify(review, null, 2));
+}
+
+function sectionsFor(recordingId) {
+  const dir = path.join(RECORDINGS, recordingId);
+  const m = readManifest(dir);
+  const events = readEvents(dir);
+  const sections = buildSections(events, m);
+  const anns = readAnnotations(dir);
+  const review = readReview(dir);
+  for (const s of sections) {
+    // notes that cover each section so the UI can show "annotated"
+    s.annotations = anns
+      .filter((a) => a.scope !== 'session' && Date.parse(a.start) < Date.parse(s.end) && Date.parse(a.end) > Date.parse(s.start))
+      .map((a) => ({ label: a.label, note: a.note, author: a.author }));
+    s.review = review.items[s.id] ?? null;
+  }
+  const video = m.files?.video && fs.existsSync(path.join(dir, m.files.video)) ? path.join(dir, m.files.video) : null;
+  return {
+    recording_id: recordingId,
+    video,
+    video_url: video ? `file://${video}` : null,
+    started_at: m.started_at,
+    ended_at: m.ended_at,
+    pauses: m.pauses ?? [],
+    sections,
+    shots_dir: `file://${path.join(dir, 'shots')}`,
+    review: {
+      enabled: !!cloudSettings() || !!openaiConfig(process.env, recorder.settings),
+      source: cloudSettings() ? 'cloud' : 'local',
+      sync_error: review.sync_error ?? null,
+      generating: !!review.generating,
+      generated_at: review.generated_at,
+      model: review.model,
+      session: review.items[SESSION_ID] ?? null,
+      summary: reviewSummary(review.items, review.threshold ?? CONFIDENCE_THRESHOLD),
+    },
+  };
+}
+
+function broadcastSections(recordingId) {
+  if (dashboard && !dashboard.isDestroyed()) dashboard.webContents.send('recordings:sections', sectionsFor(recordingId));
+}
+
+// Ask the model to explain every section plus the whole session. Items the
+// employee has already resolved are never redone; `force` redoes the open
+// ones. Runs after Stop when a key is configured, and on demand from the dashboard.
+const explaining = new Set();
+function reviewContext(dir) {
+  const m = readManifest(dir);
+  const events = readEvents(dir);
+  const sections = buildSections(events, m);
+  const ctx = { manifest: { ...m, annotations_preview: readAnnotations(dir).map((a) => `${a.label}${a.note ? ': ' + a.note : ''}`).slice(0, 8) }, sections, events };
+  return { m, sections, ctx, targets: [...sections, { whole: true, id: SESSION_ID, seconds: m.active_seconds ?? 0 }] };
+}
+
+const REVIEW_POLL_MS = 2500;
+const REVIEW_POLL_MAX_MS = 3 * 60 * 1000;
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+// Cloud-connected review: the section descriptions (redacted here, no
+// keystrokes/screenshots) go to the workspace, whose worker asks the model with
+// the company's key; results are mirrored into review.json for the dashboard.
+async function explainViaCloud(recordingId, dir, review, { force }) {
+  const cloud = cloudSettings();
+  const token = safeStorage.decryptString(Buffer.from(cloud.encryptedToken, 'base64'));
+  const config = { ...cloud, token };
+  const cloudId = await uploadToCloud(recordingId, config);
+  const { ctx, targets } = reviewContext(dir);
+  const items = reviewItems(targets, (s) => describeSection(s, ctx));
+  let remote = await submitSections(config, cloudId, items, force);
+  const started = Date.now();
+  while (remote.generating && Date.now() - started < REVIEW_POLL_MAX_MS) {
+    Object.assign(review, mergeReview(review, remote));
+    writeReview(dir, review);
+    broadcastSections(recordingId);
+    await sleep(REVIEW_POLL_MS);
+    remote = await fetchReview(config, cloudId);
+  }
+  Object.assign(review, mergeReview(review, remote));
+  if (remote.generating) review.sync_error = 'The workspace is still explaining this session; open it again in a minute.';
+}
+
+async function explainRecording(recordingId, { force = false } = {}) {
+  const api = openaiConfig(process.env, recorder.settings);
+  const cloud = cloudSettings();
+  if (!api && !cloud) return { error: 'no_key', message: 'Connect your company workspace under Settings → Cloud workspace (or add an OpenAI API key) and the AI will explain each stretch.' };
+  if (explaining.has(recordingId)) return sectionsFor(recordingId);
+  explaining.add(recordingId);
+  const dir = path.join(RECORDINGS, recordingId);
+  const review = readReview(dir);
+  review.generating = true;
+  review.threshold = CONFIDENCE_THRESHOLD;
+  review.model = cloud ? review.model ?? null : api.model;
+  review.sync_error = null;
+  writeReview(dir, review);
+  broadcastSections(recordingId);
+  try {
+    if (cloud) {
+      try {
+        await explainViaCloud(recordingId, dir, review, { force });
+      } catch (e) {
+        review.sync_error = e.message;
+      }
+      return sectionsFor(recordingId);
+    }
+    const { ctx, targets } = reviewContext(dir);
+    for (const s of targets) {
+      const prev = review.items[s.id];
+      if (prev && (RESOLVED_STATUSES.has(prev.status) || (!force && prev.status !== 'failed'))) continue;
+      try {
+        const r = await explainSection(s, ctx, api, { dir, screenshots: !!recorder.settings.clarifyScreenshots });
+        delete r.prompt; // stays in main; the UI never needs it
+        review.items[s.id] = r;
+      } catch (e) {
+        review.items[s.id] = { id: s.id, label: '', explanation: '', confidence: 0, unclear: [], questions: [], status: 'failed', error: e.message, at: new Date().toISOString() };
+      }
+      writeReview(dir, review);
+      broadcastSections(recordingId);
+    }
+  } finally {
+    review.generating = false;
+    review.generated_at = new Date().toISOString();
+    writeReview(dir, review);
+    explaining.delete(recordingId);
+    broadcastSections(recordingId);
+  }
+  return sectionsFor(recordingId);
+}
+
+// Employee decision on one explanation: approve / fix / explain. Writes the
+// annotation (with the AI's version kept alongside for provenance) and
+// updates review.json.
+async function decide(recordingId, itemId, action, body = {}) {
+  const dir = path.join(RECORDINGS, recordingId);
+  const review = readReview(dir);
+  const { item, annotation } = applyDecision(review.items[itemId], action, body);
+  review.items[itemId] = item;
+  const cloud = cloudSettings();
+  const cloudId = uploadStates()[recordingId]?.recordingId;
+  if (cloud && review.source === 'cloud' && cloudId) {
+    try {
+      const token = safeStorage.decryptString(Buffer.from(cloud.encryptedToken, 'base64'));
+      Object.assign(review, mergeReview(review, await sendDecision({ ...cloud, token }, cloudId, itemId, action, body)));
+      review.sync_error = null;
+    } catch (e) {
+      review.sync_error = `Saved on this computer only: ${e.message}`;
+    }
+  }
+  writeReview(dir, review);
+  const whole = itemId === SESSION_ID;
+  const m = readManifest(dir);
+  const section = whole ? null : buildSections(readEvents(dir), m).find((s) => s.id === itemId);
+  addAnnotation(recordingId, {
+    ...annotation,
+    start: whole ? m.started_at : section?.start,
+    end: whole ? m.ended_at : section?.end,
+    scope: whole ? 'session' : 'section',
+    section_id: whole ? null : itemId,
+  });
+  return sectionsFor(recordingId);
 }
 
 function pickSummary(s) {
@@ -209,7 +410,7 @@ function listRecordings() {
       } catch {
         /* none */
       }
-      out.push({ ...m, dir: path.join(RECORDINGS, id), annotations });
+      out.push({ ...m, dir: path.join(RECORDINGS, id), annotations, name: m.name ?? recordingName(m, { summary: m.summary_text ?? '' }) });
     } catch {
       /* corrupt manifest */
     }
@@ -223,9 +424,13 @@ function broadcastRecordings() {
 
 // Employee annotation: what the screen couldn't see (calls, paper, meetings).
 // Same JSONL shape as taskmining.annotations.read_annotations.
-function addAnnotation(recordingId, { label, note = '', start, end, case_id = '' }) {
+// `scope` is 'section' (a video section), 'session' (whole-recording summary)
+// or 'manual'. A session summary also renames the recording.
+// `author` is 'employee' for anything typed, 'ai' for an approved AI
+// explanation; `ai` keeps the model's version when the employee fixed it.
+function addAnnotation(recordingId, { label, note = '', start, end, case_id = '', scope = 'manual', section_id = null, qa = [], author = 'employee', ai = null }) {
   const dir = path.join(RECORDINGS, recordingId);
-  const m = JSON.parse(fs.readFileSync(path.join(dir, 'manifest.json'), 'utf8'));
+  const m = readManifest(dir);
   const row = {
     user: m.user,
     start: start ?? m.started_at,
@@ -233,10 +438,19 @@ function addAnnotation(recordingId, { label, note = '', start, end, case_id = ''
     label: redactText(label),
     note: redactText(note),
     case_id,
-    author: 'employee',
+    author,
+    scope,
+    section_id,
+    qa: qa.map((x) => ({ q: redactText(x.q), a: redactText(x.a) })),
+    ...(ai ? { ai } : {}),
   };
   fs.appendFileSync(path.join(dir, 'annotations.jsonl'), JSON.stringify(row) + '\n');
-  if (m.ended_at) postProcess(m);
+  if (scope === 'session') {
+    const summary_text = row.note || row.label;
+    const patched = { ...m, summary_text, name: recordingName(m, { summary: summary_text }) };
+    fs.writeFileSync(path.join(dir, 'manifest.json'), JSON.stringify(patched, null, 2));
+  }
+  if (m.ended_at) postProcess(readManifest(dir));
   else broadcastRecordings();
   return row;
 }
@@ -244,7 +458,7 @@ function addAnnotation(recordingId, { label, note = '', start, end, case_id = ''
 // ---- windows -----------------------------------------------------------------
 
 // Overlay sizes: `orb` is the idle blue circle, `pill` the recording bar, `panel` the expanded details.
-const SIZES = { orb: { w: 64, h: 64 }, pill: { w: 380, h: 64 }, panel: { w: 380, h: 332 } };
+const SIZES = { orb: { w: 104, h: 104 }, pill: { w: 380, h: 64 }, panel: { w: 380, h: 332 } };
 let overlayMode = 'orb';
 
 function setOverlayMode(mode) {
@@ -252,9 +466,10 @@ function setOverlayMode(mode) {
   const from = SIZES[overlayMode], to = SIZES[mode];
   if (!to) return;
   const [x, y] = overlay.getPosition();
-  // keep the pill centred on where the orb was
+  // keep the pill centred on where the orb was (the orb window is oversized so its glow isn't clipped)
   const nx = Math.round(x + (from.w - to.w) / 2);
-  overlay.setBounds({ x: Math.max(0, nx), y, width: to.w, height: to.h });
+  const ny = overlayMode === 'orb' || mode === 'orb' ? Math.round(y + (from.h - to.h) / 2) : y;
+  overlay.setBounds({ x: Math.max(0, nx), y: Math.max(0, ny), width: to.w, height: to.h });
   overlayMode = mode;
 }
 
@@ -264,7 +479,7 @@ function createOverlay() {
     width: SIZES.orb.w,
     height: SIZES.orb.h,
     x: Math.round(workArea.x + (workArea.width - SIZES.orb.w) / 2),
-    y: workArea.y + 12,
+    y: workArea.y,
     frame: false,
     transparent: true,
     resizable: false,
@@ -361,9 +576,21 @@ function trayIcon() {
 
 function toggle() {
   if (recorder.state === 'idle') return startRecording();
-  if (recorder.state === 'recording') return recorder.pause();
-  if (recorder.state === 'paused') return recorder.resume();
+  if (recorder.state === 'recording') return pauseRecording();
+  if (recorder.state === 'paused') return resumeRecording();
   return recorder.status();
+}
+
+function pauseRecording() {
+  const status = recorder.pause();
+  if (recorder.settings.video && captureWin) captureWin.webContents.send('video:pause');
+  return status;
+}
+
+function resumeRecording() {
+  const status = recorder.resume();
+  if (recorder.settings.video && captureWin) captureWin.webContents.send('video:resume');
+  return status;
 }
 
 function startRecording() {
@@ -395,6 +622,8 @@ async function stopRecording() {
   setOverlayMode('orb');
   if (MAC) app.dock.show();
   openReview(status.recordingId);
+  // Cloud-connected: the review starts once the local analysis is done (postProcess).
+  if (!cloudSettings() && openaiConfig(process.env, recorder.settings)) explainRecording(status.recordingId).catch(() => {});
   return status;
 }
 
@@ -443,36 +672,45 @@ ipcMain.handle('cloud:disconnect', event => {
   fs.rmSync(CLOUD_FILE,{force:true});
   return cloudStatus();
 });
-ipcMain.handle('cloud:upload', async (event, id) => {
-  requireDashboard(event); requireKeyStorage();
+// Upload the local report (idempotent server-side) and return the workspace's
+// recording id, which the review endpoints key on.
+async function uploadToCloud(id, config) {
   if (typeof id !== 'string' || !/^[a-zA-Z0-9_-]{1,128}$/.test(id)) throw new Error('Invalid recording ID.');
-  const c = cloudSettings();
-  if (!c) throw new Error('Connect your cloud workspace in Settings first.');
   if (activeUploads.has(id)) throw new Error('This report is already uploading.');
   activeUploads.add(id);
-  const saveState = state => { const states = uploadStates(); states[id] = {...state,url:c.url,companyId:c.companyId}; writePrivate(UPLOADS_FILE,states); };
+  const saveState = state => { const states = uploadStates(); states[id] = {...state,url:config.url,companyId:config.companyId}; writePrivate(UPLOADS_FILE,states); };
   try {
-    const token = safeStorage.decryptString(Buffer.from(c.encryptedToken,'base64'));
-    const result = await uploadReport({...c,token},RECORDINGS,id);
+    const result = await uploadReport(config,RECORDINGS,id);
     saveState({status:'uploaded',uploadedAt:new Date().toISOString(),recordingId:result.id});
-    return cloudStatus();
+    return result.id;
   } catch (error) {
     saveState({status:'failed',error:error.message});
     throw error;
   } finally { activeUploads.delete(id); }
+}
+ipcMain.handle('cloud:upload', async (event, id) => {
+  requireDashboard(event); requireKeyStorage();
+  const c = cloudSettings();
+  if (!c) throw new Error('Connect your cloud workspace in Settings first.');
+  const token = safeStorage.decryptString(Buffer.from(c.encryptedToken,'base64'));
+  await uploadToCloud(id,{...c,token});
+  return cloudStatus();
 });
 
 // ---- IPC ----------------------------------------------------------------------
 
 ipcMain.handle('rec:start', () => startRecording());
-ipcMain.handle('rec:pause', () => recorder.pause());
-ipcMain.handle('rec:resume', () => recorder.resume());
+ipcMain.handle('rec:pause', () => pauseRecording());
+ipcMain.handle('rec:resume', () => resumeRecording());
 ipcMain.handle('rec:stop', () => stopRecording());
 ipcMain.handle('rec:toggle', () => toggle());
 ipcMain.handle('rec:status', () => recorder.status());
 ipcMain.handle('recordings:list', () => listRecordings());
 ipcMain.handle('recordings:open', (_e, id) => shell.openPath(id ? path.join(RECORDINGS, id) : RECORDINGS));
 ipcMain.handle('recordings:annotate', (_e, id, ann) => addAnnotation(id, ann));
+ipcMain.handle('recordings:sections', (_e, id) => sectionsFor(id));
+ipcMain.handle('recordings:explain', (_e, id, opts) => explainRecording(id, opts ?? {}));
+ipcMain.handle('recordings:decide', (_e, id, itemId, action, body) => decide(id, itemId, action, body ?? {}));
 ipcMain.handle('dashboard:open', () => createDashboard());
 ipcMain.handle('overlay:resize', (_e, mode) => setOverlayMode(mode));
 ipcMain.handle('settings:get', () => recorder.settings);
@@ -483,7 +721,7 @@ ipcMain.handle('settings:set', (_e, patch) => {
   return recorder.settings;
 });
 ipcMain.handle('settings:defaults', () => DEFAULT_SETTINGS);
-ipcMain.handle('app:info', () => ({ demo: DEMO, home: HOME, platform: process.platform, user: os.userInfo().username }));
+ipcMain.handle('app:info', () => ({ demo: DEMO, home: HOME, platform: process.platform, user: os.userInfo().username, openai: !!openaiConfig(process.env, recorder.settings) }));
 ipcMain.handle('permissions:get', () => permissions(false));
 ipcMain.handle('permissions:open', (_e, kind) => openPermissionPane(kind));
 ipcMain.on('video:chunk', (_e, dir, buf) => {
