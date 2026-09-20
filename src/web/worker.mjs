@@ -1,8 +1,9 @@
 const apiRoutes =
-  /^\/api\/(?:auth\/(?:session|me)|deals(?:\/[0-9a-f-]+\/recordings)?|recordings\/[0-9a-f-]+(?:\/(?:evidence|download|review(?:\/[a-z0-9_-]{1,64})?))?|health)$/i;
+  /^\/api\/(?:auth\/(?:session|me)|deals(?:\/[0-9a-f-]+\/recordings)?|recordings\/[0-9a-f-]+(?:\/(?:evidence|download|files|media(?:\/complete)?|review(?:\/[a-z0-9_-]{1,64})?))?|health)$/i;
 const reviewSections = /^\/api\/recordings\/[0-9a-f-]+\/review\/sections$/i;
 const reviewDecision =
   /^\/api\/recordings\/[0-9a-f-]+\/review\/(?!sections$)[a-z0-9_-]{1,64}$/i;
+const mediaUpload = /^\/api\/recordings\/[0-9a-f-]+\/media(?:\/complete)?$/i;
 const importRead =
   /^\/api\/(?:deals\/[0-9a-f-]+\/imports|imports\/[0-9a-f-]+(?:\/export)?)$/i;
 const importWrite =
@@ -29,6 +30,7 @@ async function handle(request, env) {
       !["GET", "HEAD", "POST", "PUT", "DELETE"].includes(request.method) ||
       (request.method === "POST" &&
         !url.pathname.endsWith("/recordings") &&
+        !mediaUpload.test(url.pathname) &&
         !reviewDecision.test(url.pathname) &&
         !importWrite.test(url.pathname) &&
         url.pathname !== "/api/auth/session") ||
