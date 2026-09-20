@@ -19,7 +19,7 @@ import { apiConfig, startApi } from './api.js';
 import { JobStore } from './jobs.js';
 import { reviewFiles } from './filereview.js';
 import { FLAG_DECISIONS, INSIGHTS_FILE, buildInsights, insightsSummary, summarizeInsights } from './insights.js';
-import { WORKFLOWS_FILE, suggestWorkflows, workflowsStub } from './workflows.js';
+import { WORKFLOWS_FILE, refineSessionWorkflow, sessionDigest, suggestWorkflows, workflowsStub } from './workflows.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const UI = path.join(__dirname, '..', 'ui');
@@ -233,6 +233,7 @@ async function postProcess(manifest) {
   // part of the insights (the model paragraph is kept).
   try {
     buildWorkflows(manifest.recording_id);
+    await refineWorkflows(manifest.recording_id);
     refreshInsights(manifest.recording_id);
   } catch (e) {
     console.error('workflow suggestions failed:', e.message);
@@ -262,6 +263,29 @@ function buildWorkflows(recordingId) {
   broadcastRecordings();
   broadcastSections(recordingId);
   return wf;
+}
+
+// When no rule fired, the single session workflow is rewritten by the model
+// from the same digest (local key only; the cloud path has its own reviewer).
+async function refineWorkflows(recordingId) {
+  const dir = recDir(recordingId);
+  const wf = readWorkflows(dir);
+  const api = openaiConfig(process.env, recorder.settings);
+  if (!wf?.fallback || !api || cloudSettings()) return wf;
+  const m = readManifest(dir);
+  const digest = sessionDigest({ manifest: m, events: readEvents(dir), files: readFiles(dir), summary: m.summary ?? null });
+  try {
+    const next = await refineSessionWorkflow(wf, digest, api);
+    if (next !== wf) {
+      fs.writeFileSync(path.join(dir, WORKFLOWS_FILE), JSON.stringify(next, null, 2));
+      broadcastRecordings();
+      broadcastSections(recordingId);
+    }
+    return next;
+  } catch (e) {
+    console.error('session workflow rewrite failed:', e.message);
+    return wf;
+  }
 }
 
 function refreshInsights(recordingId) {

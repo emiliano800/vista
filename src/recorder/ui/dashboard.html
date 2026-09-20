@@ -1324,7 +1324,7 @@
 
       // ---- suggested workflows ----
       const SOURCE_LABEL = { events: 'app switches & clipboard', documents: 'documents', taskmining: 'task mining' };
-      const KIND_LABEL_WF = { data_transfer: 're-keying', document_processing: 'document intake', reporting: 'tracker', communication: 'inbox', lookup: 'lookup', access: 'sign-in', activity: 'activity' };
+      const KIND_LABEL_WF = { data_transfer: 're-keying', document_processing: 'document intake', reporting: 'tracker', communication: 'inbox', lookup: 'lookup', access: 'sign-in', activity: 'activity', session: 'whole session' };
       function workflowsHtml(wf) {
         if (!wf) return '<div class="empty">No workflow suggestions yet — they appear once the analysis has run.</div>';
         if (!wf.workflows?.length) return '<div class="empty">Nothing repeatable stood out in this session.</div>';
@@ -1339,13 +1339,13 @@
             <h3><span>${icon('workflow')} ${esc(w.title)}</span><span class="auto" title="How much of this could run without a person">${Math.round(w.automation * 100)}% automatable</span></h3>
             <p class="why">${esc(w.why)}</p>
             ${w.steps?.length ? `<ol>${w.steps.map((s) => `<li>${esc(s)}</li>`).join('')}</ol>` : ''}
-            <div class="src"><span class="kind">${esc(KIND_LABEL_WF[w.kind] ?? w.kind)}</span>${(w.apps ?? []).map((a) => `<span>${esc(short(a))}</span>`).join('')}${(w.sources ?? []).map((s) => `<span>from ${esc(SOURCE_LABEL[s] ?? s)}</span>`).join('')}</div>
+            <div class="src"><span class="kind">${esc(KIND_LABEL_WF[w.kind] ?? w.kind)}</span>${w.generated ? '<span>AI-written</span>' : ''}${(w.apps ?? []).map((a) => `<span>${esc(short(a))}</span>`).join('')}${(w.sources ?? []).map((s) => `<span>from ${esc(SOURCE_LABEL[s] ?? s)}</span>`).join('')}</div>
           </div>`).join('')}</div>`;
       }
       function renderWorkflows() {
         const wf = vs?.workflows;
         $('wf-body').innerHTML = wf ? workflowsHtml(wf) : `<div class="empty">${vs?.insights?.running ? 'Working out the workflows…' : 'No workflow suggestions for this session yet.'}</div>`;
-        $('wf-sub').textContent = wf?.workflows?.length ? `${wf.workflows.length} suggested · ${wf.environment?.roles?.length ?? 0} kinds of app` : '';
+        $('wf-sub').textContent = wf?.fallback ? 'no repeatable pattern yet · session summarised' : wf?.workflows?.length ? `${wf.workflows.length} suggested · ${wf.environment?.roles?.length ?? 0} kinds of app` : '';
       }
       async function openWorkflows(id) {
         const r = recordings.find((x) => x.recording_id === id);

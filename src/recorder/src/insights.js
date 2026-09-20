@@ -153,13 +153,13 @@ export function trends(current, previous = []) {
 }
 
 const SUMMARY_SYSTEM = `You are Vista, a process analyst. You get keyboard/mouse statistics for one recorded work session, the workflows suggested from it ("workflows": title, apps, automation score), sometimes a "trends" comparison with the employee's earlier sessions (input rates under "metrics", and under "workflow" the steps per case, cases, and which suggested workflows recurred in earlier sessions), and any sensitive-content flags.
-Write for the employee, in plain language, 2 to 5 sentences: what the input pattern says about how the work was done (typing-heavy vs clicking, re-keying between apps, idle stretches), the one or two suggested workflows most worth automating and why, how it compares with earlier sessions only when a "trends" field is present (if there is none, write nothing at all about earlier sessions, trends, baselines, recurrence or this being a first session), and — if there are flags — a neutral one-sentence reminder to check them before submitting. Use only the numbers given; do not estimate durations. Never speculate about what was typed.
+Write for the employee, in plain language, 2 to 5 sentences: what the input pattern says about how the work was done (typing-heavy vs clicking, re-keying between apps, idle stretches), the one or two suggested workflows most worth automating and why (if there is a single workflow of kind "session", no repeatable pattern was found: describe that one piece of work and say plainly that nothing repeatable stood out yet), how it compares with earlier sessions only when a "trends" field is present (if there is none, write nothing at all about earlier sessions, trends, baselines, recurrence or this being a first session), and — if there are flags — a neutral one-sentence reminder to check them before submitting. Use only the numbers given; do not estimate durations. Never speculate about what was typed.
 Respond as JSON: {"summary": "...", "highlights": ["...", "..."]}`;
 
 export async function summarizeInsights({ input, trends: tr, flags, workflows }, api, { fetchFn = globalThis.fetch } = {}) {
   const hasBaseline = tr?.baseline || tr?.workflow?.baseline;
   const trendsOut = hasBaseline ? { ...tr, workflow: tr.workflow ? { ...tr.workflow, recurring: (tr.workflow.recurring ?? []).filter((r) => r.seen_before) } : undefined } : null;
-  const user = JSON.stringify({ input, workflows: (workflows ?? []).slice(0, 5).map((w) => ({ title: w.title, apps: w.apps.map(shortApp), automation: w.automation })), ...(trendsOut ? { trends: trendsOut } : {}), flags: flags.map((f) => ({ kind: f.kind, scope: f.scope, reason: f.reason })) });
+  const user = JSON.stringify({ input, workflows: (workflows ?? []).slice(0, 5).map((w) => ({ title: w.title, kind: w.kind, apps: w.apps.map(shortApp), automation: w.automation })), ...(trendsOut ? { trends: trendsOut } : {}), flags: flags.map((f) => ({ kind: f.kind, scope: f.scope, reason: f.reason })) });
   const res = await fetchFn(api.url ?? OPENAI_URL, {
     method: 'POST',
     headers: { Authorization: `Bearer ${api.key}`, 'Content-Type': 'application/json' },
