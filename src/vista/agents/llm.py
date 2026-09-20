@@ -72,16 +72,21 @@ def _cassette() -> Cassette | None:
 
 def live_chat(prompt: Prompt, model: str | None = None) -> ChatResult:
     model = model or settings.openai_model
-    kwargs: dict = {"temperature": 0}
+    reasoning_model = model.rsplit("/", 1)[-1].startswith(("gpt-5", "gpt-6", "o1", "o3", "o4"))
+    # Completion limits include hidden reasoning as well as the JSON response.
+    completion_limit = max(prompt.max_tokens, 8192) if reasoning_model else prompt.max_tokens
+    kwargs: dict = {} if reasoning_model else {"temperature": 0}
     if prompt.json_mode:
         kwargs["response_format"] = {"type": "json_object"}
     resp = settings.openai_client().chat.completions.create(
         model=model,
-        max_tokens=prompt.max_tokens,
+        max_completion_tokens=completion_limit,
         messages=[{"role": "system", "content": prompt.system}, {"role": "user", "content": prompt.user}],
         extra_body=settings.openai_extra_body(),
         **kwargs,
     )
+    if resp.choices[0].finish_reason == "length":
+        raise RuntimeError("Model response exceeded the completion token budget; refusing truncated agent output")
     return ChatResult(
         model=resp.model,
         text=resp.choices[0].message.content or "",
