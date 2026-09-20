@@ -1,6 +1,33 @@
-import { mountShell, $, esc, badge, metricStrip, table, enableRowLinks, section, message } from "/lib/components.js";
-import { compactMoney, integer, monthYear, date, PERIOD, DEMO_NOTE, age } from "/lib/format.js";
-import { portfolioMetrics, companyMetrics, integrationSteps, agentStatus, attentionQueue, activity, companyName, runPortfolioAnalysis } from "/lib/store.js";
+import {
+  mountShell,
+  $,
+  esc,
+  badge,
+  metricStrip,
+  table,
+  enableRowLinks,
+  section,
+  message,
+} from "/lib/components.js";
+import {
+  compactMoney,
+  integer,
+  monthYear,
+  date,
+  PERIOD,
+  DEMO_NOTE,
+  age,
+} from "/lib/format.js";
+import {
+  portfolioMetrics,
+  companyMetrics,
+  integrationSteps,
+  agentStatus,
+  attentionQueue,
+  activity,
+  companyName,
+  runPortfolioAnalysis,
+} from "/lib/store.js";
 
 const analyst = await mountShell();
 if (analyst) render();
@@ -24,12 +51,40 @@ function render() {
       </div>
     </div>
     ${metricStrip([
-      { label: "Portfolio companies", value: integer(pm.companies), href: "#companies" },
-      { label: "Invoiced revenue", value: compactMoney(pm.revenue), note: PERIOD.label, href: "/data/?entity=invoices" },
-      { label: "Outstanding AR", value: compactMoney(pm.outstandingAr), note: "point in time", href: "/data/?entity=invoices&filter=outstanding" },
-      { label: "Overdue AR", value: compactMoney(pm.overdueAr), note: "past due date", href: "/data/?entity=invoices&filter=overdue" },
-      { label: "Vendor spend", value: compactMoney(pm.vendorSpend), note: PERIOD.label, href: "/data/?entity=purchases" },
-      { label: "Open opportunities", value: integer(pm.openOpportunities), href: "/opportunities/" },
+      {
+        label: "Portfolio companies",
+        value: integer(pm.companies),
+        href: "#companies",
+      },
+      {
+        label: "Invoiced revenue",
+        value: compactMoney(pm.revenue),
+        note: PERIOD.label,
+        href: "/data/?entity=invoices",
+      },
+      {
+        label: "Outstanding AR",
+        value: compactMoney(pm.outstandingAr),
+        note: "point in time",
+        href: "/data/?entity=invoices&filter=outstanding",
+      },
+      {
+        label: "Overdue AR",
+        value: compactMoney(pm.overdueAr),
+        note: "past due date",
+        href: "/data/?entity=invoices&filter=overdue",
+      },
+      {
+        label: "Vendor spend",
+        value: compactMoney(pm.vendorSpend),
+        note: PERIOD.label,
+        href: "/data/?entity=purchases",
+      },
+      {
+        label: "Open opportunities",
+        value: integer(pm.openOpportunities),
+        href: "/opportunities/",
+      },
       { label: "Open tasks", value: integer(pm.openTasks), href: "/tasks/" },
     ])}
     <p class="demo-line">${esc(DEMO_NOTE)}. Revenue and vendor spend are period totals; AR figures are balances as of ${esc(date("2026-09-19"))}. Click a figure to see the records behind it.</p>
@@ -37,20 +92,61 @@ function render() {
       <div class="block-head"><h2>Portfolio companies</h2><div class="block-aside">Integration status = completed steps of 7 (profile, customers, invoices, vendors, software, exceptions, analysis)</div></div>
       ${table(
         [
-          { label: "Company", render: (r) => `<div class="company-cell"><b>${esc(r.c.name)}</b><small>${esc(r.c.industry)}</small></div>` },
+          {
+            label: "Company",
+            render: (r) =>
+              `<div class="company-cell"><b>${esc(r.c.name)}</b><small>${esc(r.c.industry)}</small></div>`,
+          },
           { label: "Location", render: (r) => esc(r.c.location) },
           { label: "Acquired", render: (r) => esc(monthYear(r.c.acquired)) },
-          { label: "Integration", render: (r) => `${esc(r.i.complete)} / ${esc(r.i.total)} steps ${badge(r.i.label)}` },
-          { label: "Revenue", num: true, render: (r) => esc(compactMoney(r.m.revenue)) },
-          { label: "Outstanding AR", num: true, render: (r) => esc(compactMoney(r.m.outstandingAr)) },
-          { label: "Vendor spend", num: true, render: (r) => esc(compactMoney(r.m.vendorSpend)) },
-          { label: "Opps", num: true, render: (r) => esc(integer(r.m.openOpportunities)) },
-          { label: "Tasks", num: true, render: (r) => esc(integer(r.m.openTasks)) },
+          {
+            label: "Integration",
+            render: (r) =>
+              `${esc(r.i.complete)} / ${esc(r.i.total)} steps ${badge(r.i.label)}`,
+          },
+          {
+            label: "Revenue",
+            num: true,
+            render: (r) => esc(compactMoney(r.m.revenue)),
+          },
+          {
+            label: "Outstanding AR",
+            num: true,
+            render: (r) => esc(compactMoney(r.m.outstandingAr)),
+          },
+          {
+            label: "Vendor spend",
+            num: true,
+            render: (r) => esc(compactMoney(r.m.vendorSpend)),
+          },
+          {
+            label: "Opps",
+            num: true,
+            render: (r) => esc(integer(r.m.openOpportunities)),
+          },
+          {
+            label: "Tasks",
+            num: true,
+            render: (r) => esc(integer(r.m.openTasks)),
+          },
           { label: "Agents", render: (r) => badge(r.a.label, r.a.tone) },
-          { label: "Needs attention", num: true, render: (r) => (r.n ? `<span class="attn">${esc(r.n)}</span>` : "—") },
+          {
+            label: "Needs attention",
+            num: true,
+            render: (r) =>
+              r.n ? `<span class="attn">${esc(r.n)}</span>` : "—",
+          },
         ],
-        pm.rows.map((r) => ({ ...r, i: integrationSteps(r.c), a: agentStatus(r.c.id), n: queue.filter((q) => q.companyId === r.c.id).length })),
-        { rowHref: (r) => `/company/?id=${r.c.id}`, empty: "No companies yet. Add an acquisition to begin." },
+        pm.rows.map((r) => ({
+          ...r,
+          i: integrationSteps(r.c),
+          a: agentStatus(r.c.id),
+          n: queue.filter((q) => q.companyId === r.c.id).length,
+        })),
+        {
+          rowHref: (r) => `/company/?id=${r.c.id}`,
+          empty: "No companies yet. Add an acquisition to begin.",
+        },
       )}
     </section>
     ${section(
@@ -72,16 +168,33 @@ function render() {
     ${section(
       "Recent portfolio activity",
       `<ul class="feed">${feed
-        .map((a) => `<li><time datetime="${esc(a.at)}">${esc(age(a.at))} ago</time><span class="who">${esc(companyName(a.companyId))}</span><span class="kind-${esc(a.kind)}">${esc(a.text)}</span></li>`)
+        .map(
+          (a) =>
+            `<li><time datetime="${esc(a.at)}">${esc(age(a.at))} ago</time><span class="who">${esc(companyName(a.companyId))}</span><span class="kind-${esc(a.kind)}">${esc(a.text)}</span></li>`,
+        )
         .join("")}</ul>`,
     )}`;
   $("analyse").onclick = async () => {
-    const found = await runPortfolioAnalysis();
+    $("analyse").disabled = true;
+    let found;
+    try {
+      found = await runPortfolioAnalysis();
+    } catch (error) {
+      $("analyse").disabled = false;
+      return message(error.message, "danger");
+    }
     render();
     message(
-      found.length ? `Portfolio analysis complete — ${found.length} new opportunit${found.length === 1 ? "y" : "ies"} found (${found.map((o) => o.id).join(", ")}).` : "Portfolio analysis complete — no new opportunities beyond those already listed.",
+      found.length
+        ? `Portfolio analysis complete — ${found.length} new opportunit${found.length === 1 ? "y" : "ies"} found (${found.map((o) => o.id).join(", ")}).`
+        : "Portfolio analysis complete — no new opportunities beyond those already listed.",
       "success",
-      found.length ? { href: `/opportunities/?id=${found[0].id}`, label: `Open ${found[0].id} →` } : { href: "/opportunities/", label: "View opportunities →" },
+      found.length
+        ? {
+            href: `/opportunities/?id=${found[0].id}`,
+            label: `Open ${found[0].id} →`,
+          }
+        : { href: "/opportunities/", label: "View opportunities →" },
     );
   };
 }

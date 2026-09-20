@@ -1,0 +1,4 @@
+Invoice Number,Customer Name,Invoice Date,Due Date,Invoice Total,Amount Due,Status
+INV-1001,Bayside Dental,2026-06-02,2026-07-02,1850.00,1850.00,Open
+INV-1002,Greenway Apartments,2026-07-15,2026-08-14,4200.00,0.00,Paid
+INV-1003,Northside Bakery,2026-05-10,2026-06-09,960.50,960.50,Overdue

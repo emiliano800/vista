@@ -2,13 +2,20 @@
 // inline scripts or styles so the same-origin CSP keeps holding).
 import { requireAnalyst, signOut } from "./auth.js";
 import { DEMO_NOTE } from "./format.js";
-import { companies, hydrate, reset } from "./store.js";
+import { companies, load } from "./store.js";
 
 export const esc = (value) =>
-  String(value ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
+  String(value ?? "").replace(
+    /[&<>"']/g,
+    (c) =>
+      ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[
+        c
+      ],
+  );
 export const $ = (id) => document.getElementById(id);
 export const qs = () => new URLSearchParams(location.search);
-export const navigate = (url) => (window.VISTA_NAVIGATE ?? ((u) => location.assign(u)))(url);
+export const navigate = (url) =>
+  (window.VISTA_NAVIGATE ?? ((u) => location.assign(u)))(url);
 
 const NAV = [
   ["/portfolio/", "Portfolio"],
@@ -19,15 +26,16 @@ const NAV = [
   ["/data/", "Data"],
 ];
 
-// Mounts the sidebar + header controls and returns the analyst session.
+// Mounts the sidebar + header controls and resolves to the analyst session
+// once the firm's portfolio snapshot has been fetched from the API.
 export async function mountShell() {
   const analyst = await requireAnalyst();
   if (!analyst) return null;
-  // One snapshot per page load, so every accessor below stays synchronous.
   try {
-    await hydrate();
-  } catch {
-    message?.("The workspace could not be loaded. Refresh to try again.");
+    await load();
+  } catch (error) {
+    message(error.message, "danger");
+    return null;
   }
   const here = location.pathname.replace(/index\.html$/, "");
   const nav = $("sidebar");
@@ -45,20 +53,12 @@ export async function mountShell() {
       </ul>
       <div class="side-foot">
         <span class="side-user">${esc(analyst.name)}<small>${esc(analyst.role)} · ${esc(analyst.email)}</small></span>
-        <button id="reset-demo" class="link sm">Reload workspace</button>
       </div>`;
-    nav.querySelector("#reset-demo").onclick = async () => {
-      // Nothing is stored in the browser any more: this re-reads the workspace.
-      await reset();
-      navigate("/portfolio/");
-    };
   }
   const out = $("signout");
   if (out) {
     out.hidden = false;
     out.onclick = async () => {
-      // Await the DELETE: navigating first would abort it and leave the
-      // session row alive until it expires.
       await signOut();
       navigate("/signin/analyst/");
     };
@@ -126,7 +126,11 @@ export function metricStrip(items) {
 }
 
 // Ruled table. columns: [{key,label,num,render}]; rows: objects.
-export function table(columns, rows, { rowHref, empty = "Nothing to show.", rowClass } = {}) {
+export function table(
+  columns,
+  rows,
+  { rowHref, empty = "Nothing to show.", rowClass } = {},
+) {
   if (!rows.length) return `<p class="empty">${esc(empty)}</p>`;
   return `<div class="table-wrap"><table class="ruled">
     <thead><tr>${columns.map((c) => `<th${c.num ? ' class="num"' : ""}>${esc(c.label)}</th>`).join("")}</tr></thead>
@@ -134,7 +138,10 @@ export function table(columns, rows, { rowHref, empty = "Nothing to show.", rowC
       .map((row) => {
         const href = rowHref?.(row);
         return `<tr${href ? ` class="clickable${rowClass ? ` ${rowClass(row)}` : ""}" data-href="${esc(href)}" tabindex="0"` : rowClass ? ` class="${rowClass(row)}"` : ""}>${columns
-          .map((c) => `<td${c.num ? ' class="num"' : ""}${c.mono ? ' class="mono"' : ""}>${c.render ? c.render(row) : esc(row[c.key])}</td>`)
+          .map(
+            (c) =>
+              `<td${c.num ? ' class="num"' : ""}${c.mono ? ' class="mono"' : ""}>${c.render ? c.render(row) : esc(row[c.key])}</td>`,
+          )
           .join("")}</tr>`;
       })
       .join("")}</tbody></table></div>`;
@@ -192,7 +199,8 @@ export function mountSourceDialog() {
     document.body.append(dialog);
   }
   dialog.addEventListener("click", (event) => {
-    if (event.target === dialog || event.target.closest("[data-close]")) dialog.close();
+    if (event.target === dialog || event.target.closest("[data-close]"))
+      dialog.close();
   });
   return (record, title = "Where did this come from?") => {
     dialog.innerHTML = `<div class="dialog-body"><div class="dialog-head"><p class="eyebrow">View source</p><h2>${esc(title)}</h2><button class="ghost sm" data-close>Close</button></div>${provenanceHtml(record?.provenance)}</div>`;

@@ -1,0 +1,31 @@
+{
+  "profile": {
+    "name": "Cedar Climate",
+    "location": "Boston, MA",
+    "industry": "Residential HVAC service",
+    "acquired": "2026-09-08",
+    "description": "Residential HVAC service and maintenance-plan business serving greater Boston. Runs Housecall Pro and QuickBooks Online."
+  },
+  "files": [
+    {
+      "name": "cedar_customers.csv",
+      "type": "text/csv",
+      "group": "Customers"
+    },
+    {
+      "name": "cedar_open_ar.csv",
+      "type": "text/csv",
+      "group": "Invoices"
+    },
+    {
+      "name": "cedar_vendor_purchases.csv",
+      "type": "text/csv",
+      "group": "Vendors / purchases"
+    },
+    {
+      "name": "cedar_software.csv",
+      "type": "text/csv",
+      "group": "Software subscriptions"
+    }
+  ]
+}

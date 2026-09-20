@@ -1,9 +1,51 @@
-import { mountShell, $, qs, esc, badge, table, enableRowLinks, section, message, mountSourceDialog, companyLink } from "/lib/components.js";
-import { money, compactMoney, integer, date, percent, DEMO_NOTE, PERIOD } from "/lib/format.js";
-import { opportunities, company, companyName, tasks, evidenceRows, setOpportunityStatus, createTask } from "/lib/store.js";
+import {
+  mountShell,
+  $,
+  qs,
+  esc,
+  badge,
+  table,
+  enableRowLinks,
+  section,
+  message,
+  mountSourceDialog,
+  companyLink,
+} from "/lib/components.js";
+import {
+  money,
+  compactMoney,
+  integer,
+  date,
+  percent,
+  DEMO_NOTE,
+  PERIOD,
+} from "/lib/format.js";
+import {
+  opportunities,
+  company,
+  companyName,
+  tasks,
+  evidenceRows,
+  setOpportunityStatus,
+  createTask,
+} from "/lib/store.js";
 
-const CATEGORIES = ["All", "Purchasing", "Software", "Cross-sell / revenue", "Working capital", "Process automation"];
-const STATUSES = ["New", "Under review", "Task created", "Validated", "Dismissed", "Realized"];
+const CATEGORIES = [
+  "All",
+  "Purchasing",
+  "Software",
+  "Cross-sell / revenue",
+  "Working capital",
+  "Process automation",
+];
+const STATUSES = [
+  "New",
+  "Under review",
+  "Task created",
+  "Validated",
+  "Dismissed",
+  "Realized",
+];
 const analyst = await mountShell();
 const showSource = mountSourceDialog();
 const id = qs().get("id");
@@ -21,11 +63,16 @@ function list() {
   const status = qs().get("status") ?? "open";
   let rows = opportunities();
   if (cat !== "All") rows = rows.filter((o) => o.category === cat);
-  if (status === "open") rows = rows.filter((o) => !["Dismissed", "Realized"].includes(o.status));
+  if (status === "open")
+    rows = rows.filter((o) => !["Dismissed", "Realized"].includes(o.status));
   else if (status !== "all") rows = rows.filter((o) => o.status === status);
   rows = [...rows].sort((a, b) => (a.foundAt < b.foundAt ? 1 : -1));
-  const potential = rows.filter((o) => o.status !== "Realized").reduce((n, o) => n + (o.potentialValue ?? 0), 0);
-  const realized = opportunities().filter((o) => o.status === "Realized").reduce((n, o) => n + (o.realizedValue ?? 0), 0);
+  const potential = rows
+    .filter((o) => o.status !== "Realized")
+    .reduce((n, o) => n + (o.potentialValue ?? 0), 0);
+  const realized = opportunities()
+    .filter((o) => o.status === "Realized")
+    .reduce((n, o) => n + (o.realizedValue ?? 0), 0);
   const link = (k, v) => {
     const p = new URLSearchParams({ category: cat, status });
     p.set(k, v);
@@ -46,25 +93,43 @@ function list() {
     <div class="filters">${[["open", "Open"], ["all", "All"], ...STATUSES.map((s) => [s, s])].map(([k, l]) => `<a class="button quiet sm" href="${link("status", k)}" ${k === status ? 'aria-current="page"' : ""}>${esc(l)}</a>`).join("")}</div>
     ${table(
       [
-        { label: "Opportunity", render: (o) => `<b>${esc(o.title)}</b><small class="mono">${esc(o.id)} · found ${esc(date(o.foundAt))}</small>` },
+        {
+          label: "Opportunity",
+          render: (o) =>
+            `<b>${esc(o.title)}</b><small class="mono">${esc(o.id)} · found ${esc(date(o.foundAt))}</small>`,
+        },
         { label: "Category", key: "category" },
-        { label: "Companies", render: (o) => o.companyIds.map(companyName).map(esc).join(", ") },
-        { label: "Confidence", num: true, render: (o) => esc(percent(o.confidence)) },
+        {
+          label: "Companies",
+          render: (o) => o.companyIds.map(companyName).map(esc).join(", "),
+        },
+        {
+          label: "Confidence",
+          num: true,
+          render: (o) => esc(percent(o.confidence)),
+        },
         { label: "Value", num: true, render: valueCell },
         { label: "Status", render: (o) => badge(o.status) },
       ],
       rows,
-      { rowHref: (o) => `/opportunities/?id=${o.id}`, empty: "No opportunities match this view. Run portfolio analysis to look for new ones." },
+      {
+        rowHref: (o) => `/opportunities/?id=${o.id}`,
+        empty:
+          "No opportunities match this view. Run portfolio analysis to look for new ones.",
+      },
     )}`;
 }
 
 function detail() {
   const o = opportunities().find((x) => x.id === id);
   if (!o) {
-    $("view").innerHTML = `<div class="page-head"><div><h1>Unknown opportunity</h1></div></div><p class="block"><a href="/opportunities/">← Opportunities</a></p>`;
+    $("view").innerHTML =
+      `<div class="page-head"><div><h1>Unknown opportunity</h1></div></div><p class="block"><a href="/opportunities/">← Opportunities</a></p>`;
     return;
   }
-  const linked = tasks().filter((t) => t.sourceType === "opportunity" && t.sourceId === o.id);
+  const linked = tasks().filter(
+    (t) => t.sourceType === "opportunity" && t.sourceId === o.id,
+  );
   const evidence = o.evidence.map((ref) => ({ ref, rows: evidenceRows(ref) }));
   document.title = `Vista · ${o.id}`;
   $("view").innerHTML = `
@@ -96,26 +161,42 @@ function detail() {
         `Linked tasks (${linked.length})`,
         table(
           [
-            { label: "Task", render: (t) => `<b>${esc(t.title)}</b><small class="mono">${esc(t.id)}</small>` },
+            {
+              label: "Task",
+              render: (t) =>
+                `<b>${esc(t.title)}</b><small class="mono">${esc(t.id)}</small>`,
+            },
             { label: "Assignee", key: "assignee" },
             { label: "Due", render: (t) => esc(date(t.dueDate)) },
             { label: "Status", render: (t) => badge(t.status) },
-            { label: "Outcome", render: (t) => (t.outcome ? badge(t.outcome) : "—") },
+            {
+              label: "Outcome",
+              render: (t) => (t.outcome ? badge(t.outcome) : "—"),
+            },
           ],
           linked,
-          { rowHref: (t) => `/tasks/?id=${t.id}`, empty: "No task yet. Creating one moves this opportunity to Task created." },
+          {
+            rowHref: (t) => `/tasks/?id=${t.id}`,
+            empty:
+              "No task yet. Creating one moves this opportunity to Task created.",
+          },
         ),
       )}
     </div>`;
   $("status").onchange = async (e) => {
-    await setOpportunityStatus(o.id, e.target.value);
+    try {
+      await setOpportunityStatus(o.id, e.target.value);
+    } catch (error) {
+      return message(error.message, "danger");
+    }
     detail();
     message(`${o.id} marked ${e.target.value.toLowerCase()}.`, "success");
   };
   $("create-task").onclick = async () => {
     const first = company(o.companyIds[0]);
-    const t = await createTask(
-      {
+    let t;
+    try {
+      t = await createTask({
         title: `Follow up: ${o.title}`,
         companyId: o.companyIds[0],
         description: `${o.nextAction}\n\nSource opportunity ${o.id}: ${o.fact}`,
@@ -125,30 +206,56 @@ function detail() {
         assignee: analyst.name,
         priority: o.potentialValue >= 5000 ? "High" : "Medium",
         dueDate: "2026-10-03",
-      },
-      analyst.name,
-    );
+      });
+    } catch (error) {
+      return message(error.message, "danger");
+    }
     detail();
-    message(`Task ${t.id} created for ${first?.name ?? "portfolio"} and linked to ${o.id}.`, "success", { href: `/tasks/?id=${t.id}`, label: "Open task →" });
+    message(
+      `Task ${t.id} created for ${first?.name ?? "portfolio"} and linked to ${o.id}.`,
+      "success",
+      { href: `/tasks/?id=${t.id}`, label: "Open task →" },
+    );
   };
-  $("view").querySelectorAll("[data-source]").forEach((b) => {
-    b.onclick = () => {
-      const r = evidence.flatMap((e) => e.rows).find((x) => x.id === b.dataset.source);
-      showSource(r, r?.number ?? r?.sku ?? r?.product ?? r?.title ?? r?.id);
-    };
-  });
+  $("view")
+    .querySelectorAll("[data-source]")
+    .forEach((b) => {
+      b.onclick = () => {
+        const r = evidence
+          .flatMap((e) => e.rows)
+          .find((x) => x.id === b.dataset.source);
+        showSource(r, r?.number ?? r?.sku ?? r?.product ?? r?.title ?? r?.id);
+      };
+    });
 }
 
 function evidenceTable(entity, rows) {
-  const src = { label: "", render: (r) => (r.provenance ? `<button class="link sm" data-source="${esc(r.id)}">View source</button>` : "") };
+  const src = {
+    label: "",
+    render: (r) =>
+      r.provenance
+        ? `<button class="link sm" data-source="${esc(r.id)}">View source</button>`
+        : "",
+  };
   if (entity === "purchase")
     return table(
       [
         { label: "Date", render: (r) => esc(date(r.date)) },
         { label: "Vendor", key: "vendorName" },
-        { label: "SKU", render: (r) => `<span class="mono">${esc(r.sku)}</span>` },
-        { label: "Qty", num: true, render: (r) => `${esc(r.quantity)} ${esc(r.unit)}` },
-        { label: "Unit price", num: true, render: (r) => esc(money(r.unitPrice)) },
+        {
+          label: "SKU",
+          render: (r) => `<span class="mono">${esc(r.sku)}</span>`,
+        },
+        {
+          label: "Qty",
+          num: true,
+          render: (r) => `${esc(r.quantity)} ${esc(r.unit)}`,
+        },
+        {
+          label: "Unit price",
+          num: true,
+          render: (r) => esc(money(r.unitPrice)),
+        },
         { label: "Total", num: true, render: (r) => esc(money(r.total)) },
         src,
       ],
@@ -159,7 +266,11 @@ function evidenceTable(entity, rows) {
       [
         { label: "Product", key: "product" },
         { label: "Seats", num: true, key: "seats" },
-        { label: "Monthly", num: true, render: (r) => esc(money(r.monthlyCost)) },
+        {
+          label: "Monthly",
+          num: true,
+          render: (r) => esc(money(r.monthlyCost)),
+        },
         { label: "Renewal", render: (r) => esc(date(r.renewalDate)) },
         { label: "Notes", key: "notes" },
         src,
@@ -169,10 +280,17 @@ function evidenceTable(entity, rows) {
   if (entity === "invoice")
     return table(
       [
-        { label: "Invoice", render: (r) => `<span class="mono">${esc(r.number)}</span>` },
+        {
+          label: "Invoice",
+          render: (r) => `<span class="mono">${esc(r.number)}</span>`,
+        },
         { label: "Customer", key: "customerName" },
         { label: "Due", render: (r) => esc(date(r.dueDate)) },
-        { label: "Outstanding", num: true, render: (r) => esc(money(r.outstanding)) },
+        {
+          label: "Outstanding",
+          num: true,
+          render: (r) => esc(money(r.outstanding)),
+        },
         { label: "Status", render: (r) => badge(r.status) },
         src,
       ],
@@ -181,8 +299,16 @@ function evidenceTable(entity, rows) {
   if (entity === "finding")
     return table(
       [
-        { label: "Finding", render: (r) => `<b>${esc(r.title)}</b><small>${esc(r.detail)}</small>` },
-        { label: "Run", render: (r) => `<a class="mono" href="/agents/?run=${esc(r.runId)}">${esc(r.runId)}</a>` },
+        {
+          label: "Finding",
+          render: (r) =>
+            `<b>${esc(r.title)}</b><small>${esc(r.detail)}</small>`,
+        },
+        {
+          label: "Run",
+          render: (r) =>
+            `<a class="mono" href="/agents/?run=${esc(r.runId)}">${esc(r.runId)}</a>`,
+        },
         { label: "Severity", render: (r) => badge(r.severity) },
       ],
       rows,

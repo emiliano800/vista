@@ -41,36 +41,30 @@ stored in the browser.
 665650c5693f0c6f6b9a1c30288ebe64a17894e20ad241b8492af12c9114006c
 ```
 
-Everything this key reaches is synthetic: the Northstar tenant holds six demo
-companies and no imported records, and tenant isolation keeps it out of every
-other workspace. It is still a live write credential — it can commit imports
-to the reports bucket and trigger model calls — so rotate it if it is ever
-misused:
+The key is exchanged for an HttpOnly server session (`POST /api/auth/session`);
+the backend owns firm membership, company scope, metrics, imports,
+opportunities, tasks and agent state under `/api/portfolio/*`.
+
+Each portfolio company is its own tenant, linked to the firm through
+`platform.firm_companies`, so a company's own workspace and the analyst's
+portfolio view read the same records. Seed the demo firm (Northstar, Harbor
+Heating, Summit Mechanical, analyst user) with:
+
+```
+uv run python scripts/seed_portfolio_demo.py
+```
+
+Cedar Climate can be imported through the acquisition wizard from
+`/demo/cedar/*.csv`; the four minimal files in `/demo/simple/*.csv` (customers,
+invoices, vendor purchases, software) each detect at 99% confidence for a quick
+wizard walk-through.
+
+The key above is a live write credential. Rotate it if it is ever misused:
 
 ```
 deploy/aws/manage.sh --output-file ./key.json rotate-key \
     --user 70e9c035-0c81-4abf-a3b0-ac99f7096585
 ```
-
-The firm is a tenant and each portfolio company is a deal inside it. Provision
-one with:
-
-```
-# locally
-uv run python -m vista.manage provision-firm \
-    --name "Northstar HVAC Holdings" --analyst sarah@northstarhvac.com
-
-# in AWS (writes the key to a file instead of CloudWatch)
-deploy/aws/manage.sh --output-file ./analyst-key.json provision-firm \
-    --name "Northstar HVAC Holdings" --analyst sarah@northstarhvac.com
-```
-
-Every figure the workspace shows is derived from stored records — import
-batches, findings, agents and runs. A company with no committed import shows
-"no source" rather than a zero, and cross-company purchasing opportunities come
-from `POST /api/portfolio/analysis`, which compares unit prices for the same SKU
-across deals. The earlier browser-side key check, and the SHA-256 digest that
-shipped in the JavaScript bundle, are gone.
 
 ## The acquired companies
 
