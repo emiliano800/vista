@@ -28,8 +28,8 @@ from vista.models.tenant import (
     RecordingReviewItem,
     UsageEvent,
 )
+from vista.review import SESSION_ID, status_for
 from vista.review import explain as explain_section
-from vista.review import status_for
 from vista.storage import s3_client
 
 FINDING_KINDS = {"observed_fact", "inefficiency", "proposed_automation"}
@@ -345,31 +345,74 @@ def handle_agent_run(job: Job, tenant_schema: str) -> None:
 
 def handle_explain_recording(job: Job, tenant_schema: str) -> None:
     """Explain every pending review item of one recording. Each item is committed
-    on its own; a retry after a model outage redoes only the pending/failed ones."""
+    on its own; a retry after a model outage redoes only the pending/failed ones.
+    Every section is one model_call event + usage row on the recording_review run."""
     recording_id = uuid.UUID(job.payload["recording_id"])
+    run_id = uuid.UUID(job.payload["run_id"]) if "run_id" in job.payload else None
     with tenant_session(tenant_schema) as session:
         pending = session.scalars(
             select(RecordingReviewItem.id).where(
                 RecordingReviewItem.recording_id == recording_id, RecordingReviewItem.status.in_(("pending", "failed"))
             )
         ).all()
+        if run_id is not None:
+            run = _start_run(session, run_id, tenant_schema)
+            seq = _emit(session, run_id, _next_seq(session, run_id), "step", {"message": "explaining sections", "sections": len(pending)})
+            session.commit()
     failures = 0
     for item_id in pending:
         with tenant_session(tenant_schema) as session:
             item = session.get(RecordingReviewItem, item_id)
             if item is None or item.status not in ("pending", "failed"):
                 continue
+            run = session.get(AgentRun, run_id) if run_id is not None else None
             try:
                 model, parsed, in_tokens, out_tokens = explain_section(item.prompt)
             except Exception as exc:  # noqa: BLE001 — one bad section must not block the rest
                 failures += 1
                 item.status, item.error = "failed", repr(exc)[:2000]
+                if run is not None:
+                    seq = _emit(session, run_id, seq, "error", {"section": item.item_id, "error": repr(exc)[:2000]})
             else:
                 item.model, item.input_tokens, item.output_tokens = model, in_tokens, out_tokens
                 item.label, item.explanation = parsed["label"], parsed["explanation"]
                 item.confidence, item.unclear, item.questions = parsed["confidence"], parsed["unclear"], parsed["questions"]
                 item.status, item.error = status_for(parsed["confidence"], item.threshold), None
+                if run is not None:
+                    seq = _emit(
+                        session,
+                        run_id,
+                        seq,
+                        "model_call",
+                        {
+                            "section": item.item_id,
+                            "model": model,
+                            "input_tokens": in_tokens,
+                            "output_tokens": out_tokens,
+                            "confidence": parsed["confidence"],
+                            "status": item.status,
+                        },
+                    )
+                    _record_usage(session, run, model, in_tokens, out_tokens)
             item.explained_at = item.updated_at = datetime.now(UTC)
+            session.commit()
+    if run_id is not None:
+        with tenant_session(tenant_schema) as session:
+            run = session.get(AgentRun, run_id)
+            statuses = session.scalars(
+                select(RecordingReviewItem.status).where(
+                    RecordingReviewItem.recording_id == recording_id, RecordingReviewItem.item_id != SESSION_ID
+                )
+            ).all()
+            _emit(
+                session,
+                run_id,
+                seq,
+                "result",
+                {"sections": len(pending), "failed": failures, "open": sum(s in ("proposed", "unsure") for s in statuses)},
+            )
+            if not failures:
+                run.status, run.finished_at, run.error = "succeeded", datetime.now(UTC), None
             session.commit()
     if failures:
         raise RuntimeError(f"{failures} of {len(pending)} sections could not be explained")

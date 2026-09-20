@@ -242,6 +242,7 @@ export function mergeReview(local, remote) {
     model: remote.model ?? local.model,
     generating: !!remote.generating,
     generated_at: remote.generated_at ?? local.generated_at,
+    run: remote.run ?? null,
     items,
   };
 }

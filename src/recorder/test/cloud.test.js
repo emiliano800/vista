@@ -150,9 +150,12 @@ test("review calls: sections described on-device, decisions posted, pending item
     threshold: 0.88,
     model: "gpt",
     generating: true,
+    run: { id: "r1", status: "running", finished_at: null },
     items: { S1: { status: "approved", label: "Enter bills", final_label: "Enter bills" }, S2: { status: "pending" } },
   });
   assert.equal(merged.source, "cloud");
+  assert.deepEqual(merged.run, { id: "r1", status: "running", finished_at: null });
+  assert.equal(mergeReview(local, { items: {} }).run, null);
   assert.equal(merged.items.S1.status, "approved");
   assert.equal(merged.items.S2, undefined);
   assert.equal(merged.generating, true);

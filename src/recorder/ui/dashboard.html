@@ -670,6 +670,7 @@
           `<span class="${s.awaiting ? '' : 'ok-t'}"><b>${s.awaiting}</b> to approve</span>`,
           `<span class="${s.unclear + s.failed ? 'warn-t' : 'ok-t'}"><b>${s.unclear + s.failed}</b> unclear</span>`,
           `<span class="ok-t"><b>${s.resolved}</b> confirmed</span>`,
+          `<span class="muted">${rv.source === 'cloud' ? 'explained in your workspace' : 'explained on this computer'}</span>`,
           vs.submitted ? '' : rv.generating ? '<span class="thinking"><i></i> explaining…</span>' : `<button class="btn sm" id="rv-regen" title="Ask the AI again for anything not yet confirmed">Re-run AI</button>`,
         ].join('');
         const b = $('rv-regen');

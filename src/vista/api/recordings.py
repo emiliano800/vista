@@ -17,7 +17,7 @@ from vista.auth import Principal, current_principal
 from vista.config import settings
 from vista.db import platform_session, tenant_session
 from vista.jobs.queue import enqueue
-from vista.models.tenant import Recording, RecordingReviewItem
+from vista.models.tenant import AgentRun, Deal, Recording, RecordingReviewItem
 from vista.permissions import require_deal_role
 from vista.recordings import RecordingUpload, parse_evidence
 from vista.review import (
@@ -323,6 +323,15 @@ def review_items(session, recording_id):
     ).all()
 
 
+def latest_review_run(session, recording_id) -> AgentRun | None:
+    return session.scalar(
+        select(AgentRun)
+        .where(AgentRun.recording_id == recording_id, AgentRun.run_type == "recording_review")
+        .order_by(AgentRun.created_at.desc())
+        .limit(1)
+    )
+
+
 @router.put("/recordings/{recording_id}/review/sections")
 def submit_sections(recording_id: uuid.UUID, body: SectionsIn, principal: Principal = Depends(current_principal)):
     """The recorder describes each video section (redacted on the device); the
@@ -351,26 +360,41 @@ def submit_sections(recording_id: uuid.UUID, body: SectionsIn, principal: Princi
             item.updated_at = now
             queued += 1
         session.flush()
+        run = latest_review_run(session, recording_id)
+        if queued:
+            # One Recording Reviewer run per submission so the sections' model calls
+            # land in the same ledger as every other agent.
+            run = AgentRun(
+                job_id=uuid.uuid4(),
+                run_type="recording_review",
+                agent_key="recording_reviewer",
+                recording_id=recording_id,
+                deal_id=record.deal_id,
+                company=session.scalar(select(Deal.name).where(Deal.id == record.deal_id)),
+                requested_by=principal.user_id,
+            )
+            session.add(run)
         items = review_items(session, recording_id)
-        session.commit()
+        session.commit()  # the run must exist before the worker can pick up its job
+        out = public_review(items, run)
     if queued:
         with platform_session() as psession:
             enqueue(
                 psession,
                 principal.tenant_id,
                 "explain_recording",
-                {"recording_id": str(recording_id)},
+                {"recording_id": str(recording_id), "run_id": str(run.id)},
                 idempotency_key=f"{recording_id}:{now.isoformat()}",
             )
             psession.commit()
-    return public_review(items)
+    return out
 
 
 @router.get("/recordings/{recording_id}/review")
 def get_review(recording_id: uuid.UUID, principal: Principal = Depends(current_principal)):
     record = authorized_recording(recording_id, principal)
     with tenant_session(principal.tenant_schema) as session:
-        return public_review(review_items(session, record.id))
+        return public_review(review_items(session, record.id), latest_review_run(session, record.id))
 
 
 @router.post("/recordings/{recording_id}/review/{item_id}")
@@ -390,5 +414,6 @@ def decide(recording_id: uuid.UUID, item_id: str, body: DecisionIn, principal: P
         except ValueError as exc:
             raise HTTPException(409, str(exc)) from exc
         items = review_items(session, recording_id)
+        run = latest_review_run(session, recording_id)
         session.commit()
-        return public_review(items)
+        return public_review(items, run)

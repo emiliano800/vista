@@ -19,7 +19,7 @@ from typing import Annotated, Literal
 from pydantic import BaseModel, ConfigDict, Field
 
 from vista.config import settings
-from vista.models.tenant import RecordingReviewItem
+from vista.models.tenant import AgentRun, RecordingReviewItem
 
 CONFIDENCE_THRESHOLD = 0.88
 SESSION_ID = "session"
@@ -232,10 +232,19 @@ def review_summary(items: list[RecordingReviewItem], threshold: float = CONFIDEN
     return s
 
 
-def public_review(items: list[RecordingReviewItem]) -> dict:
+def public_run(run: AgentRun | None) -> dict | None:
+    """Workspace Recording Reviewer run behind this review; None when the sections
+    were only ever explained on the employee's own computer."""
+    if run is None:
+        return None
+    return {"id": str(run.id), "status": run.status, "started_at": run.started_at, "finished_at": run.finished_at, "error": run.error}
+
+
+def public_review(items: list[RecordingReviewItem], run: AgentRun | None = None) -> dict:
     threshold = items[0].threshold if items else CONFIDENCE_THRESHOLD
     session = next((i for i in items if i.item_id == SESSION_ID), None)
     return {
+        "run": public_run(run),
         "threshold": threshold,
         "model": next((i.model for i in items if i.model), None),
         "generating": any(i.status == "pending" for i in items),

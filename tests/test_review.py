@@ -48,10 +48,21 @@ def test_review_roundtrip_sections_worker_decisions(client, tenant_factory, bund
     }
     review = client.put(f"/api/recordings/{rid}/review/sections", headers=headers, json=body).json()
     assert review["generating"] and review["summary"]["pending"] == 2 and all(i["status"] == "pending" for i in review["items"].values())
+    assert review["run"]["status"] == "queued" and review["run"]["finished_at"] is None
 
     drain()
     review = client.get(f"/api/recordings/{rid}/review", headers=headers).json()
     assert not review["generating"] and review["threshold"] == CONFIDENCE_THRESHOLD
+    assert review["run"]["status"] == "succeeded" and review["run"]["finished_at"] and review["run"]["error"] is None
+
+    # The Recording Reviewer is accounted for like every other agent: one run, one model_call per section, usage.
+    run = client.get(f"/api/runs/{review['run']['id']}", headers=headers).json()
+    assert (run["run_type"], run["agent_key"], run["recording_id"], run["deal_id"]) == ("recording_review", "recording_reviewer", rid, deal)
+    calls = [e for e in run["events"] if e["event_type"] == "model_call"]
+    assert sorted(e["data"]["section"] for e in calls) == ["S1", "S2", "session"]
+    assert run["events"][-1]["data"] == {"sections": 3, "failed": 0, "open": 2}
+    usage = client.get("/api/usage?group_by=agent_key", headers=headers).json()
+    assert usage["total_input_tokens"] == 30 and usage["groups"][0]["key"] == {"agent_key": "recording_reviewer"}
     assert review["items"]["S1"]["status"] == "proposed" and review["items"]["S2"]["status"] == "unsure"
     assert review["session"]["label"] == "Morning AP run"
     assert review["summary"] == {
