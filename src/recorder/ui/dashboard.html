@@ -245,6 +245,11 @@
       .pill.submitted { background: var(--success-soft); color: var(--success); }
       .pill.uploading { background: var(--lime-soft); color: var(--lime-ink); }
       .pill.local { background: var(--surface-sunken); color: var(--ink-muted); }
+      .pill.ws-queued, .pill.ws-running { border-color: var(--agent); color: var(--agent-ink); }
+      .pill.ws-succeeded { border-color: var(--success); color: var(--success); }
+      .pill.ws-failed { border-color: var(--danger); color: var(--danger); }
+      .pill.ws-none { color: var(--ink-muted); }
+      .rv-ws { display: flex; gap: var(--space-2); align-items: center; flex-wrap: wrap; font-size: 12px; line-height: 16px; margin-top: 4px; }
       /* week: one bar per day */
       .week { display: grid; grid-template-columns: repeat(7, 1fr); gap: var(--space-2); align-items: end; height: 120px; }
       .week .d { display: grid; grid-template-rows: 1fr auto auto; height: 100%; text-align: center; font-size: 11px; line-height: 16px; color: var(--ink-muted); gap: var(--space-1); }
@@ -329,7 +334,7 @@
 
           <div class="banner" id="rv-banner">
             <span class="badge agent">Agent</span>
-            <div><b id="rv-banner-t">Analyzing your session…</b><div id="rv-banner-s" style="font-size:12px;line-height:16px"></div></div>
+            <div><b id="rv-banner-t">Analyzing your session…</b><div id="rv-banner-s" style="font-size:12px;line-height:16px"></div><div class="rv-ws hidden" id="rv-ws"></div></div>
             <div class="sp"></div>
             <button class="btn sm" id="rv-note">Add a general summary</button>
             <button class="btn sm" id="rv-done">Done</button>
@@ -571,6 +576,7 @@
         $('rv-lede').textContent = `${when} · ${hm(r.active_seconds ?? 0)} · ${(r.counts?.total ?? 0).toLocaleString()} interactions · ${up.label}${up.key === 'submitted' ? ' — files are in your workspace' : ''}`;
         $('rv-banner-t').textContent = up.key === 'submitted' ? 'Submitted' : up.key === 'uploading' ? up.label : up.key === 'failed' ? 'Submit failed' : done ? 'Ready to review' : p === 'failed' ? 'Analysis could not finish' : p === 'skipped' ? 'Analysis skipped' : 'Analyzing…';
         $('rv-banner-s').textContent = up.key === 'submitted' ? `Sent ${up.sub}. Nothing from this session is left on this computer.` : up.key === 'failed' ? `${up.sub} Press Submit to retry.` : up.key === 'uploading' ? 'Sending the video, screenshots and notes to your workspace…' : done ? analystSummary() : p === 'failed' || p === 'skipped' ? (r.processing_note ?? '') : '';
+        renderWorkspaceState(r, up);
         $('rv-note').classList.toggle('attn', !r.summary_text && up.key !== 'submitted');
         $('rv-note').classList.toggle('hidden', up.key === 'submitted');
         $('rv-note').title = r.summary_text ? 'Edit the general summary' : 'Tell us what this session was about — it names the recording';
@@ -641,6 +647,24 @@
         renderRecordings(); renderToday(); renderSections(); renderReview();
       };
 
+      // Workspace agent state for a submitted session: the Recording Reviewer run
+      // (from the review payload) and a link to the same recording on the website.
+      // `vs.review` is fresher than the list stub when the review view is open.
+      function wsPill(ws) {
+        return ws ? `<span class="pill ws-${esc(ws.key)}" title="${esc(ws.sub)}">${ws.key === 'queued' || ws.key === 'running' ? icon('loader') : ''}${esc(ws.label)}</span>` : '';
+      }
+      function renderWorkspaceState(r, up) {
+        const ws = (vs && vs.recording_id === r.recording_id ? vs.review?.workspace : null) ?? r.review?.workspace ?? null;
+        const url = vs && vs.recording_id === r.recording_id ? vs.workspace_url : null;
+        const el = $('rv-ws');
+        const show = up.key === 'submitted' || !!ws;
+        el.classList.toggle('hidden', !show);
+        if (!show) return;
+        el.innerHTML = `${wsPill(ws)}${ws?.sub ? `<span class="muted">${esc(ws.sub)}</span>` : ''}${url ? `<button class="btn sm" id="rv-open-ws" title="${esc(url)}">${icon('upload')}View in workspace</button>` : ''}`;
+        const b = $('rv-open-ws');
+        if (b) b.onclick = () => window.vista.openWorkspace(r.recording_id).catch((e) => alert(e.message));
+      }
+
       // One line for the analyst (and the employee) on where the review stands:
       // how many stretches the AI explained, how many still need approval, how many it found unclear.
       function analystSummary() {
@@ -697,6 +721,8 @@
         $('vs-sub').textContent = vs.submitted ? `${vs.sections.length} sections · in your workspace` : vs.sections.length ? `${vs.sections.length} sections` : 'No window switches recorded';
         renderSections();
         renderFiles();
+        const rec = recordings.find((x) => x.recording_id === id);
+        if (rec) renderWorkspaceState(rec, uploadState(rec));
         // key added after the session ended, or the app was closed mid-way: pick the explanations up now
         if (vs.review.enabled && vs.ended_at && !vs.review.generating && !vs.review.summary.total && !vs.review.session) window.vista.explain(id).catch(() => {});
       }
@@ -1100,7 +1126,7 @@
             <td>${r.active_seconds != null ? hm(r.active_seconds) : '<span class="muted">live</span>'}</td>
             <td>${(r.counts?.total ?? 0).toLocaleString()}</td>
             <td><span class="pill ${p}">${p}</span>${sum}</td>
-            <td><span class="pill ${up.key}" title="${esc(up.sub)}">${up.icon ? icon(up.icon) : ''}${esc(up.label)}</span>${up.key === 'failed' ? `<div class="muted" style="font-size:11px;white-space:normal;max-width:220px">${esc(up.sub)}</div>` : ''}</td>
+            <td><span class="pill ${up.key}" title="${esc(up.sub)}">${up.icon ? icon(up.icon) : ''}${esc(up.label)}</span> ${wsPill(r.review?.workspace)}${up.key === 'failed' ? `<div class="muted" style="font-size:11px;white-space:normal;max-width:220px">${esc(up.sub)}</div>` : ''}</td>
             <td>${notes ? `${notes} note${notes === 1 ? '' : 's'}` : '<span class="muted">—</span>'}</td>
             <td style="white-space:nowrap"><button class="btn sm primary" data-review="${esc(r.recording_id)}">Review</button> ${up.key === 'submitted' ? '' : `<button class="btn sm" data-ann="${esc(r.recording_id)}">Add note</button> <button class="btn sm icon" title="Open folder" data-open="${esc(r.recording_id)}">${icon('folder')}</button> `}${submitBtn}</td>
           </tr>`;
