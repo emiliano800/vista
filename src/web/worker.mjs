@@ -8,6 +8,11 @@ const importRead =
   /^\/api\/(?:deals\/[0-9a-f-]+\/imports|imports\/[0-9a-f-]+(?:\/export)?)$/i;
 const importWrite =
   /^\/api\/(?:deals\/[0-9a-f-]+\/imports|imports\/[0-9a-f-]+\/(?:commit|findings\/[a-f0-9]{16}))$/i;
+const portfolioRead =
+  /^\/api\/(?:portfolio\/(?:companies(?:\/[0-9a-f-]+)?|tasks|opportunities|activity|analysis)|agents|runs|findings)$/i;
+const portfolioCreate = /^\/api\/portfolio\/(?:tasks|analysis)$/i;
+const portfolioPatch =
+  /^\/api\/(?:portfolio\/(?:tasks|opportunities)|agents|findings)\/[0-9a-f-]+$/i;
 const securityHeaders = {
   "X-Content-Type-Options": "nosniff",
   "Referrer-Policy": "no-referrer",
@@ -22,19 +27,25 @@ async function handle(request, env) {
     if (
       !apiRoutes.test(url.pathname) &&
       !importRead.test(url.pathname) &&
-      !importWrite.test(url.pathname)
+      !importWrite.test(url.pathname) &&
+      !portfolioRead.test(url.pathname) &&
+      !portfolioPatch.test(url.pathname)
     )
       return new Response("Not found", { status: 404 });
     // Only explicitly allowed workspace operations reach the backend.
     if (
-      !["GET", "HEAD", "POST", "PUT", "DELETE"].includes(request.method) ||
+      !["GET", "HEAD", "POST", "PUT", "PATCH", "DELETE"].includes(
+        request.method,
+      ) ||
       (request.method === "POST" &&
         !url.pathname.endsWith("/recordings") &&
         !mediaUpload.test(url.pathname) &&
         !reviewDecision.test(url.pathname) &&
         !importWrite.test(url.pathname) &&
+        !portfolioCreate.test(url.pathname) &&
         url.pathname !== "/api/auth/session") ||
       (request.method === "PUT" && !reviewSections.test(url.pathname)) ||
+      (request.method === "PATCH" && !portfolioPatch.test(url.pathname)) ||
       (request.method === "DELETE" && url.pathname !== "/api/auth/session")
     )
       return new Response("Method not allowed", { status: 405 });

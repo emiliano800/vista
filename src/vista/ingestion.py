@@ -43,7 +43,22 @@ SCHEMAS = {
     "invoices": {
         "label": "Invoices",
         "required": ["invoice_id", "balance", "due_date"],
-        "optional": ["client_id", "policy_number", "payment_plan", "status"],
+        "optional": ["client_id", "policy_number", "payment_plan", "status", "amount", "issue_date"],
+    },
+    "vendors": {
+        "label": "Vendors",
+        "required": ["vendor_id", "vendor_name"],
+        "optional": ["category", "status", "terms"],
+    },
+    "purchases": {
+        "label": "Purchase lines",
+        "required": ["sku", "quantity", "unit_price"],
+        "optional": ["purchase_id", "vendor_name", "purchase_date", "total", "description", "unit"],
+    },
+    "subscriptions": {
+        "label": "Software subscriptions",
+        "required": ["product", "monthly_cost"],
+        "optional": ["subscription_id", "vendor_name", "seats", "seats_active", "renewal_date"],
     },
 }
 ALIASES = {
@@ -56,6 +71,20 @@ ALIASES = {
     "invoice_id": ["invoice_number", "invoice_no"],
     "balance": ["outstanding_balance", "amount_outstanding"],
     "due_date": ["payment_due_date"],
+    "amount": ["invoice_amount", "invoice_total", "gross_amount"],
+    "issue_date": ["invoice_date", "issued_on", "invoice_issue_date"],
+    "vendor_id": ["supplier_id", "vendor_code", "supplier_code"],
+    "vendor_name": ["supplier_name", "supplier", "vendor"],
+    "sku": ["item_code", "part_number", "part_no", "product_code"],
+    "quantity": ["qty", "units", "unit_count"],
+    "unit_price": ["price_per_unit", "unit_cost", "price_each"],
+    "purchase_id": ["po_number", "po_no", "purchase_order"],
+    "purchase_date": ["po_date", "ordered_on", "order_date"],
+    "product": ["software", "application", "app_name", "service"],
+    "monthly_cost": ["monthly_price", "cost_per_month", "mrr"],
+    "seats": ["licenses", "seat_count", "licensed_seats"],
+    "seats_active": ["active_seats", "seats_in_use", "used_seats"],
+    "renewal_date": ["renews_on", "renewal", "contract_end"],
 }
 
 
@@ -358,6 +387,93 @@ def analyze(tables, as_of):
                 [source],
                 money(invoice["balance"]),
             )
+    # Software: seats paid for but unused, and renewals inside the notice window.
+    for subscription, source in grouped["subscriptions"]:
+        try:
+            monthly = money(subscription["monthly_cost"])
+        except ValueError:
+            add(
+                "data_quality",
+                "Subscription cost is not a readable amount",
+                f"{subscription['product']}: {subscription['monthly_cost']!r}.",
+                "Export the monthly cost as a number before importing.",
+                [source],
+            )
+            continue
+        seats, active = subscription.get("seats", ""), subscription.get("seats_active", "")
+        if seats and active:
+            try:
+                idle = int(Decimal(seats)) - int(Decimal(active))
+            except (InvalidOperation, ValueError):
+                idle = 0
+            if idle > 0 and int(Decimal(seats)) > 0:
+                per_seat = (monthly / int(Decimal(seats))).quantize(Decimal("0.01"))
+                annual = (per_seat * idle * 12).quantize(Decimal("0.01"))
+                add(
+                    "software",
+                    "Subscription seats are paid for but unused",
+                    f"{subscription['product']}: {idle} of {seats} seats had no recorded activity.",
+                    "Confirm the seats are genuinely idle with the tenant admin before releasing them at renewal.",
+                    [source],
+                    annual,
+                    [
+                        f"{monthly} / {seats} seats = {per_seat} per seat per month",
+                        f"{per_seat} x {idle} idle seats x 12 months = {annual} a year",
+                    ],
+                )
+        renewal = subscription.get("renewal_date", "")
+        if renewal:
+            try:
+                days = (date.fromisoformat(renewal) - as_of).days
+            except ValueError:
+                continue
+            if 0 <= days <= 60:
+                add(
+                    "software",
+                    "Subscription renews inside the notice window",
+                    f"{subscription['product']} renews on {renewal}, {days} days after {as_of.isoformat()}.",
+                    "Check the notice period in the agreement before it auto-renews.",
+                    [source],
+                )
+
+    # Purchasing: the same SKU bought at more than one unit price.
+    by_sku = {}
+    for purchase, source in grouped["purchases"]:
+        try:
+            unit_price = money(purchase["unit_price"])
+            quantity = Decimal(str(purchase["quantity"]).replace(",", "").strip() or 0)
+        except (ValueError, InvalidOperation):
+            add(
+                "data_quality",
+                "Purchase line has no readable price or quantity",
+                f"{purchase['sku']}: {purchase['unit_price']!r} x {purchase['quantity']!r}.",
+                "Export quantity and unit price as numbers before importing.",
+                [source],
+            )
+            continue
+        by_sku.setdefault(purchase["sku"].casefold(), []).append((unit_price, quantity, purchase, source))
+    for lines in by_sku.values():
+        prices = {unit for unit, _, _, _ in lines}
+        if len(prices) < 2:
+            continue
+        low, high = min(prices), max(prices)
+        gap = high - low
+        units_at_high = sum(q for u, q, _, _ in lines if u == high)
+        exposure = (gap * units_at_high).quantize(Decimal("0.01"))
+        sku = lines[0][2]["sku"]
+        add(
+            "purchasing",
+            "Same SKU purchased at more than one unit price",
+            f"{sku} was bought at {len(prices)} different unit prices between {low} and {high}.",
+            "Confirm whether the prices reflect different terms, freight or dates before treating the gap as a saving.",
+            [source for _, _, _, source in lines],
+            exposure,
+            [
+                f"{high} - {low} = {gap} per unit",
+                f"{units_at_high} units at the higher price x {gap} = {exposure} scenario",
+            ],
+        )
+
     recovery = sum((Decimal(f["amount"]) for f in findings if f["category"] == "commission"), Decimal(0))
     kinds = {t["kind"] for t in tables}
     checks = [
@@ -376,6 +492,20 @@ def analyze(tables, as_of):
             else "Import invoices with due dates, balances and payment plans.",
         },
         {
+            "name": "Software subscriptions",
+            "status": "completed" if "subscriptions" in kinds else "needs_data",
+            "detail": "Idle seats and renewals inside the notice window are flagged."
+            if "subscriptions" in kinds
+            else "Import subscriptions with monthly cost, seats and renewal dates.",
+        },
+        {
+            "name": "Purchasing price variance",
+            "status": "completed" if "purchases" in kinds else "needs_data",
+            "detail": "The same SKU bought at more than one unit price is flagged."
+            if "purchases" in kinds
+            else "Import purchase lines with SKU, quantity and unit price.",
+        },
+        {
             "name": "Policy identity",
             "status": "completed" if "policies" in kinds else "needs_data",
             "detail": "Duplicate policy numbers are flagged and excluded from commission matching."
@@ -391,6 +521,9 @@ def analyze(tables, as_of):
             "tables": len(tables),
             "clients": len(grouped["clients"]),
             "policies": len(grouped["policies"]),
+            "vendors": len(grouped["vendors"]),
+            "purchases": len(grouped["purchases"]),
+            "subscriptions": len(grouped["subscriptions"]),
             "commission_variance": str(recovery),
             "findings": len(findings),
             "matched_commissions": matched,

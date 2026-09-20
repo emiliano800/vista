@@ -3,11 +3,12 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title>Vista · Sign in</title>
+    <title>Vista · PE analyst sign in</title>
     <link rel="stylesheet" href="/tokens.css" />
     <link rel="stylesheet" href="/style.css" />
+    <link rel="stylesheet" href="/pe.css" />
     <script type="module" src="/nav.js"></script>
-    <script type="module" src="/signin/signin.js"></script>
+    <script type="module" src="/signin/analyst/signin.js"></script>
   </head>
   <body>
     <header>
@@ -20,13 +21,15 @@
       >
         <span></span><span></span><span></span>
       </button>
-      <a class="brand" href="/">Vista</a><span class="muted">Sign in</span>
+      <a class="brand" href="/">Vista</a
+      ><span class="muted">PE analyst workspace</span>
     </header>
     <nav id="drawer" class="drawer" hidden aria-label="Site">
       <p class="eyebrow">Vista</p>
       <a href="/">Home</a>
       <a href="/recorder/">The recorder</a>
       <a href="/account/">Company workspace</a>
+      <a href="/portfolio/">PE analyst workspace</a>
       <a href="/signin/">Sign in</a>
     </nav>
     <div id="scrim" class="scrim" hidden></div>
@@ -34,27 +37,24 @@
       <div id="message" role="status" aria-live="polite"></div>
       <section class="login">
         <div class="login-copy">
-          <p class="eyebrow">Company workspace</p>
-          <h1>Sign in to <i>your</i> workspace.</h1>
+          <p class="eyebrow">PE analyst workspace</p>
+          <h1>See <i>every</i> company. Verify every number.</h1>
           <p class="lede">
-            Import your company’s data, review what needs attention, and
-            follow every finding back to its source.
+            Portfolio, acquisitions, opportunities and the evidence behind each
+            one — for the operating team at the firm.
           </p>
           <ul class="facts">
+            <li>Every metric traces to the records that make it up.</li>
+            <li>Ambiguous imports wait for a human; nothing merges silently.</li>
             <li>
-              Bring exports from your existing systems.
-            </li>
-            <li>
-              Confirm field mappings before analysis.
-            </li>
-            <li>
-              Review discrepancies with source records and calculations.
+              Observed facts, potential benefit and realized results are kept
+              apart.
             </li>
           </ul>
         </div>
         <form id="login-form" class="card">
-          <h2>Sign in to your workspace</h2>
-          <label for="key">Your access key</label
+          <h2>Sign in to the firm workspace</h2>
+          <label for="key">Analyst access key</label
           ><input
             id="key"
             type="password"
@@ -62,22 +62,18 @@
             required
             minlength="32"
             maxlength="256"
-            placeholder="Enter the key provided by your administrator"
+            placeholder="Enter the key provided by your firm administrator"
           /><button class="primary" type="submit">Sign in</button
           ><small
-            >Need access? Ask your workspace administrator for a personal
-            key.</small
-          ><small
-            >PE analyst at the acquiring firm?
-            <a href="/signin/analyst/">Sign in to the portfolio workspace</a
-            >.</small
+            >Firm keys are issued per analyst. Company employees sign in to
+            their <a href="/signin/">company workspace</a> instead.</small
           >
         </form>
       </section>
     </main>
     <footer>
       <span>Vista · Evidence before decisions</span
-      ><span>Company data. Clearer decisions.</span>
+      ><span>Synthetic demo data · no real companies behind these keys.</span>
     </footer>
   </body>
 </html>
