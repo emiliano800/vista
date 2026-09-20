@@ -134,6 +134,9 @@ def test_synthetic_run_links_to_deal_of_same_name(client, tenant_factory):
     run = client.post("/synthetic/discovery", json={"company": "ridgeway", "division": "11_billing_ar"}, headers=headers).json()
     assert run["deal_id"] == deal["id"]
     assert [r["id"] for r in client.get(f"/runs?deal_id={deal['id']}", headers=headers).json()] == [run["id"]]
+    _drain()
+    assert client.get(f"/usage?deal_id={deal['id']}", headers=headers).json()["runs"] == 1
+    assert client.get(f"/usage?deal_id={uuid.uuid4()}", headers=headers).json()["runs"] == 0
 
 
 def test_run_finding_usage_filters_and_grouping(client, tenant_factory):

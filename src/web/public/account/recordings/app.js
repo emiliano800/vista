@@ -207,7 +207,22 @@ function reviewSummaryText(rv) {
     );
   if (s.resolved) parts.push(`${s.resolved} confirmed.`);
   if (s.total && !s.open) parts.push("Nothing left to review.");
+  parts.push(agentRunText(rv.run));
   return parts.join(" ");
+}
+const RUN_TEXT = {
+  queued: "Recording Reviewer queued.",
+  running: "Recording Reviewer is explaining the sections.",
+  succeeded: "Reviewed by the Recording Reviewer agent",
+  failed: "Recording Reviewer run failed",
+};
+function agentRunText(run) {
+  if (!run)
+    return "Explained on the employee's computer; no workspace agent run.";
+  const text = RUN_TEXT[run.status] ?? run.status;
+  return run.finished_at
+    ? `${text} · ${new Date(run.finished_at).toLocaleString()}.`
+    : text;
 }
 async function review(id) {
   $("review").innerHTML = '<tr><td colspan="5">Loading review…</td></tr>';

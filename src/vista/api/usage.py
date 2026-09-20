@@ -1,3 +1,4 @@
+import uuid
 from datetime import datetime
 from decimal import Decimal
 
@@ -8,7 +9,7 @@ from vista.api.schemas import UsageGroupOut, UsageOut
 from vista.auth import Principal, current_principal
 from vista.db import tenant_session
 from vista.models.tenant import AgentRun, UsageEvent
-from vista.permissions import visible_deal_clause
+from vista.permissions import require_deal_role, visible_deal_clause
 
 router = APIRouter(tags=["usage"])
 
@@ -35,6 +36,7 @@ def get_usage(
     since: datetime | None = None,
     company: str | None = None,
     agent_key: str | None = None,
+    deal_id: uuid.UUID | None = None,
     principal: Principal = Depends(current_principal),
 ) -> UsageOut:
     """Token and cost totals, optionally broken down by company/division/sector/model/agent_key/run_type.
@@ -48,8 +50,12 @@ def get_usage(
         base = base.where(UsageEvent.company == company)
     if agent_key is not None:
         base = base.where(UsageEvent.agent_key == agent_key)
+    if deal_id is not None:
+        base = base.where(AgentRun.deal_id == deal_id)
     with tenant_session(principal.tenant_schema) as session:
-        if principal.role != "admin":
+        if deal_id is not None and principal.role != "admin":
+            require_deal_role(session, deal_id, principal.user_id, "viewer")
+        elif principal.role != "admin":
             base = base.where(visible_deal_clause(AgentRun.deal_id, principal.user_id))
         row = session.execute(base).one()
         groups: list[UsageGroupOut] = []
