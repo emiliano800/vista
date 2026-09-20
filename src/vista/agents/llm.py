@@ -75,6 +75,7 @@ def live_chat(prompt: Prompt, model: str | None = None) -> ChatResult:
     reasoning_model = model.rsplit("/", 1)[-1].startswith(("gpt-5", "gpt-6", "o1", "o3", "o4"))
     # Completion limits include hidden reasoning as well as the JSON response.
     completion_limit = max(prompt.max_tokens, 8192) if reasoning_model else prompt.max_tokens
+    # Reasoning models reject explicit temperature; pin it to 0 everywhere else.
     kwargs: dict = {} if reasoning_model else {"temperature": 0}
     if prompt.json_mode:
         kwargs["response_format"] = {"type": "json_object"}

@@ -43,7 +43,7 @@ def _call_model(document: Document | None) -> tuple[str, str, int, int]:
         subject = f"a document named {document.filename!r}" if document else "a deal with no document"
         resp = client.chat.completions.create(
             model=settings.openai_model,
-            max_tokens=200,
+            **settings.openai_completion_kwargs(200),
             messages=[
                 {
                     "role": "system",
@@ -70,9 +70,9 @@ def _chat(system: str, user: str, max_tokens: int = 800) -> tuple[str, str, int,
     if settings.openai_api_key:
         resp = settings.openai_client().chat.completions.create(
             model=settings.openai_model,
-            max_tokens=max_tokens,
             messages=[{"role": "system", "content": system}, {"role": "user", "content": user}],
             extra_body=settings.openai_extra_body(),
+            **settings.openai_completion_kwargs(max_tokens),
         )
         return (
             resp.model,

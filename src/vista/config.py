@@ -36,6 +36,16 @@ class Settings(BaseSettings):
 
         return OpenAI(api_key=self.openai_api_key, base_url=self.openai_base_url)
 
+    def openai_completion_kwargs(self, max_tokens: int, temperature: float | None = None) -> dict:
+        """Per-model completion arguments. Reasoning models (gpt-5+, o-series)
+        reject `max_tokens` and explicit temperature, and need headroom for
+        hidden reasoning tokens on top of the visible answer."""
+        reasoning = self.openai_model.rsplit("/", 1)[-1].startswith(("gpt-5", "gpt-6", "o1", "o3", "o4"))
+        kwargs: dict = {"max_completion_tokens": max(max_tokens, 8192) if reasoning else max_tokens}
+        if temperature is not None and not reasoning:
+            kwargs["temperature"] = temperature
+        return kwargs
+
     def openai_extra_body(self) -> dict:
         body: dict = {}
         if self.openai_base_url and "openrouter.ai" in self.openai_base_url:

@@ -11,6 +11,8 @@ from vista.agents.llm import ChatResult, Prompt, chat
 MODEL_PRICING = {
     "gpt-4o-mini": (Decimal("0.00000015"), Decimal("0.00000060")),
     "gpt-4o": (Decimal("0.0000025"), Decimal("0.00001")),
+    # OpenAI list price Sep 2026, standard tier <=272K input: $10/M in, $50/M out.
+    "gpt-6-astra": (Decimal("0.00001"), Decimal("0.00005")),
 }
 DEFAULT_PRICING = (Decimal("0.000003"), Decimal("0.000015"))
 

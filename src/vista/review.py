@@ -136,11 +136,10 @@ def explain(prompt: str) -> tuple[str, dict, int, int]:
         return "stub-model-v0", parse_explanation(None) | {"explanation": "No model configured; please explain this stretch."}, 0, 0
     resp = settings.openai_client().chat.completions.create(
         model=settings.openai_model,
-        max_tokens=500,
-        temperature=0.2,
         response_format={"type": "json_object"},
         messages=[{"role": "system", "content": SYSTEM}, {"role": "user", "content": prompt}],
         extra_body=settings.openai_extra_body(),
+        **settings.openai_completion_kwargs(500, temperature=0.2),
     )
     usage = resp.usage
     return (
