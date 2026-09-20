@@ -16,6 +16,12 @@ const duration = (seconds) =>
   seconds < 60
     ? `${Math.round(seconds)} sec`
     : `${(seconds / 60).toFixed(1)} min`;
+const sourceTone = (source) =>
+  source === "human" ? "human" : source === "ai" ? "agent" : "";
+const badge = (source, fallback) =>
+  source
+    ? `<span class="badge ${sourceTone(source)}">${esc(source)}</span>`
+    : `<span class="badge">${esc(fallback)}</span>`;
 let reportOffset = 0,
   evidenceOffset = 0,
   current = null,
@@ -97,7 +103,7 @@ async function reports() {
     ? rows
         .map(
           (r) =>
-            `<article class="report"><div><h2>${esc(date(r.started_at))}</h2><small>${esc(duration(r.active_seconds))} active · ${r.summary.n_steps} steps · ${r.summary.n_cases} cases</small></div><button data-report="${esc(r.id)}">View report →</button></article>`,
+            `<article class="report"><div><h2>${esc(date(r.started_at))}</h2><small>${esc(duration(r.active_seconds))} active</small></div><div class="figures"><span class="mono-figure">${esc(r.summary.n_steps)} steps</span><span class="mono-figure">${esc(r.summary.n_cases)} cases</span></div><button class="sm" data-report="${esc(r.id)}">View report</button></article>`,
         )
         .join("")
     : `<div class="empty">${company ? "No uploaded reports yet. Connect the desktop recorder above to share your first session." : "No companies are assigned to your account. Ask your administrator for access."}</div>`;
@@ -143,7 +149,7 @@ async function detail(id) {
     ? s.automation_potential
         .map(
           (a, i) =>
-            `<div class="candidate"><div><strong>${esc(a.activity)}</strong><small>${Math.round(a.score * 100)}% candidate score · ${a.hours_total.toFixed(2)} observed hours</small></div><button data-candidate="${i}">View evidence</button></div>`,
+            `<div class="candidate"><div><strong>${esc(a.activity)}</strong><small><span class="mono-figure">${Math.round(a.score * 100)} / 100</span> candidate score · <span class="mono-figure">${a.hours_total.toFixed(2)} h</span> observed</small></div><button class="sm" data-candidate="${i}">View evidence</button></div>`,
         )
         .join("")
     : '<p class="muted">No automation candidates in this session.</p>';
@@ -168,7 +174,7 @@ async function detail(id) {
 }
 async function evidence() {
   const generation = ++requestGeneration;
-  $("evidence").innerHTML = '<tr><td colspan="6">Loading evidence…</td></tr>';
+  $("evidence").innerHTML = '<tr><td colspan="7">Loading evidence…</td></tr>';
   $("prev-evidence").disabled = true;
   $("next-evidence").disabled = true;
   const query = new URLSearchParams({ offset: evidenceOffset, limit: 50 });
@@ -179,10 +185,10 @@ async function evidence() {
     ? result.rows
         .map(
           (r) =>
-            `<tr><td>#${r.row}</td><td>${esc(r.activity)}${r.note ? `<small>${esc(r.note)}</small>` : ""}</td><td>${esc(date(r.start))}<small>${esc(duration(Number(r.duration_s)))}</small></td><td>${esc(r.app)}</td><td>${esc(r.case_id || "Unassigned")}</td><td>${esc(r.activity_source)}<small>${esc(r.case_source || "Unassigned")}</small></td></tr>`,
+            `<tr><td class="num">${r.row}</td><td title="${esc(r.activity)}">${esc(r.activity)}${r.note ? `<small>${esc(r.note)}</small>` : ""}</td><td>${esc(date(r.start))}</td><td class="num">${esc(duration(Number(r.duration_s)))}</td><td>${esc(r.app)}</td><td class="mono">${esc(r.case_id || "Unassigned")}</td><td>${badge(r.activity_source, "unknown")} ${badge(r.case_source, "unassigned")}</td></tr>`,
         )
         .join("")
-    : '<tr><td colspan="6">No evidence rows for this selection.</td></tr>';
+    : '<tr><td colspan="7">No evidence rows for this selection.</td></tr>';
   $("evidence-page").textContent =
     `${result.rows.length ? evidenceOffset + 1 : 0}–${evidenceOffset + result.rows.length} of ${result.total} steps`;
   $("prev-evidence").disabled = evidenceOffset === 0;

@@ -1,0 +1,169 @@
+/* Vista design tokens — see DESIGN.md at the repo root. Components use var(--token); no raw hex. */
+:root {
+  --surface: #f3f0ff;
+  --surface-raised: #ffffff;
+  --surface-sunken: #e9e4ff;
+  --surface-hover: #f4f2ff;
+  --surface-selected: #e0dcff;
+  --line: #ddd8f0;
+  --line-strong: #877fa8;
+
+  --ink: #120f24;
+  --ink-secondary: #3f3a55;
+  --ink-muted: #605a78;
+  --ink-faint: #8b86a0;
+  --ink-inverse: #f3f0ff;
+
+  --brand: #00d26a;
+  --on-brand: #04261a;
+  --brand-ink: #00743a;
+  --brand-hover: #00bd5f;
+  --brand-soft: #d6ffe8;
+  --link: var(--brand-ink);
+
+  --lime: #d8ff00;
+  --on-lime: #0c1f15;
+  --lime-ink: #3d6200;
+  --lime-soft: #eaff8a;
+
+  --periwinkle: #5b5bff;
+  --on-periwinkle: #ffffff;
+  --periwinkle-ink: #3f3fe0;
+  --periwinkle-soft: #e0dcff;
+  --focus-ring: var(--periwinkle-ink);
+
+  --success: #0f7a3a;
+  --success-soft: #d6ffe8;
+  --warning: #9a4a00;
+  --warning-soft: #fff0b3;
+  --danger: #c41c08;
+  --danger-soft: #ffe0da;
+  --on-danger: #ffffff;
+
+  /* Categorical series (timelines, app bars). Derived from the palette above. */
+  --chart-1: var(--brand);
+  --chart-2: var(--periwinkle);
+  --chart-3: var(--lime);
+  --chart-4: #ffc02e;
+  --chart-5: #ff6a55;
+  --chart-6: #00b4c8;
+  --chart-7: #a05bff;
+  --chart-8: var(--line-strong);
+
+  --font-sans: 'Instrument Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  --font-display: 'Instrument Serif', Georgia, serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+  --space-16: 64px;
+  --space-24: 96px;
+
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 10px;
+  --radius-xl: 16px;
+  --radius-pill: 999px;
+
+  --shadow-sm: 0 1px 2px rgba(18, 15, 36, 0.08);
+  --shadow-md: 0 6px 18px rgba(18, 15, 36, 0.14);
+  --shadow-lg: 0 16px 48px rgba(18, 15, 36, 0.22);
+
+  --control-sm: 28px;
+  --control-md: 32px;
+  --control-lg: 40px;
+  --row: 36px;
+  --sidebar: 240px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --surface: #0d0b14;
+    --surface-raised: #17141f;
+    --surface-sunken: #08070f;
+    --surface-hover: #1d1a2b;
+    --surface-selected: #2a2470;
+    --line: #2a2638;
+    --line-strong: #6f6a85;
+
+    --ink: #f3f1fa;
+    --ink-secondary: #c6c2d6;
+    --ink-muted: #9b96ad;
+    --ink-faint: #736e88;
+    --ink-inverse: #0d0b14;
+
+    --brand: #00e676;
+    --brand-ink: #5cff9d;
+    --brand-hover: #33ff8f;
+    --brand-soft: #0f3d26;
+
+    --lime-ink: #e2ff5c;
+    --lime-soft: #2c3d08;
+
+    --periwinkle: #8f8fff;
+    --on-periwinkle: #0b0b3d;
+    --periwinkle-ink: #b3b3ff;
+    --periwinkle-soft: #2a2470;
+
+    --success: #33ff8f;
+    --success-soft: #0f3d26;
+    --warning: #ffc02e;
+    --warning-soft: #3f2e05;
+    --danger: #ff6a55;
+    --danger-soft: #47150c;
+    --on-danger: #2a0d0b;
+
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+    --shadow-md: 0 6px 18px rgba(0, 0, 0, 0.5);
+    --shadow-lg: 0 16px 48px rgba(0, 0, 0, 0.6);
+  }
+}
+
+/* ---- type scale ---- */
+.display-xl { font-size: 56px; line-height: 60px; font-weight: 600; letter-spacing: -0.025em; }
+.display { font-size: 40px; line-height: 44px; font-weight: 600; letter-spacing: -0.02em; }
+.display-serif { font-family: var(--font-display); font-style: italic; font-weight: 400; font-size: 56px; line-height: 60px; letter-spacing: 0; }
+.h1 { font-size: 28px; line-height: 34px; font-weight: 600; letter-spacing: -0.01em; }
+.h2 { font-size: 20px; line-height: 26px; font-weight: 600; }
+.h3 { font-size: 15px; line-height: 22px; font-weight: 600; }
+.body-lg { font-size: 16px; line-height: 24px; font-weight: 400; }
+.body { font-size: 14px; line-height: 20px; font-weight: 400; }
+.body-dense { font-size: 13px; line-height: 18px; font-weight: 400; }
+.small { font-size: 12px; line-height: 16px; font-weight: 400; }
+.label { font-size: 11px; line-height: 16px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; }
+.mono { font-family: var(--font-mono); font-size: 13px; line-height: 20px; font-weight: 400; }
+.mono-figure { font-family: var(--font-mono); font-size: 13px; line-height: 18px; font-weight: 500; font-variant-numeric: tabular-nums; text-align: right; }
+
+/* ---- shared primitives ---- */
+:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
+
+.badge {
+  display: inline-flex; align-items: center; gap: var(--space-1);
+  height: 20px; padding: 0 var(--space-2); border-radius: var(--radius-pill);
+  font-size: 12px; line-height: 16px; font-weight: 500; white-space: nowrap;
+  background: var(--surface-sunken); color: var(--ink-secondary);
+}
+.badge::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: currentColor; flex: none; }
+.badge.brand { background: var(--brand); color: var(--on-brand); }
+.badge.agent { background: var(--lime); color: var(--on-lime); }
+.badge.human { background: var(--periwinkle); color: var(--on-periwinkle); }
+.badge.success { background: var(--success-soft); color: var(--success); }
+.badge.warning { background: var(--warning-soft); color: var(--warning); }
+.badge.danger { background: var(--danger-soft); color: var(--danger); }
+
+/* Section rule: 4px ink with a short lime segment at the right end. */
+.rule { position: relative; height: 4px; background: var(--ink); }
+.rule::after { content: ''; position: absolute; right: 0; top: 0; height: 100%; width: 48px; background: var(--lime); }
+
+/* Logo mark: brand dot with a lime satellite top-right and a periwinkle satellite bottom-left. */
+.logo-dot { position: relative; width: 18px; height: 18px; border-radius: 50%; background: var(--brand); flex: none; }
+.logo-dot::before, .logo-dot::after { content: ''; position: absolute; width: 6px; height: 6px; border-radius: 50%; }
+.logo-dot::before { background: var(--lime); top: -2px; right: -2px; }
+.logo-dot::after { background: var(--periwinkle); bottom: -2px; left: -2px; }
