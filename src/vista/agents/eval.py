@@ -96,7 +96,44 @@ def matches(pred: Prediction, item: AnswerItem) -> bool:
 
 
 _TOKEN = re.compile(r"[A-Za-z0-9][A-Za-z0-9\-\.]{2,}")
-_STOP = {"the", "and", "not", "same", "are", "for", "with", "from", "than", "pays", "more", "less", "price", "every", "company", "vs"}
+_STOP = {
+    "the",
+    "and",
+    "not",
+    "same",
+    "are",
+    "for",
+    "with",
+    "from",
+    "than",
+    "pays",
+    "more",
+    "less",
+    "price",
+    "every",
+    "company",
+    "companies",
+    "vs",
+    "both",
+    "but",
+    "business",
+    "using",
+    "used",
+    "under",
+    "different",
+    "names",
+    "multiple",
+    "products",
+    "serving",
+    "function",
+    "tools",
+    "billed",
+    "overlapping",
+    "portfolio",
+    "separate",
+    "across",
+    "item",
+}
 
 
 def _tokens(text: str) -> set[str]:
@@ -112,7 +149,12 @@ def disambiguate(pred: Prediction, candidates: list[AnswerItem]) -> list[AnswerI
     words = _tokens(f"{pred.title} {pred.text}")
     scored = [(len(_tokens(i.title) & words), i) for i in candidates]
     best = max(s for s, _ in scored)
-    return [i for s, i in scored if s == best] if best else []
+    if not best:
+        return []
+    top = [i for s, i in scored if s == best]
+    # A trap only counts when it is the unambiguous best match; a tie with a real item is the real item.
+    real = [i for i in top if not i.is_false_positive_trap]
+    return real or top
 
 
 def score(

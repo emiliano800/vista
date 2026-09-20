@@ -17,11 +17,6 @@ from vista.agents.eval import Prediction, score
 from vista.agents.llm import chat
 from vista.agents.runtime import PhaseRun, run_phase
 
-ANALYZE_TABLES = {
-    "industrial_goods": {"items.csv", "purchase_order_lines.csv", "software_subscriptions.csv", "suppliers.csv", "customers.csv"},
-    "insurance_broking": {"software_subscriptions.csv", "vendors.csv", "carriers.csv", "clients.csv"},
-}
-
 
 def _usage(runs: list[PhaseRun]) -> dict:
     return {
@@ -61,16 +56,19 @@ def eval_execute(company: synthetic.Company, division: str, scopes: set[str]) ->
     return preds, [run]
 
 
-def eval_analyze(sector: str) -> tuple[list[Prediction], list[PhaseRun]]:
-    wanted = ANALYZE_TABLES[sector]
-    by_company = {}
-    for c in synthetic.companies():
-        if c.sector != sector:
-            continue
-        by_company[c] = [t for ds in synthetic.datasets(c) if ds.file in wanted for t in synthetic.read_tables(ds)]
+def eval_analyze(sector: str, kinds: list[str]) -> tuple[list[Prediction], list[PhaseRun]]:
+    """One model call per opportunity kind, each seeing only that kind's table types (csv or legacy xlsx sheet)."""
+    by_company = {c: synthetic.tables_for(c) for c in synthetic.companies() if c.sector == sector}
     shorts = {c.short for c in by_company}
-    run = run_phase(analyze.prepare(sector, by_company), analyze.parse, lambda out: analyze.apply(out, shorts), llm=chat)
-    return [Prediction.from_opportunity(row) for row in run.rows], [run]
+    preds, runs = [], []
+    for kind in kinds:
+        refs = {t.ref for tables in by_company.values() for t in analyze.tables_for_kind(kind, tables)}
+        run = run_phase(
+            analyze.prepare(sector, by_company, kind), analyze.parse, lambda out, r=refs: analyze.apply(out, shorts, r), llm=chat
+        )
+        runs.append(run)
+        preds.extend(Prediction.from_opportunity(row) for row in run.rows)
+    return preds, runs
 
 
 def main() -> int:
@@ -80,15 +78,17 @@ def main() -> int:
     ap.add_argument("--division", help="folder, e.g. 11_billing_ar (optional for discover)")
     ap.add_argument("--sector", choices=synthetic.SECTORS, help="analyze")
     ap.add_argument("--scopes", default="findings:write,tasks:write")
+    ap.add_argument("--kinds", help="comma-separated opportunity kinds for analyze (default: all for the sector)")
     args = ap.parse_args()
 
     items = synthetic.answer_key()
     if args.phase == "analyze":
         if not args.sector:
             ap.error("--sector is required for analyze")
-        preds, runs = eval_analyze(args.sector)
+        wanted = args.kinds.split(",") if args.kinds else analyze.SECTOR_KINDS[args.sector]
+        preds, runs = eval_analyze(args.sector, wanted)
         companies = {c.short for c in synthetic.companies() if c.sector == args.sector}
-        kinds = set(analyze.OpportunityKind.__args__)
+        kinds = set(wanted)
     else:
         if not args.company:
             ap.error("--company is required")

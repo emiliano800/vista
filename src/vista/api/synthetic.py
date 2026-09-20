@@ -5,7 +5,7 @@ import uuid
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 
-from vista.agents import synthetic
+from vista.agents import analyze, synthetic
 from vista.api.schemas import RunOut
 from vista.auth import Principal, admin_principal, current_principal
 from vista.db import platform_session, tenant_session
@@ -29,6 +29,33 @@ class DiscoveryCreate(BaseModel):
     division: str
 
 
+class AnalyzeCreate(BaseModel):
+    sector: str
+    kinds: list[str] | None = None  # default: every kind the sector supports
+
+
+def _queue_run(principal: Principal, run_type: str, payload: dict) -> RunOut:
+    with tenant_session(principal.tenant_schema) as session:
+        run = AgentRun(job_id=uuid.uuid4(), run_type=run_type, requested_by=principal.user_id)
+        session.add(run)
+        session.flush()
+        with platform_session() as psession:
+            job = enqueue(psession, tenant_id=principal.tenant_id, kind=run_type, payload={"run_id": str(run.id), **payload})
+            psession.commit()
+        run.job_id = job.id
+        session.commit()
+        return RunOut(
+            id=run.id,
+            run_type=run.run_type,
+            deal_id=None,
+            employee_agent_id=None,
+            document_id=None,
+            status=run.status,
+            created_at=run.created_at,
+            finished_at=None,
+        )
+
+
 @router.get("/synthetic/companies", response_model=list[SyntheticCompanyOut])
 def list_synthetic_companies(principal: Principal = Depends(current_principal)) -> list[SyntheticCompanyOut]:
     return [SyntheticCompanyOut(**c.__dict__, divisions=synthetic.divisions(c)) for c in synthetic.companies()]
@@ -43,27 +70,16 @@ def trigger_synthetic_discovery(body: DiscoveryCreate, principal: Principal = De
         raise HTTPException(status_code=404, detail="unknown synthetic company") from None
     if body.division not in synthetic.divisions(company):
         raise HTTPException(status_code=404, detail="unknown division for company")
-    with tenant_session(principal.tenant_schema) as session:
-        run = AgentRun(job_id=uuid.uuid4(), run_type="synthetic_discovery", requested_by=principal.user_id)
-        session.add(run)
-        session.flush()
-        with platform_session() as psession:
-            job = enqueue(
-                psession,
-                tenant_id=principal.tenant_id,
-                kind="synthetic_discovery",
-                payload={"run_id": str(run.id), "company": company.slug, "division": body.division},
-            )
-            psession.commit()
-        run.job_id = job.id
-        session.commit()
-        return RunOut(
-            id=run.id,
-            run_type=run.run_type,
-            deal_id=None,
-            employee_agent_id=None,
-            document_id=None,
-            status=run.status,
-            created_at=run.created_at,
-            finished_at=None,
-        )
+    return _queue_run(principal, "synthetic_discovery", {"company": company.slug, "division": body.division})
+
+
+@router.post("/synthetic/analyze", response_model=RunOut, status_code=201)
+def trigger_synthetic_analyze(body: AnalyzeCreate, principal: Principal = Depends(admin_principal)) -> RunOut:
+    """Queue a Sector Merger (Portfolio Analyst) run across every synthetic company in one sector."""
+    if body.sector not in analyze.SECTOR_KINDS:
+        raise HTTPException(status_code=404, detail=f"sector must be one of {sorted(analyze.SECTOR_KINDS)}")
+    allowed = analyze.SECTOR_KINDS[body.sector]
+    kinds = body.kinds or allowed
+    if unknown := sorted(set(kinds) - set(allowed)):
+        raise HTTPException(status_code=422, detail=f"kinds not supported for {body.sector}: {unknown}")
+    return _queue_run(principal, "synthetic_analyze", {"sector": body.sector, "kinds": kinds})

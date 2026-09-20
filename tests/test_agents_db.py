@@ -1,6 +1,8 @@
 """Tier 2: synthetic discovery through the real queue, worker and tenant ledger.
 Model is stubbed (conftest clears the API key). Skips without Postgres."""
 
+import json
+
 from tests.conftest import requires_db
 from vista.jobs.worker import process_one
 
@@ -56,3 +58,60 @@ def test_synthetic_findings_are_tenant_isolated(client, tenant_factory):
     _drain()
     assert client.get("/findings", headers=h1).json()
     assert client.get("/findings", headers=h2).json() == []
+
+
+def test_synthetic_analyze_run_writes_cross_company_findings(client, tenant_factory, tmp_path, monkeypatch):
+    from vista.agents import analyze, synthetic
+    from vista.agents.llm import Cassette, ChatResult
+    from vista.config import settings
+
+    headers, _, _ = tenant_factory()
+    assert client.post("/synthetic/analyze", json={"sector": "retail"}, headers=headers).status_code == 404
+    bad = client.post("/synthetic/analyze", json={"sector": "industrial_goods", "kinds": ["carrier_consolidation"]}, headers=headers)
+    assert bad.status_code == 422
+
+    # canned analyst answer for the software_overlap call, keyed by the exact prompt the worker will build
+    by_company = {c: synthetic.tables_for(c) for c in synthetic.companies() if c.sector == "industrial_goods"}
+    prompt = analyze.prepare("industrial_goods", by_company, "software_overlap")
+    ref = "14_finance_gl/software_subscriptions.csv"
+    answer = {
+        "opportunities": [
+            {
+                "kind": "software_overlap",
+                "title": "Zoom Workplace at two companies",
+                "companies": ["Northfield", "Keystone"],
+                "shared_key": "Zoom Workplace",
+                "evidence": [f"Northfield:{ref}", f"Keystone:{ref}"],
+                "detail": "Both pay list price separately.",
+                "estimated_annual_value": 4800,
+                "confidence": 0.8,
+            },
+            {"kind": "software_overlap", "title": "single company", "companies": ["Ridgeway"], "shared_key": "x", "confidence": 0.5},
+        ],
+        "rejected": ["Salesforce Sales Cloud vs Slack Business+: different products"],
+    }
+    Cassette(tmp_path / "c.json").put(
+        prompt.key(settings.openai_model), ChatResult(model="canned", text=json.dumps(answer), input_tokens=900, output_tokens=120)
+    )
+    monkeypatch.setenv("VISTA_LLM_CASSETTE", str(tmp_path / "c.json"))
+
+    run = client.post("/synthetic/analyze", json={"sector": "industrial_goods", "kinds": ["software_overlap"]}, headers=headers).json()
+    assert run["status"] == "queued" and run["run_type"] == "synthetic_analyze"
+    _drain()
+
+    result = client.get(f"/runs/{run['id']}", headers=headers).json()
+    assert result["status"] == "succeeded"
+    events = result["events"]
+    assert events[0]["data"]["companies"] == ["Keystone", "Northfield", "Ridgeway"]
+    assert [e["event_type"] for e in events].count("model_call") == 1
+    assert any(e["data"].get("message") == "look-alikes rejected" for e in events)
+    assert events[-1]["data"] == {"findings_created": 1}
+
+    ours = [f for f in client.get("/findings", headers=headers).json() if f["run_id"] == run["id"]]
+    assert len(ours) == 1 and ours[0]["kind"] == "proposed_automation"
+    assert ours[0]["title"] == "software_overlap: Zoom Workplace at two companies"
+    assert ours[0]["evidence"]["companies"] == ["Keystone", "Northfield"]
+    assert ours[0]["evidence"]["refs"] == [ref]
+
+    usage = client.get("/usage", headers=headers).json()
+    assert usage["runs"] == 1 and usage["total_input_tokens"] == 900
