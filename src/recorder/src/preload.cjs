@@ -8,6 +8,7 @@ const on = (channel) => (fn) => {
 
 contextBridge.exposeInMainWorld('vista', {
   start: () => ipcRenderer.invoke('rec:start'),
+  setIntent: (text) => ipcRenderer.invoke('rec:intent', text),
   pause: () => ipcRenderer.invoke('rec:pause'),
   resume: () => ipcRenderer.invoke('rec:resume'),
   stop: () => ipcRenderer.invoke('rec:stop'),
@@ -23,6 +24,8 @@ contextBridge.exposeInMainWorld('vista', {
   explain: (id, opts) => ipcRenderer.invoke('recordings:explain', id, opts),
   decide: (id, itemId, action, body) => ipcRenderer.invoke('recordings:decide', id, itemId, action, body),
   editSection: (id, sectionId, patch) => ipcRenderer.invoke('recordings:edit-section', id, sectionId, patch),
+  toggleFile: (id, fileId, include) => ipcRenderer.invoke('recordings:toggle-file', id, fileId, include),
+  openFile: (id, fileId) => ipcRenderer.invoke('recordings:open-file', id, fileId),
   submit: (id) => ipcRenderer.invoke('recordings:submit', id),
   openDashboard: () => ipcRenderer.invoke('dashboard:open'),
   resizeOverlay: (mode) => ipcRenderer.invoke('overlay:resize', mode),

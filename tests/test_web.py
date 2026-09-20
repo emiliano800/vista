@@ -7,7 +7,7 @@ import uuid
 from datetime import UTC, datetime, timedelta
 
 import pytest
-from botocore.exceptions import EndpointConnectionError
+from botocore.exceptions import ClientError, EndpointConnectionError
 from fastapi.testclient import TestClient
 
 from taskmining.capture import SyntheticSource
@@ -62,6 +62,11 @@ def objects(monkeypatch):
             if self.fail:
                 raise EndpointConnectionError(endpoint_url="http://unavailable")
             return {"Body": io.BytesIO(self.data[Key])}
+
+        def head_object(self, *, Bucket, Key):
+            if Key not in self.data:
+                raise ClientError({"Error": {"Code": "404"}}, "HeadObject")
+            return {"ContentLength": len(self.data[Key])}
 
     store = Store()
     monkeypatch.setattr("vista.api.recordings.s3_client", lambda: store)

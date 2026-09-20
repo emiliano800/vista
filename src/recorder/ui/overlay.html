@@ -107,6 +107,23 @@
       .links a { color: var(--ink-secondary); text-decoration: none; font-size: 12px; line-height: 16px; cursor: pointer; }
       .links a:hover { color: var(--ink); text-decoration: underline; text-underline-offset: 3px; text-decoration-color: var(--rust); }
 
+      /* ---------------- intent card (right after Start) ---------------- */
+      #intent { border-top: 1px solid var(--line); padding: var(--space-3) var(--space-3) var(--space-4); display: grid; gap: var(--space-2); }
+      #intent .q { font-family: var(--font-display); font-size: 15px; line-height: 20px; }
+      #intent .hint { color: var(--ink-muted); font-size: 11px; line-height: 16px; }
+      #intent textarea {
+        -webkit-app-region: no-drag; resize: none; width: 100%; font: inherit; color: var(--ink);
+        background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-lg);
+        padding: var(--space-2) var(--space-3); min-height: 58px; outline: none;
+        transition: border-color 0.18s ease, box-shadow 0.18s ease;
+      }
+      #intent textarea:focus { border-color: var(--brand); box-shadow: 0 0 0 3px color-mix(in srgb, var(--brand) 18%, transparent); }
+      #intent .act { display: flex; gap: var(--space-2); align-items: center; justify-content: flex-end; }
+      #intent .act a { margin-right: auto; color: var(--ink-secondary); font-size: 12px; cursor: pointer; -webkit-app-region: no-drag; }
+      #intent .act a:hover { color: var(--ink); text-decoration: underline; text-underline-offset: 3px; }
+      body.intent #intent { display: grid; }
+      body:not(.intent) #intent { display: none; }
+
       /* ---------------- idle orb ---------------- */
       /* Orb and shell both stay in the DOM; the mode switch cross-fades them so
          hovering feels like the circle unfolds into the pill instead of snapping. */
@@ -209,6 +226,15 @@
           </button>
         </div>
       </div>
+      <div id="intent">
+        <div class="q">What are you working on today?</div>
+        <textarea id="intent-text" rows="2" maxlength="4000" placeholder="e.g. Month-end close — reconciling AP invoices in Excel and QuickBooks"></textarea>
+        <div class="act">
+          <a id="intent-skip">Skip for now</a>
+          <span class="hint">Enter to save</span>
+          <button id="intent-save" class="primary">Let's go</button>
+        </div>
+      </div>
       <div id="panel" class="hidden">
         <div class="row"><span class="label">This session</span><span id="elapsed" class="label">00:00</span></div>
         <div class="stats">
@@ -243,11 +269,12 @@
       // leaving (still idle, not expanded) folds it back. Recording keeps the pill.
       // Growing: resize the window first, then animate the content in. Shrinking:
       // animate out first, then resize, so the window never clips mid-animation.
+      const MODE_SIZE = { orb: 0, pill: 1, intent: 2, panel: 3 };
       let mode = 'orb', shrinkTimer = null;
       function setMode(next) {
         if (next === mode) return;
         clearTimeout(shrinkTimer);
-        const growing = next !== 'orb' && (mode === 'orb' || next === 'panel');
+        const growing = MODE_SIZE[next] > MODE_SIZE[mode];
         mode = next;
         applyOrbAnim();
         if (growing) {
@@ -288,7 +315,8 @@
       function render(st) {
         const wasIdle = !status || status.state === 'idle';
         status = st;
-        if (st.state !== 'idle' && document.body.classList.contains('orb')) setMode(expanded ? 'panel' : 'pill');
+        if (st.state === 'idle' && intentOpen) closeIntent(false, { resize: false });
+        if (st.state !== 'idle' && mode === 'orb') setMode(expanded ? 'panel' : 'pill');
         if (st.state === 'idle' && !wasIdle && !expanded) setMode('orb');
         shell.className = st.state + (st.current.private ? ' private' : '');
         const rec = st.state === 'recording', paused = st.state === 'paused', fin = st.state === 'finishing';
@@ -333,10 +361,39 @@
         expanded = v;
         $('panel').classList.toggle('hidden', !v);
         $('expand').style.transform = v ? 'rotate(180deg)' : '';
-        setMode(v ? 'panel' : 'pill');
+        if (intentOpen) closeIntent(false);
+        else setMode(v ? 'panel' : 'pill');
       }
 
-      $('start').onclick = () => window.vista.start().then(render);
+      // Right after Start the pill opens into the intent card; saving or skipping
+      // returns it to the recording pill.
+      let intentOpen = false;
+      function openIntent() {
+        intentOpen = true;
+        $('intent-text').value = '';
+        expanded = false;
+        $('panel').classList.add('hidden');
+        $('expand').style.transform = '';
+        document.body.classList.add('intent');
+        setMode('intent');
+        setTimeout(() => $('intent-text').focus(), 320);
+      }
+      function closeIntent(save, { resize = true } = {}) {
+        if (!intentOpen) return;
+        intentOpen = false;
+        const text = $('intent-text').value.trim();
+        if (save && text) window.vista.setIntent(text).then(render);
+        document.body.classList.remove('intent');
+        if (resize) setMode(expanded ? 'panel' : 'pill');
+      }
+      $('intent-save').onclick = () => closeIntent(true);
+      $('intent-skip').onclick = () => closeIntent(false);
+      $('intent-text').onkeydown = (e) => {
+        if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); closeIntent(true); }
+        if (e.key === 'Escape') closeIntent(false);
+      };
+
+      $('start').onclick = () => window.vista.start().then((st) => { render(st); if (st.state === 'recording') openIntent(); });
       $('pause').onclick = () => window.vista.pause().then(render);
       $('resume').onclick = () => window.vista.resume().then(render);
       $('stop').onclick = () => window.vista.stop().then(render);

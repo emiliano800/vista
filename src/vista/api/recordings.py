@@ -45,6 +45,7 @@ def public_recording(record: Recording):
         "summary": record.summary,
         "sections": record.sections or {},
         "media": sorted((record.media or {}).keys()),
+        "files": record.files or [],
         "uploaded_at": record.updated_at,
         "analysis_source": "local_taskmining",
         "content_hash": record.content_hash,
@@ -82,10 +83,26 @@ def upload_recording(deal_id: uuid.UUID, body: RecordingUpload, principal: Princ
         record.manifest = {**payload["manifest"], "name": body.name, "summary_text": body.summary_text}
         record.summary = payload["summary"]
         record.sections = payload["sections"]
+        prev = {f.get("id"): f for f in record.files or []}
+        record.files = [{**f, "extraction": _kept_extraction(prev.get(f["id"]), f)} for f in payload["files"]]
         record.s3_key, record.content_hash = key, digest
         record.updated_at = datetime.now(UTC)
         session.commit()
         return public_recording(record)
+
+
+def _kept_extraction(old: dict | None, new: dict) -> dict | None:
+    """Extraction is only valid for the exact bytes it ran on: same snapshot key and sha256."""
+    if not old or old.get("sha256") != new.get("sha256") or old.get("snapshot") != new.get("snapshot"):
+        return None
+    return old.get("extraction")
+
+
+def _uploaded_size(key: str) -> int | None:
+    try:
+        return int(s3_client().head_object(Bucket=settings.s3_bucket, Key=key)["ContentLength"])
+    except (BotoCoreError, ClientError, KeyError, ValueError):
+        return None
 
 
 @router.get("/deals/{deal_id}/recordings")
@@ -214,6 +231,68 @@ def request_media_uploads(recording_id: uuid.UUID, body: MediaRequest, principal
         record.updated_at = datetime.now(UTC)
         session.commit()
         return {"uploads": uploads}
+
+
+@router.post("/recordings/{recording_id}/media/complete")
+def media_complete(recording_id: uuid.UUID, principal: Principal = Depends(current_principal)):
+    """The recorder has finished its PUTs. Documents whose snapshot arrived are
+    queued for text extraction (worker); the rest are marked as missing."""
+    with tenant_session(principal.tenant_schema) as session:
+        record = session.get(Recording, recording_id)
+        if record is None:
+            raise HTTPException(404, "Recording not found")
+        require_deal_role(session, record.deal_id, principal.user_id, "member")
+        if record.uploaded_by != principal.user_id:
+            raise HTTPException(403, "Only the employee who recorded a session can upload its files")
+        media = record.media or {}
+        files, queued = [], 0
+        for f in record.files or []:
+            f = dict(f)
+            item = media.get(f["snapshot"]) if f.get("snapshot") else None
+            if item and _uploaded_size(item["key"]) == item.get("size_bytes"):
+                if not (f.get("extraction") or {}).get("status") == "done":
+                    f["extraction"] = {"status": "queued"}
+                    queued += 1
+            elif f.get("snapshot"):
+                f["extraction"] = {"status": "missing"}
+            files.append(f)
+        record.files = files
+        record.updated_at = datetime.now(UTC)
+        session.commit()
+        now = record.updated_at
+    if queued:
+        with platform_session() as psession:
+            enqueue(
+                psession,
+                principal.tenant_id,
+                "extract_recording_files",
+                {"recording_id": str(recording_id)},
+                idempotency_key=f"files:{recording_id}:{now.isoformat()}",
+            )
+            psession.commit()
+    return {"files": files, "queued": queued}
+
+
+@router.get("/recordings/{recording_id}/files")
+def list_files(recording_id: uuid.UUID, principal: Principal = Depends(current_principal)):
+    return authorized_recording(recording_id, principal).files or []
+
+
+@router.get("/recordings/{recording_id}/files/{file_id}/text")
+def get_file_text(recording_id: uuid.UUID, file_id: str, principal: Principal = Depends(current_principal)):
+    """Redirects to the extracted JSON (sheets/paragraphs/slides/pages) of one document."""
+    record = authorized_recording(recording_id, principal)
+    item = next((f for f in record.files or [] if f.get("id") == file_id), None)
+    if item is None:
+        raise HTTPException(404, "File not found")
+    key = (item.get("extraction") or {}).get("key")
+    if not key:
+        raise HTTPException(409, "Text has not been extracted yet")
+    try:
+        url = presigned_download_url(key)
+    except (BotoCoreError, ClientError) as exc:
+        raise HTTPException(503, "File storage is unavailable; try again") from exc
+    return RedirectResponse(url, status_code=307, headers={"Cache-Control": "no-store"})
 
 
 @router.get("/recordings/{recording_id}/media")

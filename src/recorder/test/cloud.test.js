@@ -56,11 +56,25 @@ test("only completed portable reports are uploaded; retries use the same source 
       path.join(dir, "sections.json"),
       JSON.stringify({ S1: { name: "Enter bills", note: "from PDFs", edited_at: "2026-09-19T10:01:00Z" }, "../x": { name: "bad" } }),
     );
+    fs.writeFileSync(
+      path.join(dir, "files.json"),
+      JSON.stringify({
+        version: 1,
+        files: [
+          { id: "a1b2c3d4e5f6", path: "/Users/PRIVATE/Documents/Q3.xlsx", name: "Q3.xlsx", ext: ".xlsx", folder: "Documents", first_opened: "2026-09-19T10:00:00Z", last_closed: "2026-09-19T10:05:00Z", seconds: 300, intervals: [{ start: "2026-09-19T10:00:00Z", end: "2026-09-19T10:05:00Z", app: "Microsoft Excel" }], used_at: [], sources: ["ax"], snapshot: "files/a1b2c3d4e5f6/Q3.xlsx", include: true },
+          { id: "ffffffffffff", path: "/Users/PRIVATE/Downloads/secret.pdf", name: "secret.pdf", ext: ".pdf", folder: "Downloads", first_opened: "2026-09-19T10:00:00Z", last_closed: "2026-09-19T10:00:00Z", intervals: [], used_at: ["2026-09-19T10:00:00Z"], sources: ["download"], include: false },
+        ],
+      }),
+    );
     const body = reportBundle(root, "session-1");
     assert.ok(!body.includes("PRIVATE"));
     const parsed = JSON.parse(body);
+    assert.equal(parsed.files.length, 1, "unticked documents stay off the report");
+    assert.equal(parsed.files[0].name, "Q3.xlsx");
+    assert.equal(parsed.files[0].path, undefined);
     assert.deepEqual(Object.keys(parsed).sort(), [
       "event_log_csv",
+      "files",
       "manifest",
       "name",
       "sections",
@@ -157,11 +171,16 @@ test("submit uploads every media file through signed URLs, in order, and stops o
     fs.writeFileSync(path.join(dir, "shots", "000001.jpg"), Buffer.alloc(3, 2));
     fs.writeFileSync(path.join(dir, "processed", "summary.json"), "{}");
     fs.writeFileSync(path.join(dir, "notes.txt"), "not media");
+    fs.writeFileSync(path.join(dir, "files.json"), JSON.stringify({ version: 1, files: [{ path: "/Users/PRIVATE" }] }));
+    fs.mkdirSync(path.join(dir, "files", "a1b2c3d4e5f6"), { recursive: true });
+    fs.writeFileSync(path.join(dir, "files", "a1b2c3d4e5f6", "Q3.xlsx"), Buffer.alloc(7, 3));
+    fs.writeFileSync(path.join(dir, "files", "a1b2c3d4e5f6", "Q3.exe"), Buffer.alloc(7, 3));
     const files = mediaFiles(root, "session-2");
     assert.deepEqual(
       files.map((f) => [f.name, f.content_type, f.size_bytes]),
       [
         ["events.jsonl", "application/x-ndjson", 3],
+        ["files/a1b2c3d4e5f6/Q3.xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", 7],
         ["manifest.json", "application/json", 2],
         ["processed/summary.json", "application/json", 2],
         ["screen.webm", "video/webm", 10],
@@ -170,8 +189,13 @@ test("submit uploads every media file through signed URLs, in order, and stops o
     );
     const config = { url: "https://bumpsolutions.org", companyId: "00000000-0000-0000-0000-000000000001", token: "secret" };
     const puts = [];
-    let failOn = null;
+    let failOn = null, completed = 0;
     const fetchImpl = async (url, options) => {
+      if (url.endsWith("/media/complete")) {
+        assert.equal(options.method, "POST");
+        completed += 1;
+        return Response.json({ queued: 1 });
+      }
       if (url.endsWith("/media")) {
         const req = JSON.parse(options.body);
         assert.equal(options.headers.Authorization, "Bearer secret");
@@ -185,12 +209,14 @@ test("submit uploads every media file through signed URLs, in order, and stops o
     const progress = [];
     const names = await uploadMedia(config, root, "session-2", "11111111-1111-1111-1111-111111111111", { fetchImpl, onProgress: (p) => progress.push(p.done) });
     assert.deepEqual(names, files.map((f) => f.name));
-    assert.deepEqual(progress, [1, 2, 3, 4, 5]);
-    assert.deepEqual(puts[3], { url: "https://s3.test/screen.webm", type: "video/webm", bytes: 10 });
+    assert.deepEqual(progress, [1, 2, 3, 4, 5, 6]);
+    assert.deepEqual(puts[4], { url: "https://s3.test/screen.webm", type: "video/webm", bytes: 10 });
+    assert.equal(completed, 1, "workspace told once that the package is complete");
     puts.length = 0;
     failOn = "screen.webm";
     await assert.rejects(uploadMedia(config, root, "session-2", "11111111-1111-1111-1111-111111111111", { fetchImpl }), /screen\.webm failed \(500\)/);
-    assert.equal(puts.length, 4);
+    assert.equal(puts.length, 5);
+    assert.equal(completed, 1, "a failed package is not marked complete");
   } finally {
     fs.rmSync(root, { recursive: true, force: true });
   }

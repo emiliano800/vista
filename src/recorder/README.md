@@ -34,6 +34,9 @@ sections.json     the employee's edits per section (name, note, edited_at)
 screen.sections.json  written on Submit: every section resolved (span, video offset,
                   name, note, AI explanation + decision, annotations) — the video's
                   label track, uploaded next to screen.webm
+files.json        documents seen during the session (macOS): open/close intervals per
+                  file, Spotlight/Downloads sightings, sha256 + size of the snapshot
+files/<id>/<name> the *last* version of each document, copied once at Stop
 processed/        output of `taskmining run`, executed automatically on Stop
 ```
 
@@ -42,6 +45,24 @@ processed/        output of `taskmining run`, executed automatically on Stop
 Only a metadata stub stays in `~/Vista/submitted/<id>/`; section labels are kept
 three ways — in the recording row (`Recording.sections`), in
 `screen.sections.json` beside the video, and in the stub.
+
+**Documents (`src/files.js`, macOS only).** Every 5 s while recording, and on
+every window switch, the recorder asks the frontmost window for its document
+(Accessibility `AXDocument`; `lsof -p` as a fallback for apps without it) and
+turns the answers into per-file open/close intervals, cut around pauses just
+like the video. At Stop a Spotlight sweep (`kMDItemLastUsedDate`,
+`kMDItemDateAdded` within the session) adds anything the probes missed —
+including new downloads — and the current version of each allowlisted file
+(xlsx/xls/csv/docx/pptx/pdf/txt/md/json/xml, ≤ 50 MB) is copied once into
+`files/<id>/`. Nothing is read while recording; `~/Library`, caches and the
+recorder's own folders are never looked at. The review shows a document track
+under the scrubber (one bar per open interval, ticks for Spotlight sightings)
+and the file on screen at the playhead; the employee can untick a file before
+Submit, which deletes its snapshot. Absolute paths never leave the machine —
+the report carries name, folder, markers and hash. Server-side, the
+`extract_recording_files` job turns each snapshot into bounded JSON
+(sheets/rows, paragraphs, slides, PDF text; `vista/documents.py`) that the
+workspace serves at `GET /recordings/{id}/files/{file}/text`.
 
 **Review after Stop.** The dashboard splits the session into *sections* — the
 longest stretches in one window, with quick hops (a 4-second Outlook check in
