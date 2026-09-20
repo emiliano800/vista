@@ -98,6 +98,19 @@ workspace. Employees never need an OpenAI key. Without a worker the review stays
 | Shell into a running API task | `aws ecs execute-command --cluster vista --task <task-id> --container Main --interactive --command /bin/sh` (needs the Session Manager plugin) |
 | Scale | change `ApiMinTasks` / `ApiMaxTasks` / `ApiCpu` / `ApiMemory` parameters and redeploy |
 
+### Deploy from GitHub Actions
+
+`.github/workflows/deploy-aws.yml` runs `deploy.sh` on every push to `main` that touches
+backend code (and on demand via *Run workflow*). It needs one of these repository secrets:
+
+- `AWS_DEPLOY_ROLE_ARN` — an IAM role trusting GitHub's OIDC provider (no long-lived keys), or
+- `AWS_ACCESS_KEY_ID` + `AWS_SECRET_ACCESS_KEY` — keys for a deploy IAM user.
+
+The identity needs CloudFormation, ECR, ECS, IAM (task roles), EC2 describe, Secrets Manager
+and Logs permissions (`AdministratorAccess` is the simplest; narrow later). Optional repository variables: `AWS_REGION`, `STACK_NAME`,
+`WORKER_DESIRED_COUNT`. Stack parameters not supplied (`OpenAIApiKey`, `AllowedOrigins`,
+`ProvisioningKey`) keep their previous values.
+
 Changing `ALLOWED_ORIGINS` also requires updating the bucket CORS rule in the template if the
 browser uploads documents through presigned URLs.
 
