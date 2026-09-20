@@ -3,10 +3,11 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title>Vista · Work, understood</title>
+    <title>Vista · Sign in</title>
     <link rel="stylesheet" href="/tokens.css" />
     <link rel="stylesheet" href="/style.css" />
     <script type="module" src="/nav.js"></script>
+    <script type="module" src="/signin/signin.js"></script>
   </head>
   <body>
     <header>
@@ -19,7 +20,7 @@
       >
         <span></span><span></span><span></span>
       </button>
-      <a class="brand" href="/">Vista</a><span class="muted">Work, understood</span>
+      <a class="brand" href="/">Vista</a><span class="muted">Sign in</span>
     </header>
     <nav id="drawer" class="drawer" hidden aria-label="Site">
       <p class="eyebrow">Vista</p>
@@ -30,18 +31,18 @@
     </nav>
     <div id="scrim" class="scrim" hidden></div>
     <main>
+      <div id="message" role="status" aria-live="polite"></div>
       <section class="login">
         <div class="login-copy">
-          <p class="eyebrow">Work, understood</p>
-          <h1>A clearer picture of <i>everyday</i> work.</h1>
+          <p class="eyebrow">Company workspace</p>
+          <h1>Sign in to <i>your</i> workspace.</h1>
           <p class="lede">
-            Vista records how work actually happens, analyses it on the device,
-            and shares only the evidence your company agrees to see — so
-            decisions about work start from facts.
+            Review your company’s recording reports, read the evidence behind
+            every step, and find the work worth changing.
           </p>
           <ul class="facts">
             <li>
-              The desktop recorder analyses sessions before anything is shared.
+              Reports are analysed on the recorder before anything is shared.
             </li>
             <li>
               Screenshots, video and raw interaction logs never leave the
@@ -51,28 +52,24 @@
               Observed facts, inferred labels and employee notes stay separable.
             </li>
           </ul>
-          <div class="cta-row">
-            <a class="button solid" href="/signin/">Sign in to your workspace</a
-            ><a class="button quiet" href="/recorder/">About the recorder</a>
-          </div>
         </div>
-        <div class="card">
-          <h2>How Vista fits together</h2>
-          <p class="muted">
-            <b>The recorder</b> runs on an employee's computer: one Start
-            button, on-device analysis, and a review step where the employee
-            approves or corrects every explanation before anything is shared.
-          </p>
-          <p class="muted">
-            <b>The company workspace</b> is where uploaded reports live:
-            session summaries, automation candidates, and the source evidence
-            behind every recommendation.
-          </p>
-          <small
-            >Access is provided by your workspace administrator. Reports are
-            isolated per company.</small
+        <form id="login-form" class="card">
+          <h2>Sign in to your workspace</h2>
+          <label for="key">Your access key</label
+          ><input
+            id="key"
+            type="password"
+            autocomplete="off"
+            required
+            minlength="32"
+            maxlength="256"
+            placeholder="Enter the key provided by your administrator"
+          /><button class="primary" type="submit">Sign in</button
+          ><small
+            >Need access? Ask your workspace administrator for a personal
+            key.</small
           >
-        </div>
+        </form>
       </section>
     </main>
     <footer>

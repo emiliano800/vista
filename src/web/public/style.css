@@ -37,8 +37,119 @@ header > .muted {
   border-left: 1px solid var(--line);
   line-height: 1;
 }
-header button {
+header #signout {
   margin-left: auto;
+}
+
+/* Hamburger menu + side drawer */
+.menu-button {
+  width: 42px;
+  height: 42px;
+  flex: none;
+  display: grid;
+  place-content: center;
+  gap: 4px;
+  padding: 0;
+  margin: 0;
+  background: none;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  cursor: pointer;
+  box-shadow: none;
+}
+.menu-button span {
+  display: block;
+  width: 18px;
+  height: 2px;
+  background: var(--ink);
+}
+.menu-button:hover {
+  background: var(--cream-2);
+}
+.drawer {
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: min(300px, 82vw);
+  background: var(--cream);
+  border-right: 1px solid var(--line);
+  padding: 28px 24px;
+  z-index: 40;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  overflow-y: auto;
+}
+.drawer .eyebrow {
+  margin: 0 0 14px;
+}
+.drawer a {
+  font: 500 19px/1.3 var(--serif);
+  color: var(--ink);
+  text-decoration: none;
+  padding: 12px 10px;
+  border-bottom: 1px solid var(--line);
+}
+.drawer a:hover {
+  color: var(--rust);
+}
+.drawer a[aria-current="page"] {
+  color: var(--rust);
+}
+.scrim {
+  position: fixed;
+  inset: 0;
+  background: rgba(46, 41, 34, 0.35);
+  z-index: 30;
+}
+
+/* Landing / static pages */
+.cta-row {
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+  margin-top: 30px;
+}
+a.button {
+  display: inline-flex;
+  align-items: center;
+  height: 46px;
+  padding: 0 22px;
+  border-radius: 8px;
+  font-weight: 500;
+  font-size: 15px;
+  text-decoration: none;
+}
+a.button.solid {
+  background: var(--ink);
+  color: var(--cream);
+}
+a.button.solid:hover {
+  background: #3a342c;
+}
+a.button.quiet {
+  border: 1px solid var(--line);
+  color: var(--ink);
+}
+a.button.quiet:hover {
+  background: var(--cream-2);
+}
+.page-grid {
+  display: grid;
+  gap: 22px;
+  padding-top: 28px;
+}
+.steps {
+  margin: 0;
+  padding-left: 20px;
+}
+.steps li {
+  padding: 8px 0 8px 6px;
+  border-bottom: 1px solid var(--line);
+}
+.steps li:last-child {
+  border-bottom: 0;
 }
 main {
   flex: 1;
