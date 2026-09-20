@@ -53,7 +53,11 @@ let companies = [],
   preview = null,
   files = [],
   role = "viewer",
-  view = "overview",
+  view = ["overview", "sources", "findings", "agents", "runs"].includes(
+    new URLSearchParams(location.search).get("view"),
+  )
+    ? new URLSearchParams(location.search).get("view")
+    : "overview",
   filter = "open",
   busy = false,
   generation = 0,

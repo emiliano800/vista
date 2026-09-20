@@ -248,6 +248,8 @@ export const findings = (companyId) => load().findings.filter((f) => !companyId 
 export const agents = (companyId) => load().agents.filter((a) => !companyId || a.companyId === companyId);
 export const runs = (companyId) => load().runs.filter((r) => !companyId || r.companyId === companyId);
 export const run = (id) => load().runs.find((r) => r.id === id) ?? null;
+// Fleet analytics for the four suite agents; fetched on demand, not part of the snapshot.
+export const fleetAnalytics = () => get("/agents/analytics");
 export const activity = (companyId, limit = 12) =>
   load()
     .activity.filter((a) => !companyId || a.companyId === companyId)

@@ -14,7 +14,7 @@ const portfolioCreate = /^\/api\/portfolio\/(?:tasks|analysis)$/i;
 const portfolioPatch =
   /^\/api\/(?:portfolio\/(?:tasks|opportunities)|agents|findings)\/[0-9a-f-]+$/i;
 // Agent suite: run traces, spend, synthetic companies, and starting agent runs.
-const agentRead = /^\/api\/(?:runs\/[0-9a-f-]+|usage|summaries(?:\/latest)?|synthetic\/companies)$/i;
+const agentRead = /^\/api\/(?:runs\/[0-9a-f-]+|usage|agents\/analytics|summaries(?:\/latest)?|synthetic\/companies)$/i;
 const agentStart =
   /^\/api\/(?:synthetic\/(?:discovery|analyze)|summaries|agents\/[0-9a-f-]+\/runs)$/i;
 const securityHeaders = {

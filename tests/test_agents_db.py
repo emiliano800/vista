@@ -3,6 +3,7 @@ Model is stubbed (conftest clears the API key). Skips without Postgres."""
 
 import json
 import uuid
+from decimal import Decimal
 
 from tests.conftest import requires_db
 from vista.jobs.worker import process_one
@@ -164,6 +165,18 @@ def test_run_finding_usage_filters_and_grouping(client, tenant_factory):
     assert sum(g["input_tokens"] for g in usage["groups"]) == usage["total_input_tokens"]
     assert client.get("/usage?group_by=colour", headers=headers).status_code == 422
     assert client.get("/usage?agent_key=sector_merger", headers=headers).json()["runs"] == 1
+
+    fleet = client.get("/agents/analytics", headers=headers).json()
+    assert fleet["runs_total"] == 2 and fleet["runs_month"] == 2
+    by_key = {a["agent_key"]: a for a in fleet["agents"]}
+    assert set(by_key) == {"recording_reviewer", "file_reviewer", "report_generator", "sector_merger"}
+    assert by_key["file_reviewer"]["runs"] == 1 and by_key["file_reviewer"]["succeeded"] == 1
+    assert by_key["file_reviewer"]["findings_total"] == len(client.get(f"/findings?run_id={disc['id']}", headers=headers).json())
+    assert by_key["recording_reviewer"]["runs"] == 0 and by_key["recording_reviewer"]["last_run_at"] is None
+    assert Decimal(fleet["total_cost_usd"]) == Decimal(usage["total_cost_usd"])
+    assert len(fleet["by_day"]) == 30 and sum(d["runs"] for d in fleet["by_day"]) == 2
+    assert {c["key"] for c in fleet["by_company"]} == {"Ridgeway", None}
+    assert sum(k for k in fleet["findings_by_kind"].values()) == len(client.get("/findings", headers=headers).json())
 
 
 def test_non_member_sees_only_portfolio_wide_runs(client, tenant_factory):

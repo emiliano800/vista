@@ -1,12 +1,14 @@
 import { mountShell, $, qs, esc, badge, table, enableRowLinks, section, message, definitionList } from "/lib/components.js";
 import { money, integer, date, age, DEMO_NOTE } from "/lib/format.js";
-import { agents, runs, run, companies, companyName, findings, setAgentStatus, runAgentNow, createTask } from "/lib/store.js";
+import { runsChart, spendBars, spend } from "/lib/charts.js";
+import { agents, runs, run, companies, companyName, findings, setAgentStatus, runAgentNow, createTask, fleetAnalytics } from "/lib/store.js";
 
 const analyst = await mountShell();
 const runId = qs().get("run");
 if (analyst) (runId ? runDetail : list)();
 
-function list() {
+async function list() {
+  const fleet = await fleetAnalytics().catch(() => null);
   const companyFilter = qs().get("company") ?? "";
   const list = agents(companyFilter || null);
   const all = agents();
@@ -24,6 +26,7 @@ function list() {
       <div class="kpi"><span>Model cost</span><b>${esc(money(totalCost))}</b><small>all runs to date</small></div>
     </div>
     <p class="demo-line">${esc(DEMO_NOTE)}</p>
+    ${fleetHtml(fleet)}
     <div class="filters"><a class="button quiet sm" href="/agents/" ${!companyFilter ? 'aria-current="page"' : ""}>All companies</a>${companies().map((c) => `<a class="button quiet sm" href="/agents/?company=${esc(c.id)}" ${c.id === companyFilter ? 'aria-current="page"' : ""}>${esc(c.name)}</a>`).join("")}</div>
     <div class="agent-cards">${list.length ? list.map(card).join("") : `<p class="empty">No agents deployed for this company yet. Agents are deployed from a company's Agents tab after its first import.</p>`}</div>
     ${section(
@@ -57,6 +60,58 @@ function list() {
       message(`${a.name} ${action}d.`, "success");
     };
   });
+}
+
+// ---- Suite fleet: four named agents, their throughput, spend and quality --------
+const SUITE_TRIGGER = {
+  recording_reviewer: "Runs when an employee submits a recording",
+  file_reviewer: "Reads a division's exports on request",
+  report_generator: "Summarizes findings into a company report",
+  sector_merger: "Compares sister companies in a sector",
+};
+const RUN_LABEL = { queued: "Queued", running: "Running", succeeded: "Complete", failed: "Failed" };
+const KIND_LABEL = { observed_fact: "Observed facts", inefficiency: "Inefficiencies", proposed_automation: "Proposed automations" };
+const seconds = (s) => (s == null ? "—" : s < 90 ? `${Math.round(s)} s` : `${(s / 60).toFixed(1)} min`);
+
+function fleetHtml(fleet) {
+  if (!fleet) return `<p class="empty">Suite analytics are unavailable right now.</p>`;
+  const cards = fleet.agents
+    .map((a) => {
+      const rate = a.runs ? Math.round((a.succeeded / a.runs) * 100) : null;
+      return `<article class="agent-card paper suite-card" data-agent-key="${esc(a.agent_key)}">
+    <div class="block-head"><h3>${esc(a.name)}</h3>${a.last_status ? badge(RUN_LABEL[a.last_status] ?? a.last_status) : badge("Never run", "")}</div>
+    <p class="muted">${esc(SUITE_TRIGGER[a.agent_key] ?? "")}</p>
+    <div class="figures">
+      <div>Last run<b>${a.last_run_at ? esc(age(a.last_run_at, new Date())) + " ago" : "—"}</b></div>
+      <div>Runs<b>${esc(integer(a.runs))}</b>${a.active ? `<small>${esc(a.active)} in progress</small>` : ""}</div>
+      <div>Success rate<b class="${a.failed ? "attn" : ""}">${rate == null ? "—" : `${rate}%`}</b>${a.failed ? `<small>${esc(a.failed)} failed</small>` : ""}</div>
+      <div>Avg duration<b>${esc(seconds(a.avg_seconds))}</b></div>
+      <div>Open findings<b>${esc(integer(a.findings_open))}</b><small>of ${esc(integer(a.findings_total))}</small></div>
+      <div>Spend this month<b>${esc(spend(a.cost_month_usd))}</b><small>${esc(spend(a.cost_usd))} to date · ${esc(integer(a.tokens))} tokens</small></div>
+    </div>
+    <div class="actions"><a class="button quiet sm" href="/account/?view=runs">Runs &amp; traces</a></div>
+  </article>`;
+    })
+    .join("");
+  const kinds = Object.entries(KIND_LABEL)
+    .map(([k, l]) => `<div class="kpi"><span>${esc(l)}</span><b>${esc(integer(fleet.findings_by_kind[k] ?? 0))}</b></div>`)
+    .join("");
+  return `
+    ${section(
+      "Agent suite",
+      `<div class="kpi-strip">
+        <div class="kpi"><span>Runs this month</span><b>${esc(integer(fleet.runs_month))}</b><small>${esc(integer(fleet.runs_total))} to date</small></div>
+        <div class="kpi"><span>Model spend this month</span><b>${esc(spend(fleet.total_cost_month_usd))}</b><small>${esc(spend(fleet.total_cost_usd))} to date</small></div>
+        ${kinds}
+      </div>
+      <div class="agent-cards">${cards}</div>`,
+      { eyebrow: "Recording Reviewer · File Reviewer · Report Generator · Sector Merger" },
+    )}
+    <div class="two-col block">
+      <section><h2>Throughput · last ${esc(fleet.window_days)} days</h2>${runsChart(fleet.by_day)}<p class="muted small">Runs per day; failed runs in rust. Hover a bar for spend.</p></section>
+      <section><h2>Spend by company</h2>${spendBars(fleet.by_company)}<h2 class="block">Spend by model</h2>${spendBars(fleet.by_model, (r) => r.key ?? "unknown")}</section>
+    </div>
+    <p class="muted small">Findings, tokens and spend are separate measures: a finding is an evidence-backed observation or proposal, not a realized saving.</p>`;
 }
 
 function card(a) {
