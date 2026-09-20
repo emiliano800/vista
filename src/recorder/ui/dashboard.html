@@ -250,6 +250,11 @@
       .ai-read .lbl svg { width: 12px; height: 12px; fill: var(--lime-ink); flex: none; }
       .ai-read .ex { color: var(--ink-secondary); }
       .ai-read .why { color: var(--warning); }
+      /* Highlights inside model-written text: apps/documents/numbers stand out, sensitive wording is amber. */
+      mark.hl { background: transparent; padding: 0; color: var(--ink); font-weight: 600; }
+      mark.hl-num { font-family: var(--font-mono); font-weight: 500; font-variant-numeric: tabular-nums; }
+      mark.hl-file { color: var(--periwinkle-ink); }
+      mark.hl-risk { color: var(--warning); }
       .conf { display: inline-flex; align-items: center; height: 20px; font-size: 12px; line-height: 16px; font-weight: 500; padding: 0 var(--space-2); border-radius: var(--radius-pill); white-space: nowrap; font-family: var(--font-mono); }
       .conf.hi { color: var(--agent-ink); border: 1px solid var(--agent); }
       .conf.lo { color: var(--warning); background: var(--warning-soft); }
@@ -435,7 +440,7 @@
             <div style="display:grid;gap:14px">
               <div class="card" id="flags-card">
                 <h2 style="display:flex;justify-content:space-between;align-items:baseline"><span>Sensitive content</span><span class="muted" style="text-transform:none;letter-spacing:0;font-weight:500" id="flags-sub"></span></h2>
-                <p class="muted" style="margin:-4px 0 10px;font-size:12px;line-height:16px">Flagged on this computer from window titles, redactions, clipboard and typing patterns — nothing typed is read. <b>Confirm</b> what is real, <b>Dismiss</b> what is not, or keep a section out of the submission.</p>
+                <p class="muted" style="margin:-4px 0 10px;font-size:12px;line-height:16px">Flagged on this computer from window titles, redactions, clipboard and typing patterns — typed text is only kept if you turned it on, never on sign-in or private windows. <b>Confirm</b> what is real, <b>Dismiss</b> what is not, or keep a section out of the submission.</p>
                 <div class="flags" id="flags"><div class="empty">Checking…</div></div>
               </div>
               <div class="card" id="input-card">
@@ -554,10 +559,19 @@
       </div>
     </div>
 
+    <script src="highlight.js"></script>
     <script>
       const $ = (id) => document.getElementById(id);
       const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
       const short = (app) => app.replace(/^Microsoft /, '').replace(/ Desktop$/, '');
+      // Words worth spotting in the model's sentences: the apps, documents and sites of this session.
+      const aiTerms = () => [
+        ...(vs?.sections ?? []).flatMap((s) => (s.app ? [s.app, short(s.app)] : [])),
+        ...(vs?.insights?.input?.per_app ?? []).flatMap((a) => (a.app ? [a.app, short(a.app)] : [])),
+        ...(vs?.workflows?.environment?.documents ?? []).map((d) => d.name),
+        ...(vs?.workflows?.environment?.sites ?? []).map((s) => s.host),
+      ];
+      const hl = (text) => highlightHtml(text, aiTerms());
       const PALETTE = [1, 2, 3, 4, 5, 6, 7, 8].map((n) => `var(--chart-${n})`);
       const AI_ICON = '<svg viewBox="0 0 16 16"><path d="M8 1l1.6 4.4L14 7l-4.4 1.6L8 13l-1.6-4.4L2 7l4.4-1.6zM13 11l.7 1.8 1.8.7-1.8.7L13 16l-.7-1.8-1.8-.7 1.8-.7z"/></svg>';
       const QUICK = ['Phone call with a vendor', 'Phone call with a customer', 'Paper invoices / filing', 'Meeting', 'Helped a colleague', 'Break'];
@@ -854,16 +868,25 @@
         }
 
         const body = $('input-body'), act = $('input-act'), isub = $('input-sub');
+        // Typed text only exists when "Typed characters" is on in Settings; sign-in,
+        // payment and private windows are masked at capture.
+        const typedBlock = (ty) => {
+          if (!ty?.entries) return '';
+          const head = `<div class="muted" style="font-size:11px;margin:8px 0 4px">Typed text · ${ty.captured} line${ty.captured === 1 ? '' : 's'}, ${ty.chars.toLocaleString()} characters${ty.masked ? ` · ${ty.masked} dropped on sign-in, payment or private windows` : ''}</div>`;
+          if (!ty.enabled) return `${head}<div class="muted" style="font-size:12px">Nothing readable was kept — "Typed characters" is off, or every entry was on a protected window.</div>`;
+          return head + ty.lines.map((l) => `<div class="trend"><span title="${esc(l.title ?? '')}">${clock(l.at)} · ${esc(String(l.app ?? '').replace(/\.(exe|app)$/i, ''))}</span><span class="d muted" style="flex:1;text-align:left;font-family:ui-monospace,Menlo,monospace">${esc(l.text)}</span>${l.kinds?.length ? `<span class="fchip">${esc(l.kinds[0].replace(/_/g, ' '))}</span>` : ''}</div>`).join('');
+        };
         const inp = ins?.input;
         if (!inp) { body.innerHTML = `<div class="empty">${ins?.running ? 'Measuring clicks, keys and idle time…' : 'No analysis for this session yet.'}</div>`; act.innerHTML = ''; isub.textContent = ''; return; }
         const t = inp.totals;
         const tr = ins.trends;
         const delta = (m) => (m.delta_pct == null ? '<span class="d">—</span>' : `<span class="d ${m.delta_pct > 10 ? 'up' : m.delta_pct < -10 ? 'down' : ''}">${m.delta_pct > 0 ? '+' : ''}${m.delta_pct}%</span>`);
-        const summary = ins.summary?.text ? `<p class="ins-sum">${AI_ICON} ${esc(ins.summary.text)}</p>` : ins.summary?.error ? `<p class="ins-sum muted">AI summary unavailable: ${esc(ins.summary.error)}</p>` : ins.running ? '<p class="ins-sum muted"><span class="thinking"><i></i>Writing the summary…</span></p>' : '';
+        const summary = ins.summary?.text ? `<p class="ins-sum">${AI_ICON} ${hl(ins.summary.text)}</p>` : ins.summary?.error ? `<p class="ins-sum muted">AI summary unavailable: ${esc(ins.summary.error)}</p>` : ins.running ? '<p class="ins-sum muted"><span class="thinking"><i></i>Writing the summary…</span></p>' : '';
         body.innerHTML = summary
           + `<div class="kv"><div><b>${inp.clicks_per_min}</b><span>clicks / min</span></div><div><b>${inp.keys_per_min}</b><span>keys / min</span></div><div><b>${inp.rekeyed_between_apps}</b><span>pastes from another app</span></div><div><b>${inp.typing_bursts}</b><span>typing bursts · longest ${inp.longest_burst_keys} keys</span></div><div><b>${t.shortcut}</b><span>shortcuts${inp.top_shortcuts.length ? ` · ${esc(inp.top_shortcuts.slice(0, 2).map((s) => s.combo).join(', '))}` : ''}</span></div><div><b>${hm(inp.idle_seconds)}</b><span>idle · ${inp.idle_gaps} gap${inp.idle_gaps === 1 ? '' : 's'}${inp.longest_idle_seconds ? `, longest ${hm(inp.longest_idle_seconds)}` : ''}</span></div></div>`
           + (tr?.metrics?.length ? `<div class="muted" style="font-size:11px;margin-bottom:4px">Versus your last ${tr.baseline} recording${tr.baseline === 1 ? '' : 's'}</div>${tr.metrics.map((m) => `<div class="trend"><span>${esc(m.label)}</span><span class="d muted">${m.now} vs ${m.baseline}</span>${delta(m)}</div>`).join('')}` : '<div class="muted" style="font-size:12px">Trends appear once you have more than one recording.</div>')
           + (tr?.workflow?.baseline ? `<div class="muted" style="font-size:11px;margin:8px 0 4px">Workflows, versus your last ${tr.workflow.baseline} recording${tr.workflow.baseline === 1 ? '' : 's'}</div>${tr.workflow.metrics.map((m) => `<div class="trend"><span>${esc(m.label)}</span><span class="d muted">${m.now} vs ${m.baseline}</span>${delta(m)}</div>`).join('')}${tr.workflow.recurring?.some((r) => r.seen_before) ? `<div class="muted" style="font-size:12px;margin-top:4px">Seen before: ${tr.workflow.recurring.filter((r) => r.seen_before).map((r) => `${esc(r.title)} (${r.seen_before}×)`).join(' · ')}</div>` : ''}` : '')
+          + typedBlock(ins.typing)
           + (inp.per_app.length ? `<table class="apps-tbl"><tr><th>App</th><th>min</th><th>clicks</th><th>keys</th><th>copy/paste</th></tr>${inp.per_app.slice(0, 6).map((a) => `<tr><td>${esc(a.short)}</td><td>${a.minutes}</td><td>${a.clicks}</td><td>${a.keys}</td><td>${a.copies}/${a.pastes}</td></tr>`).join('')}</table>` : '');
         isub.textContent = ins.approved_at ? `approved ${clock(ins.approved_at)}` : `${(t.click + t.key + t.shortcut + t.copy + t.paste).toLocaleString()} interactions`;
         act.innerHTML = vs.submitted ? '' : ins.approved_at
@@ -976,7 +999,7 @@
         const rv = vs.review;
         if (vs.submitted) {
           const lbl = item && RESOLVED.has(item.status) ? item.final_label : item?.label;
-          return { cls: 'resolved', read: lbl ? `<div class="ai-read"><div class="lbl">${esc(lbl)}${item && RESOLVED.has(item.status) ? ` <span class="conf done">${icon('check')} confirmed</span>` : ''}</div>${item?.final_note || item?.explanation ? `<div class="ex">${esc(item.final_note || item.explanation)}</div>` : ''}</div>` : '', act: '' };
+          return { cls: 'resolved', read: lbl ? `<div class="ai-read"><div class="lbl">${esc(lbl)}${item && RESOLVED.has(item.status) ? ` <span class="conf done">${icon('check')} confirmed</span>` : ''}</div>${item?.final_note || item?.explanation ? `<div class="ex">${hl(item.final_note || item.explanation)}</div>` : ''}</div>` : '', act: '' };
         }
         if (!rv.enabled) return { cls: '', read: '', act: key === 'w' ? `<button class="btn sm primary" data-ann="${key}">Describe</button>` : '' };
         if (!item) return { cls: '', read: '', act: rv.generating ? '<span class="thinking"><i></i>Explaining…</span>' : `<button class="btn sm primary" data-ann="${key}">Describe</button>` };
@@ -984,7 +1007,7 @@
           const how = { approved: 'AI explanation approved', fixed: 'You corrected the AI', explained: 'You explained it' }[item.status];
           return {
             cls: 'resolved',
-            read: `<div class="ai-read"><div class="lbl">${esc(item.final_label)} <span class="conf done">${icon('check')} ${how}</span></div>${item.final_note ? `<div class="ex">${esc(item.final_note)}</div>` : ''}</div>`,
+            read: `<div class="ai-read"><div class="lbl">${esc(item.final_label)} <span class="conf done">${icon('check')} ${how}</span></div>${item.final_note ? `<div class="ex">${hl(item.final_note)}</div>` : ''}</div>`,
             act: `<button class="btn sm" data-ann="${key}">Edit</button>`,
           };
         }
@@ -998,13 +1021,13 @@
         if (item.status === 'unsure') {
           return {
             cls: 'unsure',
-            read: `<div class="ai-read"><div class="lbl">${AI_ICON} ${esc(item.label || 'Not sure what this was')} <span class="conf lo">${pct(item.confidence)} sure · needs you</span></div>${item.explanation ? `<div class="ex">${esc(item.explanation)}</div>` : ''}${item.unclear?.length ? `<div class="why">Unclear: ${esc(item.unclear.join('; '))}</div>` : ''}</div>`,
+            read: `<div class="ai-read"><div class="lbl">${AI_ICON} ${esc(item.label || 'Not sure what this was')} <span class="conf lo">${pct(item.confidence)} sure · needs you</span></div>${item.explanation ? `<div class="ex">${hl(item.explanation)}</div>` : ''}${item.unclear?.length ? `<div class="why">Unclear: ${esc(item.unclear.join('; '))}</div>` : ''}</div>`,
             act: `<button class="btn sm warn" data-explain="${key}">Explain what happened</button>`,
           };
         }
         return {
           cls: '',
-          read: `<div class="ai-read"><div class="lbl">${AI_ICON} ${esc(item.label)} <span class="conf hi">${pct(item.confidence)} sure</span></div><div class="ex">${esc(item.explanation)}</div></div>`,
+          read: `<div class="ai-read"><div class="lbl">${AI_ICON} ${esc(item.label)} <span class="conf hi">${pct(item.confidence)} sure</span></div><div class="ex">${hl(item.explanation)}</div></div>`,
           act: `<button class="btn sm ok" data-approve="${key}">Approve</button><button class="btn sm" data-fix="${key}">Fix</button>`,
         };
       }
@@ -1324,7 +1347,7 @@
 
       // ---- suggested workflows ----
       const SOURCE_LABEL = { events: 'app switches & clipboard', documents: 'documents', taskmining: 'task mining' };
-      const KIND_LABEL_WF = { data_transfer: 're-keying', document_processing: 'document intake', reporting: 'tracker', communication: 'inbox', lookup: 'lookup', access: 'sign-in', activity: 'activity' };
+      const KIND_LABEL_WF = { data_transfer: 're-keying', document_processing: 'document intake', reporting: 'tracker', communication: 'inbox', lookup: 'lookup', access: 'sign-in', activity: 'activity', session: 'whole session' };
       function workflowsHtml(wf) {
         if (!wf) return '<div class="empty">No workflow suggestions yet — they appear once the analysis has run.</div>';
         if (!wf.workflows?.length) return '<div class="empty">Nothing repeatable stood out in this session.</div>';
@@ -1337,15 +1360,15 @@
         return (envLine ? `<p class="wf-env">Inferred environment — ${envLine}</p>` : '')
           + `<div class="wf-list">${wf.workflows.map((w) => `<div class="wf" data-kind="${esc(w.kind)}">
             <h3><span>${icon('workflow')} ${esc(w.title)}</span><span class="auto" title="How much of this could run without a person">${Math.round(w.automation * 100)}% automatable</span></h3>
-            <p class="why">${esc(w.why)}</p>
-            ${w.steps?.length ? `<ol>${w.steps.map((s) => `<li>${esc(s)}</li>`).join('')}</ol>` : ''}
-            <div class="src"><span class="kind">${esc(KIND_LABEL_WF[w.kind] ?? w.kind)}</span>${(w.apps ?? []).map((a) => `<span>${esc(short(a))}</span>`).join('')}${(w.sources ?? []).map((s) => `<span>from ${esc(SOURCE_LABEL[s] ?? s)}</span>`).join('')}</div>
+            <p class="why">${hl(w.why)}</p>
+            ${w.steps?.length ? `<ol>${w.steps.map((s) => `<li>${hl(s)}</li>`).join('')}</ol>` : ''}
+            <div class="src"><span class="kind">${esc(KIND_LABEL_WF[w.kind] ?? w.kind)}</span>${w.generated ? '<span>AI-written</span>' : ''}${(w.apps ?? []).map((a) => `<span>${esc(short(a))}</span>`).join('')}${(w.sources ?? []).map((s) => `<span>from ${esc(SOURCE_LABEL[s] ?? s)}</span>`).join('')}</div>
           </div>`).join('')}</div>`;
       }
       function renderWorkflows() {
         const wf = vs?.workflows;
         $('wf-body').innerHTML = wf ? workflowsHtml(wf) : `<div class="empty">${vs?.insights?.running ? 'Working out the workflows…' : 'No workflow suggestions for this session yet.'}</div>`;
-        $('wf-sub').textContent = wf?.workflows?.length ? `${wf.workflows.length} suggested · ${wf.environment?.roles?.length ?? 0} kinds of app` : '';
+        $('wf-sub').textContent = wf?.fallback ? 'no repeatable pattern yet · session summarised' : wf?.workflows?.length ? `${wf.workflows.length} suggested · ${wf.environment?.roles?.length ?? 0} kinds of app` : '';
       }
       async function openWorkflows(id) {
         const r = recordings.find((x) => x.recording_id === id);
@@ -1462,7 +1485,7 @@
         ['changeDetect', 'Screenshot when the screen changes', 'Compares a tiny thumbnail twice a second; shoots when at least 4% of it moves (a new email, sheet or dialog).'],
         ['video', 'Screen video', 'Low frame-rate recording of the screen, saved next to the events.'],
         ['clipboard', 'Copied text', 'Shows where information is re-typed between systems.'],
-        ['keyContent', 'Typed characters', 'Off: only the number of keys is stored. Usually left off.'],
+        ['keyContent', 'Typed characters', 'Off: only the number of keys is stored. On: what you type is kept in the log and shown in the review — never on sign-in, payment or private windows, and card, account and contact details are masked. Usually left off.'],
         ['redact', 'Redact sensitive text', 'Off by default. On: emails, phone, card and account numbers become [EMAIL], [PHONE], [CARD] before saving, and your name becomes a code in the analysis.'],
       ];
       function renderSettings() {

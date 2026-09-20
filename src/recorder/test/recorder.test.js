@@ -151,3 +151,18 @@ test('change-triggered screenshots respect the minimum gap', async () => {
   assert.equal(t.frames.length, afterFocus); // focus shot was < 10 s ago
   await t.rec.stop();
 });
+
+test('typed characters are kept only when the setting is on and the window is not a sign-in', async () => {
+  const t = makeRecorder({ thumbProvider: null, keyNames: new Map([[1, 'A'], [2, 'B']]) });
+  t.rec.settings = { ...t.rec.settings, keyContent: true };
+  t.rec.start();
+  await sleep(10);
+  t.rec._onKeyDown({ keycode: 1 });
+  t.setWindow('Chrome', 'Sign in — Odoo');
+  await t.rec._pollWindow();
+  t.rec._onKeyDown({ keycode: 2 });
+  await t.rec.stop();
+  const keys = t.events().filter((e) => e.event_type === 'key');
+  assert.deepEqual(keys.map((k) => k.text), ['a', '']);
+  assert.equal(keys[1].payload.masked, true);
+});

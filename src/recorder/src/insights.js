@@ -7,14 +7,14 @@
 // Everything is written to insights.json; the employee confirms or dismisses
 // each flag and approves the analysis before Submit.
 import { OPENAI_URL } from './explain.js';
+import { SENSITIVE_TITLE, SENSITIVE_URL, typedFlags, typingSummary } from './keylog.js';
 import { shortApp } from './sections.js';
 import { workflowTrends } from './workflows.js';
 
 export const INSIGHTS_FILE = 'insights.json';
 export const FLAG_DECISIONS = new Set(['confirmed', 'dismissed']);
 
-export const SENSITIVE_TITLE = /\b(?:sign[ -]?in|log[ -]?in|login|password|passcode|authenticat|verify your identity|two[ -]factor|2fa|one[ -]time code|checkout|payment|billing|credit card|bank|banking|payroll|salary|tax return|medical|patient)\b/i;
-export const SENSITIVE_URL = /(?:\/login|\/signin|\/auth|\/sso|\/oauth|\/checkout|\/payment|\/billing|accounts\.google|login\.microsoft|okta\.com|auth0\.com)/i;
+export { SENSITIVE_TITLE, SENSITIVE_URL };
 export const REDACTION_TOKEN = /\[(?:IBAN|CARD|EMAIL|SSN|PHONE)\]/;
 
 const ts = (e) => Date.parse(e.timestamp);
@@ -74,6 +74,7 @@ export function sectionFlags(section, events) {
   const clip = inside.filter((e) => (e.event_type === 'copy' || e.event_type === 'paste') && /\b(?:\d[ -]?){13,19}\b|\b\d{3}-\d{2}-\d{4}\b|\b[A-Z]{2}\d{2}(?:\s?[A-Z0-9]{4}){3,7}\b/.test(e.text ?? ''));
   if (clip.length) flags.push(mkFlag('section', section.id, 'card_number', `card, account or ID number copied to the clipboard (${clip.length}×)`, clip[0].timestamp));
   for (const p of passwordCandidates(inside)) flags.push(mkFlag('section', section.id, 'password_entry', `a ${p.keys}-key entry ending in Enter in "${String(p.title).slice(0, 60)}" looks like a password being typed`, p.at));
+  for (const t of typedFlags(inside)) flags.push(mkFlag('section', section.id, t.kind, t.reason, t.at));
   return flags;
 }
 
@@ -153,13 +154,13 @@ export function trends(current, previous = []) {
 }
 
 const SUMMARY_SYSTEM = `You are Vista, a process analyst. You get keyboard/mouse statistics for one recorded work session, the workflows suggested from it ("workflows": title, apps, automation score), sometimes a "trends" comparison with the employee's earlier sessions (input rates under "metrics", and under "workflow" the steps per case, cases, and which suggested workflows recurred in earlier sessions), and any sensitive-content flags.
-Write for the employee, in plain language, 2 to 5 sentences: what the input pattern says about how the work was done (typing-heavy vs clicking, re-keying between apps, idle stretches), the one or two suggested workflows most worth automating and why, how it compares with earlier sessions only when a "trends" field is present (if there is none, write nothing at all about earlier sessions, trends, baselines, recurrence or this being a first session), and — if there are flags — a neutral one-sentence reminder to check them before submitting. Use only the numbers given; do not estimate durations. Never speculate about what was typed.
+Write for the employee, in plain language, 2 to 5 sentences: what the input pattern says about how the work was done (typing-heavy vs clicking, re-keying between apps, idle stretches), the one or two suggested workflows most worth automating and why (if there is a single workflow of kind "session", no repeatable pattern was found: describe that one piece of work and say plainly that nothing repeatable stood out yet), how it compares with earlier sessions only when a "trends" field is present (if there is none, write nothing at all about earlier sessions, trends, baselines, recurrence or this being a first session), and — if there are flags — a neutral one-sentence reminder to check them before submitting. Use only the numbers given; do not estimate durations. Never speculate about what was typed.
 Respond as JSON: {"summary": "...", "highlights": ["...", "..."]}`;
 
 export async function summarizeInsights({ input, trends: tr, flags, workflows }, api, { fetchFn = globalThis.fetch } = {}) {
   const hasBaseline = tr?.baseline || tr?.workflow?.baseline;
   const trendsOut = hasBaseline ? { ...tr, workflow: tr.workflow ? { ...tr.workflow, recurring: (tr.workflow.recurring ?? []).filter((r) => r.seen_before) } : undefined } : null;
-  const user = JSON.stringify({ input, workflows: (workflows ?? []).slice(0, 5).map((w) => ({ title: w.title, apps: w.apps.map(shortApp), automation: w.automation })), ...(trendsOut ? { trends: trendsOut } : {}), flags: flags.map((f) => ({ kind: f.kind, scope: f.scope, reason: f.reason })) });
+  const user = JSON.stringify({ input, workflows: (workflows ?? []).slice(0, 5).map((w) => ({ title: w.title, kind: w.kind, apps: w.apps.map(shortApp), automation: w.automation })), ...(trendsOut ? { trends: trendsOut } : {}), flags: flags.map((f) => ({ kind: f.kind, scope: f.scope, reason: f.reason })) });
   const res = await fetchFn(api.url ?? OPENAI_URL, {
     method: 'POST',
     headers: { Authorization: `Bearer ${api.key}`, 'Content-Type': 'application/json' },
@@ -194,6 +195,7 @@ export function buildInsights({ manifest, events, sections, files, previous = []
     generated_at: new Date().toISOString(),
     flags,
     input,
+    typing: typingSummary(events),
     trends: { ...trends(input, previous), workflow: workflowTrends({ summary: manifest.summary ?? null, workflows }, previous) },
     workflows: (workflows?.workflows ?? []).map((w) => ({ id: w.id, title: w.title, apps: w.apps, automation: w.automation, kind: w.kind })),
     summary: prior?.summary ?? null,

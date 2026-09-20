@@ -19,6 +19,7 @@ import os from 'node:os';
 import path from 'node:path';
 
 import { FILES_FILE, FileTracker } from './files.js';
+import { isSensitiveWindow } from './keylog.js';
 import { redactEvent, redactText } from './redact.js';
 
 const MOD_KEYS = new Set(['ctrl', 'alt', 'shift', 'meta']);
@@ -31,7 +32,7 @@ const IS_MAC = process.platform === 'darwin';
 
 export const DEFAULT_SETTINGS = {
   redact: false,              // mask emails/phones/cards/IBANs in titles and clipboard text before writing to disk
-  keyContent: false,          // record typed characters (false = counts + named keys only)
+  keyContent: false,          // record typed characters (false = counts + named keys only); never on sign-in, payment or private windows
   files: true,                // track documents on screen (macOS) and snapshot their last version at Stop
   clipboard: true,            // record clipboard text on copy/paste
   screenshots: true,          // JPEG frame on every focus change, on screen change + every `frameEverySec`
@@ -87,7 +88,7 @@ export class Recorder extends EventEmitter {
     this.state = 'idle'; // idle | recording | paused | finishing
     this.dir = null;
     this.stream = null;
-    this.current = { app: '', title: '', url: '', private: false };
+    this.current = { app: '', title: '', url: '', private: false, sensitive: false };
     this.counts = this._zeroCounts();
     this.appSeconds = {};
     this.lastTick = 0;
@@ -280,9 +281,10 @@ export class Recorder extends EventEmitter {
       return this._write('shortcut', { text: combo, payload: { modifiers: mods, key: name } });
     }
     const printable = name.length === 1;
+    const capture = this.settings.keyContent && !this.current.sensitive;
     let text = '';
-    if (printable && this.settings.keyContent) text = mods.includes('shift') ? name.toUpperCase() : name.toLowerCase();
-    this._write('key', { text, payload: printable ? {} : { key: name } });
+    if (printable && capture) text = mods.includes('shift') ? name.toUpperCase() : name.toLowerCase();
+    this._write('key', { text, payload: { ...(printable ? {} : { key: name }), ...(this.settings.keyContent && !capture ? { masked: true } : {}) } });
   }
 
   _onKeyUp(e) {
@@ -339,7 +341,8 @@ export class Recorder extends EventEmitter {
     if (!force && app === this.current.app && title === this.current.title && url === this.current.url) return;
     const priv = this._isPrivate(app, title);
     const own = this._isOwn(app);
-    this.current = { app, title: priv ? '(private)' : this._redactText(title), url: priv ? '' : url, private: priv, own };
+    const shownTitle = priv ? '(private)' : this._redactText(title);
+    this.current = { app, title: shownTitle, url: priv ? '' : url, private: priv, own, sensitive: priv || isSensitiveWindow({ title: shownTitle, url: priv ? '' : url }) };
     if (own) return this._emitStatus();
     this._write('focus', { payload: { window_id: win.id ?? null } });
     this._requestFrame('focus');
