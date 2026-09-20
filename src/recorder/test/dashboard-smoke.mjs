@@ -40,7 +40,7 @@ const sections = {
     { id: 's1', index: 1, name: 'Outlook', app: 'Outlook', start: day(0, 2.5), end: day(0, 2), seconds: 1800, counts: { click: 40 }, annotations: [], review: { status: 'unsure', label: '', explanation: '', confidence: 0.4, unclear: ['a'] } },
   ],
   review: { enabled: true, generating: false, generated_at: null, model: 'm', error: null, sync_error: null, session: null, summary: { open: 1, unsure: 1, approved: 0, total: 2 }, source: 'cloud', run: { status: 'succeeded', finished_at: day(0, 1) }, workspace: { key: 'succeeded', label: 'Reviewed by agent', sub: 'Recording Reviewer finished · 1 section still open.' } },
-  workspace_url: 'https://w/account/recordings/#11111111-1111-1111-1111-111111111111',
+  workspace_url: 'https://w/account/?view=runs&recording=11111111-1111-1111-1111-111111111111',
 };
 const stub = `window.vista = {
   info: async () => ({ demo: true, admin: ${JSON.stringify(process.env.VISTA_ADMIN === '1')}, home: '/x', platform: 'linux', user: 'me', openai: true, ai: { enabled: true }, cloud: true, ownApps: ['Vista','Electron'] }),

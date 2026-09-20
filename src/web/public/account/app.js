@@ -58,6 +58,7 @@ let companies = [],
   )
     ? new URLSearchParams(location.search).get("view")
     : "overview",
+  recordingFocus = new URLSearchParams(location.search).get("recording"),
   filter = "open",
   busy = false,
   generation = 0,
@@ -289,8 +290,12 @@ function agentsView() {
   return `<div class="page-heading"><div><span class="eyebrow">${esc(company().name)}</span><h1>Agents at <i>work.</i></h1><p>Four agents read this company's data, propose, and report. Every run leaves a trace you can inspect.</p></div></div>${agents ? "" : '<p class="quiet-note">Agent activity is unavailable right now.</p>'}<div class="overview-grid">${cards.join("")}</div><p class="spacing-4 small">Runs only start when you ask; agents never change source systems. Owners of this company can start runs.</p>`;
 }
 function runsView() {
-  const runs = agentRuns();
-  return `<div class="page-heading"><div><span class="eyebrow">${esc(company().name)}</span><h1>Every run, <i>on record.</i></h1><p>What each agent did, when, and what it cost. Open a run for its step-by-step trace.</p></div></div><section class="panel">${
+  const all = agentRuns();
+  const focused = recordingFocus
+    ? all.filter((r) => r.recording_id === recordingFocus)
+    : [];
+  const runs = focused.length ? focused : all;
+  return `<div class="page-heading"><div><span class="eyebrow">${esc(company().name)}</span><h1>Every run, <i>on record.</i></h1><p>What each agent did, when, and what it cost. Open a run for its step-by-step trace.</p></div></div>${focused.length ? '<p class="quiet-note">Showing the Recording Reviewer runs for one submitted recording.</p>' : ""}<section class="panel">${
     runs.length
       ? `<div class="table-wrap"><table><thead><tr><th>Started</th><th>Agent</th><th>Scope</th><th>Status</th><th class="num">Findings</th><th></th></tr></thead><tbody>${runs
           .map(

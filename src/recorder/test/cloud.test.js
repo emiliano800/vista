@@ -241,8 +241,8 @@ test("workspaceRunState maps the review's run to a banner/pill state", () => {
   assert.equal(workspaceRunState({ run: { status: "cancelled" } }).label, "cancelled", "unknown statuses pass through");
 });
 
-test("workspaceRecordingURL points at the recording on the website", () => {
-  assert.equal(workspaceRecordingURL({ url: "https://vista.example" }, "11111111-1111-1111-1111-111111111111"), "https://vista.example/account/recordings/#11111111-1111-1111-1111-111111111111");
+test("workspaceRecordingURL points at the workspace Runs view for the recording", () => {
+  assert.equal(workspaceRecordingURL({ url: "https://vista.example" }, "11111111-1111-1111-1111-111111111111"), "https://vista.example/account/?view=runs&recording=11111111-1111-1111-1111-111111111111");
   assert.equal(workspaceRecordingURL({ url: "https://vista.example" }, undefined), null, "not submitted yet");
   assert.equal(workspaceRecordingURL(null, "x"), null, "not connected");
   assert.throws(() => workspaceRecordingURL({ url: "http://vista.example" }, "x"), /https/i);
