@@ -3,6 +3,7 @@ No DB, no network, no tokens. `make test-agents`."""
 
 import json
 import os
+from types import SimpleNamespace
 
 import pytest
 
@@ -58,6 +59,21 @@ def test_answer_key_is_only_read_by_eval():
 
 
 # ---------- llm layer ----------
+
+
+def test_live_chat_rejects_truncated_output(monkeypatch):
+    from vista.agents.llm import live_chat
+    from vista.config import settings
+
+    def create(**kwargs):
+        assert "max_tokens" not in kwargs
+        assert kwargs["max_completion_tokens"] > 1200
+        return SimpleNamespace(choices=[SimpleNamespace(finish_reason="length")])
+
+    client = SimpleNamespace(chat=SimpleNamespace(completions=SimpleNamespace(create=create)))
+    monkeypatch.setattr(type(settings), "openai_client", lambda self: client)
+    with pytest.raises(RuntimeError, match="truncated agent output"):
+        live_chat(Prompt(system="Return JSON", user="Inspect this table", max_tokens=1200), model="gpt-6-astra")
 
 
 def test_stub_when_no_api_key():
