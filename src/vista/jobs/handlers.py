@@ -28,6 +28,7 @@ from vista.models.tenant import (
     RecordingReviewItem,
     UsageEvent,
 )
+from vista.portfolio import interpret
 from vista.review import SESSION_ID, status_for
 from vista.review import explain as explain_section
 from vista.storage import s3_client
@@ -634,4 +635,5 @@ HANDLERS = {
     "synthetic_discovery": handle_synthetic_discovery,
     "synthetic_analyze": handle_synthetic_analyze,
     "extract_recording_files": handle_extract_recording_files,
+    **interpret.HANDLERS,
 }

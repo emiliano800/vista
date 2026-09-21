@@ -308,6 +308,9 @@ class Vendor(ProvenanceMixin, TenantBase):
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     normalized_name: Mapped[str] = mapped_column(String(255), index=True)
     source_name: Mapped[str] = mapped_column(String(255))
+    source_vendor_id: Mapped[str] = mapped_column(String(64), default="")
+    category: Mapped[str] = mapped_column(String(128), default="")
+    payment_terms: Mapped[str] = mapped_column(String(64), default="")
     contact_name: Mapped[str] = mapped_column(String(255), default="")
     email: Mapped[str] = mapped_column(String(255), default="")
     phone: Mapped[str] = mapped_column(String(64), default="")
@@ -341,6 +344,100 @@ class Subscription(ProvenanceMixin, TenantBase):
     renewal_date: Mapped[date | None] = mapped_column(Date, nullable=True)
     contract_end_date: Mapped[date | None] = mapped_column(Date, nullable=True)
     restrictions_notes: Mapped[str] = mapped_column(Text, default="")
+
+
+class Policy(ProvenanceMixin, TenantBase):
+    """Insurance policy placed for a customer (client). Premium and commission are
+    the source system's figures; nothing here is derived."""
+
+    __tablename__ = "policies"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    customer_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("customers.id"), nullable=True, index=True)
+    customer_name: Mapped[str] = mapped_column(String(255), default="")
+    source_policy_id: Mapped[str] = mapped_column(String(64), default="")
+    source_customer_id: Mapped[str] = mapped_column(String(64), default="")
+    policy_number: Mapped[str] = mapped_column(String(64), index=True)
+    line_of_business: Mapped[str] = mapped_column(String(32), default="")
+    line_description: Mapped[str] = mapped_column(String(128), default="")
+    carrier_code: Mapped[str] = mapped_column(String(32), default="", index=True)
+    carrier_name: Mapped[str] = mapped_column(String(255), default="")
+    effective_date: Mapped[date | None] = mapped_column(Date, nullable=True)
+    expiration_date: Mapped[date | None] = mapped_column(Date, nullable=True, index=True)
+    term_months: Mapped[int] = mapped_column(Integer, default=12)
+    annual_premium: Mapped[Decimal] = mapped_column(Numeric(14, 2), default=0)
+    commission_pct: Mapped[Decimal] = mapped_column(Numeric(6, 2), default=0)
+    expected_commission: Mapped[Decimal] = mapped_column(Numeric(14, 2), default=0)
+    billing_type: Mapped[str] = mapped_column(String(32), default="")
+    status: Mapped[str] = mapped_column(String(32), default="in_force")
+    producer_id: Mapped[str] = mapped_column(String(64), default="")
+    account_manager_id: Mapped[str] = mapped_column(String(64), default="")
+    surplus_lines: Mapped[bool] = mapped_column(Boolean, default=False)
+    new_or_renewal: Mapped[str] = mapped_column(String(16), default="")
+    experience_mod: Mapped[Decimal | None] = mapped_column(Numeric(6, 3), nullable=True)
+    umbrella_limit: Mapped[Decimal | None] = mapped_column(Numeric(14, 2), nullable=True)
+
+
+class PurchaseOrder(ProvenanceMixin, TenantBase):
+    __tablename__ = "purchase_orders"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    vendor_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("vendors.id"), nullable=True, index=True)
+    po_number: Mapped[str] = mapped_column(String(64), index=True)
+    source_supplier_id: Mapped[str] = mapped_column(String(64), default="")
+    supplier_name: Mapped[str] = mapped_column(String(255), default="")
+    po_date: Mapped[date | None] = mapped_column(Date, nullable=True, index=True)
+    buyer_id: Mapped[str] = mapped_column(String(64), default="")
+    payment_terms: Mapped[str] = mapped_column(String(64), default="")
+    ship_via: Mapped[str] = mapped_column(String(128), default="")
+    freight_terms: Mapped[str] = mapped_column(String(64), default="")
+    total_amount: Mapped[Decimal] = mapped_column(Numeric(14, 2), default=0)
+    status: Mapped[str] = mapped_column(String(32), default="open")
+    approved_by: Mapped[str] = mapped_column(String(64), default="")
+    sent_method: Mapped[str] = mapped_column(String(64), default="")
+
+
+class PurchaseOrderLine(ProvenanceMixin, TenantBase):
+    __tablename__ = "purchase_order_lines"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    purchase_order_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("purchase_orders.id"), nullable=True, index=True)
+    po_number: Mapped[str] = mapped_column(String(64), index=True)
+    line_number: Mapped[int] = mapped_column(Integer, default=0)
+    item_id: Mapped[str] = mapped_column(String(64), default="", index=True)
+    description: Mapped[str] = mapped_column(Text, default="")
+    manufacturer_part_number: Mapped[str] = mapped_column(String(64), default="", index=True)
+    ordered_qty: Mapped[Decimal] = mapped_column(Numeric(14, 3), default=0)
+    uom: Mapped[str] = mapped_column(String(16), default="")
+    unit_cost: Mapped[Decimal] = mapped_column(Numeric(14, 4), default=0)
+    extended_cost: Mapped[Decimal] = mapped_column(Numeric(14, 2), default=0)
+    need_by_date: Mapped[date | None] = mapped_column(Date, nullable=True)
+    promised_date: Mapped[date | None] = mapped_column(Date, nullable=True)
+    received_qty: Mapped[Decimal] = mapped_column(Numeric(14, 3), default=0)
+    status: Mapped[str] = mapped_column(String(32), default="open")
+    gl_account: Mapped[str] = mapped_column(String(32), default="")
+
+
+class InventoryBalance(ProvenanceMixin, TenantBase):
+    """Point-in-time stock position of one item in one bin (as_of_date is the source snapshot date)."""
+
+    __tablename__ = "inventory_balances"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    item_id: Mapped[str] = mapped_column(String(64), index=True)
+    warehouse: Mapped[str] = mapped_column(String(64), default="")
+    bin_location: Mapped[str] = mapped_column(String(64), default="")
+    on_hand_qty: Mapped[Decimal] = mapped_column(Numeric(14, 3), default=0)
+    allocated_qty: Mapped[Decimal] = mapped_column(Numeric(14, 3), default=0)
+    available_qty: Mapped[Decimal] = mapped_column(Numeric(14, 3), default=0)
+    on_order_qty: Mapped[Decimal] = mapped_column(Numeric(14, 3), default=0)
+    uom: Mapped[str] = mapped_column(String(16), default="")
+    unit_cost: Mapped[Decimal] = mapped_column(Numeric(14, 4), default=0)
+    extended_value: Mapped[Decimal] = mapped_column(Numeric(14, 2), default=0)
+    last_count_date: Mapped[date | None] = mapped_column(Date, nullable=True)
+    last_receipt_date: Mapped[date | None] = mapped_column(Date, nullable=True)
+    last_issue_date: Mapped[date | None] = mapped_column(Date, nullable=True)
+    as_of_date: Mapped[date | None] = mapped_column(Date, nullable=True)
 
 
 class Task(TenantBase):
@@ -425,6 +522,7 @@ class FieldMapping(TenantBase):
     target_field: Mapped[str | None] = mapped_column(String(64), nullable=True)
     confidence: Mapped[float] = mapped_column(Float, default=0.0)
     status: Mapped[str] = mapped_column(String(16), default="proposed")  # proposed|needs_review|approved|ignored
+    reason: Mapped[str] = mapped_column(Text, default="")  # why this target was proposed (alias hit, model, ...)
     approved_by: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), nullable=True)
     approved_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 

@@ -1,11 +1,33 @@
 // Deterministic display formatting for the PE analyst workspace.
-export const TODAY = new Date("2026-09-19T12:00:00Z");
+// TODAY / PERIOD default to the synthetic as-of date and are re-anchored to
+// the backend's `today` / `period` whenever a portfolio snapshot loads.
+export const TODAY = new Date("2026-03-31T12:00:00Z");
 export const PERIOD = {
-  label: "TTM ending Sep. 2026",
-  start: "2025-10-01",
-  end: "2026-09-30",
+  label: "TTM ending Mar. 2026",
+  start: "2025-04-01",
+  end: "2026-03-31",
 };
 export const DEMO_NOTE = `Synthetic demo data · reporting period ${PERIOD.label}`;
+export function setClock(today, period) {
+  if (today) TODAY.setTime(new Date(`${today}T12:00:00Z`).getTime());
+  Object.assign(PERIOD, period ?? (today ? trailingTwelveMonths(today) : {}));
+}
+
+// Same rule as the backend's reporting_period(): TTM ending with today's month.
+export function trailingTwelveMonths(todayIso) {
+  const [y, m] = todayIso.split("-").map(Number);
+  const end = new Date(Date.UTC(y, m, 0));
+  const start = new Date(Date.UTC(y - 1, m, 1));
+  const label = end.toLocaleDateString("en-US", {
+    month: "short",
+    timeZone: "UTC",
+  });
+  return {
+    label: `TTM ending ${label}. ${y}`,
+    start: start.toISOString().slice(0, 10),
+    end: end.toISOString().slice(0, 10),
+  };
+}
 
 const usd = new Intl.NumberFormat("en-US", {
   style: "currency",

@@ -15,8 +15,8 @@ from sqlalchemy import select
 from vista.db import platform_session
 from vista.models.tenant import ImportException, ImportJob, SourceFile
 from vista.portfolio import imports as import_service
+from vista.portfolio import interpret, service
 from vista.portfolio import serializers as ser
-from vista.portfolio import service
 from vista.portfolio.access import FirmContext, company_session, firm_context, writer_context
 from vista.portfolio.imports import job_mappings
 from vista.portfolio.processors import DATASETS
@@ -71,6 +71,14 @@ def run_analysis(ctx: FirmContext = Depends(writer_context)) -> dict:
     with platform_session() as session:
         found = service.run_portfolio_analysis(session, ctx)
         return {"found": [ser.opportunity(o) for o in found], "count": len(found)}
+
+
+@router.post("/portfolio/interpretation", status_code=202)
+def run_interpretation(ctx: FirmContext = Depends(writer_context)) -> dict:
+    """Queue the interpretation layer over canonical rows: one File Reviewer run per
+    company plus one Sector Merger run per sector, executed by the job worker."""
+    with platform_session() as session:
+        return interpret.run_portfolio_interpretation(session, ctx)
 
 
 class CompanyCreate(BaseModel):
@@ -129,6 +137,24 @@ def purchases(company_id: str, ctx: FirmContext = Depends(firm_context)) -> list
 @router.get("/companies/{company_id}/subscriptions")
 def subscriptions(company_id: str, ctx: FirmContext = Depends(firm_context)) -> list[dict]:
     return _records(company_id, ctx, "subscriptions")
+
+
+@router.get("/companies/{company_id}/policies")
+def policies(company_id: str, ctx: FirmContext = Depends(firm_context)) -> list[dict]:
+    return _records(company_id, ctx, "policies")
+
+
+@router.get("/companies/{company_id}/purchase-orders")
+def purchase_orders(company_id: str, ctx: FirmContext = Depends(firm_context)) -> dict:
+    ref = ctx.company(company_id)
+    with company_session(ref) as ts:
+        records = company_records(ts)
+    return {"purchaseOrders": records["purchaseOrders"], "lines": records["purchaseOrderLines"]}
+
+
+@router.get("/companies/{company_id}/inventory")
+def inventory(company_id: str, ctx: FirmContext = Depends(firm_context)) -> list[dict]:
+    return _records(company_id, ctx, "inventory")
 
 
 @router.get("/companies/{company_id}/tasks")

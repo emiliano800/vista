@@ -8,6 +8,8 @@ AGENT_KEY_BY_RUN_TYPE = {
     "employee_discovery": "file_reviewer",
     "company_summary": "report_generator",
     "synthetic_analyze": "sector_merger",
+    "canonical_review": "file_reviewer",
+    "portfolio_merge": "sector_merger",
     "recording_review": "recording_reviewer",
 }
 

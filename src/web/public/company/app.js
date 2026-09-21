@@ -48,10 +48,19 @@ const TABS = [
   ["finance", "Finance"],
   ["vendors", "Vendors"],
   ["software", "Software"],
+  ["policies", "Policies"],
+  ["purchasing", "Purchase orders"],
+  ["inventory", "Inventory"],
   ["findings", "Findings"],
   ["tasks", "Tasks"],
   ["agents", "Agents"],
 ];
+// Sector-specific tabs only appear once the company has rows of that kind.
+const HIDE_EMPTY = {
+  policies: "policies",
+  purchasing: "purchaseOrders",
+  inventory: "inventory",
+};
 const analyst = await mountShell();
 const showSource = mountSourceDialog();
 const id = qs().get("id");
@@ -73,7 +82,17 @@ function bindSources(list) {
     .forEach((b) => {
       b.onclick = () => {
         const r = list.find((x) => x.id === b.dataset.source);
-        showSource(r, r?.name ?? r?.number ?? r?.sku ?? r?.product ?? r?.id);
+        showSource(
+          r,
+          r?.name ??
+            r?.number ??
+            r?.sku ??
+            r?.product ??
+            r?.policyNumber ??
+            r?.poNumber ??
+            r?.itemId ??
+            r?.id,
+        );
       };
     });
 }
@@ -132,7 +151,14 @@ function render() {
       },
     ])}
     <p class="demo-line">${esc(DEMO_NOTE)}</p>
-    <nav class="tabs" aria-label="Company sections">${TABS.map(([key, label]) => `<a href="/company/?id=${esc(c.id)}&tab=${key}" ${key === tab ? 'aria-current="page"' : ""}>${label}</a>`).join("")}</nav>
+    <nav class="tabs" aria-label="Company sections">${TABS.filter(
+      ([key]) => !HIDE_EMPTY[key] || (c[HIDE_EMPTY[key]] ?? []).length,
+    )
+      .map(
+        ([key, label]) =>
+          `<a href="/company/?id=${esc(c.id)}&tab=${key}" ${key === tab ? 'aria-current="page"' : ""}>${label}</a>`,
+      )
+      .join("")}</nav>
     <div id="tab"></div>`;
   $("new-task").onclick = () => openTaskDialog({ companyId: c.id });
   const renderTab =
@@ -143,6 +169,9 @@ function render() {
       finance,
       vendors,
       software,
+      policies,
+      purchasing,
+      inventory,
       findings: findingsTab,
       tasks: tasksTab,
       agents: agentsTab,
@@ -218,16 +247,26 @@ function data() {
           ["vendors", "Vendors", c.vendors],
           ["purchases", "Vendor purchases", c.purchases],
           ["subscriptions", "Subscriptions", c.subscriptions],
-        ].map(([key, entity, list]) => ({
-          key,
-          entity,
-          count: list.length,
-          files: [
-            ...new Set(list.map((r) => r.provenance?.file).filter(Boolean)),
+          ["policies", "Policies", c.policies ?? []],
+          ["purchaseOrders", "Purchase orders", c.purchaseOrders ?? []],
+          [
+            "purchaseOrderLines",
+            "Purchase order lines",
+            c.purchaseOrderLines ?? [],
           ],
-          auto: list.filter((r) => r.provenance?.review === "auto-accepted")
-            .length,
-        })),
+          ["inventory", "Inventory balances", c.inventory ?? []],
+        ]
+          .filter(([, , list]) => list.length)
+          .map(([key, entity, list]) => ({
+            key,
+            entity,
+            count: list.length,
+            files: [
+              ...new Set(list.map((r) => r.provenance?.file).filter(Boolean)),
+            ],
+            auto: list.filter((r) => r.provenance?.review === "auto-accepted")
+              .length,
+          })),
       ),
       { eyebrow: "Canonical records with provenance" },
     )}
@@ -507,6 +546,225 @@ function software() {
     ),
     { eyebrow: `${money(annual)} annualized from monthly cost × 12` },
   );
+  bindSources(rows);
+}
+
+function policies(m) {
+  const rows = [...(c.policies ?? [])].sort((a, b) =>
+    (a.expirationDate ?? "") < (b.expirationDate ?? "") ? -1 : 1,
+  );
+  const expiring = rows.filter((p) => {
+    const d = -daysBetween(p.expirationDate);
+    return d >= 0 && d <= 90;
+  });
+  $("tab").innerHTML = `
+    ${metricStrip([
+      { label: "Policies", value: integer(m.policyCount) },
+      { label: "Annual premium", value: compactMoney(m.policyPremium) },
+      {
+        label: "Expiring ≤ 90 days",
+        value: integer(m.policiesExpiring90),
+        note: `as of ${date(PERIOD.end)}`,
+      },
+    ])}
+    ${section(
+      `Policies (${integer(rows.length)})`,
+      table(
+        [
+          {
+            label: "Policy",
+            render: (p) => `<span class="mono">${esc(p.policyNumber)}</span>`,
+          },
+          { label: "Client", key: "customerName" },
+          { label: "Line", key: "lineOfBusiness" },
+          { label: "Carrier", key: "carrier" },
+          { label: "Effective", render: (p) => esc(date(p.effectiveDate)) },
+          {
+            label: "Expires",
+            render: (p) =>
+              `${esc(date(p.expirationDate))}${expiring.includes(p) ? ` ${badge(`${-daysBetween(p.expirationDate)} days`, "warning")}` : ""}`,
+          },
+          {
+            label: "Premium",
+            num: true,
+            render: (p) => esc(money(p.annualPremium)),
+          },
+          {
+            label: "Commission",
+            num: true,
+            render: (p) => esc(money(p.expectedCommission)),
+          },
+          { label: "Status", render: (p) => badge(p.status) },
+          { label: "", render: viewSource(rows) },
+        ],
+        rows.slice(0, 250),
+      ),
+      {
+        eyebrow: "Book of business from the agency management system",
+        aside:
+          rows.length > 250 ? `Showing 250 of ${integer(rows.length)}` : "",
+      },
+    )}`;
+  bindSources(rows);
+}
+
+function purchasing(m) {
+  const orders = [...(c.purchaseOrders ?? [])].sort((a, b) =>
+    (a.date ?? "") < (b.date ?? "") ? 1 : -1,
+  );
+  const lines = c.purchaseOrderLines ?? [];
+  const openLines = lines.filter((l) => l.receivedQty < l.orderedQty);
+  const late = openLines.filter(
+    (l) => l.promisedDate && daysBetween(l.promisedDate) > 0,
+  );
+  $("tab").innerHTML = `
+    ${metricStrip([
+      {
+        label: "Purchase orders",
+        value: integer(m.purchaseOrderCount),
+        note: PERIOD.label,
+      },
+      {
+        label: "PO spend",
+        value: compactMoney(m.purchaseOrderSpend),
+        note: PERIOD.label,
+      },
+      { label: "Open lines", value: integer(m.openPoLines) },
+      { label: "Past promised date", value: integer(late.length) },
+    ])}
+    ${section(
+      `Purchase orders (${integer(orders.length)})`,
+      table(
+        [
+          {
+            label: "PO",
+            render: (p) => `<span class="mono">${esc(p.poNumber)}</span>`,
+          },
+          { label: "Supplier", key: "supplierName" },
+          { label: "Date", render: (p) => esc(date(p.date)) },
+          { label: "Buyer", key: "buyer" },
+          { label: "Terms", key: "paymentTerms" },
+          {
+            label: "Lines",
+            num: true,
+            render: (p) => esc(integer(p.lineCount)),
+          },
+          { label: "Total", num: true, render: (p) => esc(money(p.total)) },
+          { label: "Status", render: (p) => badge(p.status) },
+          { label: "", render: viewSource(orders) },
+        ],
+        orders.slice(0, 250),
+      ),
+      {
+        aside:
+          orders.length > 250 ? `Showing 250 of ${integer(orders.length)}` : "",
+      },
+    )}
+    ${section(
+      `Open purchase order lines (${integer(openLines.length)})`,
+      table(
+        [
+          {
+            label: "PO / line",
+            render: (l) =>
+              `<span class="mono">${esc(l.poNumber)}-${esc(l.lineNumber)}</span>`,
+          },
+          {
+            label: "Item",
+            render: (l) => `<span class="mono">${esc(l.itemId)}</span>`,
+          },
+          { label: "Description", key: "description" },
+          {
+            label: "Ordered / received",
+            num: true,
+            render: (l) =>
+              `${esc(l.orderedQty)} / ${esc(l.receivedQty)} ${esc(l.uom)}`,
+          },
+          {
+            label: "Unit cost",
+            num: true,
+            render: (l) => esc(money(l.unitCost)),
+          },
+          {
+            label: "Promised",
+            render: (l) =>
+              `${esc(date(l.promisedDate))}${late.includes(l) ? ` ${badge(`${daysBetween(l.promisedDate)} days late`, "danger")}` : ""}`,
+          },
+          { label: "Status", render: (l) => badge(l.status) },
+          { label: "", render: viewSource(openLines) },
+        ],
+        openLines.slice(0, 250),
+      ),
+      {
+        aside:
+          openLines.length > 250
+            ? `Showing 250 of ${integer(openLines.length)}`
+            : "",
+      },
+    )}`;
+  bindSources([...orders, ...openLines]);
+}
+
+function inventory(m) {
+  const rows = [...(c.inventory ?? [])].sort(
+    (a, b) => (b.extendedValue ?? 0) - (a.extendedValue ?? 0),
+  );
+  const negative = rows.filter((b) => b.onHandQty < 0);
+  const mismatch = rows.filter(
+    (b) => Math.abs(b.onHandQty - b.allocatedQty - b.availableQty) > 0.001,
+  );
+  $("tab").innerHTML = `
+    ${metricStrip([
+      { label: "Stocked items", value: integer(m.inventoryItems) },
+      { label: "Inventory value", value: compactMoney(m.inventoryValue) },
+      { label: "Negative on hand", value: integer(negative.length) },
+      { label: "Balance mismatches", value: integer(mismatch.length) },
+    ])}
+    ${section(
+      `Inventory balances (${integer(rows.length)})`,
+      table(
+        [
+          {
+            label: "Item",
+            render: (b) => `<span class="mono">${esc(b.itemId)}</span>`,
+          },
+          { label: "Warehouse", key: "warehouse" },
+          { label: "Bin", key: "bin", mono: true },
+          {
+            label: "On hand",
+            num: true,
+            render: (b) =>
+              `${esc(b.onHandQty)} ${esc(b.uom)}${b.onHandQty < 0 ? ` ${badge("negative", "danger")}` : ""}`,
+          },
+          { label: "Allocated", num: true, key: "allocatedQty" },
+          {
+            label: "Available",
+            num: true,
+            render: (b) =>
+              `${esc(b.availableQty)}${mismatch.includes(b) ? ` ${badge("mismatch", "warning")}` : ""}`,
+          },
+          { label: "On order", num: true, key: "onOrderQty" },
+          {
+            label: "Unit cost",
+            num: true,
+            render: (b) => esc(money(b.unitCost)),
+          },
+          {
+            label: "Value",
+            num: true,
+            render: (b) => esc(money(b.extendedValue)),
+          },
+          { label: "Last count", render: (b) => esc(date(b.lastCountDate)) },
+          { label: "", render: viewSource(rows) },
+        ],
+        rows.slice(0, 250),
+      ),
+      {
+        eyebrow: rows[0]?.asOfDate ? `As of ${date(rows[0].asOfDate)}` : "",
+        aside:
+          rows.length > 250 ? `Showing 250 of ${integer(rows.length)}` : "",
+      },
+    )}`;
   bindSources(rows);
 }
 

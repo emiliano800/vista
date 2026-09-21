@@ -4,7 +4,7 @@
 // change goes through the API, then the snapshot is refreshed. Nothing in
 // localStorage is authoritative.
 import { api } from "./auth.js";
-import { PERIOD, TODAY, daysBetween } from "./format.js";
+import { PERIOD, TODAY, daysBetween, setClock } from "./format.js";
 
 let state = null;
 let pending = null;
@@ -13,7 +13,7 @@ export async function load(force = false) {
   if (state && !force) return state;
   if (!pending) {
     pending = api("/portfolio")
-      .then((s) => (state = s))
+      .then((s) => setState(s))
       .finally(() => (pending = null));
   }
   return pending;
@@ -21,6 +21,7 @@ export async function load(force = false) {
 export const refresh = () => load(true);
 export function setState(next) {
   state = next;
+  if (state) setClock(state.today, state.period);
   return state;
 }
 function current() {
@@ -72,6 +73,7 @@ export const INTEGRATION_STEPS = [
   ["invoices", "Invoices"],
   ["vendors", "Vendors"],
   ["software", "Software"],
+  ["operations", "Policies / purchasing & inventory"],
   ["exceptions", "Import exceptions resolved"],
   ["analysis", "Initial agent analysis"],
 ];

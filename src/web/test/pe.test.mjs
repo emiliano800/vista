@@ -448,3 +448,30 @@ test("cedar sample files match the checked-in demo CSVs the wizard uploads", () 
     );
   }
 });
+
+test("the workspace clock follows the server snapshot, not the browser", async () => {
+  const { TODAY, PERIOD, trailingTwelveMonths } =
+    await import("../public/lib/format.js");
+  assert.deepEqual(trailingTwelveMonths("2026-03-31"), {
+    label: "TTM ending Mar. 2026",
+    start: "2025-04-01",
+    end: "2026-03-31",
+  });
+  const fetch = storeFetch();
+  globalThis.fetch = fetch;
+  try {
+    await store.load();
+    assert.equal(TODAY.toISOString().slice(0, 10), SNAPSHOT.today);
+    // No period on the snapshot: the period is the trailing twelve months to `today`.
+    assert.deepEqual({ ...PERIOD }, trailingTwelveMonths(SNAPSHOT.today));
+    store.setState({
+      ...SNAPSHOT,
+      today: "2026-03-31",
+      period: { label: "FY", start: "2025-01-01", end: "2025-12-31" },
+    });
+    assert.equal(TODAY.toISOString().slice(0, 10), "2026-03-31");
+    assert.equal(PERIOD.label, "FY");
+  } finally {
+    delete globalThis.fetch;
+  }
+});

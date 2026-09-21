@@ -136,6 +136,100 @@ const ENTITIES = {
       ],
     },
   },
+  policies: {
+    label: "Policies",
+    columns: [
+      {
+        label: "Policy",
+        render: (r) => `<span class="mono">${esc(r.policyNumber)}</span>`,
+      },
+      { label: "Company", render: (r) => esc(companyName(r.companyId)) },
+      { label: "Client", key: "customerName" },
+      { label: "Line", key: "lineOfBusiness" },
+      { label: "Carrier", key: "carrier" },
+      { label: "Expires", render: (r) => esc(date(r.expirationDate)) },
+      {
+        label: "Premium",
+        num: true,
+        render: (r) => esc(money(r.annualPremium)),
+      },
+      { label: "Status", render: (r) => badge(r.status) },
+    ],
+    filters: {
+      all: ["All", () => true],
+      expiring: [
+        "Expires ≤ 90 days",
+        (r) =>
+          -daysBetween(r.expirationDate) <= 90 &&
+          -daysBetween(r.expirationDate) >= 0,
+      ],
+    },
+  },
+  purchaseOrders: {
+    label: "Purchase orders",
+    columns: [
+      {
+        label: "PO",
+        render: (r) => `<span class="mono">${esc(r.poNumber)}</span>`,
+      },
+      { label: "Company", render: (r) => esc(companyName(r.companyId)) },
+      { label: "Supplier", key: "supplierName" },
+      { label: "Date", render: (r) => esc(date(r.date)) },
+      { label: "Lines", num: true, key: "lineCount" },
+      { label: "Total", num: true, render: (r) => esc(money(r.total)) },
+      { label: "Status", render: (r) => badge(r.status) },
+    ],
+    filters: { all: ["All", () => true] },
+  },
+  purchaseOrderLines: {
+    label: "PO lines",
+    columns: [
+      {
+        label: "PO / line",
+        render: (r) =>
+          `<span class="mono">${esc(r.poNumber)}-${esc(r.lineNumber)}</span>`,
+      },
+      { label: "Company", render: (r) => esc(companyName(r.companyId)) },
+      {
+        label: "Item",
+        render: (r) => `<span class="mono">${esc(r.itemId)}</span>`,
+      },
+      { label: "Description", key: "description" },
+      {
+        label: "Ordered / received",
+        num: true,
+        render: (r) =>
+          `${esc(r.orderedQty)} / ${esc(r.receivedQty)} ${esc(r.uom)}`,
+      },
+      { label: "Unit cost", num: true, render: (r) => esc(money(r.unitCost)) },
+      { label: "Promised", render: (r) => esc(date(r.promisedDate)) },
+      { label: "Status", render: (r) => badge(r.status) },
+    ],
+    filters: {
+      all: ["All", () => true],
+      open: ["Open", (r) => r.receivedQty < r.orderedQty],
+    },
+  },
+  inventory: {
+    label: "Inventory",
+    columns: [
+      {
+        label: "Item",
+        render: (r) => `<span class="mono">${esc(r.itemId)}</span>`,
+      },
+      { label: "Company", render: (r) => esc(companyName(r.companyId)) },
+      { label: "Warehouse", key: "warehouse" },
+      { label: "On hand", num: true, key: "onHandQty" },
+      { label: "Available", num: true, key: "availableQty" },
+      { label: "On order", num: true, key: "onOrderQty" },
+      { label: "Value", num: true, render: (r) => esc(money(r.extendedValue)) },
+      { label: "Last count", render: (r) => esc(date(r.lastCountDate)) },
+    ],
+    filters: {
+      all: ["All", () => true],
+      negative: ["Negative on hand", (r) => r.onHandQty < 0],
+    },
+  },
 };
 const PAGE = 100;
 const analyst = await mountShell();

@@ -10,7 +10,17 @@ from datetime import date, timedelta
 from sqlalchemy import case, func, select
 from sqlalchemy.orm import Session
 
-from vista.models.tenant import Customer, Invoice, Subscription, Vendor, VendorPurchase
+from vista.models.tenant import (
+    Customer,
+    InventoryBalance,
+    Invoice,
+    Policy,
+    PurchaseOrder,
+    PurchaseOrderLine,
+    Subscription,
+    Vendor,
+    VendorPurchase,
+)
 from vista.portfolio.access import ReportingPeriod
 
 OPEN_INVOICE_STATUSES = ("open", "overdue", "disputed")
@@ -32,6 +42,14 @@ class CompanyMetrics:
     vendorCount: int
     softwareAnnual: float
     subscriptionCount: int
+    policyCount: int
+    policyPremium: float
+    policiesExpiring90: int
+    purchaseOrderCount: int
+    purchaseOrderSpend: float
+    openPoLines: int
+    inventoryItems: int
+    inventoryValue: float
 
     def as_dict(self) -> dict:
         return asdict(self)
@@ -73,6 +91,24 @@ def company_metrics(session: Session, period: ReportingPeriod, today: date) -> C
             func.count(),
         )
     ).one()
+    policy_count, premium, expiring = session.execute(
+        select(
+            func.count(),
+            func.coalesce(func.sum(Policy.annual_premium), 0),
+            func.coalesce(func.sum(case((Policy.expiration_date.between(today, today + timedelta(days=90)), 1), else_=0)), 0),
+        )
+    ).one()
+    po_count, po_spend = session.execute(
+        select(func.count(), func.coalesce(func.sum(PurchaseOrder.total_amount), 0)).where(
+            PurchaseOrder.po_date.between(period.start, period.end)
+        )
+    ).one()
+    open_lines = session.scalar(
+        select(func.count()).select_from(PurchaseOrderLine).where(PurchaseOrderLine.received_qty < PurchaseOrderLine.ordered_qty)
+    )
+    inv_items, inv_value = session.execute(
+        select(func.count(), func.coalesce(func.sum(InventoryBalance.extended_value), 0)).where(InventoryBalance.on_hand_qty > 0)
+    ).one()
     return CompanyMetrics(
         customers=customers,
         invoiceCount=inv_count,
@@ -88,6 +124,14 @@ def company_metrics(session: Session, period: ReportingPeriod, today: date) -> C
         vendorCount=vendor_count,
         softwareAnnual=_f(software),
         subscriptionCount=sub_count,
+        policyCount=policy_count,
+        policyPremium=_f(premium),
+        policiesExpiring90=int(expiring),
+        purchaseOrderCount=po_count,
+        purchaseOrderSpend=_f(po_spend),
+        openPoLines=open_lines or 0,
+        inventoryItems=inv_items,
+        inventoryValue=_f(inv_value),
     )
 
 

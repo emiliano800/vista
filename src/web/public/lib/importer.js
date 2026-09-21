@@ -3,6 +3,7 @@
 // the demo; the same steps map onto ImportJob / FieldMapping /
 // ImportException server-side later.
 import { COMPANY_SPECS, generateCompany } from "./seed.js";
+import { TODAY } from "./format.js";
 
 // ---- CSV ----------------------------------------------------------------
 export function parseCsv(text) {
@@ -457,7 +458,7 @@ export function buildCompany({ id, profile, datasets, exceptions, job }) {
       provenance: r.provenance,
     }));
   const byName = new Map(customers.map((c) => [c.name.toLowerCase(), c.id]));
-  const today = new Date("2026-09-19");
+  const today = TODAY;
   const invoices = (datasets.invoices?.records ?? []).map((r, i) => {
     const outstanding = Number(r.outstanding_balance ?? 0);
     const overdue = outstanding > 0 && r.due_date && new Date(r.due_date) < today;

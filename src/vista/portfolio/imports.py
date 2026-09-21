@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import hashlib
 import uuid
+from dataclasses import dataclass, field
 from datetime import UTC, date, datetime
 from decimal import Decimal
 
@@ -22,7 +23,11 @@ from vista.models.tenant import (
     ImportException,
     ImportJob,
     ImportRecord,
+    InventoryBalance,
     Invoice,
+    Policy,
+    PurchaseOrder,
+    PurchaseOrderLine,
     RecordProvenance,
     SourceFile,
     Subscription,
@@ -73,13 +78,21 @@ def create_import(
     content: bytes,
     mime_type: str,
     processor: ImportProcessor | None = None,
+    dataset: str | None = None,
+    sheet: str | None = None,
 ) -> ImportJob:
     """Stores the raw file, stages every source row as an ImportRecord and
-    proposes field mappings. Nothing canonical is written yet."""
+    proposes field mappings. Nothing canonical is written yet. `dataset`
+    overrides detection (the caller knows what the file is); `sheet` picks a
+    worksheet other than the first in a workbook."""
     if len(content) > MAX_UPLOAD:
         raise HTTPException(413, "File exceeds the 25 MB import limit")
+    if dataset is not None and dataset not in DATASETS:
+        raise HTTPException(422, f"Unknown dataset type {dataset!r}")
     proc = processor or get_processor()
-    inspection = proc.inspect_file(filename, content)
+    inspection = proc.inspect_file(filename, content, sheet)
+    if dataset is not None:
+        inspection.dataset = dataset
     mappings = proc.propose_mappings(inspection.dataset, inspection.columns, inspection.rows)
     with company_session(company) as ts:
         file = SourceFile(
@@ -140,6 +153,7 @@ def _write_mappings(ts: Session, job: ImportJob, mappings: list[ProposedMapping]
                 target_field=m.target,
                 confidence=m.confidence,
                 status="needs_review" if m.needs_review else "proposed",
+                reason=m.reason or "",
             )
         )
 
@@ -387,13 +401,18 @@ def approve_import(platform: Session, ctx: FirmContext, company: CompanyRef, job
         records = ts.scalars(select(ImportRecord).where(ImportRecord.import_job_id == job.id).order_by(ImportRecord.source_row)).all()
         exceptions = ts.scalars(select(ImportException).where(ImportException.import_job_id == job.id)).all()
         skip_rows: set[int] = set()
+        swap_rows: set[int] = set()
         vendor_alias: dict[str, str] = {}
         for x in exceptions:
             d = x.detail or {}
             if d.get("dataset") == "customers" and x.resolution == "Merge" and d.get("rightRow"):
                 skip_rows.add(d["rightRow"])
+            if d.get("dataset") == "invoices" and x.resolution == "Skip duplicate" and d.get("rightRow"):
+                skip_rows.add(d["rightRow"])
             if d.get("dataset") == "vendors" and x.resolution == "Match" and d.get("matchVendor"):
                 vendor_alias[d["left"]] = d["matchVendor"]
+            if d.get("dataset") == "policies" and x.resolution == "Swap dates":
+                swap_rows.update(d.get("recordRows") or [])
         job.status, job.started_at = "importing", job.started_at or _now()
         ts.flush()
         base = {
@@ -406,14 +425,20 @@ def approve_import(platform: Session, ctx: FirmContext, company: CompanyRef, job
         entity = DATASETS[job.dataset_type]["entity"]
         imported = 0
         rejected = 0
-        customers_by_name = {c.display_name.lower(): c.id for c in ts.scalars(select(Customer))}
-        vendors_by_source = {v.source_name: v for v in ts.scalars(select(Vendor))}
+        lookups = Lookups.load(ts, vendor_alias)
         for rec in records:
             if rec.source_row in skip_rows:
                 rec.status = "merged"
                 rejected += 1
                 continue
-            row = _write_canonical(ts, job.dataset_type, rec.normalized_record, base, customers_by_name, vendors_by_source, vendor_alias)
+            normalized = dict(rec.normalized_record)
+            if rec.source_row in swap_rows:
+                normalized["effective_date"], normalized["expiration_date"] = (
+                    normalized.get("expiration_date"),
+                    normalized.get("effective_date"),
+                )
+                rec.normalized_record = normalized
+            row = _write_canonical(ts, job.dataset_type, normalized, base, lookups)
             if row is None:
                 rec.status = "rejected"
                 rec.exception_reason = rec.exception_reason or "missing required field"
@@ -454,7 +479,85 @@ def approve_import(platform: Session, ctx: FirmContext, company: CompanyRef, job
     return job
 
 
-def _write_canonical(ts: Session, dataset: str, r: dict, base: dict, customers_by_name: dict, vendors_by_source: dict, vendor_alias: dict):
+@dataclass
+class Lookups:
+    """In-schema indexes used to link imported rows to rows already in the ledger."""
+
+    customers_by_name: dict[str, uuid.UUID] = field(default_factory=dict)
+    customers_by_source: dict[str, uuid.UUID] = field(default_factory=dict)
+    vendors_by_source: dict[str, Vendor] = field(default_factory=dict)
+    vendors_by_id: dict[str, Vendor] = field(default_factory=dict)
+    orders_by_number: dict[str, PurchaseOrder] = field(default_factory=dict)
+    vendor_alias: dict[str, str] = field(default_factory=dict)
+
+    @classmethod
+    def load(cls, ts: Session, vendor_alias: dict[str, str]) -> Lookups:
+        lk = cls(vendor_alias=vendor_alias)
+        for c in ts.scalars(select(Customer)):
+            lk.customers_by_name.setdefault(c.display_name.lower(), c.id)
+            if c.source_customer_id:
+                lk.customers_by_source.setdefault(c.source_customer_id, c.id)
+        for v in ts.scalars(select(Vendor)):
+            lk.vendors_by_source.setdefault(v.source_name, v)
+            if v.source_vendor_id:
+                lk.vendors_by_id.setdefault(v.source_vendor_id, v)
+        for po in ts.scalars(select(PurchaseOrder)):
+            lk.orders_by_number.setdefault(po.po_number, po)
+        return lk
+
+    def customer(self, r: dict) -> uuid.UUID | None:
+        source_id = str(r.get("source_customer_id") or "")
+        name = str(r.get("customer_name") or "").lower()
+        return self.customers_by_source.get(source_id) or self.customers_by_name.get(name)
+
+    def vendor(self, ts: Session, r: dict, base: dict, provenance: bool = True) -> Vendor | None:
+        """Existing vendor by source id or name, else a new one (with its own
+        provenance row unless the caller writes one for the vendor itself)."""
+        source = str(r.get("vendor_name") or "")
+        source_id = str(r.get("source_vendor_id") or "")
+        v = self.vendors_by_id.get(source_id) if source_id else None
+        if v is None and source:
+            v = self.vendors_by_source.get(source)
+        if v is None and not source:
+            return None
+        if v is None:
+            v = Vendor(
+                **base,
+                normalized_name=self.vendor_alias.get(source, source),
+                source_name=source,
+                source_vendor_id=source_id,
+                category=str(r.get("category") or ""),
+                payment_terms=str(r.get("payment_terms") or ""),
+            )
+            ts.add(v)
+            ts.flush()
+            self.vendors_by_source[source] = v
+            if source_id:
+                self.vendors_by_id[source_id] = v
+            if not provenance:
+                return v
+            ts.add(
+                RecordProvenance(
+                    entity_type="vendor",
+                    entity_id=v.id,
+                    source_file_id=base["source_file_id"],
+                    import_job_id=base["import_job_id"],
+                    raw_value={"vendor": source, "vendor_id": source_id},
+                    normalized_value={"normalized_name": v.normalized_name},
+                    confidence=1.0,
+                )
+            )
+        elif source_id and not v.source_vendor_id:
+            v.source_vendor_id = source_id
+            self.vendors_by_id[source_id] = v
+        return v
+
+
+def _money_or(r: dict, key: str, fallback: Decimal) -> Decimal:
+    return _dec(r.get(key)) if r.get(key) not in (None, "", 0) else fallback
+
+
+def _write_canonical(ts: Session, dataset: str, r: dict, base: dict, lk: Lookups):
     if dataset == "customers":
         name = r.get("customer_name") or ""
         if not name:
@@ -476,20 +579,32 @@ def _write_canonical(ts: Session, dataset: str, r: dict, base: dict, customers_b
         )
         ts.add(c)
         ts.flush()
-        customers_by_name.setdefault(name.lower(), c.id)
+        lk.customers_by_name.setdefault(name.lower(), c.id)
+        if c.source_customer_id:
+            lk.customers_by_source.setdefault(c.source_customer_id, c.id)
         return c
     if dataset == "invoices":
-        number = r.get("source_invoice_number") or ""
+        number = str(r.get("source_invoice_number") or "")
+        customer_id = lk.customer(r)
         name = r.get("customer_name") or ""
+        if not name and customer_id is not None:
+            linked = ts.get(Customer, customer_id)
+            name = linked.display_name if linked else ""
         if not number or not name:
             return None
         outstanding = _dec(r.get("outstanding_balance"))
-        amount = _dec(r.get("amount")) if r.get("amount") not in (None, "", 0) else outstanding
+        amount = _money_or(r, "amount", outstanding)
         due = _date(r.get("due_date"))
-        status = "paid" if outstanding == 0 else ("overdue" if due and due < today() else "open")
+        source_status = str(r.get("status") or "")
+        if source_status in ("cancelled", "void"):
+            status = "void"
+        elif source_status == "disputed":
+            status = "disputed"
+        else:
+            status = "paid" if outstanding == 0 else ("overdue" if due and due < today() else "open")
         inv = Invoice(
             **base,
-            customer_id=customers_by_name.get(name.lower()),
+            customer_id=customer_id,
             customer_name=name,
             source_invoice_number=number,
             issue_date=_date(r.get("issue_date")),
@@ -500,38 +615,41 @@ def _write_canonical(ts: Session, dataset: str, r: dict, base: dict, customers_b
         )
         ts.add(inv)
         return inv
-    if dataset == "vendors":
-        source = r.get("vendor_name") or ""
-        if not source:
-            return None
-        v = vendors_by_source.get(source)
+    if dataset == "vendor_master":
+        v = lk.vendor(ts, r, base, provenance=False)
         if v is None:
-            v = Vendor(**base, normalized_name=vendor_alias.get(source, source), source_name=source)
-            ts.add(v)
-            ts.flush()
-            vendors_by_source[source] = v
-            ts.add(
-                RecordProvenance(
-                    entity_type="vendor",
-                    entity_id=v.id,
-                    source_file_id=base["source_file_id"],
-                    import_job_id=base["import_job_id"],
-                    raw_value={"vendor": source},
-                    normalized_value={"normalized_name": v.normalized_name},
-                    confidence=1.0,
-                )
-            )
-        qty = _dec(r.get("quantity"), "0.001")
-        price = _dec(r.get("unit_price"), "0.0001")
-        total = _dec(r.get("total")) if r.get("total") not in (None, "", 0) else _dec(qty * price)
+            return None
+        v.contact_name = v.contact_name or str(r.get("contact") or "")
+        v.email = v.email or str(r.get("email") or "")
+        v.phone = v.phone or str(r.get("phone") or "")
+        v.category = v.category or str(r.get("category") or "")
+        v.payment_terms = v.payment_terms or str(r.get("payment_terms") or "")
+        if r.get("status") == "inactive":
+            v.status = "inactive"
+        return v
+    if dataset in ("vendors", "vendor_invoices"):
+        v = lk.vendor(ts, r, base)
+        if v is None:
+            return None
+        if dataset == "vendors":
+            qty = _dec(r.get("quantity"), "0.001")
+            price = _dec(r.get("unit_price"), "0.0001")
+            total = _money_or(r, "total", _dec(qty * price))
+            sku, description, unit = r.get("sku") or "", r.get("description") or "", r.get("unit") or ""
+        else:
+            qty, price = Decimal("1.000"), _dec(r.get("total"), "0.0001")
+            total = _dec(r.get("total"))
+            number = r.get("invoice_number") or ""
+            description = " · ".join(p for p in (r.get("category") or "", f"invoice {number}" if number else "") if p)
+            sku, unit = "", ""
         p = VendorPurchase(
             **base,
             vendor_id=v.id,
             purchase_date=_date(r.get("date")),
-            sku=r.get("sku") or "",
-            item_description=r.get("description") or "",
+            sku=sku,
+            item_description=description,
             quantity=qty,
-            unit=r.get("unit") or "",
+            unit=unit,
             unit_price=price,
             total_amount=total,
         )
@@ -542,17 +660,134 @@ def _write_canonical(ts: Session, dataset: str, r: dict, base: dict, customers_b
         if not product:
             return None
         monthly = _dec(r.get("monthly_cost"))
+        annual = _dec(r.get("annual_cost"))
+        if monthly == 0 and annual:
+            monthly = _dec(annual / 12)
+        if annual == 0:
+            annual = monthly * 12
         s = Subscription(
             **base,
-            vendor_name=product,
+            vendor_name=r.get("vendor") or product,
             product_name=product,
             category=r.get("category") or "",
             monthly_cost=monthly,
-            annual_cost=monthly * 12,
+            annual_cost=annual,
             seat_count=int(r.get("seats") or 0),
             renewal_date=_date(r.get("renewal_date")),
             restrictions_notes=r.get("notes") or "",
         )
         ts.add(s)
         return s
+    if dataset == "policies":
+        number = str(r.get("policy_number") or "")
+        if not number:
+            return None
+        premium = _dec(r.get("annual_premium"))
+        pct = _dec(r.get("commission_pct"))
+        expected = _money_or(r, "expected_commission", _dec(premium * pct / 100))
+        pol = Policy(
+            **base,
+            customer_id=lk.customer(r),
+            customer_name=r.get("customer_name") or "",
+            source_policy_id=str(r.get("source_policy_id") or ""),
+            source_customer_id=str(r.get("source_customer_id") or ""),
+            policy_number=number,
+            line_of_business=str(r.get("line_of_business") or "")[:32],
+            line_description=str(r.get("line_description") or "")[:128],
+            carrier_code=str(r.get("carrier_code") or "")[:32],
+            carrier_name=r.get("carrier_name") or "",
+            effective_date=_date(r.get("effective_date")),
+            expiration_date=_date(r.get("expiration_date")),
+            term_months=int(r.get("term_months") or 12),
+            annual_premium=premium,
+            commission_pct=pct,
+            expected_commission=expected,
+            billing_type=str(r.get("billing_type") or "").lower().replace(" ", "_")[:32],
+            status=str(r.get("status") or "in_force")[:32],
+            producer_id=str(r.get("producer_id") or ""),
+            account_manager_id=str(r.get("account_manager_id") or ""),
+            surplus_lines=bool(r.get("surplus_lines")),
+            new_or_renewal=str(r.get("new_or_renewal") or "").lower()[:16],
+            experience_mod=_dec(r["experience_mod"], "0.001") if r.get("experience_mod") not in (None, "", 0) else None,
+            umbrella_limit=_dec(r["umbrella_limit"]) if r.get("umbrella_limit") not in (None, "", 0) else None,
+        )
+        ts.add(pol)
+        return pol
+    if dataset == "purchase_orders":
+        number = str(r.get("po_number") or "")
+        if not number:
+            return None
+        v = lk.vendor(ts, r, base)
+        po = PurchaseOrder(
+            **base,
+            vendor_id=v.id if v else None,
+            po_number=number,
+            source_supplier_id=str(r.get("source_vendor_id") or ""),
+            supplier_name=r.get("vendor_name") or "",
+            po_date=_date(r.get("date")),
+            buyer_id=str(r.get("buyer_id") or ""),
+            payment_terms=str(r.get("payment_terms") or ""),
+            ship_via=str(r.get("ship_via") or ""),
+            freight_terms=str(r.get("freight_terms") or ""),
+            total_amount=_dec(r.get("total")),
+            status=str(r.get("status") or "open")[:32],
+            approved_by=str(r.get("approved_by") or ""),
+            sent_method=str(r.get("sent_method") or ""),
+        )
+        ts.add(po)
+        ts.flush()
+        lk.orders_by_number.setdefault(number, po)
+        return po
+    if dataset == "purchase_order_lines":
+        number = str(r.get("po_number") or "")
+        if not number:
+            return None
+        qty = _dec(r.get("quantity"), "0.001")
+        cost = _dec(r.get("unit_price"), "0.0001")
+        po = lk.orders_by_number.get(number)
+        line = PurchaseOrderLine(
+            **base,
+            purchase_order_id=po.id if po else None,
+            po_number=number,
+            line_number=int(r.get("line_number") or 0),
+            item_id=str(r.get("item_id") or ""),
+            description=r.get("description") or "",
+            manufacturer_part_number=str(r.get("manufacturer_part_number") or ""),
+            ordered_qty=qty,
+            uom=str(r.get("unit") or ""),
+            unit_cost=cost,
+            extended_cost=_money_or(r, "total", _dec(qty * cost)),
+            need_by_date=_date(r.get("need_by_date")),
+            promised_date=_date(r.get("promised_date")),
+            received_qty=_dec(r.get("received_qty"), "0.001"),
+            status=str(r.get("status") or "open")[:32],
+            gl_account=str(r.get("gl_account") or ""),
+        )
+        ts.add(line)
+        return line
+    if dataset == "inventory":
+        item = str(r.get("item_id") or "")
+        if not item:
+            return None
+        on_hand = _dec(r.get("on_hand_qty"), "0.001")
+        cost = _dec(r.get("unit_price"), "0.0001")
+        bal = InventoryBalance(
+            **base,
+            item_id=item,
+            warehouse=str(r.get("warehouse") or ""),
+            bin_location=str(r.get("bin_location") or ""),
+            on_hand_qty=on_hand,
+            allocated_qty=_dec(r.get("allocated_qty"), "0.001"),
+            available_qty=_dec(r.get("available_qty"), "0.001"),
+            on_order_qty=_dec(r.get("on_order_qty"), "0.001"),
+            uom=str(r.get("unit") or ""),
+            unit_cost=cost,
+            extended_value=_money_or(r, "total", _dec(on_hand * cost)),
+            last_count_date=_date(r.get("last_count_date")),
+            last_receipt_date=_date(r.get("last_receipt_date")),
+            last_issue_date=_date(r.get("last_issue_date")),
+            as_of_date=_date(r.get("as_of_date")),
+        )
+        ts.add(bal)
+        return bal
     return None

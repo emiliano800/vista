@@ -152,9 +152,15 @@ test("agent proxy allows run traces, usage and starting agent runs only", async 
     ).status;
   const id = "00000000-0000-0000-0000-000000000001";
   assert.equal(await status(`/runs/${id}`, "GET"), 503);
-  assert.equal(await status(`/runs?agent_key=file_reviewer&company=Ridgeway`, "GET"), 503);
+  assert.equal(
+    await status(`/runs?agent_key=file_reviewer&company=Ridgeway`, "GET"),
+    503,
+  );
   assert.equal(await status(`/findings?kind=inefficiency`, "GET"), 503);
-  assert.equal(await status(`/usage?group_by=company&group_by=model`, "GET"), 503);
+  assert.equal(
+    await status(`/usage?group_by=company&group_by=model`, "GET"),
+    503,
+  );
   assert.equal(await status(`/summaries/latest`, "GET"), 503);
   assert.equal(await status(`/synthetic/companies`, "GET"), 503);
   assert.equal(await status(`/agents/analytics`, "GET"), 503);
@@ -176,7 +182,12 @@ test("agent proxy allows run traces, usage and starting agent runs only", async 
 
 test("synthetic agent proxy allows discovery, analysis, and run polling only", async () => {
   const status = async (path, method) =>
-    (await worker.fetch(new Request(`https://vista.test/api${path}`, { method }), {})).status;
+    (
+      await worker.fetch(
+        new Request(`https://vista.test/api${path}`, { method }),
+        {},
+      )
+    ).status;
   const run = "/runs/00000000-0000-0000-0000-000000000001";
   for (const path of ["/synthetic/companies", run]) {
     assert.equal(await status(path, "GET"), 503);
@@ -189,6 +200,34 @@ test("synthetic agent proxy allows discovery, analysis, and run polling only", a
     for (const method of ["GET", "HEAD", "PUT", "PATCH", "DELETE"])
       assert.equal(await status(path, method), 405);
   }
-  for (const path of ["/synthetic/answer_key", "/synthetic/discovery/extra", `${run}/delete`])
+  for (const path of [
+    "/synthetic/answer_key",
+    "/synthetic/discovery/extra",
+    `${run}/delete`,
+  ])
     assert.equal(await status(path, "GET"), 404);
+});
+
+test("portfolio proxy exposes policies, purchasing and inventory reads and the interpretation trigger", async () => {
+  const status = async (path, method) =>
+    (
+      await worker.fetch(
+        new Request(`https://vista.test/api${path}`, { method }),
+        {},
+      )
+    ).status;
+  const company = "/companies/c-northfield";
+  for (const path of [
+    `${company}/policies`,
+    `${company}/purchase-orders`,
+    `${company}/inventory`,
+  ]) {
+    assert.equal(await status(path, "GET"), 503);
+    for (const method of ["POST", "PUT", "PATCH", "DELETE"])
+      assert.equal(await status(path, method), 405);
+  }
+  assert.equal(await status("/portfolio/interpretation", "POST"), 503);
+  for (const method of ["PUT", "PATCH", "DELETE"])
+    assert.equal(await status("/portfolio/interpretation", method), 405);
+  assert.equal(await status(`${company}/purchase-order-lines`, "GET"), 404);
 });

@@ -15,6 +15,7 @@ import {
   monthYear,
   date,
   PERIOD,
+  TODAY,
   DEMO_NOTE,
   age,
 } from "/lib/format.js";
@@ -87,9 +88,9 @@ function render() {
       },
       { label: "Open tasks", value: integer(pm.openTasks), href: "/tasks/" },
     ])}
-    <p class="demo-line">${esc(DEMO_NOTE)}. Revenue and vendor spend are period totals; AR figures are balances as of ${esc(date("2026-09-19"))}. Click a figure to see the records behind it.</p>
+    <p class="demo-line">${esc(DEMO_NOTE)}. Revenue and vendor spend are period totals; AR figures are balances as of ${esc(date(TODAY.toISOString().slice(0, 10)))}. Click a figure to see the records behind it.</p>
     <section class="block" id="companies">
-      <div class="block-head"><h2>Portfolio companies</h2><div class="block-aside">Integration status = completed steps of 7 (profile, customers, invoices, vendors, software, exceptions, analysis)</div></div>
+      <div class="block-head"><h2>Portfolio companies</h2><div class="block-aside">Integration status = completed steps of 8 (profile, customers, invoices, vendors, software, operations, exceptions, analysis)</div></div>
       ${table(
         [
           {

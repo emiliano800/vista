@@ -7,7 +7,7 @@ from __future__ import annotations
 import uuid
 from datetime import UTC, date, datetime
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from vista.config import settings
@@ -16,7 +16,11 @@ from vista.models.tenant import (
     Customer,
     ImportException,
     ImportJob,
+    InventoryBalance,
     Invoice,
+    Policy,
+    PurchaseOrder,
+    PurchaseOrderLine,
     RecordProvenance,
     SourceFile,
     Subscription,
@@ -37,6 +41,7 @@ INTEGRATION_STEPS = [
     ("invoices", "Invoices / AR imported"),
     ("vendors", "Vendors & purchases imported"),
     ("software", "Software inventory"),
+    ("operations", "Policies / purchasing & inventory imported"),
     ("exceptions", "Import exceptions resolved"),
     ("analysis", "Portfolio analysis run"),
 ]
@@ -53,6 +58,13 @@ def company_records(session: Session, include_provenance: bool = True) -> dict:
     prov = _prov_index(session) if include_provenance else {}
     vendors = session.scalars(select(Vendor).order_by(Vendor.normalized_name)).all()
     vendor_name = {v.id: v.normalized_name for v in vendors}
+    line_count = dict(
+        session.execute(
+            select(PurchaseOrderLine.purchase_order_id, func.count())
+            .where(PurchaseOrderLine.purchase_order_id.is_not(None))
+            .group_by(PurchaseOrderLine.purchase_order_id)
+        ).all()
+    )
     return {
         "customers": [
             ser.customer(c, prov.get(("customer", c.id)))
@@ -70,6 +82,22 @@ def company_records(session: Session, include_provenance: bool = True) -> dict:
         "subscriptions": [
             ser.subscription(s, prov.get(("subscription", s.id)))
             for s in session.scalars(select(Subscription).order_by(Subscription.product_name))
+        ],
+        "policies": [
+            ser.policy(p, prov.get(("policy", p.id)))
+            for p in session.scalars(select(Policy).order_by(Policy.expiration_date, Policy.policy_number))
+        ],
+        "purchaseOrders": [
+            ser.purchase_order(po, line_count.get(po.id, 0), prov.get(("purchase_order", po.id)))
+            for po in session.scalars(select(PurchaseOrder).order_by(PurchaseOrder.po_date, PurchaseOrder.po_number))
+        ],
+        "purchaseOrderLines": [
+            ser.purchase_order_line(line, prov.get(("purchase_order_line", line.id)))
+            for line in session.scalars(select(PurchaseOrderLine).order_by(PurchaseOrderLine.po_number, PurchaseOrderLine.line_number))
+        ],
+        "inventory": [
+            ser.inventory_balance(b, prov.get(("inventory_balance", b.id)))
+            for b in session.scalars(select(InventoryBalance).order_by(InventoryBalance.warehouse, InventoryBalance.item_id))
         ],
     }
 
@@ -103,6 +131,7 @@ def integration(c: dict, metrics: CompanyMetrics, open_exceptions: int, jobs: in
         "invoices": "Complete" if metrics.invoiceCount or metrics.outstandingInvoiceCount else "Not started",
         "vendors": "Complete" if metrics.vendorCount else "Not started",
         "software": "Complete" if metrics.subscriptionCount else "Not started",
+        "operations": "Complete" if metrics.policyCount or metrics.purchaseOrderCount or metrics.inventoryItems else "Not started",
         "exceptions": "Needs review" if open_exceptions else ("Complete" if jobs else "Not started"),
         "analysis": "Complete" if c["analysisRunAt"] else ("In progress" if metrics.customers else "Not started"),
     }

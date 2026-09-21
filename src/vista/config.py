@@ -59,7 +59,7 @@ class Settings(BaseSettings):
     # period stays stable; the import processor flag selects the ImportProcessor
     # implementation behind the /import-jobs API (demo = deterministic parser).
     use_synthetic_data: bool = True
-    demo_today: str = "2026-09-19"
+    demo_today: str = "2026-03-31"
     import_processor: str = "demo"  # demo|agent
     enable_agent_import: bool = False
     enable_portfolio_agent: bool = False

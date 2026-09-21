@@ -11,6 +11,7 @@ from botocore.exceptions import EndpointConnectionError
 
 from tests.conftest import requires_db
 from vista.auth import token_digest
+from vista.config import settings
 from vista.db import platform_session
 from vista.models.platform import Firm, FirmMembership, User
 from vista.portfolio.processors import get_processor
@@ -112,7 +113,8 @@ def test_firms_cannot_see_each_others_companies_and_viewers_cannot_write(client,
     assert client.post("/api/portfolio/analysis", headers=viewer).status_code == 403
 
 
-def test_import_pipeline_writes_canonical_rows_only_after_approval(client, source_store):
+def test_import_pipeline_writes_canonical_rows_only_after_approval(client, source_store, monkeypatch):
+    monkeypatch.setattr(settings, "demo_today", "2026-09-19")  # the simple fixture's invoices are dated mid-2026
     headers, _ = make_firm()
     cid = client.post("/api/portfolio/companies", headers=headers, json={"name": "Cedar Climate"}).json()["id"]
 

@@ -13,7 +13,11 @@ from vista.models.tenant import (
     FieldMapping,
     ImportException,
     ImportJob,
+    InventoryBalance,
     Invoice,
+    Policy,
+    PurchaseOrder,
+    PurchaseOrderLine,
     RecordProvenance,
     SourceFile,
     Subscription,
@@ -149,6 +153,100 @@ def subscription(s: Subscription, prov: RecordProvenance | None = None) -> dict:
         "notes": s.restrictions_notes,
         "dataSourceType": s.data_source_type,
         "syntheticDemo": s.synthetic_demo,
+        "provenance": provenance(prov),
+    }
+
+
+def policy(p: Policy, prov: RecordProvenance | None = None) -> dict:
+    return {
+        "id": sid(p.id),
+        "companyId": sid(p.company_id),
+        "customerId": sid(p.customer_id),
+        "customerName": p.customer_name,
+        "policyNumber": p.policy_number,
+        "lineOfBusiness": p.line_of_business,
+        "lineDescription": p.line_description,
+        "carrier": p.carrier_name or p.carrier_code,
+        "effectiveDate": iso(p.effective_date),
+        "expirationDate": iso(p.expiration_date),
+        "termMonths": p.term_months,
+        "annualPremium": num(p.annual_premium),
+        "commissionPct": num(p.commission_pct),
+        "expectedCommission": num(p.expected_commission),
+        "billingType": p.billing_type,
+        "status": p.status,
+        "newOrRenewal": p.new_or_renewal,
+        "surplusLines": p.surplus_lines,
+        "dataSourceType": p.data_source_type,
+        "syntheticDemo": p.synthetic_demo,
+        "provenance": provenance(prov),
+    }
+
+
+def purchase_order(po: PurchaseOrder, line_count: int, prov: RecordProvenance | None = None) -> dict:
+    return {
+        "id": sid(po.id),
+        "companyId": sid(po.company_id),
+        "vendorId": sid(po.vendor_id),
+        "poNumber": po.po_number,
+        "supplierName": po.supplier_name,
+        "date": iso(po.po_date),
+        "buyer": po.buyer_id,
+        "paymentTerms": po.payment_terms,
+        "shipVia": po.ship_via,
+        "total": num(po.total_amount),
+        "status": po.status,
+        "lineCount": line_count,
+        "dataSourceType": po.data_source_type,
+        "syntheticDemo": po.synthetic_demo,
+        "provenance": provenance(prov),
+    }
+
+
+def purchase_order_line(line: PurchaseOrderLine, prov: RecordProvenance | None = None) -> dict:
+    return {
+        "id": sid(line.id),
+        "companyId": sid(line.company_id),
+        "purchaseOrderId": sid(line.purchase_order_id),
+        "poNumber": line.po_number,
+        "lineNumber": line.line_number,
+        "itemId": line.item_id,
+        "description": line.description,
+        "manufacturerPartNumber": line.manufacturer_part_number,
+        "orderedQty": num(line.ordered_qty),
+        "receivedQty": num(line.received_qty),
+        "uom": line.uom,
+        "unitCost": num(line.unit_cost),
+        "extendedCost": num(line.extended_cost),
+        "needByDate": iso(line.need_by_date),
+        "promisedDate": iso(line.promised_date),
+        "status": line.status,
+        "dataSourceType": line.data_source_type,
+        "syntheticDemo": line.synthetic_demo,
+        "provenance": provenance(prov),
+    }
+
+
+def inventory_balance(b: InventoryBalance, prov: RecordProvenance | None = None) -> dict:
+    return {
+        "id": sid(b.id),
+        "companyId": sid(b.company_id),
+        "itemId": b.item_id,
+        "warehouse": b.warehouse,
+        "bin": b.bin_location,
+        "onHandQty": num(b.on_hand_qty),
+        "allocatedQty": num(b.allocated_qty),
+        "availableQty": num(b.available_qty),
+        "onOrderQty": num(b.on_order_qty),
+        "uom": b.uom,
+        "unitCost": num(b.unit_cost),
+        "extendedValue": num(b.extended_value),
+        "lastCountDate": iso(b.last_count_date),
+        "lastReceiptDate": iso(b.last_receipt_date),
+        "lastIssueDate": iso(b.last_issue_date),
+        "asOfDate": iso(b.as_of_date),
+        "dataSourceType": b.data_source_type,
+        "syntheticDemo": b.synthetic_demo,
         "provenance": provenance(prov),
     }
 
@@ -289,6 +387,7 @@ def field_mapping(m: FieldMapping) -> dict:
         "target": m.target_field,
         "targetEntity": m.target_entity,
         "confidence": m.confidence,
+        "reason": m.reason,
         "status": {"proposed": "Ready", "needs_review": "Review", "approved": "Confirmed", "ignored": "Ready"}[m.status],
     }
 

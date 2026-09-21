@@ -9,9 +9,9 @@ const importRead =
 const importWrite =
   /^\/api\/(?:deals\/[0-9a-f-]+\/imports|imports\/[0-9a-f-]+\/(?:commit|findings\/[a-f0-9]{16}))$/i;
 const portfolioRead =
-  /^\/api\/(?:portfolio(?:\/(?:me|companies|attention|activity))?|companies\/[a-z0-9-]{1,64}(?:\/(?:customers|invoices|vendors|purchases|subscriptions|tasks|imports))?|import-datasets|import-jobs\/[0-9a-f-]{36}(?:\/(?:mappings|preview|exceptions))?|opportunities|tasks)$/i;
+  /^\/api\/(?:portfolio(?:\/(?:me|companies|attention|activity))?|companies\/[a-z0-9-]{1,64}(?:\/(?:customers|invoices|vendors|purchases|subscriptions|policies|purchase-orders|inventory|tasks|imports))?|import-datasets|import-jobs\/[0-9a-f-]{36}(?:\/(?:mappings|preview|exceptions))?|opportunities|tasks)$/i;
 const portfolioWrite =
-  /^\/api\/(?:portfolio\/(?:analysis|companies)|companies\/[a-z0-9-]{1,64}\/(?:imports|exceptions\/[0-9a-f-]{36}\/resolve)|import-jobs\/[0-9a-f-]{36}\/(?:dataset|mappings\/approve|approve|exceptions\/X-\d{1,6})|opportunities\/OP-\d{1,6}\/status|tasks(?:\/T-\d{1,6})?|workspace-agents\/[a-z0-9-]{1,64}\/(?:status|run)|workspace-findings\/[a-z0-9-]{1,64}\/status)$/i;
+  /^\/api\/(?:portfolio\/(?:analysis|interpretation|companies)|companies\/[a-z0-9-]{1,64}\/(?:imports|exceptions\/[0-9a-f-]{36}\/resolve)|import-jobs\/[0-9a-f-]{36}\/(?:dataset|mappings\/approve|approve|exceptions\/X-\d{1,6})|opportunities\/OP-\d{1,6}\/status|tasks(?:\/T-\d{1,6})?|workspace-agents\/[a-z0-9-]{1,64}\/(?:status|run)|workspace-findings\/[a-z0-9-]{1,64}\/status)$/i;
 const syntheticWrite = /^\/api\/synthetic\/(?:discovery|analyze)$/i;
 // Agent suite: run traces, spend, synthetic companies, and starting agent runs.
 const agentRead =
