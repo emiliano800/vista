@@ -957,6 +957,9 @@ dialog::backdrop {
 #message[data-tone="success"]:not(:empty) {
   border-left-color: var(--moss);
 }
+#message[data-tone="warn"]:not(:empty) {
+  border-left-color: var(--warning);
+}
 #message[data-tone="danger"]:not(:empty) {
   border-left-color: var(--danger);
   color: var(--danger);

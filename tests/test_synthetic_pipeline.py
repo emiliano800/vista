@@ -212,6 +212,14 @@ def test_interpretation_is_queued_with_lineage_and_executed_by_the_worker(client
         assert str(review_run.id) in merge_payload["parent_run_ids"]
     assert client.get("/api/portfolio", headers=headers).json()["findings"] == []
 
+    # The analyst UI polls the request until every hop is terminal; other firms cannot see it.
+    status = client.get(f"/api/portfolio/interpretation/{request_id}", headers=headers)
+    assert status.status_code == 200, status.text
+    assert status.json()["done"] is False and status.json()["succeeded"] == 0
+    assert {j["id"] for j in status.json()["jobs"]} == {*report["review"].values(), *report["merge"].values()}
+    assert client.get(f"/api/portfolio/interpretation/{request_id}", headers=other).status_code == 404
+    assert client.get(f"/api/portfolio/interpretation/{uuid.uuid4()}", headers=headers).status_code == 404
+
     # The worker path executes the chain (stub model: no live key in tests).
     while process_one():
         pass
@@ -219,6 +227,9 @@ def test_interpretation_is_queued_with_lineage_and_executed_by_the_worker(client
         for jid in (*report["review"].values(), *report["merge"].values()):
             job = platform.get(Job, uuid.UUID(jid))
             assert job.status == "succeeded", (job.kind, job.error)
+    status = client.get(f"/api/portfolio/interpretation/{request_id}", headers=headers).json()
+    assert status["done"] is True and status["failed"] == 0 and status["succeeded"] == len(status["jobs"])
+    assert {j["kind"] for j in status["jobs"]} == {interpret.RUN_REVIEW, interpret.RUN_MERGE}
     with tenant_session(company_schema(a)) as ts:
         run = ts.get(AgentRun, review_run.id)
         assert run.status == "succeeded"

@@ -127,6 +127,30 @@ export async function runPortfolioAnalysis() {
   const result = await mutate("/portfolio/analysis");
   return result.found;
 }
+// Interpretation layer: queue one File Reviewer run per company and one Sector
+// Merger run per sector, then poll the request until the worker has finished
+// every hop. Resolves with the run status plus the opportunities that are new
+// relative to the snapshot the analyst was looking at.
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+export async function runPortfolioInterpretation({
+  pollMs = 1500,
+  timeoutMs = 180000,
+} = {}) {
+  const before = new Set(current().opportunities.map((o) => o.id));
+  const queued = await api("/portfolio/interpretation", { method: "POST" });
+  const deadline = Date.now() + timeoutMs;
+  let status = await api(`/portfolio/interpretation/${queued.request_id}`);
+  while (!status.done && Date.now() < deadline) {
+    await sleep(pollMs);
+    status = await api(`/portfolio/interpretation/${queued.request_id}`);
+  }
+  await refresh();
+  return {
+    ...status,
+    timedOut: !status.done,
+    found: current().opportunities.filter((o) => !before.has(o.id)),
+  };
+}
 export const setOpportunityStatus = (id, status) =>
   mutate(`/opportunities/${id}/status`, { status });
 export const createTask = (input) => mutate("/tasks", input);

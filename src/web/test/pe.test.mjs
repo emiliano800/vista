@@ -396,6 +396,67 @@ test("store mutations POST to the API and refresh the snapshot; realized value s
   }
 });
 
+test("runPortfolioInterpretation queues the chain, polls until done, then refreshes and reports new opportunities", async () => {
+  const request = "8f1c2a3e-0b4d-4c5e-9f6a-7b8c9d0e1f2a";
+  let polls = 0;
+  let snapshot = structuredClone(SNAPSHOT);
+  const fetch = mockFetch({
+    "GET /api/portfolio": () => json(200, snapshot),
+    "POST /api/portfolio/interpretation": () =>
+      json(202, {
+        request_id: request,
+        review: { "c-harbor": "j1" },
+        merge: { hvac: "j2" },
+      }),
+    [`GET /api/portfolio/interpretation/${request}`]: () => {
+      polls += 1;
+      const done = polls >= 2;
+      if (done)
+        snapshot.opportunities.push({
+          id: "OP-9",
+          status: "New",
+          realizedValue: null,
+          companyIds: ["c-harbor"],
+        });
+      const status = done ? "succeeded" : "running";
+      return json(200, {
+        request_id: request,
+        done,
+        succeeded: done ? 2 : 0,
+        failed: 0,
+        jobs: [
+          { id: "j1", kind: "canonical_review", scope: "c-harbor", status },
+          { id: "j2", kind: "portfolio_merge", scope: "hvac", status },
+        ],
+      });
+    },
+  });
+  globalThis.fetch = fetch;
+  try {
+    store.setState(null);
+    await store.load();
+    const result = await store.runPortfolioInterpretation({ pollMs: 1 });
+    assert.equal(polls, 2);
+    assert.equal(result.done, true);
+    assert.equal(result.timedOut, false);
+    assert.deepEqual(
+      result.found.map((o) => o.id),
+      ["OP-9"],
+      "new opportunities are those absent from the pre-run snapshot",
+    );
+    assert.equal(store.opportunities().length, 2, "snapshot refreshed");
+    const post = fetch.calls.find((c) => c.method === "POST");
+    assert.equal(post.url, "/api/portfolio/interpretation");
+    assert.ok(
+      !fetch.calls.some((c) => c.url === "/api/portfolio/analysis"),
+      "legacy analysis route is not used",
+    );
+  } finally {
+    delete globalThis.fetch;
+    store.setState(null);
+  }
+});
+
 test("store surfaces API errors to the caller and keeps the last good snapshot", async () => {
   globalThis.fetch = storeFetch({
     "POST /api/opportunities/OP-1/status": () =>

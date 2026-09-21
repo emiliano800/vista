@@ -125,7 +125,11 @@ Layer 2 (interpretation) is `POST /api/portfolio/interpretation` →
 one `canonical_review` run per company tenant (hop 1) hands off to one
 `portfolio_merge` run per sector in the firm's home tenant (hop 2) via `handoff`
 events, `parent_run_ids`, and stable keys `f"{kind}:{request_id}:{scope}"`; the
-worker executes both. Layer 2 reads canonical rows by id and never writes to
+worker executes both. The analyst "Run portfolio analysis" button calls this
+route and polls `GET /api/portfolio/interpretation/{request_id}` until every hop
+is terminal (`store.runPortfolioInterpretation`); `POST /api/portfolio/analysis`
+is the legacy deterministic SKU-price rule and is no longer wired to the UI.
+Layer 2 reads canonical rows by id and never writes to
 Layer 1 tables. The legacy `seed.js → portfolio_demo/portfolio.json` fixture is
 not a source for the six-company workspace.
 

@@ -81,6 +81,12 @@ def run_interpretation(ctx: FirmContext = Depends(writer_context)) -> dict:
         return interpret.run_portfolio_interpretation(session, ctx)
 
 
+@router.get("/portfolio/interpretation/{request_id}")
+def interpretation_status(request_id: uuid.UUID, ctx: FirmContext = Depends(firm_context)) -> dict:
+    with platform_session() as session:
+        return interpret.interpretation_status(session, ctx, request_id)
+
+
 class CompanyCreate(BaseModel):
     name: str = Field(min_length=1, max_length=255)
     location: str = ""

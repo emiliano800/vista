@@ -26,6 +26,7 @@ from dataclasses import dataclass
 from datetime import UTC, date, datetime
 from decimal import Decimal
 
+from fastapi import HTTPException
 from sqlalchemy import select, update
 from sqlalchemy.orm import Session
 
@@ -1122,6 +1123,45 @@ def _queued_request(
     if not review or any(v is None for v in (*review.values(), *merge.values())):
         return None
     return {"request_id": str(request_id), "review": review, "merge": merge}
+
+
+TERMINAL_JOB_STATUS = {"succeeded", "failed"}
+
+
+def interpretation_status(platform: Session, ctx: FirmContext, request_id: uuid.UUID) -> dict:
+    """Progress of one analyst request: every job queued under its stable keys,
+    restricted to tenants in the caller's firm scope (company tenants + the firm's
+    home tenant). `done` is true once every hop is terminal."""
+    tenant_ids = {c.tenant_id for c in ctx.companies} | {ctx.firm.home_tenant_id}
+    jobs = platform.scalars(
+        select(Job)
+        .where(
+            Job.tenant_id.in_(tenant_ids),
+            Job.kind.in_(list(HANDLERS)),
+            Job.idempotency_key.like(f"%:{request_id}:%"),
+        )
+        .order_by(Job.created_at)
+    ).all()
+    if not jobs:
+        raise HTTPException(404, "Unknown interpretation request")
+    views = [
+        {
+            "id": str(j.id),
+            "kind": j.kind,
+            "scope": j.idempotency_key.rsplit(":", 1)[-1],
+            "status": j.status,
+            "attempts": j.attempts,
+            "error": j.error,
+        }
+        for j in jobs
+    ]
+    return {
+        "request_id": str(request_id),
+        "jobs": views,
+        "done": all(v["status"] in TERMINAL_JOB_STATUS for v in views),
+        "succeeded": sum(v["status"] == "succeeded" for v in views),
+        "failed": sum(v["status"] == "failed" for v in views),
+    }
 
 
 def run_portfolio_interpretation(platform: Session, ctx: FirmContext, request_id: uuid.UUID | None = None) -> dict:

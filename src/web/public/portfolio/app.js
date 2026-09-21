@@ -27,7 +27,7 @@ import {
   attentionQueue,
   activity,
   companyName,
-  runPortfolioAnalysis,
+  runPortfolioInterpretation,
 } from "/lib/store.js";
 
 const analyst = await mountShell();
@@ -177,18 +177,38 @@ function render() {
     )}`;
   $("analyse").onclick = async () => {
     $("analyse").disabled = true;
-    let found;
+    message(
+      "Running interpretation agents — File Reviewer per company, then Sector Merger per sector…",
+      "info",
+    );
+    let result;
     try {
-      found = await runPortfolioAnalysis();
+      result = await runPortfolioInterpretation();
     } catch (error) {
       $("analyse").disabled = false;
       return message(error.message, "danger");
     }
     render();
+    const { found, jobs, failed, timedOut } = result;
+    if (timedOut)
+      return message(
+        `Interpretation still running (${jobs.filter((j) => j.status === "succeeded").length}/${jobs.length} agent runs done) — results will appear on the next refresh.`,
+        "warn",
+        { href: "/agents/", label: "View agent runs →" },
+      );
+    if (failed)
+      return message(
+        `${failed} of ${jobs.length} agent runs failed: ${jobs
+          .filter((j) => j.status === "failed")
+          .map((j) => `${j.kind} (${j.scope})`)
+          .join(", ")}.`,
+        "danger",
+        { href: "/agents/", label: "View agent runs →" },
+      );
     message(
       found.length
-        ? `Portfolio analysis complete — ${found.length} new opportunit${found.length === 1 ? "y" : "ies"} found (${found.map((o) => o.id).join(", ")}).`
-        : "Portfolio analysis complete — no new opportunities beyond those already listed.",
+        ? `Interpretation complete — ${jobs.length} agent runs, ${found.length} new opportunit${found.length === 1 ? "y" : "ies"} (${found.map((o) => o.id).join(", ")}).`
+        : `Interpretation complete — ${jobs.length} agent runs, no new opportunities beyond those already listed.`,
       "success",
       found.length
         ? {

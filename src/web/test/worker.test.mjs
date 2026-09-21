@@ -229,5 +229,9 @@ test("portfolio proxy exposes policies, purchasing and inventory reads and the i
   assert.equal(await status("/portfolio/interpretation", "POST"), 503);
   for (const method of ["PUT", "PATCH", "DELETE"])
     assert.equal(await status("/portfolio/interpretation", method), 405);
+  const request = "/portfolio/interpretation/8f1c2a3e-0b4d-4c5e-9f6a-7b8c9d0e1f2a";
+  assert.equal(await status(request, "GET"), 503);
+  assert.equal(await status(request, "POST"), 405);
+  assert.equal(await status("/portfolio/interpretation/not-a-uuid", "GET"), 404);
   assert.equal(await status(`${company}/purchase-order-lines`, "GET"), 404);
 });
