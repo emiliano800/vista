@@ -295,6 +295,7 @@ def opportunity(o: Opportunity) -> dict:
         "potentialValue": num(o.scenario_value),
         "realizedValue": num(o.realized_value),
         "generatedBy": o.generated_by,
+        "lineage": o.lineage or {},
         "syntheticDemo": o.synthetic_demo,
     }
 

@@ -119,13 +119,28 @@ def customer_key(name: str) -> str:
     return " ".join(w for w in re.sub(r"[^a-z0-9 ]+", " ", s).split() if w not in GENERIC_WORDS)
 
 
+def _records() -> dict[str, set[str]]:
+    return defaultdict(set)
+
+
+def _add_record(records: dict[str, set[str]], short: str, row: dict) -> None:
+    """Canonical rows carry their primary key as `id`; disk-read tables do not, and contribute no record ids."""
+    rid = row.get("id")
+    if rid:
+        records[short].add(str(rid))
+
+
+def _record_ids(records: dict[str, set[str]]) -> dict[str, list[str]]:
+    return {k: sorted(v) for k, v in sorted(records.items())}
+
+
 def _spread(prices: dict[str, float]) -> float:
     lo, hi = min(prices.values()), max(prices.values())
     return (hi - lo) / lo if lo else 0.0
 
 
 def _screen_price_gap(tables_by_company: dict[Company, list[Table]]) -> list[dict]:
-    by_mpn: dict[str, dict] = defaultdict(lambda: {"prices": {}, "manufacturers": set(), "evidence": set()})
+    by_mpn: dict[str, dict] = defaultdict(lambda: {"prices": {}, "manufacturers": set(), "evidence": set(), "records": _records()})
     for c, tables in tables_by_company.items():
         for t in tables:
             mpn_c = _col(t, "manufacturer_part_number", "mpn", "mfr_part_number")
@@ -140,6 +155,7 @@ def _screen_price_gap(tables_by_company: dict[Company, list[Table]]) -> list[dic
                 e = by_mpn[mpn]
                 e["prices"].setdefault(c.short, cost)
                 e["evidence"].add(f"{c.short}:{t.ref}")
+                _add_record(e["records"], c.short, r)
                 if mfr_c and r.get(mfr_c):
                     e["manufacturers"].add(str(r[mfr_c]).strip())
     out = []
@@ -156,13 +172,14 @@ def _screen_price_gap(tables_by_company: dict[Company, list[Table]]) -> list[dic
                 "spread_pct": round(spread * 100),
                 "note": "same unit cost everywhere — no gap" if spread == 0 else "",
                 "evidence": sorted(e["evidence"]),
+                "record_ids": _record_ids(e["records"]),
             }
         )
     return sorted(out, key=lambda x: -x["spread_pct"])
 
 
 def _screen_vendors(tables_by_company: dict[Company, list[Table]]) -> list[dict]:
-    by_key: dict[str, dict] = defaultdict(lambda: {"names": defaultdict(set), "evidence": set()})
+    by_key: dict[str, dict] = defaultdict(lambda: {"names": defaultdict(set), "evidence": set(), "records": _records()})
     for c, tables in tables_by_company.items():
         for t in tables:
             name_c = _col(t, "vendor_name", "supplier_name", "name", "vendor", "supplier", "payee")
@@ -177,6 +194,7 @@ def _screen_vendors(tables_by_company: dict[Company, list[Table]]) -> list[dict]
                 key = key or vendor_key(name)
                 by_key[key]["names"][c.short].add(name)
                 by_key[key]["evidence"].add(f"{c.short}:{t.ref}")
+                _add_record(by_key[key]["records"], c.short, r)
     # A vendor master's explicit shared_key and the name-derived key of an AP file describe one vendor:
     # fold groups that share a (company, name) pair.
     merged: list[tuple[str, dict]] = []
@@ -187,6 +205,8 @@ def _screen_vendors(tables_by_company: dict[Company, list[Table]]) -> list[dict]
                 for c, ns in e["names"].items():
                     target["names"][c] |= ns
                 target["evidence"] |= e["evidence"]
+                for s, ids in e["records"].items():
+                    target["records"][s] |= ids
                 break
         else:
             merged.append((key, e))
@@ -200,13 +220,14 @@ def _screen_vendors(tables_by_company: dict[Company, list[Table]]) -> list[dict]
                 "companies": sorted(e["names"]),
                 "names_by_company": {k: sorted(v) for k, v in sorted(e["names"].items())},
                 "evidence": sorted(e["evidence"]),
+                "record_ids": _record_ids(e["records"]),
             }
         )
     return sorted(out, key=lambda x: (-len(x["companies"]), x["shared_key"]))
 
 
 def _screen_software(tables_by_company: dict[Company, list[Table]]) -> list[dict]:
-    by_fn: dict[str, dict] = defaultdict(lambda: {"products": defaultdict(set), "evidence": set()})
+    by_fn: dict[str, dict] = defaultdict(lambda: {"products": defaultdict(set), "evidence": set(), "records": _records()})
     for c, tables in tables_by_company.items():
         for t in tables:
             fn_c, prod_c = _col(t, "function", "category"), _col(t, "product", "product_name", "application")
@@ -218,6 +239,7 @@ def _screen_software(tables_by_company: dict[Company, list[Table]]) -> list[dict
                     continue
                 by_fn[fn.lower()]["products"][c.short].add(prod)
                 by_fn[fn.lower()]["evidence"].add(f"{c.short}:{t.ref}")
+                _add_record(by_fn[fn.lower()]["records"], c.short, r)
     out = []
     for fn, e in by_fn.items():
         n_products = len({p for ps in e["products"].values() for p in ps})
@@ -234,6 +256,7 @@ def _screen_software(tables_by_company: dict[Company, list[Table]]) -> list[dict
                 if n_products > 1
                 else "one product everywhere — portfolio contract candidate",
                 "evidence": sorted(e["evidence"]),
+                "record_ids": _record_ids(e["records"]),
             }
         )
     return sorted(out, key=lambda x: (-len(x["companies"]), x["shared_key"]))
@@ -242,6 +265,7 @@ def _screen_software(tables_by_company: dict[Company, list[Table]]) -> list[dict
 def _screen_freight(tables_by_company: dict[Company, list[Table]]) -> list[dict]:
     per_lb: dict[str, float] = {}
     evidence = set()
+    records = _records()
     for c, tables in tables_by_company.items():
         for t in tables:
             w_c, f_c = _col(t, "weight_lb", "weight"), _col(t, "freight_cost", "frt", "freight")
@@ -252,6 +276,7 @@ def _screen_freight(tables_by_company: dict[Company, list[Table]]) -> list[dict]
                 w, f = _num(r.get(w_c)), _num(r.get(f_c))
                 if w and f and w > 0 and f > 0:
                     rates.append(f / w)
+                    _add_record(records, c.short, r)
             if rates:
                 per_lb[c.short] = round(mean(rates), 3)
                 evidence.add(f"{c.short}:{t.ref}")
@@ -264,13 +289,14 @@ def _screen_freight(tables_by_company: dict[Company, list[Table]]) -> list[dict]
             "cost_per_lb": per_lb,
             "spread_pct": round(_spread(per_lb) * 100),
             "evidence": sorted(evidence),
+            "record_ids": _record_ids(records),
         }
     ]
 
 
 def _screen_customers(tables_by_company: dict[Company, list[Table]]) -> list[dict]:
     portfolio = {vendor_key(c.name) for c in tables_by_company} | {c.short.lower() for c in tables_by_company}
-    by_key: dict[str, dict] = defaultdict(lambda: {"names": defaultdict(set), "evidence": set()})
+    by_key: dict[str, dict] = defaultdict(lambda: {"names": defaultdict(set), "evidence": set(), "records": _records()})
     for c, tables in tables_by_company.items():
         for t in tables:
             name_c = _col(t, "customer_name", "client_name", "name", "customer", "account_name")
@@ -283,6 +309,7 @@ def _screen_customers(tables_by_company: dict[Company, list[Table]]) -> list[dic
                     continue  # 'Keystone Chemical' at a sister company is a customer sharing a word, not Keystone
                 by_key[key]["names"][c.short].add(name)
                 by_key[key]["evidence"].add(f"{c.short}:{t.ref}")
+                _add_record(by_key[key]["records"], c.short, r)
     out = []
     for key, e in by_key.items():
         if len(e["names"]) < 2:
@@ -293,6 +320,7 @@ def _screen_customers(tables_by_company: dict[Company, list[Table]]) -> list[dic
                 "companies": sorted(e["names"]),
                 "names_by_company": {k: sorted(v) for k, v in sorted(e["names"].items())},
                 "evidence": sorted(e["evidence"]),
+                "record_ids": _record_ids(e["records"]),
             }
         )
     return sorted(out, key=lambda x: (-len(x["companies"]), x["shared_key"]))
@@ -355,6 +383,10 @@ SYSTEM = (
     "candidate is one opportunity listing every company). kind is always the look_for kind. When candidates are "
     "given, emit opportunities only for them: anything else you notice goes in `rejected` prefixed 'not screened:'. "
     "A candidate whose note says 'no gap' is a trap unless the rows prove otherwise. "
+    "A candidate may carry `reviewer_findings`: structured data-quality and context findings from the per-company "
+    "File Reviewer about the canonical records behind that candidate. Findings with effect 'degrade' mean the numbers "
+    "are less trustworthy: keep the opportunity, lower confidence and say why in detail. Findings with effect 'enrich' "
+    "add context that strengthens or explains the thesis: cite them in detail. Never invent findings. "
     'Respond with JSON only: {"opportunities": [{"kind": str, "title": str, "companies": [str], "shared_key": str, '
     '"evidence": [str], "detail": str, "estimated_annual_value": number|null, "confidence": 0..1}], "rejected": [str]}.'
 )
@@ -380,12 +412,25 @@ def tables_for_kind(kind: str, tables: list[Table]) -> list[Table]:
     return [t for t in tables if t.name in KIND_TABLES[kind]]
 
 
-def prepare(sector: str, tables_by_company: dict[Company, list[Table]], kind: str | None = None) -> Prompt:
+def prompt_candidate(cand: dict) -> dict:
+    """Record ids are for deterministic intersection, not for the model; everything else in a candidate is prompt material."""
+    return {k: v for k, v in cand.items() if k != "record_ids"}
+
+
+def prepare(
+    sector: str,
+    tables_by_company: dict[Company, list[Table]],
+    kind: str | None = None,
+    candidates: list[dict] | None = None,
+) -> Prompt:
+    """`candidates` overrides the pre-screen (the Sector Merger passes finding-validated candidates)."""
     scoped = {c: tables_for_kind(kind, tables) if kind else tables for c, tables in tables_by_company.items()}
+    if candidates is None:
+        candidates = screen(kind, scoped) if kind else []
     payload = {
         "sector": sector,
         "look_for": kind or "any",
-        "candidates": screen(kind, scoped) if kind else [],
+        "candidates": [prompt_candidate(c) for c in candidates],
         "companies": [
             {"short": c.short, "data_quality_tier": c.tier, "tables": [compact(t) for t in tables]} for c, tables in scoped.items()
         ],

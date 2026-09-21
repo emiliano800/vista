@@ -31,7 +31,7 @@ Keys and run-type mapping live in `src/vista/agents/keys.py`; handlers in
 | Agent (`agent_key`) | Run types (`agent_runs.run_type`) | Phase code | Reads | Writes |
 | --- | --- | --- | --- | --- |
 | **File Reviewer** (`file_reviewer`) | `deal_analysis`, `employee_discovery`, `synthetic_discovery`, `canonical_review` | `discover.py`; `portfolio/interpret.py` for `canonical_review` | one division's tables (csv/xlsx) + deterministic profile; `canonical_review` reads only the tenant's canonical rows (customers, invoices, vendors, policies, purchase orders, inventory…) | `findings` kind `observed_fact` (file/column/row refs, confidence); `canonical_review` also `tasks`, `company_summaries`, and cites canonical record ids |
-| **Sector Merger** (`sector_merger`) | `synthetic_analyze`, `portfolio_merge` | `analyze.py`; `portfolio/interpret.py` for `portfolio_merge` | approved facts + one opportunity kind across sister companies in a sector (only `firm_companies` scope) | `platform.opportunities` → `findings` kind `proposed_automation`; rejected look-alikes logged as `step` events |
+| **Sector Merger** (`sector_merger`) | `synthetic_analyze`, `portfolio_merge` | `analyze.py`; `portfolio/interpret.py` for `portfolio_merge` | approved facts + one opportunity kind across sister companies in a sector (only `firm_companies` scope); `portfolio_merge` reads canonical rows plus structured findings of the successful `canonical_review` runs in its `successful_run_ids` | `platform.opportunities` (with `lineage`: `from_findings`/`from_runs`) → `findings` kind `proposed_automation`; rejected look-alikes logged as `step` events |
 | **Pipeline & Report Generator** (`report_generator`) | `company_summary` | handler only | open `findings` for a company | `company_summaries` (verified facts kept separate from hypotheses) |
 | **Recording Reviewer** (`recording_reviewer`) | `recording_review` (+ `extract_recording_files`) | handler only | recorder report bundle (cleaned, on-device redacted) | explanations awaiting employee approve/fix/explain; `findings` |
 
@@ -121,11 +121,25 @@ first, model proposals only for unresolved columns and never auto-confirmed):
 every canonical row carries `record_provenance` (file/sheet/row/original/normalized).
 `scripts/load_synthetic_portfolio.py` drives it for the six canonical companies.
 Layer 2 (interpretation) is `POST /api/portfolio/interpretation` →
-`portfolio/interpret.run_portfolio_interpretation`: the first real A2A chain —
-one `canonical_review` run per company tenant (hop 1) hands off to one
-`portfolio_merge` run per sector in the firm's home tenant (hop 2) via `handoff`
-events, `parent_run_ids`, and stable keys `f"{kind}:{request_id}:{scope}"`; the
-worker executes both. The analyst "Run portfolio analysis" button calls this
+`portfolio/interpret.run_portfolio_interpretation`, a hybrid of deterministic
+screening and A2A: `canonical_review` and deterministic portfolio screening run
+over the same canonical state. Once all company review runs in a sector reach a
+terminal state (succeeded or permanently failed — the barrier is
+`release_sector_barrier`, run from the worker's after-terminal hook and re-tried
+from the status route), a `portfolio_merge` run is queued with
+`successful_company_ids`, `failed_company_ids`, `successful_run_ids`, `request_id`,
+`sector`. The merger recomputes deterministic cross-company candidates from
+canonical state and consumes findings from successful reviewer runs to validate,
+suppress, downgrade, or enrich those candidates: reviewers write structured
+findings (`finding_type`, `affected_entities`, `severity`, `effect`
+`block|degrade|enrich`, `blocking`), and the merger intersects
+`affected_entities[].id` with each candidate's canonical `record_ids` — no prose
+interpretation decides evidence validity. Failed reviewer scopes are excluded and
+recorded explicitly in the merge trace (`error` events, `excluded_company_ids`).
+Opportunities carry `lineage` = `{evidence record refs, from_findings, from_runs,
+merge_run_id, request_id, effect}`. Stable keys are
+`f"{kind}:{request_id}:{scope}"`; the merge `AgentRun` envelope exists from
+request time (status `waiting` in the API until its job is created). The analyst "Run portfolio analysis" button calls this
 route and polls `GET /api/portfolio/interpretation/{request_id}` until every hop
 is terminal (`store.runPortfolioInterpretation`); `POST /api/portfolio/analysis`
 is the legacy deterministic SKU-price rule and is no longer wired to the UI.
@@ -133,7 +147,7 @@ Layer 2 reads canonical rows by id and never writes to
 Layer 1 tables. The legacy `seed.js → portfolio_demo/portfolio.json` fixture is
 not a source for the six-company workspace.
 
-Status today: apart from the chain above, no handler enqueues another — every run is started by an
+Status today: apart from the review → merge barrier above, no handler enqueues another — every run is started by an
 API route (`api/runs.py`, `api/synthetic.py`, `api/summaries.py`, `api/employees.py`,
 `api/recordings.py`, which queues `extract_recording_files` on upload and
 `explain_recording` on submit). The chain `synthetic_discovery → synthetic_analyze

@@ -637,3 +637,5 @@ HANDLERS = {
     "extract_recording_files": handle_extract_recording_files,
     **interpret.HANDLERS,
 }
+# Called by the worker with the job id once a job's terminal status is committed (barriers live here).
+AFTER_TERMINAL = {**interpret.AFTER_TERMINAL}

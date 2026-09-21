@@ -13,8 +13,9 @@ nothing is invented. Re-running is idempotent: a file+sheet whose content hash
 already has a completed import job in that tenant is not imported twice.
 
 Interpretation layer: `vista.portfolio.interpret.run_portfolio_interpretation`
-enqueues one durable job per company (canonical File Reviewer) and one firm-wide
-Sector Merger hop, reading only what the fact layer wrote.
+enqueues one durable job per company (canonical File Reviewer); once every review in a
+sector is terminal the barrier queues that sector's merge, reading only what the fact
+layer wrote plus the successful reviewers' structured findings.
 """
 
 from __future__ import annotations
@@ -55,7 +56,7 @@ from vista.models.tenant import (  # noqa: E402
 )
 from vista.portfolio import imports  # noqa: E402
 from vista.portfolio.access import CompanyRef, FirmContext, load_firm_context  # noqa: E402
-from vista.portfolio.interpret import run_portfolio_interpretation  # noqa: E402
+from vista.portfolio.interpret import release_sector_barrier, run_portfolio_interpretation  # noqa: E402
 from vista.portfolio.processors import AUTO_CONFIDENCE, get_processor, workbook_sheets  # noqa: E402
 from vista.security import token_digest  # noqa: E402
 from vista.storage import ensure_bucket  # noqa: E402
@@ -346,11 +347,22 @@ def main() -> int:
         while process_one():
             pass
         with platform_session() as platform:
+            # Merge jobs are created by the sector barrier once every review is terminal, so the
+            # queue-time report has None for them; resolve them by their stable keys now.
+            ctx = load_firm_context(platform, principal)
+            request_id = report["interpretation"]["request_id"]
+            for sector in report["interpretation"]["merge"]:
+                job = release_sector_barrier(platform, ctx, request_id, sector)
+                report["interpretation"]["merge"][sector] = str(job.id) if job is not None else None
+            platform.commit()
+        while process_one():
+            pass
+        with platform_session() as platform:
             for hop in ("review", "merge"):
                 group = report["interpretation"][hop]
                 for key, job_id in group.items():
-                    job = platform.get(Job, uuid.UUID(job_id))
-                    group[key] = {"job_id": job_id, "status": job.status, "error": job.error}
+                    job = platform.get(Job, uuid.UUID(job_id)) if job_id else None
+                    group[key] = {"job_id": job_id, "status": job.status if job else "waiting", "error": job.error if job else None}
     print(json.dumps({"loaded_at": datetime.now(UTC).isoformat(timespec="seconds"), **report}, indent=2, default=str))
     return 0
 

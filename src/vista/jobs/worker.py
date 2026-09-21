@@ -4,7 +4,7 @@ import time
 from sqlalchemy import select
 
 from vista.db import platform_session
-from vista.jobs.handlers import HANDLERS, mark_run_failed
+from vista.jobs.handlers import AFTER_TERMINAL, HANDLERS, mark_run_failed
 from vista.jobs.queue import claim_next, mark_failed, mark_succeeded
 from vista.models.platform import Tenant
 
@@ -40,6 +40,16 @@ def process_one() -> bool:
             if job.kind in HANDLERS:
                 mark_run_failed(job, schema, error, permanent=job.status == "failed")
         session.commit()
+        terminal = job.status in ("succeeded", "failed")
+        kind, job_id = job.kind, job.id
+
+    # Barriers run after the terminal status is committed, so a sibling reading the queue sees it.
+    hook = AFTER_TERMINAL.get(kind)
+    if terminal and hook is not None:
+        try:
+            hook(job_id)
+        except Exception:  # noqa: BLE001 — worker boundary; the barrier is re-tried on the next status poll
+            log.exception("after-terminal hook for job %s failed", job_id)
     return True
 
 

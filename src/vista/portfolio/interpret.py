@@ -44,7 +44,9 @@ from vista.models.tenant import (
     AgentRunEvent,
     CompanySummary,
     Customer,
+    FieldMapping,
     Finding,
+    ImportJob,
     InventoryBalance,
     Invoice,
     Policy,
@@ -305,7 +307,34 @@ def _finish(ts: Session, run: AgentRun, seq: int, result: dict) -> None:
     run.status, run.finished_at = "succeeded", datetime.now(UTC)
 
 
-def _upsert_finding(ts: Session, run: AgentRun, kind: str, title: str, detail: str, evidence: dict) -> tuple[Finding, bool]:
+@dataclass(frozen=True)
+class Structured:
+    """Machine-readable layer of a finding: what it is about and what it does to analysis built on those records."""
+
+    finding_type: str  # dotted: data_quality.duplicate_entity, timing.renewal_window, ...
+    severity: str  # High|Medium|Low
+    effect: str  # block|degrade|enrich
+    affected_entities: list[dict]  # [{"type": "vendor", "id": "<uuid>"}]
+
+    @property
+    def blocking(self) -> bool:
+        return self.effect == EFFECT_BLOCK
+
+
+EFFECT_BLOCK, EFFECT_DEGRADE, EFFECT_ENRICH = "block", "degrade", "enrich"
+EFFECT_RANK = {EFFECT_ENRICH: 0, EFFECT_DEGRADE: 1, EFFECT_BLOCK: 2}
+MAX_AFFECTED_ENTITIES = 2000
+
+
+def _upsert_finding(
+    ts: Session,
+    run: AgentRun,
+    kind: str,
+    title: str,
+    detail: str,
+    evidence: dict,
+    structured: Structured | None = None,
+) -> tuple[Finding, bool]:
     """Ledger finding keyed by (agent, kind, title, company). Dismissed rows stay dismissed."""
     title = title[:512]
     existing = ts.scalar(
@@ -313,10 +342,18 @@ def _upsert_finding(ts: Session, run: AgentRun, kind: str, title: str, detail: s
             Finding.agent_key == run.agent_key, Finding.kind == kind, Finding.title == title, Finding.company == run.company
         )
     )
+    f = existing or Finding(run_id=run.id, agent_key=run.agent_key, company=run.company, kind=kind, title=title)
+    f.detail, f.evidence, f.run_id = detail, evidence, run.id
+    if structured is not None:
+        f.finding_type, f.severity, f.effect, f.blocking = (
+            structured.finding_type,
+            structured.severity,
+            structured.effect,
+            structured.blocking,
+        )
+        f.affected_entities = structured.affected_entities[:MAX_AFFECTED_ENTITIES]
     if existing is not None:
-        existing.detail, existing.evidence, existing.run_id = detail, evidence, run.id
         return existing, False
-    f = Finding(run_id=run.id, agent_key=run.agent_key, company=run.company, kind=kind, title=title, detail=detail, evidence=evidence)
     ts.add(f)
     ts.flush()
     return f, True
@@ -332,17 +369,110 @@ class Check:
     severity: str  # High|Medium|Low
     kind: str  # observed_fact|inefficiency
     table: str
-    ids: list[str]
+    ids: list[str]  # every canonical record the check is about (evidence is capped, affected_entities is not)
     metric: dict
+    finding_type: str
+    effect: str
+
+    def structured(self) -> Structured:
+        entity = ENTITY_OF_TABLE[self.table]
+        return Structured(self.finding_type, self.severity, self.effect, [{"type": entity, "id": i} for i in self.ids])
+
+
+# canonical table name -> entity type used in affected_entities and in the merger's evidence refs
+ENTITY_OF_TABLE = {
+    "customers": "customer",
+    "invoices": "invoice",
+    "vendors": "vendor",
+    "ap_vendor_invoices": "vendor_purchase",
+    "software_subscriptions": "subscription",
+    "policies": "policy",
+    "purchase_orders": "purchase_order",
+    "purchase_order_lines": "purchase_order_line",
+    "inventory_balances": "inventory_balance",
+}
+# field_mappings.target_entity -> (canonical model, table) so mapping_suspect can name the rows an uncertain mapping produced
+MODEL_OF_ENTITY = {
+    "customer": (Customer, "customers"),
+    "invoice": (Invoice, "invoices"),
+    "vendor": (Vendor, "vendors"),
+    "vendor_purchase": (VendorPurchase, "ap_vendor_invoices"),
+    "subscription": (Subscription, "software_subscriptions"),
+    "policy": (Policy, "policies"),
+    "purchase_order": (PurchaseOrder, "purchase_orders"),
+    "purchase_order_line": (PurchaseOrderLine, "purchase_order_lines"),
+    "inventory_balance": (InventoryBalance, "inventory_balances"),
+}
+MAPPED_MONEY_FIELDS = {
+    "unit_cost",
+    "unit_price",
+    "amount",
+    "outstanding_balance",
+    "annual_premium",
+    "expected_commission",
+    "commission_pct",
+    "monthly_cost",
+    "annual_cost",
+    "total_amount",
+    "ordered_qty",
+    "received_qty",
+    "on_hand_qty",
+    "extended_value",
+}
+MAPPING_SUSPECT_CONFIDENCE = 0.8
 
 
 def _ids(rows) -> list[str]:
-    return [str(r.id) for r in rows[:MAX_EVIDENCE_IDS]]
+    return [str(r.id) for r in rows]
+
+
+def mapping_suspect_checks(ts: Session) -> list[Check]:
+    """A money/quantity column whose header mapping scored below the confidence bar, or was proposed by the
+    model and never confirmed (confirmation sets confidence to 1.0), makes every row it produced unreliable
+    for price and spend comparisons."""
+    suspect = ts.scalars(
+        select(FieldMapping)
+        .join(ImportJob, ImportJob.id == FieldMapping.import_job_id)
+        .where(
+            ImportJob.status == "completed",
+            FieldMapping.status == "approved",
+            FieldMapping.target_field.in_(sorted(MAPPED_MONEY_FIELDS)),
+            (FieldMapping.confidence < MAPPING_SUSPECT_CONFIDENCE)
+            | (FieldMapping.reason.like("model:%") & (FieldMapping.confidence < 1.0)),
+        )
+    ).all()
+    by_entity: dict[str, list[FieldMapping]] = defaultdict(list)
+    for m in suspect:
+        if m.target_entity in MODEL_OF_ENTITY:
+            by_entity[m.target_entity].append(m)
+    out: list[Check] = []
+    for entity, ms in sorted(by_entity.items()):
+        model, table = MODEL_OF_ENTITY[entity]
+        job_ids = sorted({m.import_job_id for m in ms})
+        rows = ts.scalars(select(model).where(model.import_job_id.in_(job_ids))).all()
+        if not rows:
+            continue
+        cols = "; ".join(f"'{m.source_column}' → {m.target_field} ({m.confidence:.2f})" for m in ms[:4])
+        out.append(
+            Check(
+                f"{len(rows)} {table.replace('_', ' ')} rows rest on an unconfirmed column mapping",
+                f"Money/quantity columns mapped without analyst confirmation: {cols}. "
+                "Values in these rows should not drive price or spend comparisons until the mapping is confirmed.",
+                "High",
+                "observed_fact",
+                table,
+                _ids(rows),
+                {"count": len(rows), "mappings": len(ms), "import_jobs": [str(j) for j in job_ids]},
+                "data_quality.mapping_suspect",
+                EFFECT_BLOCK,
+            )
+        )
+    return out
 
 
 def canonical_checks(ts: Session, now: date) -> list[Check]:
     """Code-computed observations; each cites the canonical record ids behind it."""
-    out: list[Check] = []
+    out: list[Check] = mapping_suspect_checks(ts)
     period = reporting_period(now)
 
     late = [
@@ -365,6 +495,8 @@ def canonical_checks(ts: Session, now: date) -> list[Check]:
                 "invoices",
                 _ids(sorted(late, key=lambda i: -i.outstanding_balance)),
                 {"count": len(late), "outstanding": float(total)},
+                "working_capital.overdue_ar",
+                EFFECT_ENRICH,
             )
         )
     inverted = [
@@ -382,6 +514,8 @@ def canonical_checks(ts: Session, now: date) -> list[Check]:
                 "invoices",
                 _ids(inverted),
                 {"count": len(inverted)},
+                "data_quality.date_inversion",
+                EFFECT_DEGRADE,
             )
         )
 
@@ -401,6 +535,8 @@ def canonical_checks(ts: Session, now: date) -> list[Check]:
                 "vendors",
                 _ids([v for vs in dupes for v in vs]),
                 {"groups": len(dupes)},
+                "data_quality.duplicate_entity",
+                EFFECT_DEGRADE,
             )
         )
 
@@ -422,6 +558,8 @@ def canonical_checks(ts: Session, now: date) -> list[Check]:
                 "software_subscriptions",
                 _ids([s for ss in overlap.values() for s in ss]),
                 {"functions": len(overlap), "annual_cost": float(cost)},
+                "spend.software_overlap",
+                EFFECT_ENRICH,
             )
         )
     renewing = [s for s in subs if s.renewal_date and 0 <= (s.renewal_date - now).days <= 60]
@@ -435,6 +573,8 @@ def canonical_checks(ts: Session, now: date) -> list[Check]:
                 "software_subscriptions",
                 _ids(renewing),
                 {"count": len(renewing)},
+                "timing.renewal_window",
+                EFFECT_ENRICH,
             )
         )
 
@@ -456,6 +596,8 @@ def canonical_checks(ts: Session, now: date) -> list[Check]:
                 "policies",
                 _ids(sorted(expiring, key=lambda p: p.expiration_date)),
                 {"count": len(expiring), "premium": float(premium)},
+                "timing.policy_expiry",
+                EFFECT_ENRICH,
             )
         )
     off = [
@@ -476,6 +618,8 @@ def canonical_checks(ts: Session, now: date) -> list[Check]:
                 "policies",
                 _ids(off),
                 {"count": len(off)},
+                "data_quality.reconciliation_failure",
+                EFFECT_DEGRADE,
             )
         )
     swapped = [p for p in policies if p.effective_date and p.expiration_date and p.expiration_date < p.effective_date]
@@ -489,6 +633,8 @@ def canonical_checks(ts: Session, now: date) -> list[Check]:
                 "policies",
                 _ids(swapped),
                 {"count": len(swapped)},
+                "data_quality.date_inversion",
+                EFFECT_DEGRADE,
             )
         )
 
@@ -508,6 +654,8 @@ def canonical_checks(ts: Session, now: date) -> list[Check]:
                 "purchase_order_lines",
                 _ids(sorted(late_lines, key=lambda line: line.promised_date)),
                 {"count": len(late_lines), "open_value": float(value)},
+                "operations.late_receipt",
+                EFFECT_ENRICH,
             )
         )
 
@@ -523,6 +671,8 @@ def canonical_checks(ts: Session, now: date) -> list[Check]:
                 "inventory_balances",
                 _ids(unrec),
                 {"count": len(unrec)},
+                "data_quality.reconciliation_failure",
+                EFFECT_DEGRADE,
             )
         )
     negative = [b for b in balances if b.on_hand_qty < 0]
@@ -536,6 +686,8 @@ def canonical_checks(ts: Session, now: date) -> list[Check]:
                 "inventory_balances",
                 _ids(negative),
                 {"count": len(negative)},
+                "data_quality.negative_balance",
+                EFFECT_DEGRADE,
             )
         )
     stale = [b for b in balances if b.last_count_date and (now - b.last_count_date).days > 365 and b.extended_value > 0]
@@ -550,6 +702,8 @@ def canonical_checks(ts: Session, now: date) -> list[Check]:
                 "inventory_balances",
                 _ids(stale),
                 {"count": len(stale)},
+                "data_quality.stale_count",
+                EFFECT_ENRICH,
             )
         )
 
@@ -568,6 +722,8 @@ def canonical_checks(ts: Session, now: date) -> list[Check]:
                 "customers",
                 _ids(dormant),
                 {"count": len(dormant)},
+                "revenue.dormant_customers",
+                EFFECT_ENRICH,
             )
         )
     return out
@@ -629,7 +785,7 @@ def _task_for(
         company_id=company.id,
         ref=next_ref(platform, ctx.firm.id, "task", "T", 3),
         title=f"Review: {check.title}"[:255],
-        description=f"{check.detail} Evidence: {len(check.ids)} canonical {check.table} records cited on finding {wf.ref}.",
+        description=f"{check.detail} Evidence: {len(check.ids)} canonical {check.table} records cited on finding {wf.ref}."[:4000],
         category="Agent exception",
         source_type="finding",
         source_id=wf.ref,
@@ -701,11 +857,31 @@ def review_company(
         checks = canonical_checks(ts, now)
         high = 0
         for c in checks:
-            evidence = {"table": f"canonical/{c.table}", "record_ids": c.ids, "metric": c.metric, "confidence": 1.0, "computed_by": "code"}
-            f, is_new = _upsert_finding(ts, run, c.kind, c.title, c.detail, evidence)
+            evidence = {
+                "table": f"canonical/{c.table}",
+                "record_ids": c.ids[:MAX_EVIDENCE_IDS],
+                "record_count": len(c.ids),
+                "metric": c.metric,
+                "confidence": 1.0,
+                "computed_by": "code",
+            }
+            f, is_new = _upsert_finding(ts, run, c.kind, c.title, c.detail, evidence, c.structured())
             created += is_new
             updated += not is_new
-            seq = _emit(ts, run_id, seq, "finding", {"finding_id": str(f.id), "title": f.title, "severity": c.severity})
+            seq = _emit(
+                ts,
+                run_id,
+                seq,
+                "finding",
+                {
+                    "finding_id": str(f.id),
+                    "title": f.title,
+                    "severity": c.severity,
+                    "finding_type": c.finding_type,
+                    "effect": c.effect,
+                    "affected": len(c.ids),
+                },
+            )
             wf = _mirror_finding(ts, platform, ctx, company, agent, wrun, c.title, c.detail, c.severity, at)
             events.append([at.strftime("%H:%M"), f"{c.severity}: {c.title}"])
             if c.severity == "High":
@@ -807,7 +983,13 @@ def _authorized(platform: Session, firm_id: uuid.UUID, company_ids: list[str]) -
 
 
 def _upsert_opportunity(
-    platform: Session, firm_id: uuid.UUID, row: dict, refs_by_short: dict[str, CompanyRef], evidence: list[dict], generated_by: str
+    platform: Session,
+    firm_id: uuid.UUID,
+    row: dict,
+    refs_by_short: dict[str, CompanyRef],
+    evidence: list[dict],
+    generated_by: str,
+    lineage: dict | None = None,
 ) -> tuple[Opportunity, bool]:
     ids = [str(refs_by_short[s].id) for s in row["companies"]]
     category = OPPORTUNITY_CATEGORY[row["kind"]]
@@ -817,7 +999,12 @@ def _upsert_opportunity(
     value = Decimal(str(row["estimated_annual_value"])) if row.get("estimated_annual_value") is not None else None
     if match is not None:
         match.title, match.observed_fact, match.evidence, match.generated_by = row["title"], row["detail"], evidence, generated_by
-        match.confidence = max(match.confidence, row["confidence"]) if generated_by == "sector_merger" else match.confidence
+        match.lineage = lineage or {}
+        match.assumptions = row.get("assumptions", match.assumptions)
+        if (lineage or {}).get("effect") == EFFECT_DEGRADE:
+            match.confidence = row["confidence"]
+        elif generated_by == "sector_merger":
+            match.confidence = max(match.confidence, row["confidence"])
         if value is not None:
             match.scenario_value = value
         return match, False
@@ -838,6 +1025,7 @@ def _upsert_opportunity(
         recommended_action=row.get("next_action", ""),
         scenario_value=value,
         generated_by=generated_by,
+        lineage=lineage or {},
         synthetic_demo=False,
     )
     platform.add(opp)
@@ -886,6 +1074,122 @@ def _candidate_row(kind: str, cand: dict) -> dict:
     }
 
 
+@dataclass(frozen=True)
+class ReviewerFinding:
+    """A structured reviewer finding as the merger sees it: enough to intersect with candidate evidence,
+    cite in lineage, and hand to the model as context."""
+
+    id: str
+    run_id: str
+    company: str
+    company_id: str
+    title: str
+    detail: str
+    finding_type: str
+    severity: str
+    effect: str
+
+    def prompt(self) -> dict:
+        return {
+            "company": self.company,
+            "finding_type": self.finding_type,
+            "severity": self.severity,
+            "effect": self.effect,
+            "title": self.title,
+            "detail": self.detail,
+        }
+
+
+# (finding_type, candidate kind) -> effect when the generic effect of a finding type is wrong for a
+# particular thesis. Duplicate vendor records make spend estimates less trustworthy in general, but
+# they are the vendor-master consolidation thesis itself, so there they add context instead.
+EFFECT_OVERRIDES = {
+    ("data_quality.duplicate_entity", "vendor_consolidation"): EFFECT_ENRICH,
+    ("data_quality.duplicate_entity", "carrier_consolidation"): EFFECT_ENRICH,
+}
+DEGRADE_FACTOR = Decimal("0.75")
+MAX_PROMPT_FINDINGS = 8
+
+FindingIndex = dict[str, dict[str, list[ReviewerFinding]]]  # company short -> canonical id -> findings
+
+
+def load_reviewer_findings(refs_by_short: dict[str, CompanyRef], run_ids: set[uuid.UUID]) -> tuple[FindingIndex, dict[str, list[str]]]:
+    """Structured findings written by the successful reviewer runs, indexed by the canonical ids they are about,
+    plus the reviewer run ids found in each company's ledger (a company with no findings still contributes its run
+    to lineage). Dismissed findings are invisible to the merger: the human gate between hops is what makes them so."""
+    index: FindingIndex = {}
+    runs_by_short: dict[str, list[str]] = {}
+    if not run_ids:
+        return index, runs_by_short
+    for short, ref in refs_by_short.items():
+        by_id: dict[str, list[ReviewerFinding]] = defaultdict(list)
+        with company_session(ref) as ts:
+            runs_by_short[short] = sorted(
+                str(r) for r in ts.scalars(select(AgentRun.id).where(AgentRun.id.in_(run_ids), AgentRun.run_type == RUN_REVIEW))
+            )
+            rows = ts.scalars(
+                select(Finding).where(
+                    Finding.run_id.in_(run_ids),
+                    Finding.status.in_(["open", "reviewed"]),
+                    Finding.effect.is_not(None),
+                )
+            ).all()
+            for f in rows:
+                rf = ReviewerFinding(
+                    str(f.id),
+                    str(f.run_id),
+                    short,
+                    str(ref.id),
+                    f.title,
+                    f.detail,
+                    f.finding_type or "",
+                    f.severity or "",
+                    f.effect or EFFECT_ENRICH,
+                )
+                for ent in f.affected_entities or []:
+                    if ent.get("id"):
+                        by_id[str(ent["id"])].append(rf)
+        index[short] = dict(by_id)
+    return index, runs_by_short
+
+
+def effect_on(kind: str, finding: ReviewerFinding) -> str:
+    return EFFECT_OVERRIDES.get((finding.finding_type, kind), finding.effect)
+
+
+def validate_candidate(kind: str, cand: dict, index: FindingIndex) -> tuple[str | None, list[tuple[ReviewerFinding, str]]]:
+    """Deterministic intersection of a candidate's canonical record ids with the ids reviewer findings
+    are about. Returns the strongest effect (block > degrade > enrich, None when nothing intersects)
+    and the intersecting findings with their effect on this candidate kind."""
+    hits: dict[str, tuple[ReviewerFinding, str]] = {}
+    for short, ids in cand.get("record_ids", {}).items():
+        by_id = index.get(short, {})
+        for rid in ids:
+            for f in by_id.get(rid, ()):
+                hits.setdefault(f.id, (f, effect_on(kind, f)))
+    if not hits:
+        return None, []
+    ranked = sorted(hits.values(), key=lambda h: (-EFFECT_RANK[h[1]], h[0].company, h[0].title))
+    return ranked[0][1], ranked
+
+
+def _apply_effect(row: dict, effect: str | None, hits: list[tuple[ReviewerFinding, str]]) -> dict:
+    """DEGRADE lowers confidence and records the data-quality assumption; ENRICH adds reviewer context.
+    Both are applied in code regardless of what the model wrote, so the effect is auditable."""
+    if effect is None:
+        return row
+    assumptions = list(row.get("assumptions") or [])
+    for f, eff in hits:
+        if eff == EFFECT_DEGRADE:
+            assumptions.append(f"Data quality ({f.company}): {f.title}. Estimate treated as less reliable until resolved.")
+        elif eff == EFFECT_ENRICH:
+            assumptions.append(f"Reviewer context ({f.company}): {f.title}.")
+    confidence = row["confidence"]
+    if effect == EFFECT_DEGRADE:
+        confidence = float((Decimal(str(confidence)) * DEGRADE_FACTOR).quantize(Decimal("0.01")))
+    return {**row, "assumptions": assumptions, "confidence": confidence}
+
+
 def merge_sector(
     platform: Session,
     firm_id: uuid.UUID,
@@ -895,9 +1199,16 @@ def merge_sector(
     run_id: uuid.UUID,
     job_id: uuid.UUID,
     parent_run_ids: list[str] | None = None,
+    failed_company_ids: list[str] | None = None,
+    request_id: str | None = None,
 ) -> dict:
-    """Sector Merger body. Scope is re-checked against platform.firm_companies; anything
-    outside the firm is dropped with an error event rather than failing open."""
+    """Sector Merger body, three stages over `company_ids` (the companies whose reviews succeeded):
+    1. deterministic candidates recomputed from canonical state;
+    2. finding-aware validation - each candidate's record ids intersected with the structured findings
+       of the reviewer runs in `parent_run_ids` -> BLOCK / DEGRADE / ENRICH;
+    3. model interpretation of the surviving candidates with their reviewer context.
+    Scope is re-checked against platform.firm_companies; anything outside the firm is dropped with an
+    error event rather than failing open, and `failed_company_ids` are recorded as excluded."""
     refs = _authorized(platform, firm_id, company_ids)
     dropped = sorted(set(company_ids) - {str(r.id) for r in refs})
     by_company: dict[Company, list[Table]] = {}
@@ -911,7 +1222,11 @@ def merge_sector(
             by_company[c] = canonical_tables(ts)
     shorts = set(refs_by_short)
     kinds = [k for k in analyze.SECTOR_KINDS[sector] if k in analyze.SCREENS]
+    reviewer_runs = {uuid.UUID(r) for r in (parent_run_ids or [])}
+    index, runs_by_company = load_reviewer_findings(refs_by_short, reviewer_runs)
     at = datetime.now(UTC)
+    failed = sorted(set(failed_company_ids or []) - set(company_ids))
+    blocked = degraded = enriched = 0
     with tenant_session(home_schema) as ts:
         run = _start(ts, run_id)
         run.sector = sector
@@ -922,15 +1237,41 @@ def merge_sector(
             "step",
             {
                 "message": "started",
+                "request_id": request_id,
                 "parent_run_id": parent_run_ids[0] if parent_run_ids else None,
-                "parent_run_ids": list(parent_run_ids or []),
+                "parent_run_ids": sorted(str(r) for r in reviewer_runs),
                 "sector": sector,
                 "companies": sorted(shorts),
+                "failed_company_ids": failed,
                 "job_id": str(job_id),
             },
         )
         if dropped:
             seq = _emit(ts, run_id, seq, "error", {"message": "companies outside firm scope dropped", "company_ids": dropped})
+        for cid in failed:
+            try:
+                fc = platform.get(FirmCompany, uuid.UUID(cid))
+            except ValueError:
+                fc = None
+            name = fc.name if fc is not None and fc.firm_id == firm_id else cid
+            seq = _emit(
+                ts,
+                run_id,
+                seq,
+                "error",
+                {"message": f"{name} review failed; {name} excluded from this analysis.", "company_id": cid, "excluded": True},
+            )
+        seq = _emit(
+            ts,
+            run_id,
+            seq,
+            "tool_call",
+            {
+                "tool": "read_reviewer_findings",
+                "runs": len(reviewer_runs),
+                "findings": {short: len({f.id for fs in by_id.values() for f in fs}) for short, by_id in index.items()},
+            },
+        )
         created = updated = 0
         cost = Decimal(0)
         opp_refs: list[str] = []
@@ -939,10 +1280,32 @@ def merge_sector(
             candidates = analyze.screen(kind, scoped)
             known_refs = {f"{c.short}:{t.ref}" for c, tables in scoped.items() for t in tables}
             seq = _emit(ts, run_id, seq, "tool_call", {"tool": "screen_canonical", "kind": kind, "candidates": len(candidates)})
-            if not candidates:
+            validated: list[tuple[dict, str | None, list[tuple[ReviewerFinding, str]]]] = []
+            for cand in candidates:
+                effect, hits = validate_candidate(kind, cand, index)
+                if effect == EFFECT_BLOCK:
+                    blocked += 1
+                    seq = _emit(
+                        ts,
+                        run_id,
+                        seq,
+                        "step",
+                        {
+                            "message": "candidate blocked by reviewer finding",
+                            "kind": kind,
+                            "shared_key": cand["shared_key"],
+                            "from_findings": [f.id for f, eff in hits if eff == EFFECT_BLOCK],
+                        },
+                    )
+                    continue
+                degraded += effect == EFFECT_DEGRADE
+                enriched += effect == EFFECT_ENRICH
+                prompt_cand = {**cand, "reviewer_findings": [f.prompt() for f, _ in hits[:MAX_PROMPT_FINDINGS]]} if hits else cand
+                validated.append((prompt_cand, effect, hits))
+            if not validated:
                 continue
             phase = run_phase(
-                analyze.prepare(sector, scoped, kind),
+                analyze.prepare(sector, scoped, kind, [v[0] for v in validated]),
                 lambda text, k=kind: analyze.parse(text, k),
                 lambda out, r=known_refs: analyze.apply(out, shorts, r),
                 llm=chat,
@@ -958,19 +1321,45 @@ def merge_sector(
             cost += _usage(ts, run, r)
             confirmed = {row["shared_key"].strip().lower(): row for row in phase.rows}
             rejected = {str(x).lower() for x in phase.output.rejected}
-            for cand in candidates:
+            for cand, effect, hits in validated:
                 key = cand["shared_key"].strip().lower()
                 if any(key in x for x in rejected):
                     seq = _emit(ts, run_id, seq, "step", {"message": "look-alike rejected", "kind": kind, "shared_key": cand["shared_key"]})
                     continue
-                row = confirmed.get(key) or _candidate_row(kind, cand)
+                row = _apply_effect(confirmed.get(key) or _candidate_row(kind, cand), effect, hits)
                 generated_by = "sector_merger" if key in confirmed else "deterministic_screen"
+                record_ids = cand.get("record_ids", {})
                 evidence = [
-                    {"companyId": str(refs_by_short[s].id), "entity": t.rsplit("/", 1)[-1], "table": t}
+                    {
+                        "companyId": str(refs_by_short[s].id),
+                        "entity": t.rsplit("/", 1)[-1],
+                        "table": t,
+                        "recordIds": record_ids.get(s, [])[:MAX_EVIDENCE_IDS],
+                        "recordCount": len(record_ids.get(s, [])),
+                    }
                     for s in row["companies"]
                     for t in [e.split(":", 1)[1] for e in cand["evidence"] if e.startswith(f"{s}:")]
                 ]
-                opp, is_new = _upsert_opportunity(platform, firm_id, row, refs_by_short, evidence, generated_by)
+                lineage = {
+                    "request_id": request_id,
+                    "merge_run_id": str(run_id),
+                    "effect": effect,
+                    "from_findings": sorted(f.id for f, _ in hits),
+                    "from_runs": sorted({r for s in row["companies"] for r in runs_by_company.get(s, [])} | {f.run_id for f, _ in hits}),
+                    "reviewer_findings": [
+                        {
+                            "id": f.id,
+                            "company": f.company,
+                            "companyId": f.company_id,
+                            "finding_type": f.finding_type,
+                            "effect": eff,
+                            "title": f.title,
+                        }
+                        for f, eff in hits
+                    ],
+                    "failed_company_ids": failed,
+                }
+                opp, is_new = _upsert_opportunity(platform, firm_id, row, refs_by_short, evidence, generated_by, lineage)
                 created += is_new
                 updated += not is_new
                 opp_refs.append(opp.ref)
@@ -989,9 +1378,24 @@ def merge_sector(
                         "refs": cand["evidence"],
                         "confidence": row["confidence"],
                         "generated_by": generated_by,
+                        "effect": effect,
+                        "from_findings": lineage["from_findings"],
+                        "from_runs": lineage["from_runs"],
                     },
                 )
-                seq = _emit(ts, run_id, seq, "finding", {"finding_id": str(f.id), "opportunity": opp.ref, "title": f.title})
+                seq = _emit(
+                    ts,
+                    run_id,
+                    seq,
+                    "finding",
+                    {
+                        "finding_id": str(f.id),
+                        "opportunity": opp.ref,
+                        "title": f.title,
+                        "effect": effect,
+                        "from_findings": lineage["from_findings"],
+                    },
+                )
                 if is_new:
                     log_activity(
                         platform,
@@ -1001,7 +1405,20 @@ def merge_sector(
                         "opportunity",
                         at,
                     )
-        _finish(ts, run, seq, {"opportunities_created": created, "opportunities_updated": updated, "cost_usd": str(cost)})
+        _finish(
+            ts,
+            run,
+            seq,
+            {
+                "opportunities_created": created,
+                "opportunities_updated": updated,
+                "blocked": blocked,
+                "degraded": degraded,
+                "enriched": enriched,
+                "excluded_company_ids": failed,
+                "cost_usd": str(cost),
+            },
+        )
         ts.commit()
     for ref in refs_by_short.values():
         with company_session(ref) as ts:
@@ -1049,7 +1466,11 @@ def merge_sector(
         "companies": sorted(shorts),
         "created": created,
         "updated": updated,
+        "blocked": blocked,
+        "degraded": degraded,
+        "enriched": enriched,
         "dropped": dropped,
+        "excluded": failed,
         "cost_usd": str(cost),
     }
 
@@ -1087,51 +1508,163 @@ def handle_portfolio_merge(job: Job, tenant_schema: str) -> None:
     payload = job.payload
     with platform_session() as platform:
         ctx = _ctx(platform, payload["firm_id"], payload["requested_by"])
+        home = platform.get(Tenant, ctx.firm.home_tenant_id)
+        if home is None or home.schema_name != tenant_schema:
+            raise RuntimeError("merge job tenant is not the firm's home tenant")
         merge_sector(
             platform,
             ctx.firm.id,
             tenant_schema,
             payload["sector"],
-            payload["company_ids"],
+            payload.get("successful_company_ids", payload["company_ids"]),
             uuid.UUID(payload["run_id"]),
             job.id,
-            payload.get("parent_run_ids"),
+            payload.get("successful_run_ids", payload.get("parent_run_ids")),
+            payload.get("failed_company_ids"),
+            payload.get("request_id"),
         )
         platform.commit()
 
 
 HANDLERS = {RUN_REVIEW: handle_canonical_review, RUN_MERGE: handle_portfolio_merge}
+TERMINAL_JOB_STATUS = {"succeeded", "failed"}
+MERGE_WAITING = "waiting"  # status the UI sees for a sector merge whose barrier has not opened yet
+
+
+def _sector_members(ctx: FirmContext, sector: str) -> list[CompanyRef]:
+    return [c for c in ctx.companies if company_for(c).sector == sector]
+
+
+def _merge_job(platform: Session, home_tenant_id: uuid.UUID, request_id: str, sector: str) -> Job | None:
+    return platform.scalar(
+        select(Job).where(
+            Job.tenant_id == home_tenant_id, Job.kind == RUN_MERGE, Job.idempotency_key == f"{RUN_MERGE}:{request_id}:{sector}"
+        )
+    )
+
+
+def release_sector_barrier(platform: Session, ctx: FirmContext, request_id: str, sector: str) -> Job | None:
+    """The barrier between hop 1 and hop 2. Once every company review job of `sector` for this request
+    is terminal (succeeded or permanently failed), queue the sector's `portfolio_merge` job exactly once,
+    scoped to the companies whose reviews succeeded and naming the ones that failed. Returns the merge
+    job when it exists after the call (created now or earlier), None while the barrier is still closed.
+
+    Sibling review jobs are read under row locks so two reviewers finishing at the same moment cannot
+    both see the barrier open and race; the stable idempotency key makes a second pass a no-op anyway."""
+    members = _sector_members(ctx, sector)
+    if len(members) < 2:
+        return None
+    home = platform.get(Tenant, ctx.firm.home_tenant_id)
+    existing = _merge_job(platform, home.id, request_id, sector)
+    if existing is not None:
+        return existing
+    keys = {f"{RUN_REVIEW}:{request_id}:{m.id}": m for m in members}
+    siblings = platform.scalars(
+        select(Job)
+        .where(Job.kind == RUN_REVIEW, Job.tenant_id.in_([m.tenant_id for m in members]), Job.idempotency_key.in_(list(keys)))
+        .with_for_update()
+    ).all()
+    by_key = {j.idempotency_key: j for j in siblings}
+    if len(by_key) < len(keys) or any(j.status not in TERMINAL_JOB_STATUS for j in by_key.values()):
+        return None
+    existing = _merge_job(platform, home.id, request_id, sector)  # re-check under the locks
+    if existing is not None:
+        return existing
+    merge_run_id = next((j.payload.get("merge_run_id") for j in by_key.values() if j.payload.get("merge_run_id")), None)
+    if merge_run_id is None:
+        return None
+    succeeded = [(m, by_key[k]) for k, m in keys.items() if by_key[k].status == "succeeded"]
+    failed = [m for k, m in keys.items() if by_key[k].status == "failed"]
+    requested_by = next(iter(by_key.values())).payload["requested_by"]
+    job = enqueue(
+        platform,
+        home.id,
+        RUN_MERGE,
+        {
+            "run_id": merge_run_id,
+            "request_id": request_id,
+            "firm_id": str(ctx.firm.id),
+            "sector": sector,
+            "requested_by": requested_by,
+            "company_ids": [str(m.id) for m in members],
+            "successful_company_ids": [str(m.id) for m, _ in succeeded],
+            "failed_company_ids": [str(m.id) for m in failed],
+            "successful_run_ids": [j.payload["run_id"] for _, j in succeeded],
+            "parent_run_ids": [j.payload["run_id"] for _, j in succeeded],
+        },
+        idempotency_key=f"{RUN_MERGE}:{request_id}:{sector}",
+    )
+    platform.flush()
+    with tenant_session(home.schema_name) as ts:
+        ts.execute(update(AgentRun).where(AgentRun.id == uuid.UUID(merge_run_id)).values(job_id=job.id))
+        ts.commit()
+    for m, j in succeeded:
+        with company_session(m) as ts:
+            run_id = uuid.UUID(j.payload["run_id"])
+            _emit(
+                ts,
+                run_id,
+                _next_seq(ts, run_id),
+                "handoff",
+                {
+                    "to": RUN_MERGE,
+                    "run_id": merge_run_id,
+                    "job_id": str(job.id),
+                    "sector": sector,
+                    "failed_company_ids": [str(x.id) for x in failed],
+                },
+            )
+            ts.commit()
+    return job
+
+
+def after_review_terminal(job_id: uuid.UUID) -> None:
+    """Worker hook, called after a `canonical_review` job's terminal status is committed."""
+    with platform_session() as platform:
+        job = platform.get(Job, job_id)
+        if job is None or job.kind != RUN_REVIEW or job.status not in TERMINAL_JOB_STATUS:
+            return
+        payload = job.payload
+        if not payload.get("request_id") or not payload.get("sector"):
+            return
+        ctx = _ctx(platform, payload["firm_id"], payload["requested_by"])
+        release_sector_barrier(platform, ctx, payload["request_id"], payload["sector"])
+        platform.commit()
+
+
+AFTER_TERMINAL = {RUN_REVIEW: after_review_terminal}
 
 
 def _queued_request(
     platform: Session, ctx: FirmContext, home: Tenant, request_id: uuid.UUID, by_sector: dict[str, list[CompanyRef]]
 ) -> dict | None:
-    """The report for a request that has already been queued (every hop's job exists
-    under its stable key), or None if this request has not been seen. Re-running a
-    request must not mint new envelopes for jobs that already point at the old ones."""
+    """The report for a request that has already been queued (every review job exists under its
+    stable key), or None if this request has not been seen. Re-running a request must not mint new
+    envelopes for jobs that already point at the old ones. Merge jobs are created by the barrier, so a
+    sector whose reviews are not all terminal reports None for its merge job; if they are, the barrier
+    is given a chance to open here as well (covers a worker that died between commit and hook)."""
 
     def job_id(tenant_id: uuid.UUID, kind: str, key: str) -> str | None:
         found = platform.scalar(select(Job.id).where(Job.tenant_id == tenant_id, Job.kind == kind, Job.idempotency_key == key))
         return str(found) if found else None
 
     review = {str(c.id): job_id(c.tenant_id, RUN_REVIEW, f"{RUN_REVIEW}:{request_id}:{c.id}") for c in ctx.companies}
-    merge = {
-        sector: job_id(home.id, RUN_MERGE, f"{RUN_MERGE}:{request_id}:{sector}")
-        for sector, members in by_sector.items()
-        if len(members) >= 2
-    }
-    if not review or any(v is None for v in (*review.values(), *merge.values())):
+    if not review or any(v is None for v in review.values()):
         return None
+    merge: dict[str, str | None] = {}
+    for sector, members in by_sector.items():
+        if len(members) < 2:
+            continue
+        job = release_sector_barrier(platform, ctx, str(request_id), sector)
+        merge[sector] = str(job.id) if job is not None else None
     return {"request_id": str(request_id), "review": review, "merge": merge}
 
 
-TERMINAL_JOB_STATUS = {"succeeded", "failed"}
-
-
 def interpretation_status(platform: Session, ctx: FirmContext, request_id: uuid.UUID) -> dict:
-    """Progress of one analyst request: every job queued under its stable keys,
-    restricted to tenants in the caller's firm scope (company tenants + the firm's
-    home tenant). `done` is true once every hop is terminal."""
+    """Progress of one analyst request: every job queued under its stable keys, restricted to
+    tenants in the caller's firm scope (company tenants + the firm's home tenant), plus one
+    `waiting` entry per sector merge whose barrier has not opened yet. `done` is true once every
+    hop is terminal and no merge is waiting."""
     tenant_ids = {c.tenant_id for c in ctx.companies} | {ctx.firm.home_tenant_id}
     jobs = platform.scalars(
         select(Job)
@@ -1155,6 +1688,18 @@ def interpretation_status(platform: Session, ctx: FirmContext, request_id: uuid.
         }
         for j in jobs
     ]
+    merged = {v["scope"] for v in views if v["kind"] == RUN_MERGE}
+    waiting_on: dict[str, list[str]] = defaultdict(list)
+    for j in jobs:
+        sector = j.payload.get("sector")
+        if j.kind == RUN_REVIEW and sector and j.payload.get("merge_run_id") and sector not in merged:
+            if j.status not in TERMINAL_JOB_STATUS:
+                waiting_on[sector].append(j.payload["company_id"])
+            waiting_on.setdefault(sector, [])
+    for sector, pending in sorted(waiting_on.items()):
+        views.append(
+            {"id": None, "kind": RUN_MERGE, "scope": sector, "status": MERGE_WAITING, "attempts": 0, "error": None, "waiting_on": pending}
+        )
     return {
         "request_id": str(request_id),
         "jobs": views,
@@ -1165,15 +1710,15 @@ def interpretation_status(platform: Session, ctx: FirmContext, request_id: uuid.
 
 
 def run_portfolio_interpretation(platform: Session, ctx: FirmContext, request_id: uuid.UUID | None = None) -> dict:
-    """Queue the interpretation chain for one analyst request: a File Reviewer run per
-    company (hop 1) and a Sector Merger run per sector (hop 2) whose parents are that
-    sector's review runs. Every hop is an AgentRun + durable job for
-    `python -m vista.jobs.worker`; nothing runs inline.
+    """Queue the interpretation chain for one analyst request: a File Reviewer run per company
+    (hop 1) as durable jobs, and a Sector Merger run envelope per sector (hop 2) whose job is
+    created by `release_sector_barrier` once every review in that sector is terminal. Every hop is
+    an AgentRun + durable job for `python -m vista.jobs.worker`; nothing runs inline.
 
-    `request_id` identifies the analyst request and is the root of the lineage, so
-    idempotency keys are `f"{kind}:{request_id}:{scope}"`: re-queueing the same
-    request is a no-op, while a new request gets fresh runs. Returns the queued job
-    ids keyed by target so the caller can wait on or report them."""
+    `request_id` identifies the analyst request and is the root of the lineage, so idempotency
+    keys are `f"{kind}:{request_id}:{scope}"`: re-queueing the same request is a no-op, while a new
+    request gets fresh runs. Returns the queued job ids keyed by target; a sector's merge job id is
+    None until its barrier opens."""
     request_id = request_id or uuid.uuid4()
     report: dict = {"request_id": str(request_id), "review": {}, "merge": {}}
     home = platform.get(Tenant, ctx.firm.home_tenant_id)
@@ -1186,26 +1731,9 @@ def run_portfolio_interpretation(platform: Session, ctx: FirmContext, request_id
     if queued is not None:
         return queued
 
-    # Pass 1 - hop-1 envelopes (File Reviewer, one per company tenant).
-    review_run_ids: dict[uuid.UUID, uuid.UUID] = {}
-    for company in ctx.companies:
-        c = company_for(company)
-        with company_session(company) as ts:
-            run = AgentRun(
-                job_id=uuid.uuid4(),
-                run_type=RUN_REVIEW,
-                requested_by=ctx.principal.user_id,
-                agent_key=agent_key_for(RUN_REVIEW),
-                company=c.short,
-                sector=c.sector,
-            )
-            ts.add(run)
-            ts.commit()
-            review_run_ids[company.id] = run.id
-
-    # Pass 2 - hop-2 envelopes + jobs (Sector Merger in the firm's home tenant), with
-    # that sector's review runs as parents.
-    merge_jobs: dict[str, tuple[uuid.UUID, uuid.UUID]] = {}
+    # Hop-2 envelopes (Sector Merger in the firm's home tenant): queued AgentRuns without a job,
+    # so the UI can show the merge waiting on its reviewers.
+    merge_run_ids: dict[str, uuid.UUID] = {}
     with tenant_session(home.schema_name) as ts:
         for sector, members in by_sector.items():
             if len(members) < 2:
@@ -1219,30 +1747,26 @@ def run_portfolio_interpretation(platform: Session, ctx: FirmContext, request_id
             )
             ts.add(run)
             ts.flush()
-            job = enqueue(
-                platform,
-                home.id,
-                RUN_MERGE,
-                {
-                    "run_id": str(run.id),
-                    "parent_run_ids": [str(review_run_ids[m.id]) for m in members],
-                    "request_id": str(request_id),
-                    "firm_id": str(ctx.firm.id),
-                    "sector": sector,
-                    "company_ids": [str(m.id) for m in members],
-                    "requested_by": requested_by,
-                },
-                idempotency_key=f"{RUN_MERGE}:{request_id}:{sector}",
-            )
-            run.job_id = job.id
-            merge_jobs[sector] = (run.id, job.id)
-            report["merge"][sector] = str(job.id)
+            merge_run_ids[sector] = run.id
+            report["merge"][sector] = None
         ts.commit()
 
-    # Pass 3 - hop-1 jobs, each recording its handoff to the sector merge.
+    # Hop-1 envelopes + jobs (File Reviewer, one per company tenant). Each review job knows the
+    # sector merge it feeds so the barrier can find the envelope.
     for company in ctx.companies:
         c = company_for(company)
-        run_id = review_run_ids[company.id]
+        with company_session(company) as ts:
+            run = AgentRun(
+                job_id=uuid.uuid4(),
+                run_type=RUN_REVIEW,
+                requested_by=ctx.principal.user_id,
+                agent_key=agent_key_for(RUN_REVIEW),
+                company=c.short,
+                sector=c.sector,
+            )
+            ts.add(run)
+            ts.commit()
+            run_id = run.id
         job = enqueue(
             platform,
             company.tenant_id,
@@ -1253,21 +1777,14 @@ def run_portfolio_interpretation(platform: Session, ctx: FirmContext, request_id
                 "request_id": str(request_id),
                 "firm_id": str(ctx.firm.id),
                 "company_id": str(company.id),
+                "sector": c.sector,
+                "merge_run_id": str(merge_run_ids[c.sector]) if c.sector in merge_run_ids else None,
                 "requested_by": requested_by,
             },
             idempotency_key=f"{RUN_REVIEW}:{request_id}:{company.id}",
         )
         with company_session(company) as ts:
             ts.execute(update(AgentRun).where(AgentRun.id == run_id).values(job_id=job.id))
-            if c.sector in merge_jobs:
-                merge_run_id, merge_job_id = merge_jobs[c.sector]
-                _emit(
-                    ts,
-                    run_id,
-                    _next_seq(ts, run_id),
-                    "handoff",
-                    {"to": RUN_MERGE, "run_id": str(merge_run_id), "job_id": str(merge_job_id), "sector": c.sector},
-                )
             ts.commit()
         report["review"][str(company.id)] = str(job.id)
     platform.commit()

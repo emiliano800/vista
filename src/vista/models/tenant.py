@@ -137,6 +137,13 @@ class Finding(TenantBase):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     company: Mapped[str | None] = mapped_column(String(64), nullable=True, index=True)
     agent_key: Mapped[str | None] = mapped_column(String(32), nullable=True, index=True)
+    # Structured layer for agent-to-agent consumption: dotted type (data_quality.duplicate_entity, ...),
+    # the canonical entities it is about, and the effect on analysis built on those entities.
+    finding_type: Mapped[str | None] = mapped_column(String(64), nullable=True, index=True)
+    severity: Mapped[str | None] = mapped_column(String(16), nullable=True)  # High|Medium|Low
+    effect: Mapped[str | None] = mapped_column(String(16), nullable=True)  # block|degrade|enrich
+    blocking: Mapped[bool] = mapped_column(Boolean, default=False)
+    affected_entities: Mapped[list] = mapped_column(JSONB, default=list)  # [{"type": "vendor", "id": "<uuid>"}]
 
 
 class CompanySummary(TenantBase):

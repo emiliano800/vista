@@ -138,6 +138,8 @@ class Opportunity(PlatformBase):
     generated_by: Mapped[str] = mapped_column(String(32), default="deterministic_rule")
     synthetic_demo: Mapped[bool] = mapped_column(Boolean, default=False)
     found_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    # {"from_findings": [...], "from_runs": [...], "merge_run_id", "request_id", "effect", "reviewer_findings": [...]}
+    lineage: Mapped[dict] = mapped_column(JSONB, default=dict)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
 
