@@ -108,7 +108,7 @@ recordings/review, web/session, config, AWS script safety) + ~87 JS tests
 (recorder units, workspace UI, worker proxy). Live-model tests are opt-in
 (`pytest -m live`); everything else runs on stubs and spends nothing. CI runs
 lint (`ruff check` + `ruff format --check`), both suites against a Postgres
-service container, and a wrangler dry-run on every push to both repos.
+service container, and a wrangler dry-run on pushes to this repository's main branch.
 
 ## Known limits
 

@@ -81,9 +81,9 @@ the image or repo; local `.env` / `deploy/aws/.env` are gitignored.
 
 ## Deploy pipeline
 
-1. **Source of truth: `emiliano800/vista` `main`.** The ylemiesa mirror must never
-   deploy (its auto-deploy workflow was removed; its migration history can lag the
-   shared DB).
+1. **Sole source of truth: `emiliano800/vista` `main`.** Keep code, documentation,
+   and deployment artifacts in this repository. Deploy only an image containing
+   the database's complete migration history.
 2. `deploy/aws/deploy.sh` (reads `deploy/aws/.env`): builds the image → pushes to
    ECR `vista-api` → `aws cloudformation deploy` with parameters. Rolling update;
    the site stays up. Typical run: 10–15 min.
@@ -91,7 +91,7 @@ the image or repo; local `.env` / `deploy/aws/.env` are gitignored.
    `emiliano-vista-operator` IAM user deliberately cannot deploy (no
    ECR push / UpdateStack) — it's for management tasks and logs only.
 4. Frontend ships separately and automatically: Cloudflare rebuilds on every push.
-5. CI (`.github/workflows/ci.yml`, both repos): ruff lint+format, Python suite
+5. CI (`.github/workflows/ci.yml` in this repository): ruff lint+format, Python suite
    against a Postgres service container, taskmining run, recorder/web JS tests,
    wrangler dry-run. There is **no auto-deploy** — deploys are manual on purpose.
 

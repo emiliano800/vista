@@ -187,16 +187,21 @@ wired only in tests/eval. Any new automatic hop must follow the contract above.
   / `agents.llm.live_chat` — they reject `max_tokens` and explicit temperature and
   need raised completion budgets. Never reintroduce raw `max_tokens`.
 
-## Git
+## Git and repository scope
 
-- Remotes: `origin` = github.com/emiliano800/vista (full repo, including docs;
-  **the only sanctioned deploy source**); `upstream` = github.com/ylemiesa57/vista
-  (code only; its auto-deploy workflow was removed deliberately — do not restore).
-- Always fetch both remotes before pushing. Push code to BOTH; root-level doc .md
-  files (README, AGENTS, DESIGN, DEMO_ACCESS, CURRENT_IMPLEMENTATION, NEXT_STEPS,
-  BUSINESS_COURSE_OF_ACTION) go to `origin` only — when merging upstream, restore
-  any root docs its merges delete.
-- Never commit `.env` or `deploy/aws/.env` (hold the OpenAI key; gitignored).
+- `origin` = github.com/emiliano800/vista, branch `main`, is the sole source of
+  truth for code, documentation, and deployments. Work with this repository only.
+- Do not use `ylemiesa57/vista` or `samueljchen08/vista` (samchen), including the
+  legacy remote names `upstream` and `sam`. Do not fetch, pull, merge, mirror,
+  synchronize, push, or deploy from them, or recreate their checkouts.
+- Previous cross-repository sync and documentation-splitting instructions are
+  obsolete. All project code and documentation belong in `emiliano800/vista`.
+- Do not recreate retired remotes or mirror branches, and do not bring those
+  repositories up unprompted. Refer to this project and `origin` going forward.
+- Before pushing, verify `origin` points to `emiliano800/vista` and pull
+  `origin/main` without overwriting local work. Never fetch or push all remotes.
+  Preserve unrelated user edits and never force-push.
+- Never commit secrets, `.env`, `deploy/aws/.env`, or credential-output files.
 
 ## Live deployment (2026-09-20)
 
