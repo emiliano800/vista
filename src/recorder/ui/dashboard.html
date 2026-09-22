@@ -332,6 +332,7 @@
         <button data-view="today" class="active">This week</button>
         <button data-view="review" id="nav-review" class="hidden">Last session</button>
         <button data-view="recordings">My recordings <span id="n-rec" class="pill">0</span></button>
+        <button data-view="computer">Computer use <span id="n-cu" class="pill hidden">0</span></button>
         <div class="spacer"></div>
         <div class="who"><b id="who-name">—</b><span id="who-sub">this computer</span></div>
       </nav>
@@ -510,6 +511,29 @@
         </div>
 
         <!-- ============ SETTINGS ============ -->
+        <div id="view-computer" class="hidden">
+          <h1>Computer use</h1>
+          <p class="lede">An approved workflow can run on this computer, inside a sandbox, one checked step at a time — only after you start it here.</p>
+          <section class="card" id="cu-active-card">
+            <h2>Running now</h2>
+            <div id="cu-active"></div>
+          </section>
+          <section class="card">
+            <h2>Waiting for you</h2>
+            <p class="muted">Runs your workspace owner started that need a browser or desktop on an employee's computer. Nothing runs until you press Start and confirm.</p>
+            <div id="cu-offers"></div>
+          </section>
+          <section class="card">
+            <h2>How it works</h2>
+            <ul class="muted" style="margin:0;padding-left:18px">
+              <li>The agent may only perform a short list of actions (open a page, click a control it was shown, type a value from the approved inputs, press a key, read a table, take a screenshot) — never run scripts or commands.</li>
+              <li>Every step is checked on this computer against the session's limits before it runs, and written to a local log first.</li>
+              <li>Anything irreversible pauses the run until your workspace owner approves it. Sign-in, payment and private windows are refused.</li>
+              <li>Press <b>Stop</b>, or <span class="mono">⌘⇧Esc</span>, at any time. Quitting the recorder stops the session.</li>
+              <li>This recorder build does not include the browser or desktop drivers yet: it will report such steps as unsupported so the run pauses for a person.</li>
+            </ul>
+          </section>
+        </div>
         <!-- ============ SETUP (first launch only) ============ -->
         <div id="view-setup" class="hidden">
           <h1>Connect your company.</h1>
@@ -550,6 +574,19 @@
       <p id="publish-error" role="status"></p>
       <button id="publish-confirm" class="btn primary" disabled>Publish</button>
       <button id="publish-cancel" class="btn">Not now</button>
+    </dialog>
+    <dialog id="cu-dialog" class="card wide" aria-labelledby="cu-title">
+      <h2 id="cu-title">Start a computer-use session</h2>
+      <p id="cu-dialog-what"></p>
+      <p>While the session runs, the Computer Use Agent performs the steps of this workflow on this computer through a sandboxed window. It can only click controls it was shown, type values from the approved inputs, press listed keys, read pages and take screenshots. It cannot run scripts, open private apps or act on sign-in and payment pages. Irreversible actions wait for your workspace owner's approval.</p>
+      <p class="muted">A step-by-step log is kept in <span class="mono">Vista/computer-use/</span> on this computer. Screenshots stay here unless you choose to share them as evidence.</p>
+      <div class="set">
+        <label><div>I start this session on my computer and understand I can stop it at any time<span>Stop, ⌘⇧Esc, or quitting the recorder ends the session immediately.</span></div><input type="checkbox" id="cu-consent" /></label>
+        <label><div>Share evidence screenshots with the workspace<span>Off: screenshots stay on this computer; the workspace sees only that one was taken.</span></div><input type="checkbox" id="cu-shots" /></label>
+      </div>
+      <p id="cu-error" role="status"></p>
+      <button id="cu-confirm" class="btn primary" disabled>Start session</button>
+      <button id="cu-cancel" class="btn">Cancel</button>
     </dialog>
 
     <!-- annotation modal -->
@@ -650,8 +687,9 @@
       document.querySelectorAll('nav button').forEach((b) => (b.onclick = () => show(b.dataset.view)));
       function show(v) {
         document.querySelectorAll('nav button').forEach((b) => b.classList.toggle('active', b.dataset.view === v));
-        for (const x of ['today', 'review', 'recordings', 'setup']) $('view-' + x).classList.toggle('hidden', x !== v);
+        for (const x of ['today', 'review', 'recordings', 'computer', 'setup']) $('view-' + x).classList.toggle('hidden', x !== v);
         document.querySelector('.shell').classList.toggle('setup', v === 'setup');
+        if (v === 'computer') refreshComputerUse();
       }
 
       // ---- review: the analysis agent, shown when the dashboard comes back after Stop ----
@@ -1479,6 +1517,59 @@
       // Not connected (first launch, or an older connection that must be upgraded): the
       // setup screen is the whole window. Once connected it never shows again.
       window.vista.cloudStatus().then(value => { cloud = value; renderCloud(); if (!cloud.connected) show('setup'); }).catch(e => { $('cloud-state').textContent = e.message; show('setup'); });
+
+      // ---- computer use: offers, consent, live step log ----
+      let cu = null, cuOffer = null;
+      const cuStatusLabel = { active: 'Running', paused_for_approval: 'Waiting for the owner', stopping: 'Stopping…', closed: 'Closed' };
+      function renderComputerUse() {
+        if (!cu) return;
+        const a = cu.active;
+        $('n-cu').textContent = cu.offers.length;
+        $('n-cu').classList.toggle('hidden', !cu.offers.length);
+        $('cu-active').innerHTML = a
+          ? `<p><b>${esc(a.workflow?.name)}</b> <span class="pill">v${esc(a.workflow?.version)}</span> <span class="pill">${esc(cuStatusLabel[a.status] || a.status)}</span> · step ${a.step}${a.max_steps ? ' of ' + a.max_steps : ''} · ${a.elapsed_s}s${a.screenshots_shared ? ' · screenshots shared' : ' · screenshots local'}</p>
+             ${a.pause_reason ? `<p class="muted">Paused: ${esc(a.pause_reason)}</p>` : ''}
+             <pre class="mono" style="max-height:220px;overflow:auto;white-space:pre-wrap;margin:8px 0">${esc(a.log.join('\n')) || 'Waiting for the first step…'}</pre>
+             <div class="actions"><button class="btn danger" id="cu-stop">Stop</button></div>`
+          : `<p class="muted">${cu.enabled ? 'No session is running.' : 'Connect your company first to receive runs.'}${cu.error ? ` <span title="${esc(cu.error)}">(last check failed)</span>` : ''}</p>` +
+            (cu.interrupted ? `<p class="muted">A session (${esc(cu.interrupted.workflow?.name)}) was interrupted when the recorder restarted; the workspace has been told.</p>` : '');
+        const stop = $('cu-stop');
+        if (stop) stop.onclick = async () => { stop.disabled = true; try { cu = { ...cu, active: null, ...(await window.vista.cuStop('the employee pressed Stop')) }; } catch (e) { alert(e.message); } await refreshComputerUse(); };
+        $('cu-offers').innerHTML = cu.offers.length
+          ? cu.offers.map((o) => {
+              const missing = (o.harness_kinds || []).filter((k) => !cu.capabilities?.[k]);
+              return `<div class="row" style="display:flex;justify-content:space-between;align-items:center;gap:12px;padding:8px 0;border-top:1px solid var(--line)">
+                <div><b>${esc(o.workflow?.name)}</b> <span class="pill">v${esc(o.workflow?.version)}</span><div class="muted" style="font-size:12px">${esc(o.workflow?.goal || '')}</div>
+                <div class="muted" style="font-size:12px">Needs: ${esc((o.harness_kinds || []).join(', ') || 'nothing on this computer')} · up to ${esc(o.limits?.max_steps)} steps · asked by ${esc(o.requested_by?.email || '')}</div>
+                ${missing.length ? `<div class="muted" style="font-size:12px">This recorder cannot provide: ${esc(missing.join(', '))}</div>` : ''}</div>
+                <button class="btn primary sm" data-cu-start="${esc(o.run_id)}" ${missing.length || a ? 'disabled' : ''}>Start…</button></div>`;
+            }).join('')
+          : '<p class="muted">Nothing is waiting.</p>';
+        document.querySelectorAll('[data-cu-start]').forEach((b) => (b.onclick = () => openCuDialog(b.dataset.cuStart)));
+      }
+      async function refreshComputerUse() {
+        try { cu = await window.vista.cuList(); } catch (e) { cu = { enabled: false, offers: [], active: null, error: e.message }; }
+        renderComputerUse();
+      }
+      function openCuDialog(runId) {
+        cuOffer = cu.offers.find((o) => o.run_id === runId);
+        if (!cuOffer) return;
+        $('cu-dialog-what').innerHTML = `<b>${esc(cuOffer.workflow?.name)}</b> (version ${esc(cuOffer.workflow?.version)}) — ${esc(cuOffer.workflow?.goal || '')}<br><span class="muted">Sandbox only · needs ${esc((cuOffer.harness_kinds || []).join(' + ') || 'no harness')} · at most ${esc(cuOffer.limits?.max_steps)} steps, ${esc(cuOffer.limits?.max_runtime_seconds)} s</span>`;
+        $('cu-consent').checked = false; $('cu-shots').checked = false; $('cu-confirm').disabled = true; $('cu-error').textContent = '';
+        $('cu-dialog').showModal();
+      }
+      $('cu-consent').onchange = () => { $('cu-confirm').disabled = !$('cu-consent').checked; };
+      $('cu-cancel').onclick = () => $('cu-dialog').close();
+      $('cu-confirm').onclick = async () => {
+        if (!$('cu-consent').checked || !cuOffer) return;
+        $('cu-confirm').disabled = true;
+        try {
+          await window.vista.cuStart(cuOffer.run_id, { consent: true, shareScreenshots: $('cu-shots').checked });
+          $('cu-dialog').close();
+          cu = await window.vista.cuStatus(); renderComputerUse();
+        } catch (e) { $('cu-error').textContent = e.message; $('cu-confirm').disabled = false; }
+      };
+      window.vista.onCuStatus((status) => { cu = status; renderComputerUse(); });
 
       // ---- recordings ----
       // Days folded shut in My recordings; today starts open, older days closed.

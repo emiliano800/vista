@@ -6,7 +6,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { BrowserWindow, Menu, Tray, app, clipboard, desktopCapturer, ipcMain, nativeImage, screen, session, shell, systemPreferences, safeStorage } from 'electron';
+import { BrowserWindow, Menu, Tray, app, clipboard, desktopCapturer, globalShortcut, ipcMain, nativeImage, screen, session, shell, systemPreferences, safeStorage } from 'electron';
 
 import { CONFIDENCE_THRESHOLD, RESOLVED_STATUSES, SESSION_ID, applyDecision, describeSection, explainSection, openaiConfig, reviewSummary } from './explain.js';
 import { DEMO_KEYS, DemoHook, demoActiveWindow, demoClipboard, demoDocuments } from './demo.js';
@@ -21,6 +21,7 @@ import { reviewFiles } from './filereview.js';
 import { FLAG_DECISIONS, INSIGHTS_FILE, buildInsights, insightsSummary, summarizeInsights } from './insights.js';
 import { WORKFLOWS_FILE, refineSessionWorkflow, sessionDigest, suggestWorkflows, workflowsStub } from './workflows.js';
 import { deviceId, discoverWorkspaces, documentOptions, selectWorkspace, SubmissionQueue, uploadBinding } from './intake.js';
+import { ComputerUseClient } from './computer-use/client.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const UI = path.join(__dirname, '..', 'ui');
@@ -1192,8 +1193,42 @@ const intakeQueue = new SubmissionQueue(HOME, {
     }
   },
 });
+// ---- computer use --------------------------------------------------------------
+// The Computer Use Agent runs approved workflows through *this* computer, but only inside
+// a session the employee starts here with explicit consent. The cloud cannot reach the
+// recorder; the client polls on the same 30 s tick as uploads and, while a session is
+// active, every 3 s. Cmd/Ctrl+Shift+Escape stops a session from anywhere.
+const KILL_SWITCH = 'CommandOrControl+Shift+Escape';
+const computerUse = new ComputerUseClient({
+  home: HOME,
+  deviceId: deviceId(HOME),
+  version: app.getVersion(),
+  config: () => {
+    try {
+      return cloudSettings() ? cloudConfig() : null;
+    } catch {
+      return null;
+    }
+  },
+  onChange: (status) => {
+    if (dashboard && !dashboard.isDestroyed()) dashboard.webContents.send('cu:status', status);
+    if (status.active && !globalShortcut.isRegistered(KILL_SWITCH)) globalShortcut.register(KILL_SWITCH, () => computerUse.stop('the employee pressed the kill switch'));
+    if (!status.active && globalShortcut.isRegistered(KILL_SWITCH)) globalShortcut.unregister(KILL_SWITCH);
+  },
+});
+ipcMain.handle('cu:status', (event) => { requireDashboard(event); return computerUse.status(); });
+ipcMain.handle('cu:list', (event) => { requireDashboard(event); return computerUse.tick(); });
+ipcMain.handle('cu:start', (event, runId, options) => {
+  requireDashboard(event);
+  if (recorder.state !== 'idle') throw new Error('Stop the recording first.');
+  return computerUse.start(runId, { consent: options?.consent === true, shareScreenshots: options?.shareScreenshots === true });
+});
+ipcMain.handle('cu:stop', (event, reason) => { requireDashboard(event); return computerUse.stop(reason || 'the employee pressed Stop'); });
+ipcMain.handle('cu:steps', (event, sessionId) => { requireDashboard(event); return computerUse.steps(sessionId); });
+
 let uploadTimer = null;
 function resumeUploads(force = false) {
+  computerUse.tick().catch(() => {});
   if (!cloudSettings()) return;
   try {
     const config = cloudConfig();
@@ -1476,6 +1511,7 @@ const apiActions = {
   decideFlag,
   approveInsights,
   excludeSection,
+  computerUse,
 };
 
 async function startAgentApi() {
@@ -1512,6 +1548,12 @@ app.on('window-all-closed', () => {
 app.on('before-quit', async (e) => {
   clearInterval(uploadTimer);
   apiServer?.close();
+  if (computerUse.session) {
+    e.preventDefault();
+    await computerUse.stop('the recorder is quitting');
+    app.quit();
+    return;
+  }
   if (recorder && recorder.state !== 'idle') {
     e.preventDefault();
     await stopRecording();
