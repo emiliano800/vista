@@ -9,13 +9,31 @@
     "start": "electron .",
     "start:demo": "electron . --demo",
     "test": "node --test test/*.test.js",
-    "test:ui": "electron test/dashboard-smoke.mjs"
+    "test:ui": "electron test/dashboard-smoke.mjs",
+    "dist": "electron-builder"
   },
   "dependencies": {
     "get-windows": "^9.3.0",
     "uiohook-napi": "^1.5.5"
   },
   "devDependencies": {
-    "electron": "~43.7.2"
+    "electron": "~43.7.2",
+    "electron-builder": "^26.0.12"
+  },
+  "build": {
+    "appId": "org.bumpsolutions.vista.recorder",
+    "productName": "Vista Recorder",
+    "files": ["src/**/*", "ui/**/*", "package.json"],
+    "asarUnpack": ["**/node_modules/uiohook-napi/**", "**/node_modules/get-windows/**"],
+    "mac": {
+      "identity": null,
+      "category": "public.app-category.productivity",
+      "target": [{ "target": "dmg", "arch": ["arm64", "x64"] }],
+      "artifactName": "Vista-Recorder-mac-${arch}.${ext}"
+    },
+    "win": {
+      "target": ["nsis"],
+      "artifactName": "Vista-Recorder-windows-setup.${ext}"
+    }
   }
 }

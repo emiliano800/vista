@@ -113,8 +113,8 @@ test("hamburger drawer opens, marks the current page and closes on Escape", asyn
     );
     assert.equal($("drawer").hidden, true);
     // Every page links the same drawer destinations.
-    for (const html of [signinHtml, read("index.html")]) {
-      for (const path of ["/", "/account/", "/signin/"])
+    for (const html of [signinHtml, read("index.html"), read("recorder/index.html")]) {
+      for (const path of ["/", "/recorder/", "/account/", "/signin/"])
         assert.ok(html.includes(`href="${path}"`), `${path} linked`);
     }
     void state;

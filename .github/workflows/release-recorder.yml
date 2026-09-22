@@ -1,0 +1,46 @@
+name: Release Recorder
+
+# Builds the desktop recorder installers and attaches them to a GitHub release
+# with stable asset names, so bumpsolutions.org/recorder's "latest" download
+# links always resolve. Trigger by pushing a tag like recorder-v0.1.0, or run
+# manually with a tag name.
+
+on:
+  push:
+    tags: ["recorder-v*"]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Release tag to create/update (e.g. recorder-v0.1.0)"
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        os: [macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        working-directory: src/recorder
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm ci
+      - run: npm run dist
+        env:
+          # Unsigned demo builds; macOS users right-click → Open the first time.
+          CSC_IDENTITY_AUTO_DISCOVERY: "false"
+      - name: Upload installers to the release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }}
+          files: |
+            src/recorder/dist/*.dmg
+            src/recorder/dist/*.exe
+          fail_on_unmatched_files: false
