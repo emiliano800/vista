@@ -1569,7 +1569,7 @@
           cu = await window.vista.cuStatus(); renderComputerUse();
         } catch (e) { $('cu-error').textContent = e.message; $('cu-confirm').disabled = false; }
       };
-      window.vista.onCuStatus((status) => { cu = status; renderComputerUse(); });
+      window.vista.onCuStatus?.((status) => { cu = status; renderComputerUse(); });
 
       // ---- recordings ----
       // Days folded shut in My recordings; today starts open, older days closed.
