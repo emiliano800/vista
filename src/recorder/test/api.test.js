@@ -322,3 +322,48 @@ test('insights: read, re-run (async job), decide flags, approve, exclude a secti
   assert.equal((await call('POST', '/recordings/done1/sections/S1/exclude', { excluded: false })).body.excluded, false);
   assert.equal((await call('POST', '/recordings/done1/sections/S9/exclude', {})).status, 404);
 });
+
+test('computer use over the agent API: status, offers, start needs consent, stop, steps', async (t) => {
+  const home = fs.mkdtempSync(path.join(os.tmpdir(), 'vista-api-cu-'));
+  t.after(() => fs.rmSync(home, { recursive: true, force: true }));
+  const actions = fakeActions(home);
+  const calls = [];
+  actions.computerUse = {
+    status: () => ({ enabled: true, offers: [], active: null }),
+    tick: async () => ({ enabled: true, offers: [{ run_id: 'r1', harness_kinds: ['browser'] }], active: null }),
+    start: async (id, opts) => {
+      calls.push(['start', id, opts]);
+      if (id === 'busy') throw Object.assign(new Error('A computer-use session is already running on this computer.'), { code: 'busy' });
+      return { id: 's1', run_id: id, screenshots_shared: !!opts.shareScreenshots };
+    },
+    stop: async (reason) => {
+      calls.push(['stop', reason]);
+      return { ok: true, active: null };
+    },
+    steps: (id) => (id === 's1' ? ['✓ 1 browser · did observe'] : []),
+  };
+  const server = await startApi({ host: '127.0.0.1', port: 0, token: TOKEN, actions, jobs: new JobStore({ home }) });
+  t.after(() => server.close());
+  const base = `http://127.0.0.1:${server.address().port}`;
+  const call = async (method, p, body) => {
+    const r = await fetch(base + p, { method, headers: { Authorization: `Bearer ${TOKEN}`, 'Content-Type': 'application/json' }, body: body ? JSON.stringify(body) : undefined });
+    return [r.status, await r.json()];
+  };
+  assert.deepEqual((await call('GET', '/computer-use/status'))[1], { enabled: true, offers: [], active: null });
+  assert.equal((await call('GET', '/computer-use/sessions'))[1].offers.length, 1);
+  let [status, data] = await call('POST', '/computer-use/sessions/r1/start', {});
+  assert.equal(status, 400);
+  assert.match(data.error, /consent/);
+  [status, data] = await call('POST', '/computer-use/sessions/r1/start', { consent: 'true' });
+  assert.equal(status, 400);
+  assert.equal(calls.length, 0, 'nothing started without consent === true');
+  [status, data] = await call('POST', '/computer-use/sessions/r1/start', { consent: true, share_screenshots: true });
+  assert.equal(status, 200);
+  assert.deepEqual(data, { id: 's1', run_id: 'r1', screenshots_shared: true });
+  assert.deepEqual(calls[0], ['start', 'r1', { consent: true, shareScreenshots: true }]);
+  assert.equal((await call('POST', '/computer-use/sessions/busy/start', { consent: true }))[0], 409);
+  assert.deepEqual((await call('GET', '/computer-use/sessions/s1/steps'))[1], { session_id: 's1', steps: ['✓ 1 browser · did observe'] });
+  [status, data] = await call('POST', '/computer-use/sessions/s1/stop', { reason: 'done testing' });
+  assert.equal(status, 200);
+  assert.deepEqual(calls.at(-1), ['stop', 'done testing']);
+});

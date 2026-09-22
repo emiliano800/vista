@@ -69,6 +69,9 @@ const stub = `window.vista = {
   workflows: async () => (${JSON.stringify(sections.workflows)}),
   decideFlag: async () => (${JSON.stringify(sections)}), excludeSection: async () => (${JSON.stringify(sections)}), approveInsights: async () => (${JSON.stringify(sections)}), rerunAgents: async () => (${JSON.stringify(sections)}),
   onStatus() {}, onRecordings() {}, onSections() {}, onReview() {}, onPermissions() {},
+  cuStatus: async () => ({ enabled: true, offers: [], active: null, capabilities: { browser: false, desktop: false } }),
+  cuList: async () => ({ enabled: true, capabilities: { browser: false, desktop: false }, offers: [{ run_id: 'r1', workflow: { name: 'Enter bills', version: 2, goal: 'Key supplier invoices' }, harness_kinds: ['browser'], limits: { max_steps: 40, max_runtime_seconds: 900 }, requested_by: { email: 'owner@co' } }], active: null }),
+  cuStart: async () => ({}), cuStop: async () => ({ active: null }), cuSteps: async () => [], onCuStatus() {},
   start() {}, stop() {}, pause() {}, resume() {}, openRecording() {}, openWorkspace: async () => {}, annotate() {}, decide() {}, explain() {}, setSettings() {}, openPermission() {}, cloudConnect() {}, cloudDisconnect() {},
 };`;
 
@@ -84,6 +87,10 @@ app.whenReady().then(async () => {
     await new Promise((r) => setTimeout(r, 800));
     const out = await w.webContents.executeJavaScript(`(async () => {
       const t = (s) => document.body.innerText.includes(s);
+      document.querySelector('[data-view="computer"]').click();
+      await new Promise(r => setTimeout(r, 100));
+      const cuBtn = document.querySelector('#cu-offers [data-cu-start]');
+      const cuOk = !!cuBtn && cuBtn.disabled && t('Enter bills') && t('cannot provide: browser') && document.getElementById('n-cu').textContent === '1';
       document.querySelector('[data-view="recordings"]').click();
       await new Promise(r => setTimeout(r, 50));
       const days = document.querySelectorAll('tr.day').length;
@@ -125,7 +132,7 @@ app.whenReady().then(async () => {
         inputBody: t('clicks / min'), trendRow: t('Clicks per minute'), appTable: !!document.querySelector('#input-body .apps-tbl'), aiSummary: t('typing-heavy session'), sumMarks: document.querySelectorAll('.ins-sum mark.hl').length,
         approveBtn: !!document.querySelector('#input-act [data-approve-ins="1"]') && !!document.querySelector('#input-act [data-rerun]'), fileAi: t('Quarterly budget by cost centre'),
         wfCard: document.querySelector('#wf-card h2').textContent.includes('Suggested workflows'), wfRows: document.querySelectorAll('#wf-body .wf').length, wfSub: document.getElementById('wf-sub').textContent, wfEnv: t('Inferred environment'),
-        wfTrend: t('Steps per case'), wfRecurring: t('Seen before'),
+        wfTrend: t('Steps per case'), wfRecurring: t('Seen before'), cuOk,
       };
     })()`);
     console.log(JSON.stringify({ errors, ...out }, null, 1));
@@ -133,7 +140,7 @@ app.whenReady().then(async () => {
     const appsOk = out.appRows === 3 && out.appBars === 4 && out.appFirst === 'Outlook' && out.secsScroll === 'auto' && out.secCards === 2;
     const insightsOk = out.thumbs === 1 && out.dayRows === 3 && out.closedDays === 2 && out.hiddenRecs === 3 && out.foldToggle === 4 && out.demoReveal && out.flagRows === 2 && out.flagOpen === 1 && out.flagBtns && out.timelineFlag && out.secChip && out.excludeBtn && out.inputBody && out.trendRow && out.appTable && out.aiSummary && out.sumMarks >= 2 && out.approveBtn && out.fileAi;
     const wfOk = out.noFolder && out.progRing === '30' && out.submittingLabel && out.doneBtn && out.wfBtn === 1 && out.wfModal === 2 && out.wfCard && out.wfRows === 2 && out.wfSub.startsWith('2 suggested') && out.wfEnv && out.wfTrend && out.wfRecurring;
-    app.exit(errors.length || !insightsOk || !wfOk || !out.wsPill || !out.wsBanner || !out.hasWeek || out.days < 3 || !out.adminHidden || !out.editForm || out.electron || out.other || out.whatRecorded || !docsOk || !appsOk ? 1 : 0);
+    app.exit(errors.length || !insightsOk || !wfOk || !out.cuOk || !out.wsPill || !out.wsBanner || !out.hasWeek || out.days < 3 || !out.adminHidden || !out.editForm || out.electron || out.other || out.whatRecorded || !docsOk || !appsOk ? 1 : 0);
   });
   w.loadFile(path.join(here, '..', 'ui', 'dashboard.html'));
 });

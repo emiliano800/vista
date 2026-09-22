@@ -209,3 +209,45 @@ The app appears in the permission lists only after it has tried once, so press
 Start, grant, then press Start again. In development the entry is "Electron";
 a signed `.app` build (`electron-builder`) shows as "Vista". While recording
 the Dock icon hides so only the overlay is visible; it returns on Stop.
+
+## Computer use sessions and consent
+
+The Computer Use Agent (see `AGENTS.md`) can carry out an *approved* sandbox workflow
+through an employee's computer. The cloud never reaches the recorder; the recorder
+pulls work and the employee starts every session here, by hand:
+
+1. On the same 30 s tick as uploads, the recorder announces this device
+   (`GET /api/recorder/computer-use/sessions?device_id&platform&browser&desktop&recorder_version`)
+   with the harnesses this build can actually provide, and lists runs waiting for one.
+2. **Computer use** in the dashboard shows those offers. *Start…* opens a plain-language
+   notice; the session is claimed only after the consent box is ticked
+   (`POST …/sessions/{run_id}/claim` with `consent: {version: "computer-use-v1", accepted_at,
+   screenshots}`). Screenshots stay on this computer unless the second box is ticked.
+3. While a session is active the recorder polls `GET …/sessions/{id}` every 3 s (the poll is
+   also the lease heartbeat). Each step the server files is checked on this computer first
+   (`src/computer-use/policy.js`): the harness kind must be one the employee consented to
+   *and* one this build provides; the run's step and runtime limits are mirrored locally; only
+   a closed set of actions with well-formed values is accepted; a targeted action must cite
+   the observation its target came from, and that observation must still be current. A step
+   that fails the check is reported back as refused and never performed.
+4. Every request and result is appended to `~/Vista/computer-use/<session>/steps.jsonl`
+   (mode 0600, never under `recordings/`) *before* the result is posted
+   (`POST …/steps/{step_id}/result`). The lease token is never written to disk.
+5. *Stop*, **⌘⇧Esc** (a global shortcut registered only while a session is active), or
+   quitting the recorder ends the session (`POST …/sessions/{id}/stop`); a lost lease ends it
+   locally. A session interrupted by a restart is listed as interrupted, never resumed silently.
+
+**This build ships placeholder harnesses** (`src/computer-use/harnesses.js`): they
+advertise `browser: false, desktop: false`, so the workspace never offers a browser/desktop
+run to this device, and a step that arrives anyway is answered `harness_unsupported` —
+which the server treats as "leave this step for a person". The protocol, consent, limits,
+local log and kill switch are complete and tested (`test/cu-policy.test.js`,
+`test/cu-client.test.js`, `test/api.test.js`); the drivers that operate a sandboxed page or
+the desktop are a separate change and must keep the harness shape (`kind`, `supported`,
+`capabilities()`, `perform(step)`, `close()`).
+
+Over the agent API (`VISTA_RECORDER_API_TOKEN`): `GET /computer-use/status`,
+`GET /computer-use/sessions` (presence + offers), `POST /computer-use/sessions/{run_id}/start`
+(400 unless `consent: true`; `share_screenshots` optional), `POST /computer-use/sessions/{id}/stop`,
+`GET /computer-use/sessions/{id}/steps`. An agent cannot manufacture consent: the route
+refuses anything but the literal `true`, and the dashboard is the only place the notice is shown.
