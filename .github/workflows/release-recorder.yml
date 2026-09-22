@@ -17,30 +17,53 @@ on:
 permissions:
   contents: write
 
+# macOS signing has two modes, chosen by the presence of repository secrets:
+#   - Developer ID + notarization when MAC_CSC_LINK (base64 .p12), MAC_CSC_KEY_PASSWORD,
+#     APPLE_ID, APPLE_APP_SPECIFIC_PASSWORD and APPLE_TEAM_ID are set. Gatekeeper then
+#     opens the app without any prompt.
+#   - Ad-hoc signing otherwise (package.json `mac.identity: "-"`). The app opens after
+#     System Settings → Privacy & Security → Open Anyway. Never build fully unsigned:
+#     Apple Silicon refuses a quarantined unsigned binary with "damaged, move to Trash".
 jobs:
   build:
     strategy:
       matrix:
-        os: [macos-latest, windows-latest]
+        include:
+          - os: macos-latest
+            assets: src/recorder/dist/*.dmg
+          - os: windows-latest
+            assets: src/recorder/dist/*.exe
     runs-on: ${{ matrix.os }}
     defaults:
       run:
         working-directory: src/recorder
+    env:
+      MAC_CSC_LINK: ${{ secrets.MAC_CSC_LINK }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 22
       - run: npm ci
-      - run: npm run dist
+      - name: Build (Developer ID signed and notarized)
+        if: runner.os == 'macOS' && env.MAC_CSC_LINK != ''
+        run: npm run dist -- --config.mac.identity="Developer ID Application" --config.mac.hardenedRuntime=true
         env:
-          # Unsigned demo builds; macOS users right-click → Open the first time.
+          CSC_LINK: ${{ secrets.MAC_CSC_LINK }}
+          CSC_KEY_PASSWORD: ${{ secrets.MAC_CSC_KEY_PASSWORD }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+      - name: Build (ad-hoc signed)
+        if: runner.os != 'macOS' || env.MAC_CSC_LINK == ''
+        run: npm run dist
+        env:
           CSC_IDENTITY_AUTO_DISCOVERY: "false"
       - name: Upload installers to the release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }}
-          files: |
-            src/recorder/dist/*.dmg
-            src/recorder/dist/*.exe
-          fail_on_unmatched_files: false
+          files: ${{ matrix.assets }}
+          # A platform whose build produced nothing must fail its leg, not publish a
+          # release whose "latest" download link 404s.
+          fail_on_unmatched_files: true

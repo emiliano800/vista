@@ -148,6 +148,18 @@ posts them (`…/answers`); **Publish** needs a second explicit consent
 workspace. A failed analysis can be retried (`…/analyze`). The local queue
 caches the server's answers under `analysis`; the server is the source of truth.
 
+**Releases and macOS signing.** Pushing a `recorder-v*` tag runs
+`.github/workflows/release-recorder.yml`, which builds the DMGs and the Windows
+installer and attaches them to a GitHub release under stable names; the download
+page links to `latest`. macOS builds are **ad-hoc signed** by default
+(`mac.identity: "-"`), so Gatekeeper asks the employee to allow the app once via
+System Settings → Privacy & Security → Open Anyway. Never ship a fully unsigned
+build: Apple Silicon reports a quarantined unsigned app as "damaged". To ship a
+build that opens without prompts, add the repository secrets `MAC_CSC_LINK`
+(base64 Developer ID Application `.p12`), `MAC_CSC_KEY_PASSWORD`, `APPLE_ID`,
+`APPLE_APP_SPECIFIC_PASSWORD` and `APPLE_TEAM_ID`; the workflow then signs with
+the Developer ID, enables the hardened runtime and notarizes automatically.
+
 **Cloud review (`src/cloud.js`, legacy protocol 1).** With Settings → Cloud workspace filled in
 (website URL, company ID, access key), Stop uploads the redacted report
 (`manifest.json`, `processed/summary.json`, `processed/event_log.csv` — never

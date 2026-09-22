@@ -1,6 +1,6 @@
 {
   "name": "vista-recorder",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "One-button desktop recorder for Vista task mining: always-on overlay, cross-platform input hooks, active-window + screenshot capture, on-device redaction.",
   "private": true,
   "type": "module",
@@ -30,7 +30,8 @@
     ],
     "asarUnpack": ["**/node_modules/uiohook-napi/**", "**/node_modules/get-windows/**"],
     "mac": {
-      "identity": null,
+      "identity": "-",
+      "hardenedRuntime": false,
       "category": "public.app-category.productivity",
       "target": [{ "target": "dmg", "arch": ["arm64", "x64"] }],
       "artifactName": "Vista-Recorder-mac-${arch}.${ext}"
