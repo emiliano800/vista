@@ -324,8 +324,65 @@ test("tenant workflow proxy mirrors the firm routes: reads, drafts and decisions
     assert.equal(await status(path, "POST"), 405);
   for (const method of ["GET", "PUT", "PATCH", "DELETE"])
     assert.equal(await status(`${version}/decision`, method), 405);
-  for (const path of [`${workflow}/runs`, `${base}/not-a-uuid`, `${version}/decision/extra`, "/workflows/"])
+  for (const path of [`${base}/not-a-uuid`, `${version}/decision/extra`, "/workflows/"])
     assert.equal(await status(path, "POST"), 404);
+  // `POST /workflows/{id}/runs` used to be a 404 tripwire; runs now start on a *version*.
+  assert.equal(await status(`${workflow}/runs`, "POST"), 405);
+});
+
+test("computer-use proxy: runs start on a version, decisions and stops are POST, reads are GET, nothing else", async () => {
+  const status = async (path, method) =>
+    (await worker.fetch(new Request(`https://vista.test/api${path}`, { method }), {})).status;
+  const id = "00000000-0000-0000-0000-000000000001";
+  const workflow = `/workflows/${id}`;
+  const version = `${workflow}/versions/${id}`;
+  const run = `/workflow-runs/${id}`;
+  for (const path of [`${workflow}/runs`, run, `${run}/steps/${id}/screenshot`]) {
+    assert.equal(await status(path, "GET"), 503);
+    assert.equal(await status(path, "HEAD"), 503);
+    for (const method of ["POST", "PUT", "PATCH", "DELETE"]) assert.equal(await status(path, method), 405);
+  }
+  for (const path of [`${version}/runs`, `${run}/decision`, `${run}/stop`]) {
+    assert.equal(await status(path, "POST"), 503);
+    for (const method of ["GET", "HEAD", "PUT", "PATCH", "DELETE"]) assert.equal(await status(path, method), 405);
+  }
+  for (const path of [`${version}/runs/extra`, `/workflow-runs/not-a-uuid`, `${run}/steps/${id}`, `${run}/screenshot`, `/workflow-runs`])
+    assert.equal(await status(path, "GET"), 404);
+  // decision bodies are forwarded as JSON
+  const seen = [];
+  const env = { API_ORIGIN: "https://api.vista.test/" };
+  const original = globalThis.fetch;
+  globalThis.fetch = async (url, options) => {
+    seen.push([options.method, new URL(url).pathname, await new Response(options.body).text()]);
+    return Response.json({ ok: true });
+  };
+  try {
+    const r = await worker.fetch(
+      new Request(`https://vista.test/api${run}/decision`, { method: "POST", headers: { "Content-Type": "application/json", Origin: "https://vista.test" }, body: JSON.stringify({ step_id: id, decision: "approve" }) }),
+      env,
+    );
+    assert.equal(r.status, 200);
+    assert.deepEqual(seen, [["POST", `/api/workflow-runs/${id}/decision`, JSON.stringify({ step_id: id, decision: "approve" })]]);
+  } finally {
+    globalThis.fetch = original;
+  }
+});
+
+test("recorder computer-use proxy: presence/poll are GET, claim/result/stop are POST", async () => {
+  const status = async (path, method) =>
+    (await worker.fetch(new Request(`https://vista.test/api${path}`, { method }), {})).status;
+  const id = "00000000-0000-0000-0000-000000000001";
+  const base = "/recorder/computer-use";
+  for (const path of [`${base}/sessions`, `${base}/sessions/${id}`]) {
+    assert.equal(await status(path, "GET"), 503);
+    for (const method of ["POST", "PUT", "PATCH", "DELETE"]) assert.equal(await status(path, method), 405);
+  }
+  for (const path of [`${base}/sessions/${id}/claim`, `${base}/sessions/${id}/stop`, `${base}/steps/${id}/result`]) {
+    assert.equal(await status(path, "POST"), 503);
+    for (const method of ["GET", "PUT", "PATCH", "DELETE"]) assert.equal(await status(path, method), 405);
+  }
+  for (const path of [`${base}/steps/${id}`, `${base}/sessions/${id}/claim/extra`, `${base}/sessions/x`, `${base}`])
+    assert.equal(await status(path, "GET"), 404);
 });
 
 test("recorder intake proxy exposes enrollment and private upload operations only", async () => {
