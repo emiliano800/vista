@@ -235,3 +235,26 @@ test("portfolio proxy exposes policies, purchasing and inventory reads and the i
   assert.equal(await status("/portfolio/interpretation/not-a-uuid", "GET"), 404);
   assert.equal(await status(`${company}/purchase-order-lines`, "GET"), 404);
 });
+
+test("workflow proxy permits registry reads and version decisions, not execution or mutation", async () => {
+  const status = async (path, method) =>
+    (await worker.fetch(new Request(`https://vista.test/api${path}`, { method }), {})).status;
+  const id = "00000000-0000-0000-0000-000000000001";
+  const base = `/companies/c-meridian/workflows`;
+  const workflow = `${base}/${id}`;
+  const version = `${workflow}/versions/${id}`;
+  for (const path of [base, workflow, `${workflow}/versions`, version, `${version}/eligibility`]) {
+    assert.equal(await status(path, "GET"), 503);
+    assert.equal(await status(path, "HEAD"), 503);
+    for (const method of ["PUT", "PATCH", "DELETE"])
+      assert.equal(await status(path, method), 405);
+  }
+  for (const path of [base, `${workflow}/versions`, `${version}/decision`])
+    assert.equal(await status(path, "POST"), 503);
+  for (const path of [workflow, version, `${version}/eligibility`])
+    assert.equal(await status(path, "POST"), 405);
+  for (const method of ["GET", "HEAD", "PUT", "PATCH", "DELETE"])
+    assert.equal(await status(`${version}/decision`, method), 405);
+  for (const path of [`${workflow}/runs`, `${base}/not-a-uuid`, `${version}/decision/extra`])
+    assert.equal(await status(path, "POST"), 404);
+});

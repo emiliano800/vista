@@ -20,6 +20,7 @@ from vista.api import (
     synthetic,
     tenants,
     usage,
+    workflows,
 )
 
 app = FastAPI(title="Vista", version="0.2.0")
@@ -70,6 +71,7 @@ for router in (
     portfolio.router,
     synthetic.router,
     evals.router,
+    workflows.router,
 ):
     app.include_router(router)
     app.include_router(router, prefix="/api", include_in_schema=False)

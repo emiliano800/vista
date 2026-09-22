@@ -2,7 +2,21 @@ import uuid
 from datetime import date, datetime
 from decimal import Decimal
 
-from sqlalchemy import BigInteger, Boolean, Date, DateTime, Float, ForeignKey, Integer, Numeric, String, Text, UniqueConstraint, func
+from sqlalchemy import (
+    BigInteger,
+    Boolean,
+    CheckConstraint,
+    Date,
+    DateTime,
+    Float,
+    ForeignKey,
+    Integer,
+    Numeric,
+    String,
+    Text,
+    UniqueConstraint,
+    func,
+)
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import DeclarativeBase, Mapped, declared_attr, mapped_column
 
@@ -639,3 +653,44 @@ class WorkspaceFinding(TenantBase):
     status: Mapped[str] = mapped_column(String(16), default="Open")  # Open|Reviewed|Actioned|Dismissed
     found_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     synthetic_demo: Mapped[bool] = mapped_column(Boolean, default=False)
+
+
+class Workflow(TenantBase):
+    __tablename__ = "workflows"
+    __table_args__ = (CheckConstraint("latest_version > 0", name="ck_workflow_latest_version"),)
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    company_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), index=True)
+    name: Mapped[str] = mapped_column(String(255))
+    latest_version: Mapped[int] = mapped_column(Integer, default=1)
+    created_by: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class WorkflowVersion(TenantBase):
+    __tablename__ = "workflow_versions"
+    __table_args__ = (
+        UniqueConstraint("workflow_id", "number", name="uq_workflow_version_number"),
+        CheckConstraint("number > 0", name="ck_workflow_version_number"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    workflow_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("workflows.id"))
+    number: Mapped[int] = mapped_column(Integer)
+    definition: Mapped[dict] = mapped_column(JSONB)
+    definition_hash: Mapped[str] = mapped_column(String(64))
+    created_by: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class WorkflowApproval(TenantBase):
+    __tablename__ = "workflow_approvals"
+    __table_args__ = (CheckConstraint("decision IN ('approved', 'rejected')", name="ck_workflow_decision"),)
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    version_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("workflow_versions.id"), unique=True)
+    definition_hash: Mapped[str] = mapped_column(String(64))
+    decision: Mapped[str] = mapped_column(String(16))
+    reason: Mapped[str] = mapped_column(Text, default="")
+    decided_by: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True))
+    decided_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
