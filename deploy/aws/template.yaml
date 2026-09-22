@@ -53,6 +53,17 @@ Parameters:
   OpenAIModel:
     Type: String
     Default: gpt-4o-mini
+  TypeSafeApiKey:
+    Type: String
+    Default: ""
+    NoEcho: true
+    Description: >-
+      Optional. TypeSafe Jev key, stored in Secrets Manager and injected as VISTA_TYPESAFE_API_KEY.
+      Without it Jev runs in stub mode: no recorder workflow candidates and the Computer Use Agent
+      executes nothing.
+  TypeSafeModel:
+    Type: String
+    Default: jev-latest
   ProvisioningKey:
     Type: String
     Default: ""
@@ -78,6 +89,7 @@ Parameters:
 
 Conditions:
   HasOpenAIKey: !Not [!Equals [!Ref OpenAIApiKey, ""]]
+  HasTypeSafeKey: !Not [!Equals [!Ref TypeSafeApiKey, ""]]
   HasProvisioningKey: !Not [!Equals [!Ref ProvisioningKey, ""]]
   RunWorker: !Not [!Equals [!Ref WorkerDesiredCount, 0]]
   DeletionProtection: !Equals [!Ref DBDeletionProtection, "true"]
@@ -213,6 +225,13 @@ Resources:
       Name: !Sub "${AWS::StackName}/openai-api-key"
       SecretString: !Ref OpenAIApiKey
 
+  TypeSafeSecret:
+    Type: AWS::SecretsManager::Secret
+    Condition: HasTypeSafeKey
+    Properties:
+      Name: !Sub "${AWS::StackName}/typesafe-api-key"
+      SecretString: !Ref TypeSafeApiKey
+
   ProvisioningSecret:
     Type: AWS::SecretsManager::Secret
     Condition: HasProvisioningKey
@@ -243,6 +262,7 @@ Resources:
                 Resource:
                   - !GetAtt Database.MasterUserSecret.SecretArn
                   - !If [HasOpenAIKey, !Ref OpenAISecret, !Ref "AWS::NoValue"]
+                  - !If [HasTypeSafeKey, !Ref TypeSafeSecret, !Ref "AWS::NoValue"]
                   - !If [HasProvisioningKey, !Ref ProvisioningSecret, !Ref "AWS::NoValue"]
               - Effect: Allow
                 Action: [logs:CreateLogGroup, logs:CreateLogStream, logs:PutLogEvents]
@@ -359,6 +379,7 @@ Resources:
           - {Name: VISTA_COOKIE_SECURE, Value: "true"}
           - {Name: VISTA_ALLOWED_ORIGINS, Value: !Ref AllowedOrigins}
           - {Name: VISTA_OPENAI_MODEL, Value: !Ref OpenAIModel}
+          - {Name: VISTA_TYPESAFE_MODEL, Value: !Ref TypeSafeModel}
         Secrets:
           - Name: VISTA_DB_USER
             ValueFrom: !Sub "${Database.MasterUserSecret.SecretArn}:username::"
@@ -367,6 +388,10 @@ Resources:
           - !If
             - HasOpenAIKey
             - {Name: VISTA_OPENAI_API_KEY, ValueFrom: !Ref OpenAISecret}
+            - !Ref AWS::NoValue
+          - !If
+            - HasTypeSafeKey
+            - {Name: VISTA_TYPESAFE_API_KEY, ValueFrom: !Ref TypeSafeSecret}
             - !Ref AWS::NoValue
           - !If
             - HasProvisioningKey
@@ -416,6 +441,7 @@ Resources:
             - {Name: VISTA_COOKIE_SECURE, Value: "true"}
             - {Name: VISTA_ALLOWED_ORIGINS, Value: !Ref AllowedOrigins}
             - {Name: VISTA_OPENAI_MODEL, Value: !Ref OpenAIModel}
+            - {Name: VISTA_TYPESAFE_MODEL, Value: !Ref TypeSafeModel}
           Secrets:
             - Name: VISTA_DB_USER
               ValueFrom: !Sub "${Database.MasterUserSecret.SecretArn}:username::"
@@ -424,6 +450,10 @@ Resources:
             - !If
               - HasOpenAIKey
               - {Name: VISTA_OPENAI_API_KEY, ValueFrom: !Ref OpenAISecret}
+              - !Ref AWS::NoValue
+            - !If
+              - HasTypeSafeKey
+              - {Name: VISTA_TYPESAFE_API_KEY, ValueFrom: !Ref TypeSafeSecret}
               - !Ref AWS::NoValue
             - !If
               - HasProvisioningKey

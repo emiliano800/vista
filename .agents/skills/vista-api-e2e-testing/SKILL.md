@@ -53,6 +53,13 @@ Run from the Vista repository root so migrations and synthetic data resolve.
 - Do not equate employee discovery with a true Sector Merger/Analyze implementation; check current API/UI support.
 - Dashboard Findings may be import-analysis-only, with synthetic findings, employee runs, summaries, and usage available only through API. Check actual navigation and data sources before claiming integration.
 
+## Computer Use Agent
+- Needs an approved sandbox `workflow_versions` row (tenant `admin` decides via `POST /workflows/{w}/versions/{v}/decision`) and `VISTA_TYPESAFE_API_KEY` on the worker; stub Jev answers `none`, so the run pauses at step 1 with zero actions — that is the expected stub behaviour, not a passing execution.
+- Check `GET /workflows/{w}/versions/{v}/eligibility` first: `execution_available` must be true; `availability.reasons` names what is missing (`harness_not_connected` → start the recorder in `--demo`, connect the company, open Computer use).
+- Start with `POST /workflows/{w}/versions/{v}/runs {"mode":"sandbox"}`; poll `GET /workflow-runs/{id}`. Status order to expect: `queued → waiting_for_harness → running ⇄ waiting_for_human → succeeded|failed|stopped`. A documents-only workflow skips `waiting_for_harness`.
+- `waiting_for_human` carries `pending.candidates` with Jev's probabilities and `pending.value_from` (an input *name*). Decide with `POST /workflow-runs/{id}/decision {"step_id":…, "decision":"approve"|"deny"}`; `POST …/stop` at any time. Verify one `usage_events` row per judgment and one `tool_call` event per step on `GET /runs/{agent_run_id}`; the final `findings` row has `finding_type=workflow.execution` and `evidence.verification`.
+- Demo destination: `python3 -m http.server 8765` in `synthetic_data/front_end_work`, open `_sandbox/entry.html?reset=1`; diff its Export CSV against the Ridgeway `supplier_invoices.csv` rows the run used. This build's recorder answers browser/desktop steps `harness_unsupported` (placeholder harnesses), so a browser workflow pauses for a person after the first remote step.
+
 ## Evidence
 - Workers consume a shared queue unless database-isolated: old recording/import jobs may fail or consume live tokens independently. Correlate logs by job/run ID.
 - Pretty-print Chrome JSON pages and zoom using Ctrl+= for legible recordings.

@@ -75,7 +75,7 @@ S3 and every committed row traceable back. The import processor is pluggable
 
 ## The agent suite
 
-Four agents, all running as durable jobs through the same queue/worker, every model
+Five agents, all running as durable jobs through the same queue/worker, every model
 call metered into `usage_events` (tokens + $ at real model rates):
 
 | Agent | Trigger | What it does |
@@ -84,6 +84,7 @@ call metered into `usage_events` (tokens + $ at real model rates):
 | **Sector Merger** | on demand | Portfolio Analyst across sister companies in a sector; one call per opportunity kind; proposals cite companies, shared keys, table refs; look-alike traps get rejected and logged |
 | **Report Generator** | on demand | Company summary over open findings; keeps verified facts separate from hypotheses |
 | **Recording Reviewer** | recorder submit | Explains low-confidence stretches of recordings; employee approves/fixes/explains; below-threshold always waits for the employee |
+| **Computer Use Agent** | Workflows → Run in sandbox (tenant admin) | Executes an *approved* sandbox workflow version one bounded step at a time — Jev picks the next action/target/input among code-enumerated candidates, code enforces limits and the risk gate, browser/desktop steps go through the employee's recorder with consent, an independent read-back judgment verifies the result |
 
 Infrastructure around them: append-only `agent_runs`/`agent_run_events` traces
 (every tool call and model call), findings with kind/status triage, `/usage` with
@@ -153,3 +154,7 @@ service container, and a wrangler dry-run on pushes to this repository's main br
   be rotated before any real-customer use.
 - Migration gotcha: in `migrations/tenant/env.py`, never execute statements after
   `connection.commit()` before `context.configure` (Alembic silently rolls back).
+- Computer Use Agent: sandbox only; the recorder in this build ships placeholder
+  browser/desktop harnesses (steps come back `harness_unsupported` and the run pauses
+  for a person); firm-side run routes and a run-inputs UI are not built; without
+  `VISTA_TYPESAFE_API_KEY` the agent executes nothing.

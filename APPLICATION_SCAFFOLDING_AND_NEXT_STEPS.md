@@ -214,42 +214,47 @@ with model calls disabled. No production migrations or model calls are required 
 exercise this milestone. For deployment, ship the backend and tenant migration
 before clients depend on the new routes; update the Worker allow-list with it.
 
-## 5. Deferred: one verified sandbox action
+## 5. Delivered: one verified sandbox action (bounded computer use)
 
-This work has not been implemented and is not the current priority. When workflow
-execution resumes, the first slice should be:
+The first execution slice exists as the **Computer Use Agent** (`src/vista/computer_use/`,
+AGENTS.md "Computer Use Agent — bounded, not arbitrary"). The shape from the original plan is
+what shipped:
 
 ```text
-Authorized invoice
-  -> approved workflow version
-  -> permitted sandbox tool
-  -> draft creation
-  -> independent read-back verification
-  -> human correction, if needed
+Approved workflow version (pinned by definition_hash)
+  -> bound inputs (documents / records / declared values)
+  -> harness per allowed tool (documents, http, workspace locally;
+     browser, desktop through the employee's recorder, with consent)
+  -> one Jev judgment per step: next_action, target, value_input, p_irreversible
+  -> risk gate (submit always; p_irreversible >= threshold) -> admin approves that step
+  -> independent read-back verification against success_criteria
+  -> one observed_fact finding + tasks, every step on the AgentRun ledger
 ```
 
-Use a deterministic connector simulator for repeatable failure tests, then the
-provider's real sandbox. Start with one invoice format and one accounting destination.
-Keep payments, real ledger posting, autonomous outreach, and arbitrary computer use
-outside that milestone.
+Delivered:
 
-Required additions, not implemented yet:
+1. **Typed tools and a company-bound connection.** `computer_use/tools.py` maps every
+   `allowed_tools` label to primitives and harness kinds; `harness_connections` (kind
+   `http`, `base_url` + `allow_paths`, token only in the worker's env) is the minimal
+   company-bound connection; a label alone grants nothing (`availability()` reports
+   `no_harness_for_tools`, `connection_missing`, `harness_not_connected`).
+2. **Execution safety.** Run-level lease (`workflow_runs.lease_owner/lease_until`),
+   per-step checkpoints, deterministic step ids (`uuid5(run_id, seq)`) so a retry cannot
+   file a remote step twice, idempotent resume jobs, budget enforcement per step,
+   watchdog expiry, `AFTER_TERMINAL` reconciliation when the job fails permanently.
+3. **Independent verification and ordinary feedback.** A separate judgment over the
+   final observation and the criteria only; outcome, steps, cost and undo hints saved on
+   the run and its finding; the admin's approve/deny decisions are events on the run.
 
-1. **Typed tools and a company-bound connection.** Define validated arguments,
-   permissions, external account binding, secret references, and tool results.
-   Stored `allowed_tools` labels alone do not grant a connector permission.
-2. **Execution safety.** Add worker leases/recovery, atomic run/job creation,
-   action checkpoints, idempotency keys, budget enforcement, and reconciliation.
-   A timeout after draft creation must not create a second draft on retry.
-3. **Independent verification and ordinary feedback.** Read the resulting record
-   and compare company, supplier, invoice number, currency, amounts, and attachment.
-   Save outcome/correction evidence against the workflow version and run.
+What "computer use" means here is bounded, not arbitrary: a closed action vocabulary,
+targets only from code-enumerated candidates, typed values only from declared inputs,
+sandbox only, limits and a risk gate in code, a kill switch, everything on the ledger.
 
-Reuse `AgentRun`, events, usage, S3 artifacts, and canonical record provenance rather
-than creating a disconnected execution ledger. Do not treat the current
-[executor phase](src/vista/agents/execute.py), which returns action dictionaries,
-as a connector implementation. Likewise, the legacy portfolio `run_agent_now()`
-display path must not stand in for an actual queued execution.
+Still deferred: OAuth/secret-manager connectors and a connections API/UI; the recorder's
+page and desktop *drivers* (this build ships placeholder harnesses that report
+`harness_unsupported`); Windows/Linux desktop; resume without re-consent; iframes,
+popups, drag and file upload; automatic undo; a run-inputs UI (v1 binds server-side);
+firm-side run routes; payments, real ledger posting and autonomous outreach.
 
 ## 6. Current milestone: recorder connection and private uploads
 

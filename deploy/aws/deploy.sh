@@ -9,7 +9,7 @@
 #   AWS_REGION / AWS_PROFILE      standard AWS CLI settings
 #   STACK_NAME                    default "vista"
 #   VPC_ID, SUBNET_IDS            default: the account's default VPC and all its public subnets
-#   OPENAI_API_KEY, PROVISIONING_KEY, ALLOWED_ORIGINS, WORKER_DESIRED_COUNT, DB_DELETION_PROTECTION
+#   OPENAI_API_KEY, TYPESAFE_API_KEY, PROVISIONING_KEY, ALLOWED_ORIGINS, WORKER_DESIRED_COUNT, DB_DELETION_PROTECTION
 set -euo pipefail
 cd "$(dirname "$0")/../.."
 
@@ -97,7 +97,7 @@ params = {
     "WorkerDesiredCount": os.environ.get("WORKER_DESIRED_COUNT", "0"),
     "DBDeletionProtection": os.environ.get("DB_DELETION_PROTECTION", "true"),
 }
-for key, env in (("AllowedOrigins", "ALLOWED_ORIGINS"), ("OpenAIApiKey", "OPENAI_API_KEY"), ("ProvisioningKey", "PROVISIONING_KEY")):
+for key, env in (("AllowedOrigins", "ALLOWED_ORIGINS"), ("OpenAIApiKey", "OPENAI_API_KEY"), ("TypeSafeApiKey", "TYPESAFE_API_KEY"), ("ProvisioningKey", "PROVISIONING_KEY")):
     if os.environ.get(env):
         params[key] = os.environ[env]
 json.dump([{"ParameterKey": k, "ParameterValue": v} for k, v in params.items()], open(sys.argv[1], "w"))

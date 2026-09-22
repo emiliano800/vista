@@ -55,7 +55,9 @@ API by default, worker via `VISTA_ROLE`, or an explicit command for one-off task
 On start (when `VISTA_MIGRATE_ON_START=true`) it runs Alembic migrations under a
 Postgres advisory lock so concurrent task launches don't race. The worker executes
 agent jobs (File Reviewer, Sector Merger, Report Generator, Recording Reviewer,
-extraction) from the `platform.jobs` queue — no Redis/SQS; the queue is Postgres.
+Computer Use Agent, extraction) from the `platform.jobs` queue — no Redis/SQS; the
+queue is Postgres. The worker never reaches an employee's computer: browser/desktop
+steps are pulled by the recorder over the same `/api` proxy.
 
 **Database** — schema-per-tenant isolation: `platform` (tenants, users, sessions,
 jobs, firm layer) plus one `t_<hex>` schema per company. Two Alembic environments

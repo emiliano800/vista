@@ -59,7 +59,8 @@ Keep unavailable inputs visible as missing rather than filling them with agent g
    evidence. Minutes saved alone do not establish realized cost savings.
 
 This is the intended end-to-end workflow. Current findings, tasks, and run traces
-provide a foundation; they do not constitute a shipped automation execution platform.
+provide a foundation; the Computer Use Agent adds one bounded, sandbox-only execution
+slice with review gates — not a shipped automation platform for real systems.
 Employee recording and verification remain evidence inputs to these views, rather
 than a fourth management platform.
 
@@ -70,7 +71,7 @@ than a fourth management platform.
 | **PE analyst portfolio** (`/signin/analyst/` → `/portfolio/`) | Firm-scoped financial metrics, company drill-downs, opportunities and evidence; currently also mixes in imports, tasks, and agents that need separating by audience |
 | **Company detail within analyst UI** (`/company/?id=…`) | Finance, records, findings, tasks, and agents for one company; still uses analyst authentication and a firm-wide snapshot, so it is not a CFO authorization boundary |
 | **Existing company workspace** (`/signin/` → `/account/`) | Company data sources, findings, agents, run traces, and published recording reports; an operational foundation, not the finished CFO or FDE platform |
-| **Agent suite** (`src/vista/agents/`) | File Reviewer, Sector Merger, Report Generator, Recording Reviewer — durable jobs with per-call cost tracking and eval harness |
+| **Agent suite** (`src/vista/agents/`, `src/vista/computer_use/`) | File Reviewer, Sector Merger, Report Generator, Recording Reviewer, Computer Use Agent — durable jobs with per-call cost tracking and eval harness; the Computer Use Agent runs approved sandbox workflows one bounded step at a time (see AGENTS.md) |
 | **Desktop recorder** (`src/recorder/`) | Electron recorder: on-device capture, consented metadata-only upload with selected documents, cloud analysis into a draft report the employee answers and publishes |
 | **Backend** (`src/vista/`) | FastAPI + Postgres (schema-per-tenant isolation) + S3; durable job queue; append-only run/audit trail |
 
