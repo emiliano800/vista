@@ -36,7 +36,7 @@ packages = ["src/vista", "src/taskmining"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "-m 'not live'"  # live provider tests spend tokens: opt in with `pytest -m live`
-markers = ["live: calls the real model provider (needs VISTA_OPENAI_API_KEY)"]
+markers = ["live: calls a real model provider (needs VISTA_OPENAI_API_KEY and/or VISTA_TYPESAFE_API_KEY)"]
 
 [tool.ruff]
 line-length = 140

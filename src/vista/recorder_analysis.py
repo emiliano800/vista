@@ -10,8 +10,12 @@ therefore split in three, and the split is preserved in the stored report:
                   (time per app, switches, copy→paste transfers, ping-pong loops,
                   work stretches). Never touched by a model.
   interpretation  the Recording Reviewer's reading of those facts plus the
-                  documents the employee chose to share. Every item must point at
-                  apps that actually appear in `observed`; anything else is dropped.
+                  documents the employee chose to share. Two interpreters
+                  (`settings.recorder_interpreter`): `jev` derives workflow
+                  candidates from the observed transfers, loops and stretches in
+                  code and asks TypeSafe Jev typed questions about each, so every
+                  item is born citing its evidence; `chat` asks the prose model to
+                  write items and drops any that name an app not in `observed`.
   questions       focused prompts the employee answers before publishing.
 
 The handler is idempotent per run: a retry recomputes the same draft and never
@@ -24,6 +28,7 @@ import json
 import re
 import uuid
 from collections import Counter, defaultdict
+from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import PurePosixPath
 from typing import Any
@@ -32,8 +37,10 @@ from pydantic import BaseModel, ConfigDict, Field, ValidationError
 from sqlalchemy import select
 
 from vista import documents
+from vista.agents.jev import NONE, Judgment, choice, judge, noul, score
 from vista.agents.llm import Prompt, chat, strip_fences
 from vista.agents.runtime import run_phase
+from vista.config import settings
 from vista.db import tenant_session
 from vista.models.platform import Job
 from vista.models.tenant import AgentRun, AgentRunEvent, RecorderReport, RecorderSubmission
@@ -332,6 +339,413 @@ def parse(text: str) -> ModelOutput | None:
         return None
 
 
+# ---- workflow candidates (code) → typed judgments (Jev) → interpretation ----------
+#
+# The chat interpretation above asks a model to *write* workflows and then drops what it
+# invented. This path never lets it invent: code derives every candidate from the observed
+# transfers, loops and stretches, so each one is born citing its evidence, and Jev only
+# answers typed questions about each — is it a unit of work, of what kind, how mechanical,
+# and whether only the employee can say. Wording and thresholds live here, not in the
+# model, so changing a threshold never re-runs inference.
+
+MAX_CANDIDATES = 8
+MIN_STRETCH_SWITCHES = 4
+WORKFLOW_THRESHOLD = 0.5  # p(recurring unit of work) needed to report a workflow
+AUTOMATION_THRESHOLD = 2.0  # mechanical score (0..3) needed to propose automation
+QUESTION_THRESHOLD = 0.6  # p(only the employee can say what it is) needed to ask
+
+KINDS = {
+    "data_transfer": "Values are copied out of one application and entered into another.",
+    "lookup_and_enter": "Something is looked up in one application to decide or fill what is entered in another.",
+    "reconciliation": "Two applications are compared back and forth to check that they agree.",
+    "communication": "Messages or email are read or written around work in another application.",
+    "review_approval": "Something is examined in one application and then approved, filed or forwarded in another.",
+    NONE: "None of these describes it, or it is incidental switching rather than a unit of work.",
+}
+KIND_NAMES = {
+    "data_transfer": "Data transfer",
+    "lookup_and_enter": "Look up and enter",
+    "reconciliation": "Reconciliation",
+    "communication": "Communication loop",
+    "review_approval": "Review and approval",
+}
+MECHANICAL = [
+    "Every step needs the employee's judgment; nothing repeats the same way twice.",
+    "Mostly judgment, with a few steps that repeat the same way each time.",
+    "Mostly the same steps every time, with an occasional decision or exception.",
+    "The same mechanical sequence every time: the same fields, the same order, no decision.",
+]
+
+
+def _evidence_text(c: dict) -> str:
+    a, b = c["apps"][0], c["apps"][1]
+    n = c["count"]
+    about = c["about"]
+    if c["pattern"] == "transfer":
+        return f"Copied from {a} and pasted into {b} {n} time{'s' if n != 1 else ''}, {about['mean_latency_s']}s apart on average"
+    if c["pattern"] == "loop":
+        return f"Switched back and forth between {a} and {b} {n} times"
+    return (
+        f"{about['switches']} switches among {', '.join(c['apps'])} between {_clock(_ts(about['start']))} and {_clock(_ts(about['end']))}"
+    )
+
+
+def workflow_candidates(observed: dict) -> list[dict]:
+    """Every recurring cross-application pattern in the observed facts, each carrying
+    the fact it came from (`about`) and a sentence stating it (`evidence`)."""
+    found: list[dict] = []
+    for t in observed["transfers"]:
+        found.append(
+            {
+                "pattern": "transfer",
+                "apps": [t["from"], t["to"]],
+                "count": t["count"],
+                "about": {"transfer": [t["from"], t["to"]], "count": t["count"], "mean_latency_s": t["mean_latency_s"]},
+            }
+        )
+    for loop in observed["loops"]:
+        a, b = loop["between"]
+        found.append({"pattern": "loop", "apps": [a, b], "count": loop["count"], "about": {"loop": [a, b], "count": loop["count"]}})
+    for s in observed["stretches"]:
+        if len(s["apps"]) >= 2 and s["switches"] >= MIN_STRETCH_SWITCHES:
+            found.append(
+                {
+                    "pattern": "stretch",
+                    "apps": s["apps"][:3],
+                    "count": s["switches"],
+                    "about": {"stretch": s["id"], "start": s["start"], "end": s["end"], "switches": s["switches"], "events": s["events"]},
+                }
+            )
+    # One candidate per pair of applications: a transfer, a loop and a stretch between the
+    # same two apps are three views of one piece of work, not three workflows. The most
+    # specific pattern leads (a transfer says more than a loop, a loop more than a stretch);
+    # the others stay attached as evidence, and the pair ranks by its strongest signal.
+    priority = {"transfer": 0, "loop": 1, "stretch": 2}
+    groups: dict[frozenset, list[dict]] = {}
+    for c in found:
+        groups.setdefault(frozenset(c["apps"][:2]), []).append(c)
+    merged = []
+    for members in groups.values():
+        members.sort(key=lambda c: (priority[c["pattern"]], -c["count"]))
+        primary, extra = members[0], members[1:]
+        about = dict(primary["about"], also=[e["about"] for e in extra]) if extra else primary["about"]
+        evidence = "; also ".join([_evidence_text(primary)] + [_evidence_text(e)[0].lower() + _evidence_text(e)[1:] for e in extra])
+        merged.append({**primary, "about": about, "evidence": evidence, "rank": max(m["count"] for m in members)})
+    merged.sort(key=lambda c: (-c["rank"], c["pattern"], c["apps"]))
+    return [{"id": f"c{i + 1}", **{k: v for k, v in c.items() if k != "rank"}} for i, c in enumerate(merged[:MAX_CANDIDATES])]
+
+
+def judge_request(observed: dict, candidates: list[dict], docs: list[dict]) -> tuple[dict, dict]:
+    """State and questions for one Jev call: four typed questions per candidate, all answered in parallel."""
+    facts = {k: observed[k] for k in ("events", "apps", "switches", "transfers", "loops", "stretches", "session")}
+    state = {
+        "context": (
+            "Metadata-only record of one employee's work session: application names, timing, switches and "
+            "copy→paste transfers. Window titles, URLs, typed text and screenshots were never captured."
+        ),
+        "observed": facts,
+        "shared_documents": [{"filename": d["filename"], "summary": d["summary"], "excerpt": d["excerpt"]} for d in docs],
+        "candidates": [{k: c[k] for k in ("id", "pattern", "apps", "count", "evidence")} for c in candidates],
+    }
+    questions: dict[str, dict] = {}
+    for c in candidates:
+        ref = f"candidate `{c['id']}` in `candidates` ({' and '.join(c['apps'])}; {c['evidence'].lower()})"
+        questions[f"{c['id']}_workflow"] = noul(
+            f"Is {ref} a recurring unit of work — something this employee does the same way again and again — "
+            "rather than incidental switching between applications?",
+            {
+                "true": "A repeatable task with a purpose that spans these applications.",
+                "false": "Incidental, one-off, or just where the employee's attention happened to go.",
+            },
+        )
+        questions[f"{c['id']}_kind"] = choice(
+            f"What kind of work is {ref}? Judge from the pattern, the timing, and any `shared_documents`.", KINDS
+        )
+        questions[f"{c['id']}_mechanical"] = score(
+            f"How mechanical is {ref}: how much of it is the same steps in the same order, with no decision to make?", MECHANICAL
+        )
+        questions[f"{c['id']}_ask"] = noul(
+            f"Could only the employee say what {ref} actually is — what moves between the applications, and why?",
+            {
+                "true": "The metadata leaves the task itself unknown; ask before proposing anything.",
+                "false": "The pattern and the shared documents already make the task clear enough to describe.",
+            },
+        )
+    return state, questions
+
+
+def _workflow_name(kind: str, apps: list[str]) -> str:
+    joiner = " → " if kind == "data_transfer" else " ↔ "
+    return f"{KIND_NAMES[kind]}: {joiner.join(apps[:2])}"
+
+
+def _question_for(kind: str, c: dict) -> str:
+    a, b, n = c["apps"][0], c["apps"][1], c["count"]
+    return {
+        "data_transfer": (
+            f"You moved values from {a} into {b} about {n} times. "
+            "What is being re-keyed, and is there a file or export it could come from instead?"
+        ),
+        "lookup_and_enter": f"You went between {a} and {b} {n} times. What do you look up in one before entering it in the other?",
+        "reconciliation": (
+            f"You went back and forth between {a} and {b} {n} times. "
+            "What are you checking agrees between them, and what happens when it doesn't?"
+        ),
+        "communication": (
+            f"Around your work in {b}, you kept returning to {a}. "
+            "What are you sending or receiving there, and who decides what happens next?"
+        ),
+        "review_approval": (
+            f"Between {a} and {b}: what do you check in the first before acting in the second, and does anyone else have to approve it?"
+        ),
+    }[kind]
+
+
+# ---- what to do about a judged workflow (templated in code; nothing generated) ----------
+#
+# Every judged workflow carries `actions`: a numbered checklist for the FDE, filled from
+# the facts, and — when Jev scored it mechanical enough — a prefilled `WorkflowDefinition`
+# the workspace can turn into a draft version with one button. The draft is a starting
+# point that still needs a human edit and an admin decision; nothing here executes.
+
+TOOLS = {
+    "data_transfer": ["read_source_records", "map_fields", "write_destination_records", "compare_with_manual_entry"],
+    "lookup_and_enter": ["lookup_reference", "read_source_records", "write_destination_records", "compare_with_manual_entry"],
+    "reconciliation": ["read_source_records", "read_destination_records", "match_records", "report_differences"],
+    "communication": ["read_messages", "extract_requests", "create_task", "draft_reply"],
+    "review_approval": ["read_source_records", "check_against_rules", "route_for_approval", "record_decision"],
+}
+DRAFT_LIMITS = {"max_steps": 10, "max_runtime_seconds": 300, "max_cost_usd": "1.00"}
+
+
+def draft_definition(kind: str, c: dict, docs: list[dict]) -> dict:
+    """A `WorkflowDefinition` (automation/schemas.py) prefilled from the kind and the apps."""
+    a, b, n = c["apps"][0], c["apps"][1], c["count"]
+    goal = {
+        "data_transfer": (
+            f"Move the values the employee re-keys from {a} into {b} (about {n} times per session) without manual entry, "
+            "and list anything that could not be mapped for a person to handle."
+        ),
+        "lookup_and_enter": (
+            f"Look up the reference the employee finds in {a} and fill the matching entry in {b}, leaving unmatched cases for a person."
+        ),
+        "reconciliation": (
+            f"Compare the records the employee checks between {a} and {b} and report every difference, without changing either side."
+        ),
+        "communication": (
+            f"Read the requests arriving in {a} that drive work in {b}, turn each into a task, and draft a reply for a person to send."
+        ),
+        "review_approval": (
+            f"Check what the employee examines in {a} against the rules that decide it, and route the result for approval in {b}."
+        ),
+    }[kind]
+    criteria = {
+        "data_transfer": [
+            f"Every value written to {b} equals the corresponding source value from {a}",
+            f"No record is created in {b} that the employee would not have created by hand",
+            "Anything that could not be mapped is listed for a person instead of guessed",
+        ],
+        "lookup_and_enter": [
+            f"Every entry in {b} is filled from the {a} record the employee would have chosen",
+            "A lookup with no match or more than one match is left for a person, not guessed",
+        ],
+        "reconciliation": [
+            f"Every difference between {a} and {b} in the sample is reported with both values",
+            "Neither system is changed",
+        ],
+        "communication": [
+            f"Every request in the {a} sample becomes exactly one task with the right owner",
+            "No reply is sent without a person pressing send",
+        ],
+        "review_approval": [
+            f"Every case in the sample gets the same decision the employee gave it in {a}",
+            "Anything the rules do not cover is routed to a person with the reason",
+        ],
+    }[kind]
+    inputs = [f"{a} export or sample", f"{b} field list"] + [f"shared document: {d['filename']}" for d in docs[:5]]
+    return {
+        "goal": goal,
+        "required_inputs": list(dict.fromkeys(i[:255] for i in inputs)),
+        "allowed_tools": TOOLS[kind],
+        "success_criteria": criteria,
+        "environment": "sandbox",
+        "limits": dict(DRAFT_LIMITS),
+    }
+
+
+def instructions_for(kind: str, c: dict, docs: list[dict], question: str | None, automation: bool) -> list[str]:
+    """Specific next steps for the FDE, in order. Each names the apps, the counts and the documents involved."""
+    a, b = c["apps"][0], c["apps"][1]
+    steps = [
+        f"Confirm with the employee what actually moves between {a} and {b}"
+        + (f" — the report asks: “{question}”" if question else "")
+        + ". Their answer on the published report is the baseline; do not proceed from the pattern alone."
+    ]
+    if docs:
+        names = ", ".join(d["filename"] for d in docs[:3])
+        steps.append(
+            f"Check whether the shared document{'s' if len(docs) > 1 else ''} ({names}) {'are' if len(docs) > 1 else 'is'} the {a} source. "
+            "If not, ask for one representative export."
+        )
+    else:
+        steps.append(f"Ask for one representative export or sample from {a}: the fields, not the volume, are what matter.")
+    steps.append(
+        {
+            "data_transfer": (
+                f"List the fields in {b} that receive the values and map each to a column in the {a} source. "
+                "Note any value the employee changes on the way (formats, codes, defaults)."
+            ),
+            "lookup_and_enter": (
+                f"Write down what is looked up in {a} (the key) and which fields in {b} depend on it. "
+                "Note what happens when the lookup finds nothing, or more than one match."
+            ),
+            "reconciliation": (
+                f"Write down the matching rule the employee uses between {a} and {b} (which identifiers, which amounts) "
+                "and what they do when the two disagree."
+            ),
+            "communication": (
+                f"Sample a week of the messages in {a} that lead to work in {b}. "
+                "Group them by what they ask for and note who decides the response."
+            ),
+            "review_approval": (
+                f"Write down the rules the employee applies in {a} before acting in {b}, including who else must approve, and when."
+            ),
+        }[kind]
+    )
+    steps.append(
+        f"Measure the baseline from this session — {c['evidence'][0].lower() + c['evidence'][1:]} — then ask how often it recurs per week "
+        "and how long one round takes, so an outcome can be compared to something."
+    )
+    if automation:
+        steps.append(
+            "Draft the workflow from the prefilled definition (button below): sandbox only, at most 10 steps and $1.00 per run. "
+            "Edit the inputs and tools to match what you learned; the definition is a starting point, not a decision."
+        )
+        steps.append(
+            "Run the draft against the sample and compare every result with what the employee entered by hand. "
+            "Submit the version for an admin decision; execution stays unavailable until it is approved and eligible."
+        )
+    else:
+        steps.append(
+            "Not mechanical enough to automate yet: look for the smaller fix first — a template, a saved view, an export, or a field "
+            "added to one system — and record what it changes against the measurement above. "
+            "Revisit automation once the steps stop varying."
+        )
+    return steps
+
+
+def apply_judgment(
+    judgment: Judgment, candidates: list[dict], *, model: str, source: str, docs: list[dict] | None = None
+) -> tuple[dict, list[dict]]:
+    """Turn typed answers into the report's interpretation. Nothing here is generated:
+    names, rationales, questions and next steps are templates over the candidate and
+    the chosen labels, and confidence is the least certain judgment an item depends on."""
+    workflows, automation, questions, declined = [], [], [], 0
+    for c in candidates:
+        p_workflow = judgment.noul(f"{c['id']}_workflow")
+        kind, p_kind = judgment.choice(f"{c['id']}_kind")
+        mechanical, p_mechanical = judgment.score(f"{c['id']}_mechanical")
+        p_ask = judgment.noul(f"{c['id']}_ask")
+        if p_workflow < WORKFLOW_THRESHOLD or kind == NONE:
+            declined += 1
+            continue
+        confidence = round(min(p_workflow, p_kind), 2)
+        name = _workflow_name(kind, c["apps"])
+        automate = mechanical >= AUTOMATION_THRESHOLD
+        asked = _question_for(kind, c) if p_ask >= QUESTION_THRESHOLD else None
+        actions = {
+            "instructions": instructions_for(kind, c, list(docs or []), asked, automate),
+            "draft_definition": draft_definition(kind, c, list(docs or [])) if automate else None,
+            "question": asked,
+        }
+        item = {
+            "name": name,
+            "kind": kind,
+            "apps": c["apps"],
+            "evidence": c["evidence"],
+            "about": c["about"],
+            "confidence": confidence,
+            "candidate": c["id"],
+            "actions": actions,
+        }
+        workflows.append(item)
+        if automate:
+            level = MECHANICAL[min(round(mechanical), len(MECHANICAL) - 1)]
+            automation.append(
+                {
+                    "title": f"Automate {name[0].lower() + name[1:]}",
+                    "rationale": f"{level} {KINDS[kind]}",
+                    "apps": c["apps"],
+                    "evidence": c["evidence"],
+                    "about": c["about"],
+                    "confidence": round(min(confidence, p_mechanical), 2),
+                    "mechanical": round(mechanical, 2),
+                    "candidate": c["id"],
+                    "actions": actions,
+                }
+            )
+        if asked:
+            questions.append({"source": "model", "question": asked, "about": {"apps": c["apps"], "candidate": c["id"]}})
+    summary = ""
+    if candidates:
+        summary = (
+            f"{len(workflows)} recurring workflow{'s' if len(workflows) != 1 else ''} "
+            f"judged from {len(candidates)} observed pattern{'s' if len(candidates) != 1 else ''}"
+        )
+        summary += f"; {len(automation)} look{'s' if len(automation) == 1 else ''} mechanical enough to automate." if workflows else "."
+    interpretation = {
+        "source": source,
+        "model": model,
+        "summary": summary,
+        "workflows": workflows,
+        "automation_candidates": automation,
+        "rejected": declined,
+        "judged": len(candidates),
+    }
+    return interpretation, questions[:3]
+
+
+@dataclass
+class Interpretation:
+    interpretation: dict
+    questions: list[dict]
+    model: str
+    source: str
+    input_tokens: int
+    output_tokens: int
+    event: dict  # interpreter-specific detail for the `model_call` event
+
+
+def interpret_with_jev(observed: dict, docs: list[dict], judge_fn=judge) -> Interpretation:
+    candidates = workflow_candidates(observed)
+    if not candidates:
+        interpretation, questions = apply_judgment(Judgment(model="none", source="code"), [], model="none", source="code")
+        return Interpretation(
+            interpretation, questions, "none", "code", 0, 0, {"interpreter": "jev", "candidates": 0, "questions": 0, "rejected": 0}
+        )
+    state, questions = judge_request(observed, candidates, docs)
+    judgment = judge_fn(state, questions)
+    interpretation, model_questions = apply_judgment(judgment, candidates, model=judgment.model, source=judgment.source, docs=docs)
+    event = {"interpreter": "jev", "candidates": len(candidates), "questions": len(questions), "rejected": interpretation["rejected"]}
+    return Interpretation(
+        interpretation, model_questions, judgment.model, judgment.source, judgment.input_tokens, judgment.output_tokens, event
+    )
+
+
+def interpret_with_chat(observed: dict, docs: list[dict], llm=chat) -> Interpretation:
+    phase = run_phase(prepare(observed, docs), parse, lambda output: [], llm=llm)
+    interpretation, model_questions = apply_interpretation(phase.output, observed, model=phase.result.model, source=phase.result.source)
+    event = {"interpreter": "chat", "parsed": phase.output is not None, "rejected": interpretation["rejected"]}
+    r = phase.result
+    return Interpretation(interpretation, model_questions, r.model, r.source, r.input_tokens, r.output_tokens, event)
+
+
+def interpret(observed: dict, docs: list[dict]) -> Interpretation:
+    if settings.recorder_interpreter == "jev":
+        return interpret_with_jev(observed, docs)
+    return interpret_with_chat(observed, docs)
+
+
 def apply_interpretation(output: ModelOutput | None, observed: dict, *, model: str, source: str) -> tuple[dict, list[dict]]:
     """Keep only items whose apps exist in the observed facts; return
     (interpretation, extra questions)."""
@@ -458,23 +872,23 @@ def _analyze(tenant_schema: str, submission_id: uuid.UUID, run_id: uuid.UUID, se
                 "stretches": len(observed["stretches"]),
             },
         )
-        phase = run_phase(prepare(observed, docs), parse, lambda output: [], llm=chat)
-        interpretation, model_questions = apply_interpretation(phase.output, observed, model=phase.result.model, source=phase.result.source)
+        result = interpret(observed, docs)
+        interpretation, model_questions = result.interpretation, result.questions
         seq = _emit(
             session,
             run_id,
             seq,
             "model_call",
             {
-                "model": phase.result.model,
-                "source": phase.result.source,
-                "input_tokens": phase.result.input_tokens,
-                "output_tokens": phase.result.output_tokens,
-                "parsed": phase.output is not None,
-                "rejected": interpretation["rejected"],
+                "model": result.model,
+                "source": result.source,
+                "input_tokens": result.input_tokens,
+                "output_tokens": result.output_tokens,
+                **result.event,
             },
         )
-        record_usage(session, run, phase.result.model, phase.result.input_tokens, phase.result.output_tokens)
+        if result.source != "code":  # no candidates → no model call → nothing to meter
+            record_usage(session, run, result.model, result.input_tokens, result.output_tokens)
         questions = merge_questions(deterministic_questions(observed), model_questions)
         report = session.scalar(select(RecorderReport).where(RecorderReport.submission_id == submission_id).with_for_update())
         now = datetime.now(UTC)
@@ -516,6 +930,56 @@ def _analyze(tenant_schema: str, submission_id: uuid.UUID, run_id: uuid.UUID, se
         )
         run.status, run.finished_at, run.error = "succeeded", now, None
         session.commit()
+
+
+def finding_rows(report: RecorderReport) -> list[dict]:
+    """The published report's judged workflows as `findings` rows (keyword fields for
+    `Finding(...)`), each citing the report, the candidate and the run, and carrying the
+    employee's answer and the `actions` the workspace renders. Pure: persistence and
+    dedupe are `recorder_uploads.record_findings`'s job. Items from the chat interpreter
+    (no candidate) still become findings; they just cite less."""
+    interpretation = report.interpretation or {}
+    answers = {q["about"].get("candidate"): q.get("answer") for q in report.questions or [] if isinstance(q.get("about"), dict)}
+    automation = {a.get("candidate"): a for a in interpretation.get("automation_candidates", []) if a.get("candidate")}
+    rows = []
+    for w in interpretation.get("workflows", []):
+        cid = w.get("candidate")
+        auto = automation.get(cid) if cid else None
+        answer = answers.get(cid) if cid else None
+        detail = [w.get("evidence") or ""]
+        if w.get("kind") in KINDS:
+            detail.append(KINDS[w["kind"]])
+        detail.append(
+            f"Judged a recurring workflow at {round((w.get('confidence') or 0) * 100)}%"
+            + (f"; mechanical {auto['mechanical']} of 3." if auto else "; not mechanical enough to automate yet.")
+        )
+        if answer:
+            detail.append(f"Employee: {answer}")
+        refs = [f"report:{report.id}"] + ([f"candidate:{cid}"] if cid else []) + ([f"run:{report.run_id}"] if report.run_id else [])
+        actions = (auto or w).get("actions")
+        rows.append(
+            {
+                "kind": "proposed_automation" if auto else "inefficiency",
+                "title": auto["title"] if auto else w["name"],
+                "detail": " ".join(p for p in detail if p),
+                "evidence": {
+                    "refs": refs,
+                    "report_id": str(report.id),
+                    "candidate": cid,
+                    "about": w.get("about"),
+                    "from_run": str(report.run_id) if report.run_id else None,
+                    "apps": w.get("apps", []),
+                    "kind": w.get("kind"),
+                    "confidence": w.get("confidence"),
+                    "mechanical": auto.get("mechanical") if auto else None,
+                    "question": actions.get("question") if actions else None,
+                    "answer": answer,
+                    "actions": actions,
+                },
+                "finding_type": f"workflow.{w['kind']}" if w.get("kind") in KIND_NAMES else None,
+            }
+        )
+    return rows
 
 
 def public_report(report: RecorderReport, *, full: bool) -> dict[str, Any]:

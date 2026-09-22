@@ -306,6 +306,28 @@ test("workflow proxy permits registry reads and version decisions, not execution
     assert.equal(await status(path, "POST"), 404);
 });
 
+test("tenant workflow proxy mirrors the firm routes: reads, drafts and decisions, nothing else", async () => {
+  const status = async (path, method) =>
+    (await worker.fetch(new Request(`https://vista.test/api${path}`, { method }), {})).status;
+  const id = "00000000-0000-0000-0000-000000000001";
+  const base = "/workflows";
+  const workflow = `${base}/${id}`;
+  const version = `${workflow}/versions/${id}`;
+  for (const path of [base, workflow, `${workflow}/versions`, version, `${version}/eligibility`]) {
+    assert.equal(await status(path, "GET"), 503);
+    for (const method of ["PUT", "PATCH", "DELETE"])
+      assert.equal(await status(path, method), 405);
+  }
+  for (const path of [base, `${workflow}/versions`, `${version}/decision`])
+    assert.equal(await status(path, "POST"), 503);
+  for (const path of [workflow, version, `${version}/eligibility`])
+    assert.equal(await status(path, "POST"), 405);
+  for (const method of ["GET", "PUT", "PATCH", "DELETE"])
+    assert.equal(await status(`${version}/decision`, method), 405);
+  for (const path of [`${workflow}/runs`, `${base}/not-a-uuid`, `${version}/decision/extra`, "/workflows/"])
+    assert.equal(await status(path, "POST"), 404);
+});
+
 test("recorder intake proxy exposes enrollment and private upload operations only", async () => {
   const status = async (path, method) =>
     (await worker.fetch(new Request(`https://vista.test/api${path}`, { method }), {})).status;

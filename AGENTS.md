@@ -65,14 +65,22 @@ Keys and run-type mapping live in `src/vista/agents/keys.py`; handlers in
 | **File Reviewer** (`file_reviewer`) | `deal_analysis`, `employee_discovery`, `synthetic_discovery`, `canonical_review` | `discover.py`; `portfolio/interpret.py` for `canonical_review` | one division's tables (csv/xlsx) + deterministic profile; `canonical_review` reads only the tenant's canonical rows (customers, invoices, vendors, policies, purchase orders, inventory…) | `findings` kind `observed_fact` (file/column/row refs, confidence); `canonical_review` also `tasks`, `company_summaries`, and cites canonical record ids |
 | **Sector Merger** (`sector_merger`) | `synthetic_analyze`, `portfolio_merge` | `analyze.py`; `portfolio/interpret.py` for `portfolio_merge` | approved facts + one opportunity kind across sister companies in a sector (only `firm_companies` scope); `portfolio_merge` reads canonical rows plus structured findings of the successful `canonical_review` runs in its `successful_run_ids` | `platform.opportunities` (with `lineage`: `from_findings`/`from_runs`) → `findings` kind `proposed_automation`; rejected look-alikes logged as `step` events |
 | **Pipeline & Report Generator** (`report_generator`) | `company_summary` | handler only | open `findings` for a company | `company_summaries` (verified facts kept separate from hypotheses) |
-| **Recording Reviewer** (`recording_reviewer`) | `recording_review` (+ `extract_recording_files`), `submission_analysis` (job `analyze_submission`) | handler only; `recorder_analysis.py` for `submission_analysis` | v1: recorder report bundle (cleaned, on-device redacted); v2: the accepted `recorder_submissions` package read back from S3 (metadata-only activity + shared documents) | v1: explanations awaiting employee approve/fix/explain; v2: one `recorder_reports` draft (observed facts computed in code, model interpretation kept apart, employee questions) that only the employee can publish |
+| **Recording Reviewer** (`recording_reviewer`) | `recording_review` (+ `extract_recording_files`), `submission_analysis` (job `analyze_submission`) | handler only; `recorder_analysis.py` for `submission_analysis` | v1: recorder report bundle (cleaned, on-device redacted); v2: the accepted `recorder_submissions` package read back from S3 (metadata-only activity + shared documents) | v1: explanations awaiting employee approve/fix/explain; v2: one `recorder_reports` draft (observed facts computed in code; workflow candidates derived from the transfers/loops/stretches in those facts and judged by Jev — `VISTA_RECORDER_INTERPRETER=jev`, the default — or interpreted by the chat model with `=chat`; employee questions) that only the employee can publish. On publish, each judged workflow becomes a `findings` row — kind `proposed_automation` when Jev scored it mechanical enough, else `inefficiency` — citing `report:<id>`, `candidate:<cN>`, `run:<id>`, and carrying the employee's answer plus `actions`: a numbered FDE checklist and, for automation candidates, a prefilled `WorkflowDefinition` (`recorder_uploads.record_findings`, deduped per run) |
 
 Internal (not user-facing) phases: **Config Proposer** (`propose.py`, facts →
 reviewable `ProposeOutput.proposals` (column_mapping / dedupe_merge / rule /
 workflow_change; no table yet — consumed in-memory by tests/eval) and
 **Division Executor** (`execute.py`, approved proposals → `findings`/`tasks`,
 scope-checked). Every phase is `prepare → chat → parse → apply` via
-`agents/runtime.run_phase`; only `chat` touches a model.
+`agents/runtime.run_phase`; only `chat` touches a model — or `agents/jev.judge`,
+the one other function that does. `judge` asks TypeSafe Jev (System One) for *typed*
+judgments: code enumerates the facts and the candidates, the model only selects and
+grades among them (a probability, a label with its distribution, a position on an
+ordered rubric), so nothing it returns can name an app or record code did not put in
+front of it and `parse` is trivial. It has the same stub / cassette (`VISTA_JEV_CASSETTE`)
+/ live modes as `chat`, is metered exactly like it (one `usage_events` row, `jev` pricing
+in `runtime.py`, input tokens only), and never generates prose — templated wording and
+every threshold stay in code, so a policy change never re-runs inference.
 
 ## A2A (agent-to-agent) protocol
 
@@ -128,7 +136,10 @@ auditable. The rules below are the contract.
 - `observed_fact` → Config Proposer is automatic. Proposals → Division Executor,
   and anything → source systems, require a human `approved` status first.
 - Recording Reviewer never hands off below the confidence threshold; it waits for
-  the employee.
+  the employee. Its findings exist only after the employee publishes; the workspace's
+  **Draft workflow** button then creates a *draft* version through `api/company_workflows.py`
+  (tenant-scoped twin of `api/workflows.py`: `member`/`owner` draft, `owner` decides),
+  and a draft still needs a decision before it is eligible. Nothing executes.
 - An agent may *suggest* the next hop by emitting a `handoff` event with
   `"pending_review": true` and no `job_id`; the API turns that into a real
   enqueue only on approval.
@@ -144,7 +155,8 @@ auditable. The rules below are the contract.
 
 **7. Versioning.**
 - New run types: add to `AGENT_KEY_BY_RUN_TYPE`, `HANDLERS`, the `/api` allow-list
-  in `src/web/worker.mjs`, and this table. Payload changes must stay
+  in `src/web/worker.mjs`, and this table. Tenant workflow routes (`/api/workflows…`)
+  are allow-listed there as `tenantWorkflowRead`/`tenantWorkflowWrite`, mirroring the firm ones. Payload changes must stay
   backward-readable by in-flight jobs (additive fields only; never rename).
 
 **Two-layer pipeline over `synthetic_data/`.** Layer 1 (facts) is the import
@@ -190,7 +202,8 @@ wired only in tests/eval. Any new automatic hop must follow the contract above.
 
 ## Stack & commands
 
-- Python 3.12, FastAPI, SQLAlchemy 2, Alembic, Postgres 16, MinIO/S3, uv; Electron
+- Python 3.12, FastAPI, SQLAlchemy 2, Alembic, Postgres 16, MinIO/S3, uv; TypeSafe Jev
+  (`VISTA_TYPESAFE_API_KEY`; stub answers without it) beside the OpenAI-compatible model; Electron
   recorder; Cloudflare Worker + static web; Node 22 for JS tests (installed under
   `~/.local/bin`).
 - Start infra: `docker compose up -d` (MinIO image is `quay.io/minio/minio`).

@@ -25,6 +25,11 @@ const workflowRead =
   /^\/api\/companies\/[a-z0-9-]{1,64}\/workflows(?:\/[0-9a-f-]{36}(?:\/versions(?:\/[0-9a-f-]{36}(?:\/eligibility)?)?)?)?$/i;
 const workflowWrite =
   /^\/api\/companies\/[a-z0-9-]{1,64}\/workflows(?:\/[0-9a-f-]{36}\/versions(?:\/[0-9a-f-]{36}\/decision)?)?$/i;
+// The company workspace's own workflows (tenant-scoped; same shapes as the firm routes).
+const tenantWorkflowRead =
+  /^\/api\/workflows(?:\/[0-9a-f-]{36}(?:\/versions(?:\/[0-9a-f-]{36}(?:\/eligibility)?)?)?)?$/i;
+const tenantWorkflowWrite =
+  /^\/api\/workflows(?:\/[0-9a-f-]{36}\/versions(?:\/[0-9a-f-]{36}\/decision)?)?$/i;
 const recorderRead =
   /^\/api\/recorder\/(?:workspaces|submissions(?:\/[0-9a-f-]{36})?|reports(?:\/[0-9a-f-]{36})?)$/i;
 const recorderWrite =
@@ -51,6 +56,8 @@ async function handle(request, env) {
       !findingWrite.test(url.pathname) &&
       !workflowRead.test(url.pathname) &&
       !workflowWrite.test(url.pathname) &&
+      !tenantWorkflowRead.test(url.pathname) &&
+      !tenantWorkflowWrite.test(url.pathname) &&
       !recorderRead.test(url.pathname) &&
       !recorderWrite.test(url.pathname)
     )
@@ -69,6 +76,9 @@ async function handle(request, env) {
       (workflowWrite.test(url.pathname) &&
         !workflowRead.test(url.pathname) &&
         request.method !== "POST") ||
+      (tenantWorkflowWrite.test(url.pathname) &&
+        !tenantWorkflowRead.test(url.pathname) &&
+        request.method !== "POST") ||
       (request.method === "POST" &&
         !url.pathname.endsWith("/recordings") &&
         !mediaUpload.test(url.pathname) &&
@@ -77,6 +87,7 @@ async function handle(request, env) {
         !portfolioWrite.test(url.pathname) &&
         !agentStart.test(url.pathname) &&
         !workflowWrite.test(url.pathname) &&
+        !tenantWorkflowWrite.test(url.pathname) &&
         !recorderWrite.test(url.pathname) &&
         url.pathname !== "/api/auth/session") ||
       (request.method === "PUT" && !reviewSections.test(url.pathname)) ||

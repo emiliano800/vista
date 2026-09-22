@@ -18,8 +18,8 @@ from vista.config import settings
 from vista.db import platform_session, set_tenant_search_path, tenant_session
 from vista.jobs.queue import enqueue
 from vista.models.platform import FirmCompany
-from vista.models.tenant import AgentRun, Deal, DealMembership, RecorderReport, RecorderSubmission
-from vista.recorder_analysis import MAX_QUESTIONS, public_report
+from vista.models.tenant import AgentRun, Deal, DealMembership, Finding, RecorderReport, RecorderSubmission
+from vista.recorder_analysis import MAX_QUESTIONS, finding_rows, public_report
 from vista.storage import s3_client
 
 ANALYSIS_JOB = "analyze_submission"
@@ -385,10 +385,38 @@ def publish_report(session: Session, principal: Principal, submission_id: uuid.U
         report.published_at = datetime.now(UTC)
         report.published_by = principal.user_id
         report.updated_at = report.published_at
+        record_findings(session, report)
         session.flush()
     result = public_submission(row, report, full_report=True)
     session.commit()
     return result
+
+
+def record_findings(session: Session, report: RecorderReport) -> int:
+    """The report's judged workflows become `findings` the workspace can act on — only
+    now, on the employee's publish (the review gate), and at most once per run: a
+    re-publish or a retry dedupes on kind + title. Returns how many were added."""
+    if report.run_id is None:
+        return 0
+    run = session.get(AgentRun, report.run_id)
+    existing = {(f.kind, f.title) for f in session.scalars(select(Finding).where(Finding.run_id == report.run_id))}
+    added = 0
+    for fields in finding_rows(report):
+        key = (fields["kind"], fields["title"])
+        if key in existing:
+            continue
+        existing.add(key)
+        session.add(
+            Finding(
+                run_id=report.run_id,
+                status="open",
+                company=run.company if run else None,
+                agent_key=(run.agent_key if run else None) or "recording_reviewer",
+                **fields,
+            )
+        )
+        added += 1
+    return added
 
 
 def readable_workspaces(session: Session, principal: Principal) -> set[tuple[str, str]]:

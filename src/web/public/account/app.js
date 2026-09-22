@@ -42,6 +42,8 @@ const paths = {
   clock: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
   bot: '<rect x="4" y="8" width="16" height="12" rx="2"/><path d="M12 4v4M8 13h.01M16 13h.01M9 17h6"/>',
   play: '<path d="m7 5 12 7-12 7Z"/>',
+  workflow:
+    '<rect width="8" height="8" x="3" y="3" rx="2"/><path d="M7 11v4a2 2 0 0 0 2 2h4"/><rect width="8" height="8" x="13" y="13" rx="2"/>',
 };
 const icon = (name) =>
   `<svg class="icon" viewBox="0 0 24 24" aria-hidden="true">${paths[name] ?? paths.file}</svg>`;
@@ -53,7 +55,7 @@ let companies = [],
   preview = null,
   files = [],
   role = "viewer",
-  view = ["overview", "sources", "findings", "agents", "runs", "recordings"].includes(
+  view = ["overview", "sources", "findings", "agents", "runs", "recordings", "workflows"].includes(
     new URLSearchParams(location.search).get("view"),
   )
     ? new URLSearchParams(location.search).get("view")
@@ -113,6 +115,7 @@ const stamp = (value) => (value ? new Date(value).toLocaleString() : "—");
 const canEdit = () => role === "owner" || role === "member";
 const company = () => companies.find((c) => c.id === $("company").value);
 const isMeridian = () => /meridian risk partners/i.test(company()?.name ?? "");
+let workflows = [];
 function message(text = "") {
   $("message").textContent = text;
   $("message").hidden = !text;
@@ -186,6 +189,7 @@ function render() {
   $("finding-count").textContent = count;
   $("run-count").textContent = agentRuns().length;
   $("report-count").textContent = companyReports().length;
+  $("workflow-count").textContent = workflows.length;
   $("as-of").textContent = active ? `Data as of ${day(active.as_of)}` : "";
   $("view-name").textContent = {
     overview: "Overview",
@@ -194,6 +198,7 @@ function render() {
     agents: "Agents",
     runs: "Runs",
     recordings: "Recordings",
+    workflows: "Workflows",
   }[view];
   document.title = `Vista · ${$("view-name").textContent}`;
   $("import-top").disabled = !company() || !canEdit();
@@ -217,9 +222,11 @@ function render() {
             ? runsView()
             : view === "recordings"
               ? recordingsView()
-              : active
-              ? overviewView()
-              : welcomeView();
+              : view === "workflows"
+                ? workflowsView()
+                : active
+                  ? overviewView()
+                  : welcomeView();
   bindContent();
 }
 const runTag = (status) =>
@@ -308,6 +315,14 @@ async function loadReports(current) {
     if (current === generation) reports = [];
   }
 }
+async function loadWorkflows(current) {
+  try {
+    const rows = await api("/workflows?limit=100");
+    if (current === generation) workflows = rows;
+  } catch {
+    if (current === generation) workflows = [];
+  }
+}
 const span = (session) =>
   session?.started_at
     ? `${new Date(session.started_at).toLocaleString()} – ${session.ended_at ? new Date(session.ended_at).toLocaleTimeString() : "…"}`
@@ -336,13 +351,65 @@ function reportHtml(r) {
       (a) =>
         `<tr><td>${esc(a.app)}</td><td class="num">${Math.round((a.share ?? 0) * 100)}%</td><td class="num">${number(a.events)}</td><td class="num">${number(a.copies)}</td><td class="num">${number(a.pastes)}</td></tr>`,
     )
-    .join("")}</tbody></table></div>${li(o.transfers ?? [], (t) => `<li>Copied from <strong>${esc(t.from)}</strong> into <strong>${esc(t.to)}</strong> ${number(t.count)}× (about ${number(t.mean_latency_s)}s apart)</li>`)}<h3>Agent's reading <span class="tag">${esc(i.source === "stub" ? "no model" : "hypothesis")}</span></h3>${i.summary ? `<p>${esc(i.summary)}</p>` : '<p class="small muted">No model interpretation was produced.</p>'}${li(i.workflows ?? [], (w) => `<li><strong>${esc(w.name)}</strong> — ${esc(w.apps.join(", "))}${w.evidence ? ` · ${esc(w.evidence)}` : ""} · ${Math.round((w.confidence ?? 0) * 100)}%</li>`)}${(i.automation_candidates ?? []).length ? `<h4>Automation candidates</h4>${li(i.automation_candidates, (c) => `<li><strong>${esc(c.title)}</strong>${c.rationale ? ` — ${esc(c.rationale)}` : ""}</li>`)}` : ""}${(i.documents ?? []).length ? `<h4>Shared documents</h4>${li(i.documents, (d) => `<li>${esc(d.filename)} <span class="muted">${esc(d.summary?.kind ?? "")}${d.summary?.rows != null ? ` · ${number(d.summary.rows)} rows` : ""}</span></li>`)}` : ""}<h3>Employee's answers</h3>${li(r.questions ?? [], (q) => `<li><em>${esc(q.question)}</em><br />${q.answer ? esc(q.answer) : '<span class="muted">Not answered</span>'}</li>`)}`;
+    .join("")}</tbody></table></div>${li(o.transfers ?? [], (t) => `<li>Copied from <strong>${esc(t.from)}</strong> into <strong>${esc(t.to)}</strong> ${number(t.count)}× (about ${number(t.mean_latency_s)}s apart)</li>`)}<h3>Agent's reading <span class="tag">${esc(i.source === "stub" ? "no model" : "hypothesis")}</span></h3>${i.summary ? `<p>${esc(i.summary)}</p>` : '<p class="small muted">No model interpretation was produced.</p>'}${li(i.workflows ?? [], workflowItem)}${(i.automation_candidates ?? []).length ? `<h4>Automation candidates</h4>${li(i.automation_candidates, (c) => `<li><strong>${esc(c.title)}</strong>${c.rationale ? ` — ${esc(c.rationale)}` : ""}</li>`)}` : ""}${(i.documents ?? []).length ? `<h4>Shared documents</h4>${li(i.documents, (d) => `<li>${esc(d.filename)} <span class="muted">${esc(d.summary?.kind ?? "")}${d.summary?.rows != null ? ` · ${number(d.summary.rows)} rows` : ""}</span></li>`)}` : ""}<h3>Employee's answers</h3>${li(r.questions ?? [], (q) => `<li><em>${esc(q.question)}</em><br />${q.answer ? esc(q.answer) : '<span class="muted">Not answered</span>'}</li>`)}`;
+}
+// What to do about one judged workflow: the employee question it raised, the numbered
+// steps, and — only when a prefilled draft exists and the viewer may act — a Draft button.
+// The steps and the draft are templated by the backend from the facts; nothing is generated here.
+function actionsHtml(actions, key) {
+  if (!actions?.instructions?.length) return "";
+  const steps = actions.instructions.map((s) => `<li>${esc(s)}</li>`).join("");
+  const asked = actions.question ? `<p class="small">Asked the employee: <em>${esc(actions.question)}</em></p>` : "";
+  const draft =
+    actions.draft_definition && canEdit()
+      ? `<p class="actions"><button class="primary" data-draft="${esc(key)}">${icon("workflow")}Draft workflow</button><span class="small muted">sandbox · draft · needs owner approval</span></p>`
+      : "";
+  return `<details class="what-to-do"><summary>What to do</summary>${asked}<ol class="small">${steps}</ol>${draft}<p class="small draft-result" data-draft-result="${esc(key)}" hidden></p></details>`;
+}
+function workflowItem(w) {
+  return `<li><strong>${esc(w.name)}</strong> — ${esc(w.apps.join(", "))}${w.evidence ? ` · ${esc(w.evidence)}` : ""} · ${Math.round((w.confidence ?? 0) * 100)}%${actionsHtml(w.actions, w.candidate ?? "")}</li>`;
+}
+// Wire every Draft workflow button under `root`: POST the prefilled definition to the
+// workspace's own workflows API, report the result in place, and refresh the Workflows nav.
+function bindDrafts(root, lookup, after) {
+  root.querySelectorAll("[data-draft]").forEach(
+    (b) =>
+      (b.onclick = async () => {
+        const draft = lookup(b.dataset.draft);
+        if (!draft) return;
+        const out = root.querySelector(`[data-draft-result="${b.dataset.draft}"]`);
+        b.disabled = true;
+        try {
+          const created = await api("/workflows", {
+            method: "POST",
+            body: JSON.stringify({ name: draft.name.slice(0, 255), definition: draft.definition }),
+          });
+          workflows = [created, ...workflows.filter((w) => w.id !== created.id)];
+          $("workflow-count").textContent = workflows.length;
+          if (out) {
+            out.hidden = false;
+            out.textContent = `Draft v${created.latest_version.number} created — awaiting owner approval under Workflows.`;
+          }
+          if (after) await after(created);
+        } catch (e) {
+          b.disabled = false;
+          if (out) {
+            out.hidden = false;
+            out.textContent = e.message;
+          }
+        }
+      }),
+  );
 }
 async function showReport(id) {
   $("report-body").innerHTML = '<p class="muted">Loading report…</p>';
   $("report-dialog").showModal();
   const r = await api(`/recorder/reports/${id}`);
   $("report-body").innerHTML = reportHtml(r);
+  bindDrafts($("report-body"), (key) => {
+    const w = (r.interpretation?.workflows ?? []).find((x) => x.candidate === key);
+    return w?.actions?.draft_definition ? { name: w.name, definition: w.actions.draft_definition } : null;
+  });
 }
 function runsView() {
   const all = agentRuns();
@@ -455,7 +522,7 @@ async function showAgentFinding(id) {
             )
             .join("")}</dl></details>`
         : ""
-    }</div><div id="tab-trace" hidden><p class="muted">Loading run trace…</p></div>${
+    }${actionsHtml(ev.actions, f.id)}</div><div id="tab-trace" hidden><p class="muted">Loading run trace…</p></div>${
       canEdit()
         ? `<div class="actions section-gap">${[
             "reviewed",
@@ -500,6 +567,16 @@ async function showAgentFinding(id) {
         $("evidence-dialog").close();
         render();
       })),
+  );
+  bindDrafts(
+    $("evidence-body"),
+    () => (ev.actions?.draft_definition ? { name: f.title, definition: ev.actions.draft_definition } : null),
+    async () => {
+      if (f.status === "open" || f.status === "reviewed") {
+        const updated = await api(`/findings/${f.id}`, { method: "PATCH", body: JSON.stringify({ status: "actioned" }) });
+        Object.assign(f, updated);
+      }
+    },
   );
 }
 async function startRun(key) {
@@ -591,6 +668,28 @@ function overviewView() {
 function sourcesView() {
   return `<div class="page-heading"><div><span class="eyebrow">The evidence library</span><h1>Data with a <i>paper trail.</i></h1><p>Original columns, source rows and confirmed mappings. Everything behind your company snapshot.</p></div>${active ? `<a class="small" href="/api/imports/${active.id}/export">Download snapshot</a>` : ""}</div>${batchPicker()}${active ? `<section class="panel"><div class="panel-heading"><h2>Current snapshot</h2><span class="small">As of ${day(active.as_of)}</span></div><div class="table-wrap"><table><thead><tr><th>Source file</th><th>Record type</th><th class="num">Records</th><th>Status</th><th></th></tr></thead><tbody>${active.tables.map((t) => `<tr><td>${icon("file")} ${esc(t.filename)}${t.sheet ? `<small>${esc(t.sheet)}</small>` : ""}</td><td>${esc(active.schemas[t.kind].label)}</td><td class="num">${number(t.records.length)}</td><td>${statusTag("completed")}</td><td><button data-source="${esc(t.id)}">Browse records</button></td></tr>`).join("")}</tbody></table></div></section>` : '<div class="empty"><h2>Your source library starts here.</h2><p>Import your company exports to create a snapshot.</p><button data-import>Import data</button></div>'}<section class="panel section-gap"><div class="panel-heading"><h2>Import history</h2><span class="small">Latest 100 imports</span></div>${batches.length ? `<div class="table-wrap"><table><thead><tr><th>Imported</th><th>Files</th><th>Records</th><th>Status</th><th></th></tr></thead><tbody>${batches.map((b) => `<tr><td>${esc(new Date(b.created_at).toLocaleString())}<small>Data as of ${day(b.as_of)}</small></td><td>${b.files.length}</td><td>${number(b.record_count)}</td><td>${statusTag(b.status)}</td><td><button ${b.status === "preview" ? "data-resume" : "data-batch"}="${esc(b.id)}" ${b.status === "preview" && !canEdit() ? "disabled" : ""}>${b.status === "preview" ? "Review mapping" : "Open snapshot"}</button></td></tr>`).join("")}</tbody></table></div>` : '<p class="muted">No files imported yet.</p>'}</section>`;
 }
+const versionTag = (status) =>
+  `<span class="tag ${status === "approved" ? "success" : status === "rejected" ? "danger" : "warning"}">${esc(status)}</span>`;
+function workflowsView() {
+  const heading = `<div class="page-heading"><div><span class="eyebrow">${esc(company().name)}</span><h1>Workflows, <i>version by version.</i></h1><p>Drafts come from recorder findings (Findings → Proposed automation → Draft workflow) or from the firm's analysts. Every version is approved or rejected exactly as written; a new version starts unapproved again. Nothing here executes yet.</p></div></div>`;
+  if (!workflows.length)
+    return `${heading}<div class="empty"><h2>No workflows yet.</h2><p>Open a published recording or a proposed-automation finding and press <b>Draft workflow</b> to create the first draft.</p></div>`;
+  const rows = workflows
+    .map((w) => {
+      const v = w.latest_version;
+      const d = v.definition ?? {};
+      const decision = v.decision ? `${v.decision.decision} · ${v.decision.reason || "no reason given"}` : "awaiting a decision";
+      const buttons =
+        role === "owner" && v.status === "draft"
+          ? `<button class="primary" data-decide="approved" data-workflow="${esc(w.id)}" data-version="${esc(v.id)}">${icon("check")}Approve v${v.number}</button><button data-decide="rejected" data-workflow="${esc(w.id)}" data-version="${esc(v.id)}">Reject</button>`
+          : role === "owner"
+            ? ""
+            : '<span class="small muted">Only the workspace owner can approve or reject.</span>';
+      return `<article class="finding-row"><div><span class="eyebrow">v${v.number} · ${esc(v.status)}</span><h3>${esc(w.name)}</h3><p>${esc(d.goal ?? "")}</p><details><summary class="small">Definition</summary><dl class="small"><dt>Inputs</dt><dd>${esc((d.required_inputs ?? []).join(", "))}</dd><dt>Tools</dt><dd>${esc((d.allowed_tools ?? []).join(", "))}</dd><dt>Success</dt><dd>${(d.success_criteria ?? []).map((c) => `<div>${esc(c)}</div>`).join("")}</dd><dt>Limits</dt><dd>${esc(`${d.limits?.max_steps ?? "?"} steps · ${d.limits?.max_runtime_seconds ?? "?"} s · $${d.limits?.max_cost_usd ?? "?"} per run · ${d.environment ?? "sandbox"}`)}</dd></dl></details><p class="spacing-2 small">${esc(decision)} · created ${esc(stamp(v.created_at))}</p></div><section>${versionTag(v.status)}<div class="actions">${buttons}</div></section></article>`;
+    })
+    .join("");
+  return `${heading}<section class="panel">${rows}</section>`;
+}
 function findingsView() {
   const findings = active?.analysis.findings ?? [];
   return `<div class="page-heading"><div><span class="eyebrow">From records to recommendations</span><h1>Attention, with <i>evidence.</i></h1><p>Inspect what was observed, decide what comes next, and keep a record of your review.</p></div>${batchPicker()}</div><div class="filterbar" role="group" aria-label="Finding status">${["open", "reviewed", "dismissed", "all"].map((f) => `<button data-filter="${f}" aria-pressed="${filter === f}" class="${filter === f ? "selected" : ""}">${{ open: "Needs review", reviewed: "Reviewed", dismissed: "Dismissed", all: "All findings" }[f]} · ${findings.filter((r) => f === "all" || r.status === f).length}</button>`).join("")}</div><section class="panel">${findingRows(findings.filter((f) => filter === "all" || f.status === filter))}</section><p class="spacing-4 small">Marking a finding reviewed records your assessment. It does not resolve the discrepancy or count it as realized savings.</p>${agentFindingsBlock()}`;
@@ -660,6 +759,17 @@ function bindContent() {
         preview = loaded;
         openDialog($("import-dialog"));
         renderMapping();
+      })),
+  );
+  document.querySelectorAll("[data-decide]").forEach(
+    (b) =>
+      (b.onclick = action(async () => {
+        const updated = await api(`/workflows/${b.dataset.workflow}/versions/${b.dataset.version}/decision`, {
+          method: "POST",
+          body: JSON.stringify({ decision: b.dataset.decide, reason: "Decided from the company workspace" }),
+        });
+        workflows = workflows.map((w) => (w.id === b.dataset.workflow ? { ...w, latest_version: updated } : w));
+        render();
       })),
   );
   if ($("batch-select"))
@@ -1016,7 +1126,7 @@ async function enterCompany() {
       active = loaded;
     }
     render();
-    await Promise.all([loadAgents(current), loadReports(current)]);
+    await Promise.all([loadAgents(current), loadReports(current), loadWorkflows(current)]);
     if (current === generation) render();
   } catch (e) {
     if (current === generation) {
