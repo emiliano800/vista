@@ -249,7 +249,9 @@ pulls work and the employee starts every session here, by hand:
 **This build ships placeholder harnesses** (`src/computer-use/harnesses.js`): they
 advertise `browser: false, desktop: false`, so the workspace never offers a browser/desktop
 run to this device, and a step that arrives anyway is answered `harness_unsupported` —
-which the server treats as "leave this step for a person". The protocol, consent, limits,
+which the server treats as "leave this step for a person". In `--demo` mode they advertise
+both kinds so the whole protocol can be walked through locally (offer → consent → step →
+refusal → the run pauses for a person in the workspace); the refusal message says so. The protocol, consent, limits,
 local log and kill switch are complete and tested (`test/cu-policy.test.js`,
 `test/cu-client.test.js`, `test/api.test.js`); the drivers that operate a sandboxed page or
 the desktop are a separate change and must keep the harness shape (`kind`, `supported`,

@@ -16,9 +16,13 @@
 export const HARNESS_KINDS = ['browser', 'desktop'];
 
 export class UnsupportedHarness {
-  constructor(kind, reason) {
+  // `demo: true` advertises the kind anyway so the whole protocol (offer → consent → step →
+  // refusal → pause for a person) can be walked through locally without a driver. Never on
+  // by default: a device must not attract runs it cannot perform.
+  constructor(kind, reason, { demo = false } = {}) {
     this.kind = kind;
-    this.supported = false;
+    this.supported = demo;
+    this.demo = demo;
     this.reason = reason;
   }
 
@@ -40,10 +44,11 @@ export class UnsupportedHarness {
   async close() {}
 }
 
-export function defaultHarnesses() {
+export function defaultHarnesses({ demo = false } = {}) {
+  const note = demo ? ' (demo mode: the step is reported back as unsupported so the run pauses for a person)' : '';
   return {
-    browser: new UnsupportedHarness('browser', 'The sandboxed browser harness is not included in this recorder build.'),
-    desktop: new UnsupportedHarness('desktop', 'The desktop harness is not included in this recorder build.'),
+    browser: new UnsupportedHarness('browser', `The sandboxed browser harness is not included in this recorder build${note}.`, { demo }),
+    desktop: new UnsupportedHarness('desktop', `The desktop harness is not included in this recorder build${note}.`, { demo }),
   };
 }
 

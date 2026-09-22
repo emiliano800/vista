@@ -76,13 +76,19 @@ function client(t, over = {}) {
   return { c, home, changes };
 }
 
-test('placeholder harnesses advertise nothing and refuse steps with harness_unsupported', async () => {
+test('placeholder harnesses advertise nothing and refuse steps with harness_unsupported; demo mode advertises but still refuses', async () => {
   const h = defaultHarnesses();
   assert.deepEqual(capabilitiesOf(h), { browser: false, desktop: false });
   const r = await h.browser.perform({ action: 'click' });
   assert.equal(r.ok, false);
   assert.equal(r.error.code, 'harness_unsupported');
   assert.ok(new UnsupportedHarness('desktop', 'no').perform);
+  const d = defaultHarnesses({ demo: true });
+  assert.deepEqual(capabilitiesOf(d), { browser: true, desktop: true });
+  const rd = await d.browser.perform({ action: 'click' });
+  assert.equal(rd.ok, false);
+  assert.equal(rd.error.code, 'harness_unsupported');
+  assert.match(rd.error.message, /demo mode/);
 });
 
 test('the idle tick announces the device with its real capabilities and lists offers; no workspace means no offers', async (t) => {

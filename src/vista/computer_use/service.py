@@ -20,7 +20,6 @@ from vista.agents.keys import agent_key_for
 from vista.automation import service as automation
 from vista.automation.schemas import WorkflowLimits
 from vista.computer_use import tools
-from vista.computer_use.harness import REMOTE_KINDS
 from vista.computer_use.schemas import ClaimIn, DecisionIn, RunStart, SessionStopIn, StepResultIn, WorkflowRunOut
 from vista.config import settings
 from vista.db import platform_session
@@ -162,8 +161,8 @@ def start_run(
     if not eligibility.eligible or not eligibility.execution_available:
         raise HTTPException(409, {"reasons": eligibility.reasons, "availability": availability.to_json()})
     inputs = bind_inputs(session, principal, body)
-    kinds = tools.kinds_for(definition["allowed_tools"])
-    needs_remote = bool(kinds & REMOTE_KINDS)
+    remote_kinds = list(availability.remote_kinds)
+    needs_remote = bool(remote_kinds)
     agent_run = AgentRun(
         job_id=uuid.uuid4(),  # replaced once the job row exists
         run_type=RUN_TYPE,
@@ -190,7 +189,7 @@ def start_run(
     if needs_remote:
         run.pending = {
             "kind": "offer",
-            "harness_kinds": sorted(kinds & REMOTE_KINDS),
+            "harness_kinds": remote_kinds,
             "expires_at": (now() + timedelta(seconds=settings.computer_use_offer_ttl_s)).isoformat(),
             "device": availability.device,
         }

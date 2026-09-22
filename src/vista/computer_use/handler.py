@@ -20,6 +20,7 @@ from vista.agents.jev import judge
 from vista.computer_use import tools
 from vista.computer_use.harness import (
     CONTROL_PRIMITIVES,
+    LOCAL_KINDS,
     REMOTE_KINDS,
     Action,
     HarnessSuspended,
@@ -29,7 +30,7 @@ from vista.computer_use.harness import (
 )
 from vista.computer_use.harness_local import DocumentsHarness, HttpHarness, WorkspaceHarness
 from vista.computer_use.harness_remote import RemoteHarness
-from vista.computer_use.planner import Finish, Pause, PlannerState, Stop, facts_from_result, plan_step, verify
+from vista.computer_use.planner import Act, Finish, Pause, PlannerState, Stop, facts_from_result, plan_step, verify
 from vista.computer_use.service import JOB_KIND, TERMINAL
 from vista.config import settings
 from vista.db import platform_session, tenant_session
@@ -289,9 +290,13 @@ def _execute(session, tenant_schema: str, job: Job, run: WorkflowRun, owner: str
 
     allowed = definition["allowed_tools"]
     primitives = tools.primitives_for(allowed)
-    kinds = tools.kinds_for(allowed)
-    remote_kinds = kinds & REMOTE_KINDS
-    if remote_kinds and run.harness_session_id is None:
+    # Local kinds come from the registry; remote kinds only from the session the employee
+    # actually claimed (a tool with a local alternative never waits for a recorder).
+    kinds = tools.kinds_for(allowed) & LOCAL_KINDS
+    if run.harness_session_id is not None:
+        hs_ = session.get(HarnessSession, run.harness_session_id)
+        kinds |= set(hs_.kinds or []) if hs_ is not None else set()
+    elif (run.pending or {}).get("kind") == "offer" and (run.pending or {}).get("harness_kinds"):
         run.status = "waiting_for_harness"
         agent_run.status = "waiting"
         session.commit()
@@ -363,6 +368,11 @@ def _execute(session, tenant_schema: str, job: Job, run: WorkflowRun, owner: str
         }
 
     harnesses = build_harnesses(session, tenant_schema, run, workflow, kinds, replay, limits_left())
+    # A resumed run plans over the checkpointed observation; the remote harness must cite
+    # that observation's id on the next targeted request, or the recorder refuses it as stale.
+    last_obs = state.observation or {}
+    if last_obs.get("harness") in harnesses and last_obs.get("harness") in REMOTE_KINDS:
+        harnesses[last_obs["harness"]].last_observation_id = last_obs.get("observation_id")
     focus = next((k for k in ("browser", "desktop") if k in harnesses), None)
     failures = 0
 
@@ -432,31 +442,38 @@ def _execute(session, tenant_schema: str, job: Job, run: WorkflowRun, owner: str
             return
 
         # --- judge ---
-        decision, judgment, detail = plan_step(
-            state,
-            definition,
-            run.inputs or {},
-            observation,
-            run_id=str(run.id),
-            primitives=primitives & set().union(*(h.capabilities() for h in harnesses.values())) | CONTROL_PRIMITIVES,
-            limits_left=limits_left(),
-            mode=run.mode,
-            risk_threshold=settings.computer_use_risk_threshold,
-            judge_fn=judge,
-        )
-        ledger.emit(
-            "model_call",
-            {
-                "model": judgment.model,
-                "source": judgment.source,
-                "input_tokens": judgment.input_tokens,
-                "output_tokens": judgment.output_tokens,
-                **detail,
-            },
-        )
-        ledger.usage(judgment)
-        run.checkpoint = state.to_checkpoint()
-        session.commit()
+        pending = state.pending or {}
+        if pending.get("action", {}).get("seq") == seq and seq in replay:
+            # The recorder answered the action already decided (and, if gated, approved) for
+            # this step: apply that answer rather than asking the model again.
+            decision = Act(Action.from_json(pending["action"]), gated=bool(pending.get("gated")))
+        else:
+            state.pending = None
+            decision, judgment, detail = plan_step(
+                state,
+                definition,
+                run.inputs or {},
+                observation,
+                run_id=str(run.id),
+                primitives=primitives & set().union(*(h.capabilities() for h in harnesses.values())) | CONTROL_PRIMITIVES,
+                limits_left=limits_left(),
+                mode=run.mode,
+                risk_threshold=settings.computer_use_risk_threshold,
+                judge_fn=judge,
+            )
+            ledger.emit(
+                "model_call",
+                {
+                    "model": judgment.model,
+                    "source": judgment.source,
+                    "input_tokens": judgment.input_tokens,
+                    "output_tokens": judgment.output_tokens,
+                    **detail,
+                },
+            )
+            ledger.usage(judgment)
+            run.checkpoint = state.to_checkpoint()
+            session.commit()
 
         if isinstance(decision, Pause):
             pause(session, run, agent_run, ledger, workflow, state, decision.request)
@@ -472,11 +489,13 @@ def _execute(session, tenant_schema: str, job: Job, run: WorkflowRun, owner: str
         # --- act ---
         action = decision.action
         harness = route(harnesses, action, focus)
+        state.pending = {"action": action.to_json(), "gated": decision.gated}
         try:
             result = harness.act(action)
         except HarnessSuspended as suspended:
             suspend(session, run, agent_run, ledger, state, suspended, job)
             return
+        state.pending = None
         state.n = action.seq
         run.steps_used = state.n
         entry = {

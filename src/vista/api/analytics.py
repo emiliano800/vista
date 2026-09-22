@@ -1,4 +1,4 @@
-"""Fleet analytics for the four suite agents: throughput, outcomes, spend and quality
+"""Fleet analytics for the five suite agents: throughput, outcomes, spend and quality
 in one read, so the /agents page can render without stitching /runs, /findings and
 /usage together client-side. A firm member's view spans every company tenant the firm
 is authorised for (plus the firm's home tenant); a workspace member's view is their own

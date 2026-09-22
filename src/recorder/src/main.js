@@ -22,6 +22,7 @@ import { FLAG_DECISIONS, INSIGHTS_FILE, buildInsights, insightsSummary, summariz
 import { WORKFLOWS_FILE, refineSessionWorkflow, sessionDigest, suggestWorkflows, workflowsStub } from './workflows.js';
 import { deviceId, discoverWorkspaces, documentOptions, selectWorkspace, SubmissionQueue, uploadBinding } from './intake.js';
 import { ComputerUseClient } from './computer-use/client.js';
+import { defaultHarnesses } from './computer-use/harnesses.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const UI = path.join(__dirname, '..', 'ui');
@@ -1203,6 +1204,7 @@ const computerUse = new ComputerUseClient({
   home: HOME,
   deviceId: deviceId(HOME),
   version: app.getVersion(),
+  harnesses: defaultHarnesses({ demo: DEMO }),
   config: () => {
     try {
       return cloudSettings() ? cloudConfig() : null;

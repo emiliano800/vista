@@ -170,7 +170,7 @@ def test_run_finding_usage_filters_and_grouping(client, tenant_factory):
     fleet = client.get("/agents/analytics", headers=headers).json()
     assert fleet["runs_total"] == 2 and fleet["runs_month"] == 2
     by_key = {a["agent_key"]: a for a in fleet["agents"]}
-    assert set(by_key) == {"recording_reviewer", "file_reviewer", "report_generator", "sector_merger"}
+    assert set(by_key) == {"recording_reviewer", "file_reviewer", "report_generator", "sector_merger", "computer_use"}
     assert by_key["file_reviewer"]["runs"] == 1 and by_key["file_reviewer"]["succeeded"] == 1
     assert by_key["file_reviewer"]["findings_total"] == len(client.get(f"/findings?run_id={disc['id']}", headers=headers).json())
     assert by_key["recording_reviewer"]["runs"] == 0 and by_key["recording_reviewer"]["last_run_at"] is None

@@ -54,6 +54,7 @@ class PlannerState:
     undo: list[dict] = field(default_factory=list)
     consecutive_none: int = 0
     observation: dict | None = None  # last observation, JSON
+    pending: dict | None = None  # an action handed to the recorder and not yet answered: {"action", "gated"}
 
     @classmethod
     def from_checkpoint(cls, data: dict | None) -> PlannerState:
@@ -66,6 +67,7 @@ class PlannerState:
             undo=list(data.get("undo", [])),
             consecutive_none=int(data.get("consecutive_none", 0)),
             observation=data.get("observation"),
+            pending=data.get("pending"),
         )
 
     def to_checkpoint(self) -> dict:
@@ -77,6 +79,7 @@ class PlannerState:
             "undo": self.undo,
             "consecutive_none": self.consecutive_none,
             "observation": self.observation,
+            "pending": self.pending,
         }
 
     def executed(self, step_id: str) -> bool:
