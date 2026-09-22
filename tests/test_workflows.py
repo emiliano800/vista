@@ -105,6 +105,11 @@ def test_admin_approval_is_version_bound_and_idempotent(client, workspace):
     assert eligibility["eligible"] is True
     assert eligibility["reasons"] == []
     assert eligibility["execution_available"] is False
+    # The approval gate passes, but nothing can run it: DEFINITION's tools are not in the
+    # Computer Use Agent's registry, and the firm API has no run route (runs start from the
+    # company workspace, see tests/test_computer_use_db.py).
+    assert eligibility["availability"]["reasons"] == ["no_harness_for_tools"]
+    assert eligibility["availability"]["unmapped_tools"] == DEFINITION["allowed_tools"]
     assert client.post(f"{workflow_path(workflow)}/runs", headers=headers).status_code in (404, 405)
 
 

@@ -1,6 +1,6 @@
-"""The four user-facing agents and which run types belong to each."""
+"""The five user-facing agents and which run types belong to each."""
 
-AGENT_KEYS = ("recording_reviewer", "file_reviewer", "report_generator", "sector_merger")
+AGENT_KEYS = ("recording_reviewer", "file_reviewer", "report_generator", "sector_merger", "computer_use")
 
 AGENT_KEY_BY_RUN_TYPE = {
     "deal_analysis": "file_reviewer",
@@ -12,6 +12,7 @@ AGENT_KEY_BY_RUN_TYPE = {
     "portfolio_merge": "sector_merger",
     "recording_review": "recording_reviewer",
     "submission_analysis": "recording_reviewer",
+    "workflow_execution": "computer_use",
 }
 
 AGENT_NAMES = {
@@ -19,6 +20,7 @@ AGENT_NAMES = {
     "file_reviewer": "File Reviewer",
     "report_generator": "Pipeline & Report Generator",
     "sector_merger": "Sector Merger",
+    "computer_use": "Computer Use Agent",
 }
 
 
