@@ -52,24 +52,37 @@ def main():
     seed = commands.add_parser("seed-portfolio", help="seed the analyst demo firm and its companies")
     seed.add_argument("--skip-cedar", action="store_true")
     seed.add_argument("--analyst-key", default=None)
-    args = parser.parse_args()
+    commands.add_parser(
+        "load-synthetic",
+        help="load the six synthetic_data/ companies through the fact + interpretation layers",
+        description="Arguments are passed through to scripts/load_synthetic_portfolio.py "
+        "(--analyst-key, --replace-firm SLUG, --only, --no-analyze, --processor, --accept-model-mappings).",
+    )
+    args, loader_args = parser.parse_known_args()
+    if loader_args and args.command != "load-synthetic":
+        parser.error(f"unrecognized arguments: {' '.join(loader_args)}")
     if args.command == "migrate":
         migrate()
         return
-    if args.command == "seed-portfolio":
+    if args.command in ("seed-portfolio", "load-synthetic"):
         # scripts/ ships in the image; run it in-process so manage.sh, which can
         # only invoke `python -m vista.manage`, can reach it inside AWS.
         import runpy
         import sys
 
-        argv = ["seed_portfolio_demo.py"]
-        if args.skip_cedar:
-            argv.append("--skip-cedar")
-        if args.analyst_key:
-            argv += ["--analyst-key", args.analyst_key]
-        script = Path(__file__).resolve().parents[2] / "scripts" / "seed_portfolio_demo.py"
+        if args.command == "seed-portfolio":
+            name = "seed_portfolio_demo.py"
+            argv = [name]
+            if args.skip_cedar:
+                argv.append("--skip-cedar")
+            if args.analyst_key:
+                argv += ["--analyst-key", args.analyst_key]
+        else:
+            name = "load_synthetic_portfolio.py"
+            argv = [name, *loader_args]
+        script = Path(__file__).resolve().parents[2] / "scripts" / name
         if not script.exists():
-            parser.error(f"seeder not found at {script}; is scripts/ in the image?")
+            parser.error(f"{name} not found at {script}; is scripts/ in the image?")
         sys.argv = argv
         runpy.run_path(str(script), run_name="__main__")
         return

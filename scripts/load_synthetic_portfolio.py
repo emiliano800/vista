@@ -173,6 +173,18 @@ def seed_firm(session: Session, analyst_key: str | None) -> tuple[Firm, User]:
     return firm, user
 
 
+def retire_firm(session: Session, slug: str) -> bool:
+    """Delete another firm (its firm_companies, memberships, opportunities and activity
+    cascade) so its analyst signs into this one instead. Company tenants and their
+    schemas are kept: jobs and users may still reference them."""
+    firm = session.scalar(select(Firm).where(Firm.slug == slug))
+    if firm is None:
+        return False
+    session.delete(firm)
+    session.flush()
+    return True
+
+
 def company_dirs(manifest: dict) -> list[tuple[str, dict, Path]]:
     out = []
     for sector, companies in manifest["sectors"].items():
@@ -307,6 +319,13 @@ def main() -> int:
     parser.add_argument(
         "--accept-model-mappings", action="store_true", help="confirm model-proposed column mappings instead of leaving them for review"
     )
+    parser.add_argument(
+        "--replace-firm",
+        action="append",
+        default=[],
+        metavar="SLUG",
+        help="delete this firm first (e.g. the northstar HVAC demo); repeatable",
+    )
     args = parser.parse_args()
     if args.analyst_key and not (len(args.analyst_key) == 64 and all(ch in "0123456789abcdef" for ch in args.analyst_key.lower())):
         parser.error("--analyst-key must be 64 hex characters")
@@ -317,6 +336,7 @@ def main() -> int:
     migrate_platform()
     ensure_bucket()
     with platform_session() as session:
+        retired = [slug for slug in args.replace_firm if retire_firm(session, slug)]
         firm, user = seed_firm(session, args.analyst_key.lower() if args.analyst_key else None)
         for sector, c, root in companies:
             seed_company(session, firm, sector, c, root)
@@ -329,7 +349,7 @@ def main() -> int:
         migrate_tenant_schema(schema_for(c["slug"]))
 
     processor = get_processor(args.processor)
-    report = {"firm": FIRM["name"], "as_of": manifest.get("as_of_date"), "companies": {}}
+    report = {"firm": FIRM["name"], "replaced_firms": retired, "as_of": manifest.get("as_of_date"), "companies": {}}
     with platform_session() as platform:
         ctx = load_firm_context(platform, principal)
         for _sector, c, root in companies:

@@ -93,6 +93,7 @@ workspace. Employees never need an OpenAI key. Without a worker the review stays
 | Stack outputs | `deploy/aws/deploy.sh --outputs` |
 | Add a user | `deploy/aws/manage.sh add-user --tenant TENANT_UUID --company COMPANY_UUID --email employee@example.com --role member` |
 | Rotate a key | `deploy/aws/manage.sh rotate-key --user USER_UUID` |
+| Load the six synthetic companies into the analyst workspace | `deploy/aws/manage.sh load-synthetic --analyst-key ANALYST_KEY --replace-firm northstar` (the key is the existing analyst's; `--replace-firm` removes the HVAC demo firm; add `--no-analyze` to skip the interpretation agents) |
 | Run agent jobs and recording AI review in AWS | set `WORKER_DESIRED_COUNT=1` (and `OPENAI_API_KEY`) in `deploy/aws/.env`, redeploy |
 | API logs | `aws logs tail /vista/vista/api --follow` |
 | Shell into a running API task | `aws ecs execute-command --cluster vista --task <task-id> --container Main --interactive --command /bin/sh` (needs the Session Manager plugin) |
