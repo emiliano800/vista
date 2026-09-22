@@ -2,24 +2,33 @@
 
 ## Start here
 
-**Current milestone: workflow definitions, immutable versions, and approvals.**
-The backend now stores a company-scoped workflow, lets an authorized reviewer decide
-on a specific version, and exposes a read-only eligibility check. This is the first
-small piece of the automation platform, not an automation executor.
+**Current priority: the employee recorder pipeline.** Workflow execution is deferred
+while we connect the app to the right workspace and accept uploads without requiring
+Python on the employee's computer.
 
-**Next: one verified sandbox execution.** After that, connect the downloaded recorder
-to the same pipeline. **Reinforcement learning (RL) is a stretch goal**, not a
-requirement for this milestone or for delivering useful workflow automation.
+| Area | Current repository status |
+| --- | --- |
+| Workflow registry, immutable versions, approvals | Implemented and tested; no executor |
+| Recorder step 1: personal-key connection and company selection | Implemented and tested |
+| Recorder step 2: unprocessed-session upload, retry queue, verified private receipt | Implemented and tested |
+| Recorder step 3: cloud analysis, clarification, report generation and publication | Not implemented for the new intake format; this is the next engineering step |
+| Sandbox workflow execution | Deferred at the user's request |
+| Learning / reinforcement learning (RL) | Optional stretch goal, not a delivery dependency |
 
-This document describes repository implementation and planned work. It does not
-certify the deployed AWS image or the installer. New APIs require the matching
-backend migration and Cloudflare Worker update before they are available live.
+The new recorder flow currently ends at **Uploaded — awaiting analysis**. A verified
+upload is not a completed report or a published company finding. Existing report
+and agent APIs remain separate from this new private intake path.
+
+This document describes source code, not a fresh certification of the deployed AWS
+image or downloadable installers. The changes require backend migration `0018`,
+the updated Cloudflare Worker, and a newly built recorder installer. This update
+does not itself deploy AWS or publish a desktop release.
 
 Related documents: [current implementation](CURRENT_IMPLEMENTATION.md),
 [product direction](NEXT_STEPS.md), [business context](BUSINESS_COURSE_OF_ACTION.md),
 and [infrastructure](INFRASTRUCTURE.md).
 
-## 1. The three-step milestone implemented here
+## 1. Completed foundation: workflow registry and approvals
 
 ### 1. Store workflows and immutable versions
 
@@ -202,9 +211,10 @@ with model calls disabled. No production migrations or model calls are required 
 exercise this milestone. For deployment, ship the backend and tenant migration
 before clients depend on the new routes; update the Worker allow-list with it.
 
-## 5. What comes next: one verified sandbox action
+## 5. Deferred: one verified sandbox action
 
-The next small milestone should be:
+This work has not been implemented and is not the current priority. When workflow
+execution resumes, the first slice should be:
 
 ```text
 Authorized invoice
@@ -238,32 +248,173 @@ than creating a disconnected execution ledger. Do not treat the current
 as a connector implementation. Likewise, the legacy portfolio `run_agent_now()`
 display path must not stand in for an actual queued execution.
 
-## 6. Then connect the employee app to the same pipeline
+## 6. Current milestone: recorder connection and private uploads
 
-The recorder should become a capture, privacy, upload, and review client; AWS should
-own authoritative analysis and model calls. Employees should not need Python, a
-source checkout, an AWS credential, or a model key.
+### Step 1 — employee connection: implemented
 
-The current app still needs the following work:
+The connection panel is available without `VISTA_ADMIN=1`. On first launch without
+a current connection, the app opens its dashboard; Settings offers:
 
-- Enrollment that binds an authenticated employee/device to the correct company.
-  Legacy recorder `deals.id` must be mapped explicitly to canonical company scope.
-- An unprocessed-session upload contract, so upload does not require local Python
-  to have already produced a summary and event CSV.
-- An explicit approved-artifact manifest and resumable upload state. Verify receipt
-  before local cleanup; separate upload, analysis, and publication states.
-- Model interpretation through the backend, with questions focused on ambiguity
-  rather than requiring the employee to inspect every agent step.
-- Clean-machine installer tests, packaged UI assets, and guided permissions.
+1. Enter a personal Vista access key. The website defaults to bumpsolutions.org;
+   an advanced override supports local development or another authorized deployment.
+2. Fetch authorized workspaces from `GET /api/recorder/workspaces`.
+3. Select a company when there are several; the app does not silently pick the first.
+4. Confirm the recording/sharing notice and connect.
 
-Current behavior is not a guarantee that capture stays local: cloud review can
-upload a report after Stop, and Submit can upload media and snapshots before removing
-local files. Redaction defaults and the sharing UI need an explicit policy. A private
-analysis draft should not automatically be visible to all company users.
+The access key is encrypted with Electron `safeStorage` before being saved locally.
+The app records user, tenant, destination, and a persistent installation UUID. New
+recordings started while connected retain that workspace binding, and their upload
+cannot be silently moved to another account or destination. Existing older connection
+files require reconnection through the new flow.
 
-Recording evidence and business facts remain separate: a screen observation is not
-an authoritative accounting entry. Suitable documents go through mapping, validation,
-and import approval before becoming canonical records.
+Workspace resolution is explicit:
+
+- A `member` or `admin` user whose tenant is a canonical `FirmCompany` can upload to
+  that company, unless it has exited.
+- Otherwise, existing deal-based accounts can select their `member`/`owner` deals.
+  These remain legacy destinations, with no automatic name-based mapping to a
+  different canonical tenant.
+- A firm analyst's portfolio visibility does not automatically grant employee-upload
+  access to every canonical company. Appropriate company accounts must be provisioned.
+
+This is personal-key enrollment, not SSO or device-token management. The installation
+UUID is a label, not an authentication credential. Requests continue to use the
+personal key and re-check current workspace access on the server.
+
+### Step 2 — upload before analysis: implemented
+
+The v2 intake flow does not require local Python, a checkout, `summary.json`, or a
+processed event CSV. New connected/packaged clients can store a stopped session as
+an unprocessed private submission:
+
+```text
+Stopped session
+  -> preview destination and optional documents
+  -> explicitly approve the sharing package
+  -> persist a frozen package in the local upload queue
+  -> create private submission and request signed upload URLs
+  -> upload the approved artifacts
+  -> server verifies sizes, hashes, and metadata schema
+  -> receive an idempotent receipt: Uploaded — awaiting analysis
+```
+
+The default activity artifact contains only timestamps, app names, interaction
+types, and counts. It omits window titles, URLs, recorded typed text, clipboard
+contents, screenshots, video, and the original raw event file. Paused intervals and
+sections excluded before queuing are omitted from the activity artifact.
+
+Document snapshots are optional and unchecked by default. Selected documents upload
+in full, not as redacted excerpts; the employee must review their contents first.
+Section exclusions do not redact the contents of a separately selected document.
+
+Current bounds: one activity artifact up to 4 MiB / 50,000 events, at most ten
+documents up to 20 MiB each, and a 50 MiB total package. Supported document types are
+CSV, TSV, TXT, PDF, XLSX, XLSM, DOCX, and PPTX. Paths and symlink escapes are rejected.
+
+The disk-backed queue freezes the manifest and copies the selected bytes before
+network work. It resumes when the app is open and connected to the original account,
+renews signed URLs on retry, and skips already acknowledged artifacts. Disconnecting
+pauses further work; account/workspace changes do not retarget pending packages.
+Authentication and invalid-format errors pause automatic retries until an explicit
+retry/reconnection. No access keys or signed URLs are written into the queue state.
+
+S3 PUTs are bound to the declared content length and SHA-256 checksum. The API also
+reads back and verifies the required objects before recording acceptance. Lost
+completion responses can be recovered through the same submission and receipt.
+Local recordings and queue copies are retained, including after successful upload.
+
+The package is immutable once queued. The app blocks later changes to its sharing
+selection/exclusions; local edits are not a withdrawal of previously uploaded data.
+Cancellation, withdrawal, retention, and queue cleanup controls remain future work.
+
+### Backend storage and API
+
+Tenant migration `0018_recorder_submissions` adds the `recorder_submissions` table.
+S3 holds artifacts; the tenant row holds the manifest/hash, owner, installation and
+source IDs, resolved canonical company when present, upload state, and verification
+receipt. Retries of the same source package return the same submission; an attempt
+to replace that source with a different manifest is rejected.
+
+| Endpoint | Purpose |
+| --- | --- |
+| `GET /api/recorder/workspaces` | Resolve the current user's permitted upload destinations |
+| `POST /api/recorder/submissions` | Register the v2 manifest with explicit sharing consent |
+| `GET /api/recorder/submissions` | List the current uploader's accessible private submissions |
+| `GET /api/recorder/submissions/{id}` | Inspect one owned submission and receipt |
+| `POST /api/recorder/submissions/{id}/upload-urls` | Get short-lived, checksum-bound URLs for the approved artifacts |
+| `POST /api/recorder/submissions/{id}/complete` | Verify objects and accept the upload idempotently |
+
+Ownership is enforced even between two users of the same company. Losing workspace
+access blocks subsequent operations. There is no public download, publish, analysis,
+or workflow execution route for these private submissions.
+
+The API currently reports `analysis_status: not_started` and
+`publication_status: draft`; these are fixed states while the next processing stage
+is absent. No analysis job is enqueued. New uploads do not appear as completed reports
+or findings in the company/portfolio pages. The existing v1 completed-report APIs
+remain available separately; do not assume their behavior has been replaced for
+older installed clients.
+
+### Implementation and verification
+
+| Area | Code |
+| --- | --- |
+| Workspace resolution, manifest validation, signed URLs, receipt verification | [recorder_uploads.py](src/vista/recorder_uploads.py) |
+| Owner-scoped intake API | [api/recorder.py](src/vista/api/recorder.py) |
+| Tenant schema | [migration 0018](migrations/tenant/versions/0018_recorder_submissions.py) |
+| Metadata packaging, scope binding, local retry queue | [intake.js](src/recorder/src/intake.js) |
+| Desktop integration and connection lifecycle | [main.js](src/recorder/src/main.js) |
+| Employee company picker and sharing preview | [dashboard.html](src/recorder/ui/dashboard.html) |
+| API, privacy, receipts, and local object-store tests | [test_recorder_uploads.py](tests/test_recorder_uploads.py) |
+| Queue and metadata-filter tests | [intake.test.js](src/recorder/test/intake.test.js) |
+| Setup/review UI tests | [recorder-enrollment.test.mjs](src/web/test/recorder-enrollment.test.mjs) |
+
+Verification for this implementation: 191 Python tests passed against a fresh local
+Postgres instance, including a signed-upload round trip against local MinIO; 121
+JavaScript tests passed; Ruff lint/format and the Worker dry-run passed. No live model
+calls or AWS operations were used. Tests include cross-account denial, revoked access,
+missing/corrupt artifacts, interrupted uploads, lost receipts, explicit document
+consent, privacy exclusions, and the distinction between uploaded and analyzed.
+
+A run against the long-lived local Postgres container hit shared-memory exhaustion;
+the final suite passed in a separate fresh Postgres 16 container with 256 MiB shared
+memory. No repository/database security settings were relaxed. A new database alone
+does not isolate the server's memory resources from other local workloads.
+
+Packaging now includes the shared theme/fonts, but a clean-machine installed-app
+acceptance test and new published installers are still required. Renderer tests use
+a mocked Electron bridge; they do not certify native capture permissions or an
+installer rollout.
+
+### Step 3 — cloud analysis and report publication: next, not implemented
+
+1. Add a durable, idempotent analysis job for an accepted submission, using verified
+   artifact references. Adapt the existing task-mining pipeline to the metadata-only
+   format and make reduced observation coverage explicit; do not assume the removed
+   window/clipboard/typed-text fields are available.
+2. Extract approved documents and run backend interpretation with scoped inputs,
+   metered model calls, retry/recovery, and bounded cost. Keep raw source records
+   separate from inferred workflow findings.
+3. Persist a draft report, surface focused employee questions, and add explicit
+   publication permissions and a report/evidence view for the correct workspace.
+   Define how legacy deal destinations connect to canonical company views without
+   guessing by name or silently copying data across tenants.
+
+Also still needed: dedicated device-token revocation/SSO if required, withdrawal and
+retention controls, and production monitoring. Recording evidence is not an accounting
+entry; suitable business documents still need mapping, validation, and import approval
+before becoming canonical financial records.
+
+### Rollout checklist (separate from implementation)
+
+- Deploy the current backend image and apply migration `0018` using the existing AWS
+  deployment process, then verify service stability and the new authenticated APIs.
+- Deploy/verify the matching Cloudflare Worker allow-list.
+- Build and publish a new recorder release; pushing source code does not update the
+  already-downloadable installers. Test fresh installation and reconnection without
+  a source checkout or Python installation.
+- Do not promise generated reports until step 3 is implemented and verified. The
+  successful end state of this release is a verified private upload awaiting analysis.
 
 ## 7. Stretch goal: learning and RL (next-next step)
 
@@ -301,7 +452,8 @@ workflow assignments, connectors, execution verification, and measured financial
 impact are still additional implementation work. A proposed saving is not a realized
 result, and a completed agent analysis is not proof that an automation was deployed.
 
-**Immediate objective delivered:** create a company workflow, review an immutable
-version, and record an authorized decision. **Next objective:** execute that approved
-version against one sandbox tool and verify the result. **Stretch objective:** use
-reviewed outcomes to improve policies, potentially including RL.
+**Implemented:** the workflow registry/approval foundation, plus recorder connection
+and verified private uploads that do not require local Python analysis.
+**Next:** cloud analysis and controlled report publication for those submissions.
+**Deferred:** sandbox workflow execution. **Stretch:** policy improvement and RL.
+Deployments and installer releases remain separate rollout steps.

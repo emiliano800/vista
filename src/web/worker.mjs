@@ -22,6 +22,10 @@ const workflowRead =
   /^\/api\/companies\/[a-z0-9-]{1,64}\/workflows(?:\/[0-9a-f-]{36}(?:\/versions(?:\/[0-9a-f-]{36}(?:\/eligibility)?)?)?)?$/i;
 const workflowWrite =
   /^\/api\/companies\/[a-z0-9-]{1,64}\/workflows(?:\/[0-9a-f-]{36}\/versions(?:\/[0-9a-f-]{36}\/decision)?)?$/i;
+const recorderRead =
+  /^\/api\/recorder\/(?:workspaces|submissions(?:\/[0-9a-f-]{36})?)$/i;
+const recorderWrite =
+  /^\/api\/recorder\/submissions(?:\/[0-9a-f-]{36}\/(?:upload-urls|complete))?$/i;
 const securityHeaders = {
   "X-Content-Type-Options": "nosniff",
   "Referrer-Policy": "no-referrer",
@@ -42,13 +46,18 @@ async function handle(request, env) {
       !agentRead.test(url.pathname) &&
       !agentStart.test(url.pathname) &&
       !workflowRead.test(url.pathname) &&
-      !workflowWrite.test(url.pathname)
+      !workflowWrite.test(url.pathname) &&
+      !recorderRead.test(url.pathname) &&
+      !recorderWrite.test(url.pathname)
     )
       return new Response("Not found", { status: 404 });
     // Only explicitly allowed workspace operations reach the backend.
     if (
       !["GET", "HEAD", "POST", "PUT", "DELETE"].includes(request.method) ||
       (syntheticWrite.test(url.pathname) && request.method !== "POST") ||
+      (recorderWrite.test(url.pathname) &&
+        !recorderRead.test(url.pathname) &&
+        request.method !== "POST") ||
       (workflowWrite.test(url.pathname) &&
         !workflowRead.test(url.pathname) &&
         request.method !== "POST") ||
@@ -60,6 +69,7 @@ async function handle(request, env) {
         !portfolioWrite.test(url.pathname) &&
         !agentStart.test(url.pathname) &&
         !workflowWrite.test(url.pathname) &&
+        !recorderWrite.test(url.pathname) &&
         url.pathname !== "/api/auth/session") ||
       (request.method === "PUT" && !reviewSections.test(url.pathname)) ||
       (request.method === "DELETE" && url.pathname !== "/api/auth/session")

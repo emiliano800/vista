@@ -155,14 +155,17 @@ export async function cloudRequest(
       "The server did not return a report response. Check the website address.",
     );
   }
-  if (!response.ok)
-    throw new Error(
+  if (!response.ok) {
+    const error = new Error(
       typeof data.detail === "string"
         ? data.detail
         : response.status === 422
-          ? "The report format was rejected. Update the recorder and analyze the session again."
+          ? "The upload format was rejected. Update the recorder and review the package."
           : `Upload failed (${response.status}). Please retry.`,
     );
+    error.status = response.status;
+    throw error;
+  }
   return data;
 }
 export async function uploadReport(config, root, id, fetchImpl = fetch) {

@@ -1,0 +1,100 @@
+import uuid
+
+from fastapi import APIRouter, Depends, HTTPException, Query
+from sqlalchemy import select, text
+
+from vista.auth import Principal, current_principal
+from vista.db import tenant_session
+from vista.models.tenant import RecorderSubmission
+from vista.recorder_uploads import (
+    SubmissionCreate,
+    accept_submission,
+    manifest_hash,
+    public_submission,
+    resolve_workspace,
+    signed_uploads,
+    submission_for,
+    workspaces_for,
+)
+
+router = APIRouter(prefix="/recorder", tags=["recorder uploads"])
+
+
+@router.get("/workspaces")
+def workspaces(principal: Principal = Depends(current_principal)) -> dict:
+    return {
+        "user_id": str(principal.user_id),
+        "tenant_id": str(principal.tenant_id),
+        "email": principal.email,
+        "workspaces": workspaces_for(principal),
+    }
+
+
+@router.post("/submissions", status_code=201)
+def create_submission(body: SubmissionCreate, principal: Principal = Depends(current_principal)) -> dict:
+    workspace = resolve_workspace(principal, body.workspace)
+    manifest = body.model_dump(mode="json")
+    digest = manifest_hash(manifest)
+    with tenant_session(principal.tenant_schema) as session:
+        lock_key = f"recorder:{principal.tenant_id}:{principal.user_id}:{body.device_id}:{body.source_id}"
+        session.execute(text("SELECT pg_advisory_xact_lock(hashtextextended(:key, 0))"), {"key": lock_key})
+        row = session.scalar(
+            select(RecorderSubmission).where(
+                RecorderSubmission.uploaded_by == principal.user_id,
+                RecorderSubmission.device_id == body.device_id,
+                RecorderSubmission.source_id == body.source_id,
+            )
+        )
+        if row is not None and row.manifest_hash != digest:
+            raise HTTPException(409, "This session already has a different immutable upload package")
+        if row is None:
+            row = RecorderSubmission(
+                uploaded_by=principal.user_id,
+                device_id=body.device_id,
+                source_id=body.source_id,
+                canonical_company_id=uuid.UUID(workspace["canonical_company_id"]) if workspace["canonical_company_id"] else None,
+                manifest=manifest,
+                manifest_hash=digest,
+            )
+            session.add(row)
+            session.flush()
+        result = public_submission(row)
+        session.commit()
+        return result
+
+
+@router.get("/submissions")
+def list_submissions(
+    limit: int = Query(50, ge=1, le=100),
+    offset: int = Query(0, ge=0),
+    principal: Principal = Depends(current_principal),
+) -> list[dict]:
+    allowed = {(workspace["kind"], workspace["id"]) for workspace in workspaces_for(principal)}
+    with tenant_session(principal.tenant_schema) as session:
+        rows = session.scalars(
+            select(RecorderSubmission)
+            .where(RecorderSubmission.uploaded_by == principal.user_id)
+            .order_by(RecorderSubmission.created_at.desc(), RecorderSubmission.id)
+            .offset(offset)
+            .limit(limit)
+        ).all()
+        return [public_submission(row) for row in rows if (row.manifest["workspace"]["kind"], row.manifest["workspace"]["id"]) in allowed]
+
+
+@router.get("/submissions/{submission_id}")
+def get_submission(submission_id: uuid.UUID, principal: Principal = Depends(current_principal)) -> dict:
+    with tenant_session(principal.tenant_schema) as session:
+        return public_submission(submission_for(session, principal, submission_id))
+
+
+@router.post("/submissions/{submission_id}/upload-urls")
+def upload_urls(submission_id: uuid.UUID, principal: Principal = Depends(current_principal)) -> dict:
+    with tenant_session(principal.tenant_schema) as session:
+        row = submission_for(session, principal, submission_id, lock=True)
+        return {"submission": public_submission(row), "uploads": signed_uploads(principal, row)}
+
+
+@router.post("/submissions/{submission_id}/complete")
+def complete_submission(submission_id: uuid.UUID, principal: Principal = Depends(current_principal)) -> dict:
+    with tenant_session(principal.tenant_schema) as session:
+        return accept_submission(session, principal, submission_for(session, principal, submission_id, lock=True))

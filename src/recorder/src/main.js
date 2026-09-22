@@ -13,13 +13,14 @@ import { DEMO_KEYS, DemoHook, demoActiveWindow, demoClipboard, demoDocuments } f
 import { DEFAULT_SETTINGS, Recorder, keyNamesFrom, loadSettings } from './recorder.js';
 import { FILES_DIR, FILES_FILE, FileTracker, axDocuments, documentFromTitle, lsofDocuments, publicFile, readFiles, snapshotFiles, spotlightSweep, writeFiles } from './files.js';
 import { redactText } from './redact.js';
-import { cloudRequest, companyID, fetchReview, mergeReview, readSectionEdits, reportBundle, reviewItems, sendDecision, submitSections, uploadMedia, uploadReport, workspaceRecordingURL, workspaceRunState, workspaceURL } from './cloud.js';
+import { fetchReview, mergeReview, readSectionEdits, reportBundle, reviewItems, sendDecision, submitSections, uploadMedia, uploadReport, workspaceRecordingURL, workspaceRunState, workspaceURL } from './cloud.js';
 import { appSpans, buildSections, parseEvents, recordingName } from './sections.js';
 import { apiConfig, startApi } from './api.js';
 import { JobStore } from './jobs.js';
 import { reviewFiles } from './filereview.js';
 import { FLAG_DECISIONS, INSIGHTS_FILE, buildInsights, insightsSummary, summarizeInsights } from './insights.js';
 import { WORKFLOWS_FILE, refineSessionWorkflow, sessionDigest, suggestWorkflows, workflowsStub } from './workflows.js';
+import { deviceId, discoverWorkspaces, documentOptions, selectWorkspace, SubmissionQueue, uploadBinding } from './intake.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const UI = path.join(__dirname, '..', 'ui');
@@ -152,7 +153,13 @@ async function collectDocuments(dir, manifest) {
 }
 
 // The employee can leave a document out before Submit; its snapshot is deleted.
+function requireSharingDraft(recordingId) {
+  if (uploadStates()[recordingId]?.protocol === 2)
+    throw new Error('This sharing package is already queued and cannot be changed. Local edits do not withdraw an uploaded package.');
+}
+
 function toggleFile(recordingId, fileId, include) {
+  requireSharingDraft(recordingId);
   if (!/^[a-f0-9]{12}$/.test(String(fileId))) throw new Error('Invalid file.');
   const dir = recDir(recordingId);
   if (readManifest(dir).submitted) throw new Error('This session was submitted.');
@@ -190,10 +197,13 @@ function broadcastStatus(status) {
 // Resolves with the manifest patch once processing is done/failed/skipped.
 async function postProcess(manifest) {
   const dir = path.join(RECORDINGS, manifest.recording_id);
-  const repo = findRepoRoot();
+  const repo = app.isPackaged || cloudSettings()?.protocol === 2 ? null : findRepoRoot();
   // Documents first: Submit is only offered once processing is 'done', so the
   // snapshots are in place before anything can leave the machine.
   await collectDocuments(dir, manifest).then(() => broadcastSections(manifest.recording_id)).catch((e) => console.error('document collection failed:', e.message));
+  const ready = readManifest(dir);
+  fs.writeFileSync(path.join(dir, 'manifest.json'), JSON.stringify({ ...ready, upload_ready: true }, null, 2));
+  broadcastRecordings();
   // File agent + insights run alongside taskmining; both are idempotent (re-runs
   // after a decision only fill in what is missing).
   const agents = runAgents(manifest.recording_id).catch((e) => console.error('agents failed:', e.message));
@@ -205,7 +215,7 @@ async function postProcess(manifest) {
   };
   if (!repo) {
     await agents;
-    return write({ processing: 'skipped', processing_note: 'taskmining package not found; run `python -m taskmining run --input events.jsonl` later' });
+    return write({ processing: 'awaiting_upload', processing_note: 'Ready to upload activity metadata and selected documents. Cloud analysis is not enabled in this version.' });
   }
   const args = ['-m', 'taskmining', 'run', '--input', path.join(dir, 'events.jsonl'), '--out', path.join(dir, 'processed')];
   if (!recorder.settings.redact) args.push('--no-redact', '--no-pseudonymize');
@@ -270,7 +280,7 @@ function buildWorkflows(recordingId) {
 async function refineWorkflows(recordingId) {
   const dir = recDir(recordingId);
   const wf = readWorkflows(dir);
-  const api = openaiConfig(process.env, recorder.settings);
+  const api = localModelConfig();
   if (!wf?.fallback || !api || cloudSettings()) return wf;
   const m = readManifest(dir);
   const digest = sessionDigest({ manifest: m, events: readEvents(dir), files: readFiles(dir), summary: m.summary ?? null });
@@ -318,7 +328,7 @@ async function reviewDocuments(recordingId, { force = false } = {}) {
   const dir = recDir(recordingId);
   const files = readFiles(dir);
   if (!files.length) return files;
-  const api = openaiConfig(process.env, recorder.settings);
+  const api = localModelConfig();
   await reviewFiles(dir, files, api, {
     force,
     onFile: () => {
@@ -359,7 +369,7 @@ async function computeInsights(recordingId, { force = false } = {}) {
   const insights = buildInsights({ manifest: m, events, sections, files: readFiles(dir), previous: previousManifests(recordingId), workflows }, force ? { ...prior, summary: null } : prior);
   writeInsights(dir, insights);
   broadcastSections(recordingId);
-  const api = openaiConfig(process.env, recorder.settings);
+  const api = localModelConfig();
   if (api && (!insights.summary || insights.summary.error)) {
     try {
       insights.summary = await summarizeInsights(insights, api);
@@ -412,6 +422,7 @@ function approveInsights(recordingId, approved = true) {
 
 // Keep a section out of the report and the workspace review (video is untouched).
 function excludeSection(recordingId, sectionId, excluded) {
+  requireSharingDraft(recordingId);
   if (!/^[A-Za-z0-9_-]{1,64}$/.test(String(sectionId))) throw new Error('Invalid section.');
   const dir = recDir(recordingId);
   if (readManifest(dir).submitted) throw new Error('This session was submitted.');
@@ -428,11 +439,16 @@ function excludeSection(recordingId, sectionId, excluded) {
 // Where AI explanations come from, so the dashboard can say exactly why they are
 // (not) running: company workspace, a local key from the environment, a key
 // typed into Settings, or nothing. The key itself never leaves the main process.
+function localModelConfig() {
+  return app.isPackaged || cloudSettings()?.protocol === 2 ? null : openaiConfig(process.env, recorder.settings);
+}
+
 function aiStatus() {
   const cloud = cloudSettings();
-  const api = openaiConfig(process.env, recorder.settings);
+  const api = localModelConfig();
   return {
-    enabled: !!cloud || !!api,
+    pendingCloudAnalysis: cloud?.protocol === 2,
+    enabled: cloud?.protocol === 2 ? false : !!api,
     source: cloud ? 'cloud' : 'local',
     key_source: cloud ? 'cloud' : api?.source ?? 'none',
     model: cloud ? null : api?.model ?? null,
@@ -636,8 +652,9 @@ async function explainViaCloud(recordingId, dir, review, { force }) {
 }
 
 async function explainRecording(recordingId, { force = false } = {}) {
-  const api = openaiConfig(process.env, recorder.settings);
+  const api = localModelConfig();
   const cloud = cloudSettings();
+  if (cloud?.protocol === 2) return sectionsFor(recordingId);
   if (!api && !cloud) return { error: 'no_key', message: 'Connect your company workspace under Settings → Cloud workspace (or add an OpenAI API key) and the AI will explain each stretch.' };
   if (explaining.has(recordingId)) return sectionsFor(recordingId);
   const dir = recDir(recordingId);
@@ -1018,7 +1035,10 @@ function startRecording({ ui = true } = {}) {
     if (!createDashboard()) dashboard.webContents.send('permissions:changed', perms);
     return recorder.status();
   }
+  const starting = recorder.state === 'idle';
   const status = recorder.start();
+  const connection = cloudSettings();
+  if (starting && connection) writePrivate(path.join(recorder.dir, 'workspace-binding.json'), uploadBinding(connection));
   if (dashboard && !dashboard.isDestroyed()) dashboard.hide();
   if (MAC) app.dock.hide();
   setOverlayMode('pill');
@@ -1058,7 +1078,7 @@ async function stopRecording({ ui = true } = {}) {
   if (MAC) app.dock.show();
   if (ui) openReview(status.recordingId);
   // Cloud-connected: the review starts once the local analysis is done (postProcess).
-  if (!cloudSettings() && openaiConfig(process.env, recorder.settings)) explainRecording(status.recordingId).catch((e) => noteReviewError(status.recordingId, e));
+  if (!cloudSettings() && localModelConfig()) explainRecording(status.recordingId).catch((e) => noteReviewError(status.recordingId, e));
   return status;
 }
 
@@ -1067,7 +1087,10 @@ const CLOUD_FILE = path.join(HOME, 'cloud.json');
 const UPLOADS_FILE = path.join(HOME, 'uploads.json');
 const activeUploads = new Set();
 function cloudSettings() {
-  try { return JSON.parse(fs.readFileSync(CLOUD_FILE, 'utf8')); } catch { return null; }
+  try {
+    const c = JSON.parse(fs.readFileSync(CLOUD_FILE, 'utf8'));
+    return c.protocol === 2 ? c : null;
+  } catch { return null; }
 }
 function uploadStates() {
   try { return JSON.parse(fs.readFileSync(UPLOADS_FILE, 'utf8')); } catch { return {}; }
@@ -1084,32 +1107,50 @@ function requireKeyStorage() {
 }
 function cloudStatus() {
   const c = cloudSettings();
-  return {connected:!!c, url:c?.url ?? '', companyId:c?.companyId ?? '', email:c?.email ?? '', companyName:c?.companyName ?? '', uploads:uploadStates()};
+  return {
+    connected: !!c, protocol: c?.protocol ?? null, url: c?.url ?? '', companyId: c?.workspace?.id ?? '',
+    workspace: c?.workspace ?? null, email: c?.email ?? '', companyName: c?.companyName ?? '',
+    requiresReconnect: !c && fs.existsSync(CLOUD_FILE), uploads: uploadStates(),
+  };
 }
 function requireDashboard(event) {
   if (!dashboard || event.sender !== dashboard.webContents || event.senderFrame !== dashboard.webContents.mainFrame) throw new Error('Cloud actions are available only in the dashboard.');
 }
 ipcMain.handle('cloud:status', event => { requireDashboard(event); return cloudStatus(); });
+let pendingEnrollment = null;
+ipcMain.handle('cloud:discover', async (event, input) => {
+  requireDashboard(event); requireKeyStorage();
+  pendingEnrollment = null;
+  const url = workspaceURL(input.url || 'https://bumpsolutions.org');
+  const identity = await discoverWorkspaces({ url, token: input.token });
+  pendingEnrollment = { url, token: input.token, identity, expires: Date.now() + 300000 };
+  return identity;
+});
 ipcMain.handle('cloud:connect', async (event, input) => {
   requireDashboard(event); requireKeyStorage();
-  const url = workspaceURL(input.url), companyId = companyID(input.companyId);
-  if (typeof input.token !== 'string' || input.token.length < 32 || input.token.length > 256) throw new Error('Enter your personal access key.');
-  const config = {url,companyId,token:input.token};
-  const me = await cloudRequest(config,'/auth/me');
-  const companies = await cloudRequest(config,'/deals');
-  const company = companies.find(c => c.id === companyId);
-  if (!company) throw new Error('Your access key does not have access to this company.');
-  writePrivate(CLOUD_FILE,{url,companyId,email:me.email,companyName:company.name, encryptedToken:safeStorage.encryptString(input.token).toString('base64')});
+  if (!pendingEnrollment || pendingEnrollment.expires < Date.now()) throw new Error('Sign in again to choose your company.');
+  if (input.consent !== true) throw new Error('Confirm the recording and sharing notice before connecting.');
+  const { url, token, identity } = pendingEnrollment;
+  const workspace = selectWorkspace(identity, input.workspace);
+  writePrivate(CLOUD_FILE, {
+    protocol: 2, url, workspace: { id: workspace.id, kind: workspace.kind }, companyId: workspace.id,
+    companyName: workspace.name, userId: identity.user_id, tenantId: identity.tenant_id, email: identity.email,
+    deviceId: deviceId(HOME), consentVersion: 'activity-metadata-v1', encryptedToken: safeStorage.encryptString(token).toString('base64'),
+  });
+  pendingEnrollment = null;
+  resumeUploads(true);
   return cloudStatus();
 });
 ipcMain.handle('cloud:disconnect', event => {
   requireDashboard(event);
+  pendingEnrollment = null;
   fs.rmSync(CLOUD_FILE,{force:true});
   return cloudStatus();
 });
 // Upload the local report (idempotent server-side) and return the workspace's
 // recording id, which the review endpoints key on.
 async function uploadToCloud(id, config) {
+  if (config.protocol === 2) throw new Error('Use Upload session to review and confirm the sharing package.');
   if (typeof id !== 'string' || !/^[a-zA-Z0-9_-]{1,128}$/.test(id)) throw new Error('Invalid recording ID.');
   if (activeUploads.has(id)) throw new Error('This report is already uploading.');
   activeUploads.add(id);
@@ -1125,10 +1166,59 @@ async function uploadToCloud(id, config) {
 }
 function cloudConfig() {
   const c = cloudSettings();
-  if (!c) throw new Error(ADMIN ? 'Connect your cloud workspace in Settings first.' : 'This computer is not connected to a workspace yet. Ask your Vista admin.');
+  if (!c) throw new Error('Connect your company in Settings with your personal access key first.');
   requireKeyStorage();
   return { ...c, token: safeStorage.decryptString(Buffer.from(c.encryptedToken, 'base64')) };
 }
+
+const intakeQueue = new SubmissionQueue(HOME, {
+  isCurrent: (binding) => {
+    const c = cloudSettings();
+    return !!c && JSON.stringify(uploadBinding(c)) === JSON.stringify(binding);
+  },
+  onChange: (state) => {
+    const states = uploadStates();
+    states[state.manifest.source_id] = {
+      protocol: 2, status: state.status, url: state.binding.url, companyId: state.binding.workspace.id,
+      submissionId: state.submission?.id ?? null, receipt: state.receipt, error: state.error,
+      progress: { done: state.uploaded.length, total: state.manifest.artifacts.length },
+      analysis_status: 'not_started', publication_status: 'draft',
+    };
+    writePrivate(UPLOADS_FILE, states);
+    if (recorder) {
+      broadcastRecordings();
+      if (fs.existsSync(path.join(RECORDINGS, state.manifest.source_id, 'manifest.json'))) broadcastSections(state.manifest.source_id);
+    }
+  },
+});
+let uploadTimer = null;
+function resumeUploads(force = false) {
+  if (!cloudSettings()) return;
+  try {
+    intakeQueue.flush(cloudConfig(), { force }).catch(() => console.error('Upload queue paused; reconnect your workspace to retry.'));
+  } catch {
+    console.error('Unlock your system keychain to resume pending uploads.');
+  }
+}
+async function queueSubmission(id, options) {
+  if (recorder.status().recordingId === id && recorder.state !== 'idle') throw new Error('Stop the recording first.');
+  const config = cloudConfig();
+  if (options?.consent !== true || JSON.stringify(options.expectedBinding) !== JSON.stringify(uploadBinding(config)))
+    throw new Error('Review and confirm the upload destination and selected files again.');
+  intakeQueue.enqueue(RECORDINGS, id, config, options);
+  resumeUploads(true);
+  return sectionsFor(id);
+}
+ipcMain.handle('cloud:retry', event => {
+  requireDashboard(event);
+  resumeUploads(true);
+  return cloudStatus();
+});
+ipcMain.handle('recordings:upload-preview', (event, id) => {
+  requireDashboard(event);
+  const c = cloudConfig();
+  return { companyName: c.companyName, email: c.email, binding: uploadBinding(c), documents: documentOptions(RECORDINGS, id) };
+});
 ipcMain.handle('cloud:upload', async (event, id) => {
   requireDashboard(event);
   await uploadToCloud(id, cloudConfig());
@@ -1195,7 +1285,8 @@ async function demoSubmit(id, dir, m) {
   return sectionsFor(id);
 }
 
-async function submitRecording(id) {
+async function submitRecording(id, options = {}) {
+  if (cloudSettings()?.protocol === 2) return queueSubmission(id, options);
   if (DEMO && !cloudSettings()) {
     if (!ID_RE.test(String(id))) throw new Error('Invalid recording ID.');
     const dir = path.join(RECORDINGS, id);
@@ -1247,9 +1338,9 @@ async function submitRecording(id) {
   }
   return sectionsFor(id);
 }
-ipcMain.handle('recordings:submit', (event, id) => {
+ipcMain.handle('recordings:submit', (event, id, options) => {
   requireDashboard(event);
-  return submitRecording(id);
+  return submitRecording(id, options);
 });
 ipcMain.handle('recordings:edit-section', (_e, id, sectionId, patch) => editSection(id, sectionId, patch ?? {}));
 ipcMain.handle('recordings:exclude-section', (_e, id, sectionId, excluded) => excludeSection(id, sectionId, !!excluded));
@@ -1304,7 +1395,7 @@ ipcMain.handle('app:relaunch', async () => {
   app.relaunch({ args: process.argv.slice(1).filter((a) => a !== '--demo').concat('--dashboard') });
   app.exit(0);
 });
-ipcMain.handle('app:info', () => ({ demo: DEMO, admin: ADMIN, home: HOME, platform: process.platform, user: os.userInfo().username, openai: !!openaiConfig(process.env, recorder.settings), ai: aiStatus(), cloud: !!cloudSettings(), ownApps: recorder.settings.ownApps ?? DEFAULT_SETTINGS.ownApps }));
+ipcMain.handle('app:info', () => ({ demo: DEMO, admin: ADMIN, home: HOME, platform: process.platform, user: os.userInfo().username, openai: !!localModelConfig(), ai: aiStatus(), cloud: !!cloudSettings(), ownApps: recorder.settings.ownApps ?? DEFAULT_SETTINGS.ownApps }));
 ipcMain.handle('permissions:get', () => permissions(false));
 ipcMain.handle('permissions:open', (_e, kind) => openPermissionPane(kind));
 ipcMain.on('video:chunk', (_e, dir, buf) => {
@@ -1367,7 +1458,9 @@ app.whenReady().then(async () => {
   tray.on('click', () => createDashboard());
   createOverlay();
   createCaptureWindow();
-  if (process.argv.includes('--dashboard')) createDashboard();
+  if (process.argv.includes('--dashboard') || !cloudSettings()) createDashboard();
+  resumeUploads();
+  uploadTimer = setInterval(() => resumeUploads(), 30000);
   await startAgentApi();
 });
 
@@ -1375,6 +1468,7 @@ app.on('window-all-closed', () => {
   /* keep running in the tray/overlay */
 });
 app.on('before-quit', async (e) => {
+  clearInterval(uploadTimer);
   apiServer?.close();
   if (recorder && recorder.state !== 'idle') {
     e.preventDefault();

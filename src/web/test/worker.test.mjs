@@ -258,3 +258,25 @@ test("workflow proxy permits registry reads and version decisions, not execution
   for (const path of [`${workflow}/runs`, `${base}/not-a-uuid`, `${version}/decision/extra`])
     assert.equal(await status(path, "POST"), 404);
 });
+
+test("recorder intake proxy exposes enrollment and private upload operations only", async () => {
+  const status = async (path, method) =>
+    (await worker.fetch(new Request(`https://vista.test/api${path}`, { method }), {})).status;
+  const base = "/recorder/submissions";
+  const submission = `${base}/00000000-0000-0000-0000-000000000001`;
+  for (const path of ["/recorder/workspaces", base, submission]) {
+    assert.equal(await status(path, "GET"), 503);
+    assert.equal(await status(path, "HEAD"), 503);
+    for (const method of ["PUT", "PATCH", "DELETE"])
+      assert.equal(await status(path, method), 405);
+  }
+  for (const path of [base, `${submission}/upload-urls`, `${submission}/complete`])
+    assert.equal(await status(path, "POST"), 503);
+  for (const path of ["/recorder/workspaces", submission])
+    assert.equal(await status(path, "POST"), 405);
+  for (const path of [`${submission}/upload-urls`, `${submission}/complete`])
+    for (const method of ["GET", "HEAD", "PUT", "PATCH", "DELETE"])
+      assert.equal(await status(path, method), 405);
+  for (const path of [`${submission}/download`, `${submission}/publish`, `${submission}/analyze`, `${base}/not-a-uuid`])
+    assert.equal(await status(path, "GET"), 404);
+});

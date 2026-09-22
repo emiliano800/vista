@@ -24,6 +24,10 @@
     "appId": "org.bumpsolutions.vista.recorder",
     "productName": "Vista Recorder",
     "files": ["src/**/*", "ui/**/*", "package.json"],
+    "extraResources": [
+      { "from": "../web/public/tokens.css", "to": "web/public/tokens.css" },
+      { "from": "../web/public/fonts", "to": "web/public/fonts" }
+    ],
     "asarUnpack": ["**/node_modules/uiohook-napi/**", "**/node_modules/get-windows/**"],
     "mac": {
       "identity": null,

@@ -501,16 +501,20 @@
             <label><div>Simulated apps and input<span>Plays a scripted AP-clerk session (Outlook, Acrobat, QuickBooks, Excel) instead of recording this computer. Takes effect after the app restarts.</span></div><input type="checkbox" id="demo-mode"></label>
             <div class="muted" id="demo-state" style="font-size:12px"></div>
           </section>
-          <div id="admin-settings" class="hidden">
-          <section class="card">
-            <h2>Cloud workspace <span class="pill">admin</span></h2>
-            <p class="muted">Connect to review completed reports on the website. Uploads include activity labels, app names, case IDs, notes and pseudonymous user IDs. Screenshots, video and raw interaction logs stay on this computer.</p>
-            <label for="cloud-url">Website address</label><input id="cloud-url" type="url" placeholder="https://bumpsolutions.org" />
-            <label for="cloud-company">Company ID (shown on the website)</label><input id="cloud-company" type="text" />
-            <label for="cloud-key">Personal access key</label><input id="cloud-key" type="password" autocomplete="off" placeholder="Stored securely in your system keychain" />
-            <div style="margin-top:14px"><button class="btn primary" id="cloud-connect">Connect</button> <button class="btn" id="cloud-disconnect">Disconnect</button></div>
+          <section class="card" id="cloud-enrollment">
+            <h2>Connect your company</h2>
+            <p class="muted">Enter the personal access key from your administrator. Choose an authorized company, then confirm the sharing notice. No AWS or model-provider key is needed.</p>
+            <label for="cloud-key">Personal access key</label><input id="cloud-key" type="password" autocomplete="off" placeholder="Stored securely using your system keychain" />
+            <details style="margin-top:12px"><summary>Advanced: website address</summary><label for="cloud-url">Website address</label><input id="cloud-url" type="url" value="https://bumpsolutions.org" /></details>
+            <div style="margin-top:14px"><button class="btn primary" id="cloud-discover">Find my company</button> <button class="btn" id="cloud-disconnect">Disconnect</button></div>
+            <div id="cloud-confirmation" class="hidden" style="margin-top:14px">
+              <label for="cloud-company">Your company</label><select id="cloud-company"></select>
+              <div class="set"><label><div>Confirm recording and sharing<span>Capture stays local until I choose Upload session. The new upload shares app names, interaction types/counts and timestamps, plus only the document snapshots I select. Screenshots, video, typed text, clipboard contents, window titles and raw logs are not included. Uploads remain private drafts awaiting a future cloud-analysis step.</span></div><input id="cloud-consent" type="checkbox" /></label></div>
+              <button class="btn primary" id="cloud-connect" disabled>Connect this company</button>
+            </div>
             <p class="muted" id="cloud-state" role="status"></p>
           </section>
+          <div id="admin-settings" class="hidden">
           <section class="card">
             <h2>Private apps and words <span class="pill">admin</span></h2>
             <p class="muted" style="margin:0 0 8px">Capture is muted while any of these apps are in front or these words appear in the window title.</p>
@@ -533,6 +537,19 @@
         </div>
       </main>
     </div>
+
+    <dialog id="upload-dialog" class="card wide" aria-labelledby="upload-title">
+      <h2 id="upload-title">Review your sharing package</h2>
+      <p id="upload-destination"></p>
+      <p>Activity metadata includes app names, interaction types/counts and timestamps. It excludes typed text, clipboard contents, URLs, window titles, screenshots, video and raw event logs.</p>
+      <h3>Optional document snapshots</h3>
+      <p class="muted">Nothing is selected by default. Selected documents are uploaded in full; check their contents before sharing.</p>
+      <div id="upload-documents" class="set"></div>
+      <div class="set"><label><div>I approve this package for the company shown above<span>The package is frozen when queued. Local originals are retained, and later local edits do not withdraw uploaded data. The server stores a private draft; cloud analysis is not enabled yet.</span></div><input id="upload-consent" type="checkbox" /></label></div>
+      <p id="upload-error" role="status"></p>
+      <button id="upload-confirm" class="btn primary" disabled>Queue upload</button>
+      <button id="upload-cancel" class="btn">Cancel</button>
+    </dialog>
 
     <!-- annotation modal -->
     <div id="modal" class="modal hidden">
@@ -613,6 +630,8 @@
       // uploading, failed (retry), uploaded (report only, older flow) or local.
       function uploadState(r) {
         const u = r?.upload;
+        if (u?.protocol === 2 && u.status === 'accepted') return { key: 'accepted', label: 'Uploaded · awaiting analysis', icon: 'cloudCheck', sub: 'Verified private draft. Local originals are retained; no report has been published.' };
+        if (u?.protocol === 2 && (u.status === 'queued' || u.status === 'uploading')) return { key: u.status, label: u.status === 'queued' ? 'Queued for upload' : `Uploading ${u.progress?.done ?? 0}/${u.progress?.total ?? 0}`, icon: 'loader', sub: 'Uploads resume when this app is open and connected to the original workspace.' };
         if (r?.submitted || u?.status === 'submitted') return { key: 'submitted', label: 'Submitted', icon: 'cloudCheck', sub: u?.submittedAt ?? r?.submitted?.at ? new Date(u?.submittedAt ?? r.submitted.at).toLocaleString() : '' };
         if (u?.status === 'uploading') return { key: 'uploading', label: u.progress?.total ? `Uploading ${u.progress.done}/${u.progress.total}` : 'Uploading…', icon: 'loader', sub: '' };
         if (u?.status === 'failed') return { key: 'failed', label: 'Failed', icon: 'alert', sub: u.error ?? '' };
@@ -671,6 +690,7 @@
         const s = r.summary;
         const when = `${clock(r.started_at)}–${r.ended_at ? clock(r.ended_at) : '…'}`;
         const up = uploadState(r);
+        const intake = cloud?.protocol === 2 || r.upload?.protocol === 2 || p === 'awaiting_upload';
         $('rv-title').textContent = r.name ?? (done ? 'Session analyzed' : 'Session saved');
         $('rv-lede').textContent = `${when} · ${hm(r.active_seconds ?? 0)} · ${(r.counts?.total ?? 0).toLocaleString()} interactions · ${up.label}${up.key === 'submitted' ? ' — files are in your workspace' : ''}`;
         $('rv-banner-t').textContent = up.key === 'submitted' ? 'Submitted' : up.key === 'uploading' ? up.label : up.key === 'failed' ? 'Submit failed' : done ? 'Ready to review' : p === 'failed' ? 'Analysis could not finish' : p === 'skipped' ? 'Analysis skipped' : 'Analyzing…';
@@ -680,17 +700,22 @@
         $('rv-note').classList.toggle('hidden', up.key === 'submitted');
         $('rv-note').title = r.summary_text ? 'Edit the general summary' : 'Tell us what this session was about — it names the recording';
         const sb = $('rv-submit');
-        sb.classList.toggle('hidden', up.key === 'submitted');
-        sb.disabled = !done || up.key === 'uploading';
-        sb.innerHTML = up.key === 'uploading' ? `${icon('loader')}${esc(up.label)}` : up.key === 'failed' ? `${icon('upload')}Retry submit` : `${icon('upload')}Submit`;
-        sb.title = !info?.cloud ? 'Not connected to a workspace yet — ask your Vista admin' : sb.title;
+        sb.classList.toggle('hidden', up.key === 'submitted' || up.key === 'accepted');
+        const captureSaved = !!r.ended_at && (r.upload_ready || ['done', 'skipped', 'failed', 'awaiting_upload'].includes(p));
+        sb.disabled = intake ? !captureSaved || !cloud?.connected || ['uploading', 'queued'].includes(up.key) : !done || up.key === 'uploading';
+        sb.innerHTML = up.key === 'uploading' || up.key === 'queued' ? `${icon('loader')}${esc(up.label)}` : up.key === 'failed' ? `${icon('upload')}Retry upload` : `${icon('upload')}${intake ? 'Upload session' : 'Submit'}`;
+        sb.title = !info?.cloud ? 'Connect your company in Settings first' : 'Review the destination and document selection before uploading';
+        if (intake) {
+          $('rv-banner-t').textContent = up.key === 'accepted' ? 'Uploaded — awaiting analysis' : up.key === 'failed' ? 'Upload needs attention' : ['uploading', 'queued'].includes(up.key) ? up.label : 'Ready to upload';
+          $('rv-banner-s').textContent = up.key === 'accepted' ? up.sub : up.key === 'failed' ? up.sub : 'Only activity metadata and the documents you choose will be shared. Local originals are retained. Cloud analysis is not enabled yet.';
+        }
         $('rv-details-t').textContent = done && s ? `How this was analysed · ${(r.counts?.total ?? 0).toLocaleString()} events → ${s.steps} steps → ${s.cases} case${s.cases === 1 ? '' : 's'}` : finished && p !== 'done' ? 'How this was analysed' : `Analysing · ${STAGES[Math.max(0, Math.min(stageIdx, STAGES.length - 1))][1].toLowerCase()}…`;
 
         const out = (k) => {
           if (!s) return '';
           return { save: `${(r.counts?.total ?? 0).toLocaleString()} events`, redact: `${s.raw_events} → ${s.clean_events} clean`, steps: `${s.steps} steps`, cases: `${s.cases} case${s.cases === 1 ? '' : 's'}`, discover: s.top_variant ? `${s.top_variant.activities.length}-step path` : '', score: s.automation?.length ? `top ${s.automation.length}` : '' }[k] ?? '';
         };
-        $('rv-stages').innerHTML = STAGES.map(([k, t, sub], i) => {
+        $('rv-stages').innerHTML = intake ? '<p class="muted">Capture saved on this device → approved package uploaded → awaiting future cloud analysis. Uploading does not create or publish a report.</p>' : STAGES.map(([k, t, sub], i) => {
           let cls = '';
           if (i < stageIdx) cls = 'done';
           else if (i === stageIdx) cls = finished ? (p === 'done' ? 'done' : 'failed') : 'active';
@@ -729,10 +754,47 @@
           ? fl.map((f) => `<div class="row"><span class="n">${f.count}×</span><span>${esc(short(f.from))} → ${esc(short(f.to))}</span><span class="muted">~${hm(f.mean_transfer_s)} each</span><div class="bar"><i style="width:${(f.count / flMax) * 100}%"></i></div></div>`).join('')
           : '<div class="empty">No copy → paste between apps seen</div>';
       }
+      let pendingShare = null;
+      $('upload-consent').onchange = () => { $('upload-confirm').disabled = !$('upload-consent').checked; };
+      $('upload-cancel').onclick = () => { pendingShare = null; $('upload-dialog').close(); };
+      $('upload-confirm').onclick = async () => {
+        if (!pendingShare || !$('upload-consent').checked) return;
+        $('upload-confirm').disabled = true;
+        try {
+          const selectedFileIds = [...$('upload-documents').querySelectorAll('input:checked')].map((e) => e.dataset.uploadFile);
+          await window.vista.submit(pendingShare.id, { consent: true, selectedFileIds, expectedBinding: pendingShare.binding });
+          pendingShare = null;
+          $('upload-dialog').close();
+          recordings = await window.vista.recordings();
+          renderRecordings(); renderToday(); renderReview();
+        } catch (e) {
+          $('upload-error').textContent = e.message;
+          $('upload-confirm').disabled = false;
+        }
+      };
       $('rv-done').onclick = () => show('today');
       $('rv-note').onclick = () => openAnnotate(reviewing, '', { whole: true });
       $('rv-submit').onclick = async () => {
         const r = recordings.find((x) => x.recording_id === reviewing);
+        if (cloud?.protocol === 2) {
+          try {
+            if (r?.upload?.protocol === 2 && r.upload.status === 'failed') {
+              await window.vista.retryUploads();
+              return;
+            }
+            const preview = await window.vista.uploadPreview(reviewing);
+            pendingShare = { id: reviewing, binding: preview.binding };
+            $('upload-destination').textContent = `Destination: ${preview.companyName} · ${preview.email}`;
+            $('upload-documents').innerHTML = preview.documents.length
+              ? preview.documents.map((f) => `<label><div>${esc(f.name)}<span>${Number(f.size_bytes).toLocaleString()} bytes · full snapshot</span></div><input type="checkbox" data-upload-file="${esc(f.id)}" /></label>`).join('')
+              : '<p class="muted">No supported snapshots are available. Activity metadata can still be uploaded.</p>';
+            $('upload-consent').checked = false;
+            $('upload-confirm').disabled = true;
+            $('upload-error').textContent = '';
+            $('upload-dialog').showModal();
+          } catch (e) { alert(e.message); }
+          return;
+        }
         const open = vs?.review?.summary?.open ?? 0;
         const ask = `Submit “${r?.name ?? 'this session'}” to your workspace?\n\nThe video, screenshots, notes and analysis are uploaded and then removed from this computer.${open ? `\n${open} section${open === 1 ? '' : 's'} still unreviewed — you can finish in the workspace.` : ''}`;
         if (!confirm(ask)) return;
@@ -769,6 +831,7 @@
       function analystSummary() {
         const rv = vs?.review;
         if (!rv) return 'Working out the stretches of work…';
+        if (rv.pendingCloudAnalysis || cloud?.protocol === 2) return 'Cloud analysis is not enabled yet. You can upload activity metadata and selected documents.';
         if (!rv.enabled) return info?.admin ? 'AI is off — no key found (Settings → AI explanations).' : 'Name each section yourself, then Submit.';
         const s = rv.summary;
         if (rv.generating) return `Explaining each section… ${s.total ? `${s.total} of ${vs.sections.length} done.` : ''}`;
@@ -1261,28 +1324,61 @@
         $('quick-chips').querySelectorAll('.chip').forEach((c) => (c.onclick = () => openAnnotate(target?.recording_id, c.dataset.q)));
       }
 
+      let enrollment = null;
       function renderCloud() {
         $('cloud-url').value = cloud?.url || 'https://bumpsolutions.org';
-        $('cloud-company').value = cloud?.companyId || '';
-        $('cloud-state').textContent = cloud?.connected ? `Connected to ${cloud.companyName} as ${cloud.email}. Recordings upload only when the employee presses Submit.` : 'Not connected. Enter the details from your workspace.';
+        $('cloud-state').textContent = cloud?.connected
+          ? `Connected to ${cloud.companyName} as ${cloud.email}. Uploads require your sharing confirmation. Cloud analysis is not enabled yet.`
+          : cloud?.requiresReconnect ? 'Reconnect with your personal access key to upgrade this older connection.' : 'Not connected. Enter your personal access key to find your company.';
         $('cloud-disconnect').disabled = !cloud?.connected;
         if (info) info.cloud = !!cloud?.connected;
         renderRecordings();
         renderReview();
       }
-      $('cloud-connect').onclick = async () => {
-        $('cloud-connect').disabled = true;
-        const input = {url:$('cloud-url').value.trim(),companyId:$('cloud-company').value.trim(),token:$('cloud-key').value.trim()};
+      function connectionReady() {
+        $('cloud-connect').disabled = !enrollment || !$('cloud-company').value || !$('cloud-consent').checked;
+      }
+      $('cloud-consent').onchange = connectionReady;
+      $('cloud-company').onchange = connectionReady;
+      $('cloud-discover').onclick = async () => {
+        $('cloud-discover').disabled = true;
+        enrollment = null;
+        $('cloud-consent').checked = false;
+        $('cloud-confirmation').classList.add('hidden');
+        connectionReady();
+        const input = { url: $('cloud-url').value.trim(), token: $('cloud-key').value.trim() };
         $('cloud-key').value = '';
-        try { cloud = await window.vista.cloudConnect(input); renderCloud(); }
-        catch (e) { $('cloud-state').textContent = e.message; }
-        finally { $('cloud-connect').disabled = false; }
+        try {
+          enrollment = await window.vista.cloudDiscover(input);
+          $('cloud-company').innerHTML = (enrollment.workspaces.length > 1 ? '<option value="">Select your company</option>' : '') +
+            enrollment.workspaces.map((w, i) => `<option value="${i}">${esc(w.name)}${w.kind === 'deal' ? ' (existing workspace)' : ''}</option>`).join('');
+          $('cloud-confirmation').classList.remove('hidden');
+          $('cloud-state').textContent = `Signed in as ${enrollment.email}. Confirm the destination and sharing notice.`;
+          connectionReady();
+        } catch (e) { $('cloud-state').textContent = e.message; }
+        finally { $('cloud-discover').disabled = false; }
+      };
+      $('cloud-connect').onclick = async () => {
+        if (!enrollment || !$('cloud-company').value || !$('cloud-consent').checked) return;
+        $('cloud-connect').disabled = true;
+        const choice = enrollment.workspaces[Number($('cloud-company').value)];
+        try {
+          cloud = await window.vista.cloudConnect({ workspace: { id: choice.id, kind: choice.kind }, consent: true });
+          enrollment = null;
+          $('cloud-confirmation').classList.add('hidden');
+          info = await window.vista.info();
+          renderCloud();
+        } catch (e) { $('cloud-state').textContent = e.message; connectionReady(); }
       };
       $('cloud-disconnect').onclick = async () => {
-        try { cloud = await window.vista.cloudDisconnect(); renderCloud(); }
-        catch (e) { $('cloud-state').textContent = e.message; }
+        try {
+          cloud = await window.vista.cloudDisconnect();
+          enrollment = null;
+          $('cloud-confirmation').classList.add('hidden');
+          connectionReady(); renderCloud();
+        } catch (e) { $('cloud-state').textContent = e.message; }
       };
-      window.vista.cloudStatus().then(value => { cloud = value; renderCloud(); }).catch(e => { $('cloud-state').textContent = e.message; });
+      window.vista.cloudStatus().then(value => { cloud = value; renderCloud(); if (!cloud.connected) show('settings'); }).catch(e => { $('cloud-state').textContent = e.message; });
 
       // ---- recordings ----
       // Days folded shut in My recordings; today starts open, older days closed.
@@ -1506,7 +1602,8 @@
       function renderAiState() {
         const ai = info?.ai;
         if (!ai) return;
-        $('ai-state').textContent = ai.key_source === 'cloud' ? 'AI explanations run in your company workspace.'
+        $('ai-state').textContent = ai.pendingCloudAnalysis ? 'Connected for private uploads. Cloud analysis is not enabled yet; no model key is needed here.'
+          : ai.key_source === 'cloud' ? 'AI explanations run in your company workspace.'
           : ai.key_source === 'env' ? `AI explanations on · key from the environment · model ${ai.model}`
           : ai.key_source === 'settings' ? `AI explanations on · key from Settings · model ${ai.model}`
           : 'AI explanations off — no key found.';

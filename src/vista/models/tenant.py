@@ -694,3 +694,23 @@ class WorkflowApproval(TenantBase):
     reason: Mapped[str] = mapped_column(Text, default="")
     decided_by: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True))
     decided_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class RecorderSubmission(TenantBase):
+    __tablename__ = "recorder_submissions"
+    __table_args__ = (
+        UniqueConstraint("uploaded_by", "device_id", "source_id", name="uq_recorder_submission_source"),
+        CheckConstraint("upload_status IN ('uploading', 'accepted')", name="ck_recorder_submission_status"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    uploaded_by: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), index=True)
+    device_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True))
+    source_id: Mapped[str] = mapped_column(String(128))
+    canonical_company_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), nullable=True)
+    manifest: Mapped[dict] = mapped_column(JSONB)
+    manifest_hash: Mapped[str] = mapped_column(String(64))
+    upload_status: Mapped[str] = mapped_column(String(16), default="uploading")
+    verified_artifacts: Mapped[list] = mapped_column(JSONB, default=list)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    accepted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
