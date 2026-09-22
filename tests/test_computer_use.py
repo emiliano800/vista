@@ -113,7 +113,7 @@ class ScriptedJudge:
             probs = {k: 0.0 for k in questions["value"]["criteria"]}
             probs[label] = spec.get("p_value", 0.9)
             answers["value"] = {"type": "choice", "choice": label, "confidence": spec.get("p_value", 0.9), "probabilities": probs}
-        for key, q in questions.items():
+        for key in questions:
             if key.startswith("criterion_") or key == "goal_met":
                 answers[key] = {"type": "noul", "noul": spec.get(key, spec.get("verify", 0.9))}
         return Judgment(model="jev-1.13.0", answers=answers, input_tokens=spec.get("tokens", 800))

@@ -72,6 +72,10 @@ sensor on non-synthetic work.
 
 ## 4. Connectors and the agent runtime (the autonomy ladder continues)
 
+The Computer Use Agent already executes approved workflows in the sandbox (bounded
+primitives, review gates, verification). What it lacks is *reach*: the recorder's page and
+desktop drivers, OAuth connectors, and a connections API/UI.
+
 Read-only email + QuickBooks/Xero sandbox first; `connections` table with encrypted
 OAuth tokens; connector tools for discovery runs. Findings graduate from
 file-profile facts to observed business activity; `verify_by` becomes a link.

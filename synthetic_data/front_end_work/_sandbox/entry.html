@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Sandbox — Vendor invoice entry</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="entry.css">
+</head>
+<body>
+<div class="banner" role="note">SANDBOX — the only writable demo fixture. Nothing here reaches a real system; rows live in this browser's <code>localStorage</code>.</div>
+<main class="wrap">
+  <header class="head">
+    <h1>Vendor invoice entry</h1>
+    <p class="sub">A stand-in for the destination system of the Ridgeway <em>Enter Bills</em> workflow. Field names equal the columns of <code>supplier_invoices.csv</code>, so an approved workflow's inputs map one-to-one.</p>
+  </header>
+
+  <form id="invoice-form" class="form" autocomplete="off" novalidate>
+    <fieldset>
+      <legend>Supplier</legend>
+      <div class="row">
+        <label for="SUPPLIER_NAME">Supplier name</label>
+        <input id="SUPPLIER_NAME" name="SUPPLIER_NAME" type="text" required>
+      </div>
+      <div class="row">
+        <label for="SUPPLIER_INVOICE_N">Supplier invoice number</label>
+        <input id="SUPPLIER_INVOICE_N" name="SUPPLIER_INVOICE_N" type="text" required>
+      </div>
+      <div class="row">
+        <label for="PO_NUMBER">PO number</label>
+        <input id="PO_NUMBER" name="PO_NUMBER" type="text">
+      </div>
+    </fieldset>
+    <fieldset>
+      <legend>Dates</legend>
+      <div class="row">
+        <label for="INVOICE_DATE">Invoice date</label>
+        <input id="INVOICE_DATE" name="INVOICE_DATE" type="text" placeholder="YYYY-MM-DD" required>
+      </div>
+      <div class="row">
+        <label for="DUE_DATE">Due date</label>
+        <input id="DUE_DATE" name="DUE_DATE" type="text" placeholder="YYYY-MM-DD">
+      </div>
+    </fieldset>
+    <fieldset>
+      <legend>Amounts</legend>
+      <div class="row">
+        <label for="MERCHANDISE_TOTAL">Merchandise total</label>
+        <input id="MERCHANDISE_TOTAL" name="MERCHANDISE_TOTAL" type="text" inputmode="decimal" required>
+      </div>
+      <div class="row">
+        <label for="FREIGHT">Freight</label>
+        <input id="FREIGHT" name="FREIGHT" type="text" inputmode="decimal" value="0.00">
+      </div>
+      <div class="row">
+        <label for="SALES_TAX">Sales tax</label>
+        <input id="SALES_TAX" name="SALES_TAX" type="text" inputmode="decimal" value="0.00">
+      </div>
+      <div class="row">
+        <label for="INVOICE_TOTAL">Invoice total</label>
+        <input id="INVOICE_TOTAL" name="INVOICE_TOTAL" type="text" inputmode="decimal" required>
+      </div>
+      <div class="row">
+        <label for="GL_ACCOUNT">GL account</label>
+        <select id="GL_ACCOUNT" name="GL_ACCOUNT">
+          <option value="2000">2000 · Accounts payable</option>
+          <option value="5000">5000 · Cost of goods sold</option>
+          <option value="5100">5100 · Freight in</option>
+          <option value="6200">6200 · Shop supplies</option>
+        </select>
+      </div>
+    </fieldset>
+    <div class="actions">
+      <button type="submit" id="submit-invoice" class="primary">Submit invoice</button>
+      <button type="button" id="reset-form">Reset form</button>
+    </div>
+    <p id="status" class="status" role="status" aria-live="polite"></p>
+    <p id="alert" class="alert" role="alert" hidden></p>
+  </form>
+
+  <section class="table-section">
+    <div class="table-head">
+      <h2>Submitted invoices <span id="count" class="count">0</span></h2>
+      <div class="actions">
+        <button type="button" id="export-csv">Export CSV</button>
+        <button type="button" id="clear-all" data-armed="false">Clear all</button>
+      </div>
+    </div>
+    <table id="submitted" aria-label="Submitted invoices">
+      <caption>Submitted invoices</caption>
+      <thead>
+        <tr><th>#</th><th>SUPPLIER_NAME</th><th>SUPPLIER_INVOICE_N</th><th>PO_NUMBER</th><th>INVOICE_DATE</th><th>DUE_DATE</th><th>MERCHANDISE_TOTAL</th><th>FREIGHT</th><th>SALES_TAX</th><th>INVOICE_TOTAL</th><th>GL_ACCOUNT</th><th>Saved</th></tr>
+      </thead>
+      <tbody id="rows"></tbody>
+    </table>
+    <p class="hint">Duplicate invoice numbers are rejected with an alert — that is the “left for a person” case. Open <code>?reset=1</code> to start empty. <code>window.VISTA_SANDBOX.rows()</code> / <code>.csv()</code> expose the table to scripts.</p>
+  </section>
+</main>
+<script src="entry.js"></script>
+</body>
+</html>
