@@ -48,7 +48,7 @@ def process_one() -> bool:
     if terminal and hook is not None:
         try:
             hook(job_id)
-        except Exception:  # noqa: BLE001 — worker boundary; the barrier is re-tried on the next status poll
+        except Exception:  # noqa: BLE001 — worker boundary; interpretation_status re-tries the barrier on each poll
             log.exception("after-terminal hook for job %s failed", job_id)
     return True
 

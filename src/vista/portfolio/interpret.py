@@ -1660,13 +1660,8 @@ def _queued_request(
     return {"request_id": str(request_id), "review": review, "merge": merge}
 
 
-def interpretation_status(platform: Session, ctx: FirmContext, request_id: uuid.UUID) -> dict:
-    """Progress of one analyst request: every job queued under its stable keys, restricted to
-    tenants in the caller's firm scope (company tenants + the firm's home tenant), plus one
-    `waiting` entry per sector merge whose barrier has not opened yet. `done` is true once every
-    hop is terminal and no merge is waiting."""
-    tenant_ids = {c.tenant_id for c in ctx.companies} | {ctx.firm.home_tenant_id}
-    jobs = platform.scalars(
+def _request_jobs(platform: Session, tenant_ids: set[uuid.UUID], request_id: uuid.UUID) -> list[Job]:
+    return platform.scalars(
         select(Job)
         .where(
             Job.tenant_id.in_(tenant_ids),
@@ -1675,8 +1670,27 @@ def interpretation_status(platform: Session, ctx: FirmContext, request_id: uuid.
         )
         .order_by(Job.created_at)
     ).all()
+
+
+def interpretation_status(platform: Session, ctx: FirmContext, request_id: uuid.UUID) -> dict:
+    """Progress of one analyst request: every job queued under its stable keys, restricted to
+    tenants in the caller's firm scope (company tenants + the firm's home tenant), plus one
+    `waiting` entry per sector merge whose barrier has not opened yet. `done` is true once every
+    hop is terminal and no merge is waiting.
+
+    Every poll re-tries the barrier for each sector still waiting on its merge: if the worker's
+    after-terminal hook died between committing the last review and queueing the merge, the next
+    poll queues it (the barrier is idempotent), so a request cannot stay `waiting` forever."""
+    tenant_ids = {c.tenant_id for c in ctx.companies} | {ctx.firm.home_tenant_id}
+    jobs = _request_jobs(platform, tenant_ids, request_id)
     if not jobs:
         raise HTTPException(404, "Unknown interpretation request")
+    merged = {j.idempotency_key.rsplit(":", 1)[-1] for j in jobs if j.kind == RUN_MERGE}
+    awaiting = {j.payload["sector"] for j in jobs if j.kind == RUN_REVIEW and j.payload.get("merge_run_id")} - merged
+    released = [s for s in sorted(awaiting) if release_sector_barrier(platform, ctx, str(request_id), s) is not None]
+    if released:
+        platform.commit()
+        jobs = _request_jobs(platform, tenant_ids, request_id)
     views = [
         {
             "id": str(j.id),

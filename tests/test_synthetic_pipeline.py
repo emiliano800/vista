@@ -125,6 +125,12 @@ def merge_jobs(platform, request_id) -> list[Job]:
     return platform.scalars(select(Job).where(Job.kind == interpret.RUN_MERGE, Job.idempotency_key.like(f"%:{request_id}:%"))).all()
 
 
+def drain_queue() -> None:
+    """Tests step the worker one job at a time, so leftovers from other tests must not be claimed first."""
+    while process_one():
+        pass
+
+
 def home_schema(firm_id) -> str:
     with platform_session() as p:
         return p.get(Tenant, p.get(Firm, firm_id).home_tenant_id).schema_name
@@ -197,6 +203,7 @@ def test_interpretation_is_queued_with_lineage_and_executed_by_the_worker(client
         import_table(client, headers, cid, root / "03_procurement" / "purchase_orders.csv", "purchase_orders")
         import_table(client, headers, cid, root / "03_procurement" / "purchase_order_lines.csv", "purchase_order_lines")
 
+    drain_queue()
     first = client.post("/api/portfolio/interpretation", headers=headers)
     assert first.status_code == 202, first.text
     report = first.json()
@@ -355,6 +362,7 @@ def test_barrier_waits_for_retries_then_merges_over_successful_companies_only(cl
         return real_review(platform, ctx, company, *args, **kwargs)
 
     monkeypatch.setattr(interpret, "review_company", flaky_review)
+    drain_queue()
     report = client.post("/api/portfolio/interpretation", headers=headers).json()
     request_id = report["request_id"]
     with platform_session() as platform:
@@ -443,3 +451,40 @@ def test_validate_candidate_intersects_record_ids_and_ranks_effects():
     assert degraded["confidence"] == 0.6 and degraded["assumptions"][0] == "existing" and len(degraded["assumptions"]) == 3
     assert interpret._apply_effect(row, interpret.EFFECT_ENRICH, [(stale, interpret.EFFECT_ENRICH)])["confidence"] == 0.8
     assert interpret._apply_effect(row, None, []) is row
+
+
+def test_status_poll_reopens_the_barrier_when_the_worker_hook_never_ran(client, source_store, monkeypatch):  # noqa: F811
+    """If the worker dies between committing the last review and queueing the merge, the next status
+    poll runs the (idempotent) barrier itself, so the analyst's request can never wait forever."""
+    import vista.jobs.worker as worker
+
+    headers, _ = make_firm()
+    a = new_company(client, headers, "Northfield Industrial Components", "Industrial distribution")
+    b = new_company(client, headers, "Keystone Bearing & Drive", "Industrial distribution")
+    for cid, root in ((a, NORTHFIELD), (b, KEYSTONE)):
+        import_table(client, headers, cid, root / "03_procurement" / "suppliers.csv", "vendor_master")
+
+    monkeypatch.setattr(worker, "AFTER_TERMINAL", {})  # the hook is lost: nothing queues the merge
+    report = client.post("/api/portfolio/interpretation", headers=headers).json()
+    request_id = report["request_id"]
+    while process_one():
+        pass
+    with platform_session() as platform:
+        assert all(platform.get(Job, uuid.UUID(j)).status == "succeeded" for j in report["review"].values())
+        assert merge_jobs(platform, request_id) == []
+
+    status = client.get(f"/api/portfolio/interpretation/{request_id}", headers=headers).json()
+    merge_view = next(j for j in status["jobs"] if j["kind"] == interpret.RUN_MERGE)
+    assert merge_view["status"] == "queued" and merge_view["id"] is not None and status["done"] is False
+    with platform_session() as platform:
+        (merge,) = merge_jobs(platform, request_id)
+        assert str(merge.id) == merge_view["id"]
+        assert set(merge.payload["successful_company_ids"]) == {a, b} and merge.payload["failed_company_ids"] == []
+    # Polling again is a no-op: still exactly one merge job.
+    client.get(f"/api/portfolio/interpretation/{request_id}", headers=headers)
+    with platform_session() as platform:
+        assert len(merge_jobs(platform, request_id)) == 1
+    while process_one():
+        pass
+    status = client.get(f"/api/portfolio/interpretation/{request_id}", headers=headers).json()
+    assert status["done"] is True and status["failed"] == 0 and status["succeeded"] == 3
