@@ -1285,6 +1285,22 @@ async function demoSubmit(id, dir, m) {
   return sectionsFor(id);
 }
 
+// The record check Submit / Upload session runs, for the agent API's batch
+// reviewer. Protocol 2 has no local analysis to wait for: the capture must be
+// saved and not already queued, uploading or accepted.
+function validateSubmission(id) {
+  if (cloudSettings()?.protocol !== 2) {
+    reportBundle(RECORDINGS, id);
+    return { protocol: 1, consent_required: false };
+  }
+  const m = readManifest(recDir(id));
+  if (!m.ended_at) throw new Error('Stop the recording first.');
+  const up = uploadStates()[id];
+  if (up?.protocol === 2 && up.status === 'accepted') throw new Error('This session was already uploaded.');
+  if (up?.protocol === 2 && ['queued', 'uploading'].includes(up.status)) throw new Error('This session is already uploading.');
+  return { protocol: 2, consent_required: true };
+}
+
 async function submitRecording(id, options = {}) {
   if (cloudSettings()?.protocol === 2) return queueSubmission(id, options);
   if (DEMO && !cloudSettings()) {
@@ -1428,8 +1444,16 @@ const apiActions = {
   collectDocuments,
   readFiles,
   publicFile,
-  reportBundle: (id) => reportBundle(RECORDINGS, id),
-  submitRecording,
+  validateSubmission,
+  // Agent-driven submits never share by default: under Upload session (protocol 2)
+  // the item must carry the employee's explicit consent and document selection,
+  // the same contract the dashboard's consent dialog fulfils.
+  submitRecording: async (id, options = {}) => {
+    if (cloudSettings()?.protocol !== 2) return submitRecording(id, options);
+    if (options.consent !== true) throw new Error('Employee consent is required before an upload: pass consent: true with the approved selected_file_ids.');
+    await queueSubmission(id, { consent: true, selectedFileIds: options.selectedFileIds ?? [], expectedBinding: uploadBinding(cloudConfig()) });
+    return { submitted: null, upload: uploadStates()[id] ?? null };
+  },
   runAgents,
   decideFlag,
   approveInsights,

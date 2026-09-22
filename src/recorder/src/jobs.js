@@ -124,7 +124,13 @@ export class JobStore {
       item_id: `i${String(i + 1).padStart(2, '0')}`,
       batch_id: batchId,
       recording_id: it.recording_id,
-      options: { explain: !!(it.explain ?? options.explain), submit: !!(it.submit ?? options.submit) },
+      options: {
+        explain: !!(it.explain ?? options.explain),
+        submit: !!(it.submit ?? options.submit),
+        // Sharing consent is per item and never inherited from the batch.
+        consent: it.consent === true,
+        selectedFileIds: Array.isArray(it.selected_file_ids) ? it.selected_file_ids.map(String) : [],
+      },
       status: 'queued',
       started_at: null,
       finished_at: null,
@@ -188,7 +194,7 @@ function itemSummary(r) {
 // The per-item chain: file reviewer → record reviewer → what to document.
 // `actions` are the main.js functions the dashboard already calls; nothing
 // here parses a file or validates a recording on its own.
-export async function reviewItem(recordingId, { explain = false, submit = false } = {}, actions) {
+export async function reviewItem(recordingId, { explain = false, submit = false, consent = false, selectedFileIds = [] } = {}, actions) {
   const out = { parsed: null, flags: [], ingested: null, error: null };
   const flag = (stage, name, detail, fileId = null) => out.flags.push({ stage, flag: name, ...(fileId ? { file_id: fileId } : {}), detail: detail ?? null });
 
@@ -222,15 +228,16 @@ export async function reviewItem(recordingId, { explain = false, submit = false 
     summary: manifest.summary ?? null,
   };
 
-  // 2. Record reviewer: the bundle validation Submit runs, then the optional AI
-  //    summary, then ingestion into the workspace.
+  // 2. Record reviewer: the same validation Submit / Upload session runs, then
+  //    the optional AI summary, then ingestion into the workspace.
   let valid = true;
+  let intake = null;
   if (manifest.submitted) {
     valid = false;
     flag('record_reviewer', 'already_submitted', manifest.submitted.at);
   } else {
     try {
-      actions.reportBundle(recordingId);
+      intake = actions.validateSubmission(recordingId) ?? null;
     } catch (e) {
       valid = false;
       flag('record_reviewer', 'record_invalid', e.message);
@@ -248,10 +255,15 @@ export async function reviewItem(recordingId, { explain = false, submit = false 
   }
   if (!submit) out.ingested = { skipped: 'submit not requested' };
   else if (!valid) out.ingested = { skipped: 'record flagged' };
-  else {
+  else if (intake?.consent_required && consent !== true) {
+    flag('record_reviewer', 'consent_required', 'Upload session needs the employee\'s explicit consent: pass consent: true and the approved selected_file_ids on the item.');
+    out.ingested = { skipped: 'consent required' };
+  } else {
     try {
-      const r = await actions.submitRecording(recordingId);
-      out.ingested = { cloud_recording_id: r.submitted?.recording_id ?? null, files_uploaded: r.submitted?.files ?? 0, submitted_at: r.submitted?.at ?? null };
+      const r = await actions.submitRecording(recordingId, { consent: consent === true, selectedFileIds });
+      out.ingested = r.upload?.protocol === 2
+        ? { submission_id: r.upload.submissionId ?? null, upload_status: r.upload.status ?? 'queued', analysis_status: 'not_started', publication_status: 'draft' }
+        : { cloud_recording_id: r.submitted?.recording_id ?? null, files_uploaded: r.submitted?.files ?? 0, submitted_at: r.submitted?.at ?? null };
     } catch (e) {
       out.error = { stage: 'record_reviewer', message: e.message };
       out.ingested = { skipped: 'submit failed' };

@@ -91,11 +91,12 @@ function fakeActions(home) {
       }
     },
     publicFile: ({ path: _p, ...rest }) => rest,
-    reportBundle: (id) => {
+    validateSubmission: (id) => {
       if (id !== 'done1') throw new Error('Wait until this session has finished analysis.');
+      return { protocol: 1, consent_required: false };
     },
-    submitRecording: async (id) => {
-      calls.push(['submit', id]);
+    submitRecording: async (id, options) => {
+      calls.push(['submit', id, options]);
       return { submitted: { at: '2026-01-02T00:00:00Z', recording_id: 'cloud-1', files: 1 } };
     },
   };
@@ -217,7 +218,7 @@ test('a batch runs every item through file reviewer → record reviewer → writ
   const i3 = (await call('GET', `/batches/${b.body.batch_id}/items/i03`)).body;
   assert.deepEqual(i3.flags.map((f) => f.flag), ['record_invalid', 'summary_failed']);
   assert.deepEqual(i3.ingested, { skipped: 'submit not requested' });
-  assert.deepEqual(actions.calls.filter(([c]) => c === 'submit'), [['submit', 'done1']]);
+  assert.deepEqual(actions.calls.filter(([c]) => c === 'submit'), [['submit', 'done1', { consent: false, selectedFileIds: [] }]]);
   assert.equal((await call('GET', `/batches/${b.body.batch_id}/items/i09`)).status, 404);
   assert.equal((await call('GET', '/batches/nope')).status, 404);
 });
@@ -234,6 +235,46 @@ test('reviewItem skips ingestion for flagged records and records submit failures
   assert.equal(failed.error.stage, 'record_reviewer');
   assert.deepEqual(failed.ingested, { skipped: 'submit failed' });
   assert.equal(failed.parsed.files.length, 2);
+});
+
+test('under Upload session a batch item is valid without local analysis and only shares with explicit consent', async () => {
+  const home = fs.mkdtempSync(path.join(os.tmpdir(), 'vista-api-'));
+  const actions = fakeActions(home);
+  // Protocol 2: the capture is saved but never analysed locally, so the legacy
+  // report-bundle check must not flag it.
+  actions.validateSubmission = (id) => {
+    if (id === 'live2') throw new Error('Stop the recording first.');
+    return { protocol: 2, consent_required: true };
+  };
+  actions.submitRecording = async (id, options) => {
+    actions.calls.push(['submit', id, options]);
+    if (options.consent !== true) throw new Error('Employee consent is required before an upload.');
+    return { submitted: null, upload: { protocol: 2, status: 'queued', submissionId: null } };
+  };
+  const withoutConsent = await reviewItem('done1', { submit: true }, actions);
+  assert.deepEqual(withoutConsent.flags.map((f) => f.flag), ['unreadable', 'consent_required']);
+  assert.deepEqual(withoutConsent.ingested, { skipped: 'consent required' });
+  assert.equal(withoutConsent.error, null);
+  assert.equal(actions.calls.filter(([c]) => c === 'submit').length, 0);
+
+  const consented = await reviewItem('done1', { submit: true, consent: true, selectedFileIds: ['abcdef123456'] }, actions);
+  assert.deepEqual(consented.flags.map((f) => f.flag), ['unreadable']);
+  assert.deepEqual(consented.ingested, { submission_id: null, upload_status: 'queued', analysis_status: 'not_started', publication_status: 'draft' });
+  assert.deepEqual(actions.calls.filter(([c]) => c === 'submit'), [['submit', 'done1', { consent: true, selectedFileIds: ['abcdef123456'] }]]);
+
+  const live = await reviewItem('live2', { submit: true, consent: true }, actions);
+  assert.deepEqual(live.flags.map((f) => f.flag), ['record_invalid']);
+  assert.deepEqual(live.ingested, { skipped: 'record flagged' });
+
+  // Batch items carry consent individually; the batch-level flag cannot grant it.
+  const jobs = new JobStore({ home, log: () => {} });
+  const batch = jobs.createBatch([{ recording_id: 'done1', submit: true, consent: true, selected_file_ids: ['abcdef123456'] }, { recording_id: 'done1', submit: true }], { consent: true }, (id, options) => reviewItem(id, options, actions));
+  await new Promise((resolve) => setTimeout(resolve, 20));
+  const items = ['i01', 'i02'].map((i) => jobs.getItem(batch.batch_id, i));
+  assert.equal(items[0].options.consent, true);
+  assert.deepEqual(items[0].options.selectedFileIds, ['abcdef123456']);
+  assert.equal(items[1].options.consent, false);
+  assert.deepEqual(items[1].ingested, { skipped: 'consent required' });
 });
 
 test('jobs interrupted by a restart are marked failed, finished jobs stay readable', () => {

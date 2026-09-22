@@ -157,6 +157,13 @@ test("agent proxy allows run traces, usage and starting agent runs only", async 
     503,
   );
   assert.equal(await status(`/findings?kind=inefficiency`, "GET"), 503);
+  assert.equal(await status(`/findings/${id}`, "PATCH"), 503);
+  assert.equal(await status(`/findings/${id}`, "GET"), 405);
+  assert.equal(await status(`/findings/${id}`, "POST"), 405);
+  assert.equal(await status(`/findings/${id}`, "DELETE"), 405);
+  assert.equal(await status(`/findings`, "PATCH"), 405);
+  assert.equal(await status(`/runs/${id}`, "PATCH"), 405);
+  assert.equal(await status(`/findings/not-a-uuid`, "PATCH"), 404);
   assert.equal(
     await status(`/usage?group_by=company&group_by=model`, "GET"),
     503,
@@ -178,6 +185,46 @@ test("agent proxy allows run traces, usage and starting agent runs only", async 
   assert.equal(await status(`/synthetic/discovery`, "GET"), 405);
   assert.equal(await status(`/tenants`, "POST"), 404);
   assert.equal(await status(`/synthetic/nope`, "GET"), 404);
+});
+
+test("finding triage from the company workspace reaches the backend as PATCH", async () => {
+  // The same request account/app.js sends from the evidence dialog, run through
+  // the Worker rather than a stubbed fetch, so a method gate cannot hide it.
+  const original = globalThis.fetch;
+  let forwarded;
+  globalThis.fetch = async (url, options) => {
+    forwarded = { url, options };
+    return Response.json({ status: "reviewed" });
+  };
+  try {
+    const id = "00000000-0000-0000-0000-000000000001";
+    const response = await worker.fetch(
+      new Request(`https://bumpsolutions.org/api/findings/${id}`, {
+        method: "PATCH",
+        headers: {
+          origin: "https://bumpsolutions.org",
+          "X-Vista-Request": "1",
+          "Content-Type": "application/json",
+          cookie: "vista_session=opaque",
+        },
+        body: JSON.stringify({ status: "reviewed" }),
+      }),
+      { API_ORIGIN: "https://api.example.com" },
+    );
+    assert.equal(response.status, 200);
+    assert.equal(
+      forwarded.url.href,
+      `https://api.example.com/api/findings/${id}`,
+    );
+    assert.equal(forwarded.options.method, "PATCH");
+    assert.equal(forwarded.options.headers.get("x-vista-request"), "1");
+    assert.equal(
+      await new Response(forwarded.options.body).text(),
+      '{"status":"reviewed"}',
+    );
+  } finally {
+    globalThis.fetch = original;
+  }
 });
 
 test("synthetic agent proxy allows discovery, analysis, and run polling only", async () => {

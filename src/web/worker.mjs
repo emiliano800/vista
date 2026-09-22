@@ -18,6 +18,9 @@ const agentRead =
   /^\/api\/(?:runs(?:\/[0-9a-f-]+)?|findings|agents(?:\/analytics)?|usage|evals|summaries(?:\/latest)?|synthetic\/companies)$/i;
 const agentStart =
   /^\/api\/(?:synthetic\/(?:discovery|analyze)|summaries|agents\/[0-9a-f-]+\/runs)$/i;
+// Finding triage from the company workspace (Mark reviewed / Dismiss / Reopen)
+// is the API's only PATCH operation.
+const findingWrite = /^\/api\/findings\/[0-9a-f-]{36}$/i;
 const workflowRead =
   /^\/api\/companies\/[a-z0-9-]{1,64}\/workflows(?:\/[0-9a-f-]{36}(?:\/versions(?:\/[0-9a-f-]{36}(?:\/eligibility)?)?)?)?$/i;
 const workflowWrite =
@@ -45,6 +48,7 @@ async function handle(request, env) {
       !portfolioWrite.test(url.pathname) &&
       !agentRead.test(url.pathname) &&
       !agentStart.test(url.pathname) &&
+      !findingWrite.test(url.pathname) &&
       !workflowRead.test(url.pathname) &&
       !workflowWrite.test(url.pathname) &&
       !recorderRead.test(url.pathname) &&
@@ -53,7 +57,11 @@ async function handle(request, env) {
       return new Response("Not found", { status: 404 });
     // Only explicitly allowed workspace operations reach the backend.
     if (
-      !["GET", "HEAD", "POST", "PUT", "DELETE"].includes(request.method) ||
+      !["GET", "HEAD", "POST", "PUT", "PATCH", "DELETE"].includes(
+        request.method,
+      ) ||
+      (request.method === "PATCH" && !findingWrite.test(url.pathname)) ||
+      (findingWrite.test(url.pathname) && request.method !== "PATCH") ||
       (syntheticWrite.test(url.pathname) && request.method !== "POST") ||
       (recorderWrite.test(url.pathname) &&
         !recorderRead.test(url.pathname) &&

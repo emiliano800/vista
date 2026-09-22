@@ -755,6 +755,30 @@
           : '<div class="empty">No copy → paste between apps seen</div>';
       }
       let pendingShare = null;
+      // Upload session (protocol 2): every upload goes through the same preview +
+      // consent dialog, whichever button started it. A failed package is retried
+      // as-is; its sharing selection is frozen.
+      async function openUploadPreview(id) {
+        const r = recordings.find((x) => x.recording_id === id);
+        try {
+          if (r?.upload?.protocol === 2 && r.upload.status === 'failed') {
+            await window.vista.retryUploads();
+            recordings = await window.vista.recordings();
+            renderRecordings(); renderToday(); renderReview();
+            return;
+          }
+          const preview = await window.vista.uploadPreview(id);
+          pendingShare = { id, binding: preview.binding };
+          $('upload-destination').textContent = `Destination: ${preview.companyName} · ${preview.email}`;
+          $('upload-documents').innerHTML = preview.documents.length
+            ? preview.documents.map((f) => `<label><div>${esc(f.name)}<span>${Number(f.size_bytes).toLocaleString()} bytes · full snapshot</span></div><input type="checkbox" data-upload-file="${esc(f.id)}" /></label>`).join('')
+            : '<p class="muted">No supported snapshots are available. Activity metadata can still be uploaded.</p>';
+          $('upload-consent').checked = false;
+          $('upload-confirm').disabled = true;
+          $('upload-error').textContent = '';
+          $('upload-dialog').showModal();
+        } catch (e) { alert(e.message); }
+      }
       $('upload-consent').onchange = () => { $('upload-confirm').disabled = !$('upload-consent').checked; };
       $('upload-cancel').onclick = () => { pendingShare = null; $('upload-dialog').close(); };
       $('upload-confirm').onclick = async () => {
@@ -776,25 +800,7 @@
       $('rv-note').onclick = () => openAnnotate(reviewing, '', { whole: true });
       $('rv-submit').onclick = async () => {
         const r = recordings.find((x) => x.recording_id === reviewing);
-        if (cloud?.protocol === 2) {
-          try {
-            if (r?.upload?.protocol === 2 && r.upload.status === 'failed') {
-              await window.vista.retryUploads();
-              return;
-            }
-            const preview = await window.vista.uploadPreview(reviewing);
-            pendingShare = { id: reviewing, binding: preview.binding };
-            $('upload-destination').textContent = `Destination: ${preview.companyName} · ${preview.email}`;
-            $('upload-documents').innerHTML = preview.documents.length
-              ? preview.documents.map((f) => `<label><div>${esc(f.name)}<span>${Number(f.size_bytes).toLocaleString()} bytes · full snapshot</span></div><input type="checkbox" data-upload-file="${esc(f.id)}" /></label>`).join('')
-              : '<p class="muted">No supported snapshots are available. Activity metadata can still be uploaded.</p>';
-            $('upload-consent').checked = false;
-            $('upload-confirm').disabled = true;
-            $('upload-error').textContent = '';
-            $('upload-dialog').showModal();
-          } catch (e) { alert(e.message); }
-          return;
-        }
+        if (cloud?.protocol === 2) { await openUploadPreview(reviewing); return; }
         const open = vs?.review?.summary?.open ?? 0;
         const ask = `Submit “${r?.name ?? 'this session'}” to your workspace?\n\nThe video, screenshots, notes and analysis are uploaded and then removed from this computer.${open ? `\n${open} section${open === 1 ? '' : 's'} still unreviewed — you can finish in the workspace.` : ''}`;
         if (!confirm(ask)) return;
@@ -1408,9 +1414,18 @@
           const sum = r.summary ? `<div class="muted" style="font-size:12px;margin-top:3px">${r.summary.steps} steps · ${r.summary.cases} case${r.summary.cases === 1 ? '' : 's'}</div>` : (r.processing_note ? `<div class="muted" style="font-size:12px;margin-top:3px">${esc(r.processing_note)}</div>` : '');
           const notes = (r.annotations ?? 0) + (r.edits ?? 0);
           const pct = up.key === 'uploading' && r.upload?.progress?.total ? Math.round((r.upload.progress.done / r.upload.progress.total) * 100) : null;
+          // Protocol 2 (Upload session) has no local analysis step: the button is
+          // ready once the capture is saved and the workspace is connected.
+          const intake = cloud?.protocol === 2 || r.upload?.protocol === 2 || p === 'awaiting_upload';
+          const captureSaved = !!r.ended_at && (r.upload_ready || ['done', 'skipped', 'failed', 'awaiting_upload'].includes(p));
+          const busy = ['uploading', 'queued'].includes(up.key);
+          const submitDisabled = intake ? !captureSaved || !cloud?.connected || busy : p !== 'done' || up.key === 'uploading';
+          const submitLabel = up.key === 'failed' ? (intake ? 'Retry upload' : 'Retry') : busy ? (intake ? up.label : 'Submitting') : intake ? 'Upload' : 'Submit';
           const submitBtn = up.key === 'submitted'
             ? `<button class="btn sm done" disabled>${icon('check')}Submitted</button> ${r.workflows?.count ? `<button class="btn sm icon wf" title="${r.workflows.count} suggested workflow${r.workflows.count === 1 ? '' : 's'}" data-wf="${esc(r.recording_id)}">${icon('workflow')}</button>` : `<span class="thinking" title="Working out the workflows"><i></i></span>`}`
-            : `<button class="btn sm ${up.key === 'failed' ? 'warn' : ''}" data-submit="${esc(r.recording_id)}" ${p !== 'done' || up.key === 'uploading' ? 'disabled' : ''}>${up.key === 'uploading' ? '<span class="thinking"><i></i></span>' : icon('upload')}${up.key === 'failed' ? 'Retry' : up.key === 'uploading' ? 'Submitting' : 'Submit'}</button>${up.key === 'uploading' ? `<span class="prog" style="--p:${pct ?? 0}" title="${pct == null ? 'Preparing…' : `${pct}% uploaded`}"><span>${pct == null ? '…' : pct}</span></span>` : ''}`;
+            : up.key === 'accepted'
+              ? `<button class="btn sm done" disabled title="${esc(up.sub)}">${icon('cloudCheck')}Uploaded</button>`
+              : `<button class="btn sm ${up.key === 'failed' ? 'warn' : ''}" data-submit="${esc(r.recording_id)}" ${submitDisabled ? 'disabled' : ''}>${busy ? '<span class="thinking"><i></i></span>' : icon('upload')}${esc(submitLabel)}</button>${up.key === 'uploading' ? `<span class="prog" style="--p:${pct ?? 0}" title="${pct == null ? 'Preparing…' : `${pct}% uploaded`}"><span>${pct == null ? '…' : pct}</span></span>` : ''}`;
           const thumb = r.thumb ? `<img class="rec-thumb" src="${esc(r.thumb)}" alt="" loading="lazy">` : `<div class="rec-thumb"></div>`;
           return `<tr${hide}>
             <td style="min-width:280px"><div style="display:flex;gap:10px;align-items:center">${thumb}<div>${title}<div class="muted" style="font-size:12px">${esc(when)}</div></div></div></td>
@@ -1423,6 +1438,7 @@
           </tr>`;
         }).join('')).join('');
         $('rec-rows').querySelectorAll('[data-submit]').forEach((b) => (b.onclick = async () => {
+          if (cloud?.protocol === 2) { await openUploadPreview(b.dataset.submit); return; }
           const r = recordings.find((x) => x.recording_id === b.dataset.submit);
           if (!confirm(`Submit “${r?.name ?? 'this session'}” to your workspace?\n\nThe video, screenshots, notes and analysis are uploaded and then removed from this computer.`)) return;
           b.disabled = true;

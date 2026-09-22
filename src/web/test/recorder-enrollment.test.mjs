@@ -134,10 +134,34 @@ for (const selectDocument of [false, true]) {
   });
 }
 
+test('the recordings list uploads through the same consent dialog as the review view', async () => {
+  const ui = page({ connected: true });
+  try {
+    await settle(() => ui.$('cloud-state').textContent.includes('Connected') && ui.$('rec-rows').querySelector('[data-submit="session-1"]'));
+    const button = ui.$('rec-rows').querySelector('[data-submit="session-1"]');
+    assert.equal(button.disabled, false);
+    assert.match(button.textContent, /Upload/);
+    button.click();
+    await settle(() => ui.$('upload-dialog').open);
+    assert.equal(ui.state.submit.length, 0);
+    ui.$('upload-consent').checked = true;
+    ui.$('upload-consent').dispatchEvent(new ui.dom.window.Event('change'));
+    ui.$('upload-confirm').click();
+    await settle(() => ui.state.submit.length === 1 && !ui.$('upload-dialog').open);
+    assert.equal(ui.state.submit[0].recordId, 'session-1');
+    assert.equal(ui.state.submit[0].options.consent, true);
+    assert.equal(ui.state.submit[0].options.expectedBinding.workspace.id, id);
+    assert.equal(ui.state.submit[0].options.selectedFileIds.length, 0);
+    assert.deepEqual(ui.errors, []);
+  } finally { ui.dom.window.close(); }
+});
+
 test('receipt confirmation is shown as awaiting analysis, not a completed or published report', async () => {
   const ui = page({ connected: true, accepted: true });
   try {
     await settle(() => ui.state.onReview && ui.$('cloud-state').textContent.includes('Connected'));
+    await settle(() => ui.$('rec-rows').textContent.includes('Uploaded'));
+    assert.equal(ui.$('rec-rows').querySelector('[data-submit]'), null);
     await ui.state.onReview('session-1');
     assert.match(ui.$('rv-banner-t').textContent, /awaiting analysis/);
     assert.match(ui.$('rv-banner-s').textContent, /Local originals are retained/);
