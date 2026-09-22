@@ -10,6 +10,7 @@ a source row and every model call metered.
 sign-in at `/signin/analyst/`. Demo keys (synthetic data only): [DEMO_ACCESS.md](DEMO_ACCESS.md).
 
 Docs:
+- [APPLICATION_SCAFFOLDING_AND_NEXT_STEPS.md](APPLICATION_SCAFFOLDING_AND_NEXT_STEPS.md) — team implementation guide: workflow automation, verification, and learning
 - [CURRENT_IMPLEMENTATION.md](CURRENT_IMPLEMENTATION.md) — what exists and how it works
 - [NEXT_STEPS.md](NEXT_STEPS.md) — roadmap and open work
 - [PRIVATE_EQUITY.md](PRIVATE_EQUITY.md) — short primer on private equity and how Vista maps onto it
