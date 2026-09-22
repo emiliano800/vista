@@ -30,6 +30,14 @@ class Settings(BaseSettings):
     openai_base_url: str | None = None
     # OpenRouter provider pinning: comma-separated ("nvidia" → only that provider, no fallbacks)
     openai_provider_only: str = ""
+    # TypeSafe Jev (System One): typed judgments over code-supplied candidates, via agents/jev.py.
+    # Unset → stub answers (no / none / 0), so nothing is proposed without a model.
+    typesafe_api_key: str | None = None
+    typesafe_model: str = "jev-latest"
+    typesafe_base_url: str = "https://api.typesafe.ai/v1"
+    # Which model interprets a recorder submission: "jev" judges workflow candidates code derived
+    # from the observed facts; "chat" is the prose-JSON interpretation by the OpenAI-compatible model.
+    recorder_interpreter: str = "jev"  # jev|chat
 
     def openai_client(self):
         from openai import OpenAI

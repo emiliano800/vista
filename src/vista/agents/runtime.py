@@ -13,6 +13,9 @@ MODEL_PRICING = {
     "gpt-4o": (Decimal("0.0000025"), Decimal("0.00001")),
     # OpenAI list price Sep 2026, standard tier <=272K input: $10/M in, $50/M out.
     "gpt-6-astra": (Decimal("0.00001"), Decimal("0.00005")),
+    # TypeSafe list price Sep 2026 (docs.typesafe.ai/models): $0.042/M input, output free.
+    "jev": (Decimal("0.000000042"), Decimal("0")),
+    "stub-jev": (Decimal("0"), Decimal("0")),
 }
 DEFAULT_PRICING = (Decimal("0.000003"), Decimal("0.000015"))
 
@@ -24,7 +27,8 @@ def pricing(model: str) -> tuple[Decimal, Decimal]:
     return DEFAULT_PRICING
 
 
-def cost_usd(result: ChatResult) -> Decimal:
+def cost_usd(result: Any) -> Decimal:
+    """Cost of one model call — a `ChatResult` or a `jev.Judgment`; both carry model and token counts."""
     in_price, out_price = pricing(result.model)
     return Decimal(result.input_tokens) * in_price + Decimal(result.output_tokens) * out_price
 
