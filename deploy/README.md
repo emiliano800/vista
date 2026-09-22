@@ -1,18 +1,27 @@
-# Deploy the first web workspace
+# Deploy the Vista platforms
 
-The website shows real reports uploaded by the desktop recorder. Users sign in with a
-personal high-entropy access key, select an assigned company, review sessions and
-recommendations, inspect the supporting CSV rows and download reports. Recommendations
-are computed on the employee's device, not proven savings or cloud AI conclusions.
-Screen capture and analysis still happen in Electron. No mock company data is seeded.
+Vista's product direction is a financial platform for PE analysts and portco CFOs,
+plus an FDE platform for workflow automations and operational results. The CFO sees
+the company-scoped subset of the analyst's financial view. FDEs work within assigned
+companies and workflows; their results provide evidence for financial impact, with
+estimates kept separate from realized benefits.
+
+Today, the web app has a firm-scoped analyst workspace and an existing company
+workspace. Dedicated CFO/FDE views and their permissions are pending. These product
+boundaries do not currently imply separate servers, domains, or databases: the
+existing deployment uses one web app/proxy and a shared API with tenant isolation.
+The analyst's `/company/` page still uses firm-wide access and must not be treated
+as a restricted CFO portal.
 
 ## Components
 
 * Cloudflare Worker `vista`: static browser UI and same-origin `/api` proxy.
-* Python API: company permissions, hashed access keys and expiring browser sessions.
-* Postgres 16: tenant schemas, memberships and report metadata.
-* Private S3-compatible storage: report JSON bundles containing the cleaned activity
-  log and summary. No raw events, screenshots or video are uploaded.
+* Python API: company and firm permissions, canonical imports, financial metrics,
+  findings, tasks, agent runs, hashed access keys, and expiring browser sessions.
+* Postgres 16: isolated tenant records plus shared firm memberships and job queue.
+* Private S3-compatible storage: imported source files, recording reports, and
+  submitted recording media/documents; see [recorder behavior](../src/recorder/README.md).
+* Job worker: durable company review, portfolio interpretation, and recording jobs.
 
 Cloudflare's static hosting alone cannot run this FastAPI/Postgres stack. Deploy the
 backend either to AWS (recommended: ECS Express Mode + RDS + S3, see
@@ -20,7 +29,20 @@ backend either to AWS (recommended: ECS Express Mode + RDS + S3, see
 backend needs a public HTTPS URL before connecting the Worker. The existing
 `bumpsolutions.org` custom domain stays attached to the `vista` Worker.
 
-## Local end-to-end run
+## Role separation when deploying
+
+Current entry points are `/signin/analyst/` for the firm portfolio and `/signin/`
+for the company workspace. Neither provisioning a company user nor giving someone
+AWS access creates the planned CFO or FDE application role.
+
+Before releasing those views, enforce CFO company scope and FDE assignments in API
+queries, evidence downloads, exports, and job/run access. Reuse financial calculations
+between CFO and analyst views; never send a firm-wide snapshot and filter it only in
+the browser. A dedicated FDE workspace must distinguish proposed automation, approved
+work, execution status, and measured results. Existing agent traces alone do not
+prove that a business workflow has been automated.
+
+## Local end-to-end run (recording evidence)
 
 ```sh
 uv sync --group dev
@@ -55,7 +77,7 @@ docker compose --env-file deploy/.env -f deploy/compose.yml exec api .venv/bin/p
 
 The migration service upgrades the shared and existing tenant schemas and creates the
 private report bucket before the `api` and `worker` services start. The worker processes
-the recording AI review; set `OPENAI_API_KEY` in `deploy/.env` for real explanations.
+agent jobs and recording AI review; set `OPENAI_API_KEY` in `deploy/.env` for live model calls.
 Caddy obtains/renews the HTTPS certificate.
 Check `https://api.bumpsolutions.org/api/health`. Persist and back up the Postgres,
 report-storage and Caddy volumes. `down -v` deletes that data; do not use it for updates.
@@ -90,7 +112,9 @@ only after the API health check succeeds. `API_ORIGIN` is configured in the dash
 not in source; `keep_vars` preserves it when deploying from Git. Preview deployments
 must use an explicitly allowed origin or a separate test backend.
 
-The Worker forwards only the authentication and recording-report routes. It strips
+The Worker forwards an explicit allow-list of authentication, portfolio, import,
+agent, company, and recording routes (`src/web/worker.mjs`). New CFO/FDE API routes
+must be added to that allow-list when implemented. It strips
 unneeded client headers, rejects foreign-origin mutations and redirects, sends no-store
 responses for private data, and sets a restrictive content-security policy. Browser
 keys are exchanged for HttpOnly cookies and are never put in localStorage. Desktop
@@ -107,6 +131,10 @@ when using Docker):
 .venv/bin/python -m vista.manage add-user --tenant TENANT_UUID --company COMPANY_UUID --email analyst@example.com --role viewer
 .venv/bin/python -m vista.manage rotate-key --user USER_UUID
 ```
+
+These are existing company membership roles, not CFO/FDE persona assignments.
+Firm membership separately controls the analyst APIs; a company viewer is not a
+PE analyst simply because their email or UI label says "analyst".
 
 Members upload; viewers only read. Both require company membership. Key rotation
 invalidates old bearer keys and all browser sessions. Public `POST /tenants` is disabled

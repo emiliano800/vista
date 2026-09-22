@@ -7,6 +7,29 @@ global mouse/keyboard/shortcut hooks, `get-windows` for the foreground app and
 window title, `desktopCapturer` for screenshots and a low-frame-rate
 `screen.webm`.
 
+## Role in the Vista platforms
+
+The recorder is the employee evidence-collection and verification surface. Vista's
+management product is split into a financial platform (PE analyst and portco CFO)
+and an automation platform (FDE, or forward-deployed engineer).
+
+- **FDE:** use permitted recording evidence, employee explanations, process timings,
+  and cross-app transfers to understand workflows, propose automations, and assess
+  operational results. The dedicated FDE workspace is planned, not implemented here.
+- **Portco CFO:** see the financial implications and supporting evidence for their
+  company as a subset of the analyst's financial view.
+- **PE analyst:** compare financial performance and validated impact across authorized
+  portfolio companies. Detailed workflow debugging is primarily FDE work.
+
+Recorded repetition or estimated time saved is an automation candidate, not proof
+of realized financial savings. Future links from workflow results to the financial
+model must preserve the baseline, assumptions, provenance, and review decisions.
+Recording access remains explicitly scoped; being an analyst or CFO does not itself
+imply unrestricted access to employee media. The upload/review behavior below is the
+current implementation and must be considered when defining those permissions.
+
+## Capture and local artifacts
+
 Screenshots are taken on window switch, every 15 s, and **when the screen
 actually changes**: a 64x36 grayscale thumbnail is polled every 750 ms and a
 full frame is shot when >= 4 % of its pixels move (min 1.5 s apart), so a new

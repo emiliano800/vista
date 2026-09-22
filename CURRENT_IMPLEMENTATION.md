@@ -1,7 +1,29 @@
 # Vista — Current Implementation
 
-What exists today, verified against the code and the live deployment.
+Implementation reference; the product-surface review below was checked against
+repository commit `72c3871` on 2026-09-21. Deployment notes are historical and must
+be rechecked against AWS before assuming a newly pulled change is live.
 (Roadmap: `NEXT_STEPS.md`. Business: `BUSINESS_COURSE_OF_ACTION.md`.)
+
+## Product direction and current coverage
+
+The target is **two platforms with three views**: a financial platform for the PE
+analyst and portco CFO, and a workflow-automation platform for the FDE
+(forward-deployed engineer). The CFO sees only the assigned company's subset of the
+analyst's financial model. FDEs see assigned workflow automations and operational
+results, linked to financial impact with evidence and explicit assumptions.
+
+| Area | Implemented foundation | Remaining separation |
+| --- | --- | --- |
+| PE analyst | Firm-scoped portfolio, company finance drill-downs, canonical records, opportunities and evidence | Center navigation and results on financial analysis; broader forecasting/modeling is not implemented |
+| Portco CFO | Company isolation and reusable financial metrics | CFO role, company-scoped financial API responses and UI; `/company/` currently requires analyst access and receives the firm-wide snapshot |
+| FDE | Company evidence workspace, findings, tasks, agents, run traces, and recorder/task-mining output | Assigned-workflow access, dedicated automation configuration/testing/approval and results experience; source-system automation execution is not a shipped platform |
+
+Current firm memberships use `analyst/operator/admin/viewer`, not dedicated `cfo`
+or `fde` roles. Financial visibility and mutation rights need separate decisions.
+FDE access must not implicitly grant portfolio financial visibility. Use the same
+financial calculations for analyst and CFO, and distinguish operational improvement,
+modeled financial benefit, and validated realized impact.
 
 ## System map
 
@@ -35,8 +57,8 @@ synthetic_data/       6 synthetic companies (2 sectors, 3 data-quality tiers),
   expiring HttpOnly cookies bound to the key hash; key rotation kills sessions.
   Custom header + origin allow-list on cookie writes (CSRF). Public tenant
   provisioning is disabled; operators use `python -m vista.manage`
-  (`create-workspace`, `add-user`, `rotate-key`, `provision-firm`,
-  `seed-portfolio-demo`, `migrate`) — in AWS via `deploy/aws/manage.sh`.
+  (`create-workspace`, `add-user`, `rotate-key`, `seed-portfolio`,
+  `load-synthetic`, `migrate`) — in AWS via `deploy/aws/manage.sh`.
 - **Roles:** platform admin/member plus per-deal owner/member/viewer; firm
   memberships (analyst/operator/admin/viewer) gate the portfolio side. Run-starting
   requires owner on a deal (or admin).
@@ -73,13 +95,14 @@ check. Reasoning models (gpt-5+/gpt-6/o-series) are handled correctly
 
 ## Desktop recorder
 
-Electron app: one Start button, always-on-top orb overlay, on-device capture
-(screenshots/video/keystrokes never leave the machine), document tracking
+Electron app: one Start button, always-on-top orb overlay, on-device capture, document tracking
 (AXDocument/lsof/Spotlight) with last-version snapshots, file agent at Stop,
 sensitive-section flags, keyboard/mouse insights with approval, suggested
 workflows/trends, hidden demo mode, and an agent-facing HTTP API with a batch
-review pipeline. Only completed, employee-reviewed report bundles upload
-(idempotent, content-addressed).
+review pipeline. Stop sends the cleaned report for cloud review; Submit also uploads
+recording media and selected document snapshots, then removes the local recording
+folder after success. See `src/recorder/README.md` for the capture and upload contract.
+These artifacts require explicit evidence access when implementing the new views.
 
 ## Web surfaces
 

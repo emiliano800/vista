@@ -5,27 +5,35 @@ Distilled from the original business plan (full text in git history:
 
 ## What Vista is
 
-An adaptive operating platform for lower-middle-market private equity. PE firms
-onboard acquired businesses whose operations live in spreadsheets, paper, and
-employee heads. Each company gets its own workspace; AI agents — one per back-office
-employee — discover how work actually happens, surface evidence-backed
-inefficiencies, and (eventually) execute the fixes. Findings roll up into company
-summaries, then portfolio-level opportunities (purchasing, software overlap,
-cross-sell). Initial industry: HVAC roll-ups.
+Financial and operating intelligence for lower-middle-market private equity.
+The product direction as of 2026-09-21 is two platforms with three user views:
 
-**Positioning:** "Vista turns acquired businesses' scattered records into an adaptive
-operating platform. Each business gets the tools it needs, agents carry out
-administrative work, and PE owners get evidence-backed opportunities to improve
-operations across their portfolio."
+- **Financial platform — PE analyst:** financial performance, model inputs and
+  assumptions, opportunities, and validated impact across authorized portfolio companies.
+- **Financial platform — portco CFO:** the assigned company's subset of the same
+  financial model and evidence, supporting company financial review and validation.
+- **Automation platform — FDE (forward-deployed engineer):** workflow discovery,
+  automation delivery, exceptions, and measured operational results within assigned scope.
 
-## Who buys it
+Shared canonical records and evidence connect the platforms. An FDE's operational
+result can support a financial conclusion only with a baseline, explicit assumptions,
+and validation. The long-term agent vision remains bounded administrative execution
+with review; dedicated CFO/FDE views and end-to-end automation are not yet shipped.
 
-- **Economic buyer:** PE operating partner / platform-company exec / CFO responsible
-  for post-acquisition improvement.
-- **Implementation sponsor:** whoever owns integrating acquisitions.
-- **Daily users:** office managers, bookkeepers, ops staff — who must barely notice
-  Vista exists (the employee experience is a few onboarding questions and occasional
-  one-tap verification questions, not a monitoring tool).
+**Positioning:** "Vista connects portfolio financial analysis with the workflows
+behind it. PE analysts see across authorized companies, CFOs understand their own
+company's financial picture, and FDEs deliver automations with measurable results."
+
+## Who buys it and who uses it
+
+- **Economic buyer:** PE operating partner / platform-company executive / CFO
+  responsible for post-acquisition improvement.
+- **Financial users:** PE analysts and portco CFOs; the CFO's financial visibility
+  is a company-scoped subset, not a separate set of numbers.
+- **Implementation users:** FDEs responsible for assigned workflows and automation
+  outcomes; this role does not automatically carry portfolio financial access.
+- **Evidence contributors:** employees, bookkeepers, and operations staff supplying
+  records and reviewing explanations through a minimal recorder/verification surface.
 
 ## Core hypotheses to validate (in order)
 
@@ -37,7 +45,12 @@ operations across their portfolio."
 
 ## Course of action
 
-### Now → hackathon (product exists: see IMPLEMENTATION_SO_FAR.md)
+### Original hackathon plan (historical)
+
+The sequence below records the earlier HVAC prototype plan. Current implementation
+is in `CURRENT_IMPLEMENTATION.md`; the current priority is the financial/FDE split
+in `NEXT_STEPS.md`. The canonical demo now uses six insurance and industrial companies.
+
 1. Build the frontend company view + findings queue on the existing API.
 2. Build the hackathon demo: portfolio dashboard, three synthetic HVAC companies
    (Harbor Heating, Summit Mechanical, Cedar Climate), live Cedar onboarding via CSV

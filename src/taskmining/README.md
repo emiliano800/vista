@@ -8,6 +8,24 @@ model, and automation-potential ranking.
 uv run python -m taskmining run --synthetic 40 --out out/
 ```
 
+## Role in the Vista platforms
+
+This engine supplies workflow evidence for the **FDE (forward-deployed engineer)
+automation platform**: process variants, cycle and wait times, rework, repetitive
+activity, and cross-app data transfers. Its rankings help prioritize investigation;
+they do not deploy automations or demonstrate realized savings.
+
+The **financial platform** has a PE analyst view across authorized companies and a
+portco CFO view limited to that company's subset of the same financial model. Both
+should consume supported financial implications of workflow results, with links to
+the underlying evidence and explicit assumptions. Human minutes saved cannot be
+booked as a cost reduction without additional validation.
+
+The engine and CLI below exist today. Dedicated FDE/CFO views and the complete
+workflow-result-to-financial-impact connection are product work still to be built.
+In this README, a process analyst is someone interpreting workflow evidence; that
+term does not imply the PE analyst's portfolio permissions.
+
 ## How Celonis Task Mining works (reverse-engineered)
 
 Celonis Task Mining is a "bottom-up" complement to process mining. Instead of

@@ -1,11 +1,25 @@
 # Vista Design System — "Field Notes"
 
-The visual system for every Vista surface: the marketing site, the company
-workspace (`src/web/public`), the employee dashboard and the always-on
-overlay (`src/recorder/ui`). Tokens live in `src/web/public/tokens.css`;
+The visual system for every Vista surface: the financial platform (PE analyst
+and portco CFO views), the FDE automation platform, the marketing site
+(`src/web/public`), and the employee recorder/dashboard and overlay
+(`src/recorder/ui`). Tokens live in `src/web/public/tokens.css`;
 every surface links that file and uses `var(--token)`. No raw hex outside it.
 
 Reference mockup: `designs/02-field-notes.html`.
+
+Product direction as of 2026-09-21: analyst and CFO share financial components,
+metric definitions, reporting periods, and evidence patterns; the CFO sees only
+the assigned company's subset. Lead those views with financial performance and
+model assumptions. Lead the FDE (forward-deployed engineer) view with workflows,
+automation state, approvals, exceptions, and operational results. Link measured
+workflow outcomes to financial impact without equating estimates with realized
+savings. Keep implementation traces available as supporting evidence rather than
+making them the financial homepage.
+
+Dedicated CFO/FDE views and role enforcement are pending. Visual separation does
+not enforce authorization: the backend must scope the data before it reaches a
+view. The existing analyst `/company/` page is not yet a CFO portal.
 
 ---
 

@@ -23,6 +23,38 @@ Key product principles:
   (current) → read-only connectors (email, QuickBooks) → shadowing → scoped execution
   with review gates.
 
+## Product direction — 2026-09-21
+
+Two platforms, three user views:
+
+- **Financial platform / PE analyst:** financial performance, model inputs and
+  assumptions, opportunities, and validated impact across explicitly authorized
+  portfolio companies. Lead with financial decisions and evidence.
+- **Financial platform / portco CFO:** the assigned company's subset of the same
+  analyst financial model, metric definitions, periods, and evidence. No sibling
+  company data or portfolio-wide comparisons. Visibility is a subset; write and
+  approval permissions must be defined independently rather than assuming read-only.
+- **Automation platform / FDE (forward-deployed engineer):** assigned workflows,
+  automation proposals/configuration, testing, approvals, execution status,
+  exceptions, and measured operational outcomes. FDE access is a separate scope,
+  not inherited analyst access to the full portfolio's financial data.
+
+Keep shared canonical data and provenance behind these views. Link FDE outcomes to
+financial implications with explicit baselines and assumptions; observed facts,
+modeled benefits, and realized results stay distinct. Employee recording and
+verification supply evidence, rather than forming a fourth management platform.
+The split is a product boundary, not a mandate for separate backend deployments.
+
+Implementation status: `src/web/public/portfolio/` and `company/` provide the analyst
+foundation; `company/` calls the analyst shell and receives the firm-wide snapshot.
+`account/` is the existing company operations/evidence workspace. Dedicated CFO/FDE
+roles and views are not implemented. Current firm roles are
+`analyst/operator/admin/viewer`; never relabel `operator` as an FDE role without
+implementing its scope. Enforce company/workflow restrictions server-side before
+exposing new views, including evidence, exports, and job/run endpoints. A financial
+metrics dashboard is not yet a full forecasting/valuation model, and an agent run
+is not proof of a deployed workflow automation.
+
 ## Agent catalog
 
 Keys and run-type mapping live in `src/vista/agents/keys.py`; handlers in

@@ -3,21 +3,48 @@
 Ordered by value. Current state: `CURRENT_IMPLEMENTATION.md`. Business sequencing:
 `BUSINESS_COURSE_OF_ACTION.md`.
 
-## 1. Deploy and seed the firm-scoped portfolio
+## 1. Separate the financial and automation platforms
 
-The firm-scoped architecture (platform `firms`/`firm_companies`/`opportunities`,
-canonical business records with provenance, import pipeline, portfolio APIs) is
-merged but **not yet deployed** — production runs the previous backend. Next deploy
-(`deploy/aws/deploy.sh`) applies platform migration 0003 + the new tenant
-migrations, then `deploy/aws/manage.sh seed-portfolio-demo` seeds the demo firm.
-Update `DEMO_ACCESS.md` afterwards if seeded identities/keys change.
+Product direction (2026-09-21): two platforms, three role-specific views.
 
-## 2. Close the demo loop on real imports
+- **PE analyst:** financial model and performance across the firm's authorized
+  companies, company comparisons, assumptions, opportunities, and validated impact.
+- **Portco CFO:** the assigned company's subset of that same financial view, using
+  identical metric definitions, reporting periods, and evidence. Define company
+  editing/approval rights separately from financial visibility.
+- **FDE (forward-deployed engineer):** assigned workflows, automation proposals and
+  configuration, tests, approvals, execution status, exceptions, and measured
+  operational results. Financial impact is linked back to this evidence.
 
-The demo import processor is deterministic; the agent-backed processor sits behind
-`VISTA_ENABLE_AGENT_IMPORT`. Ship one company's real (synthetic-file) CSV/XLSX
-import end-to-end through mapping review → exceptions → committed canonical rows →
-File Reviewer findings over *imported* records instead of raw division files.
+Start from the current analyst portfolio/company finance UI and company evidence
+workspace. Split navigation and responsibilities without creating competing financial
+models. Preserve the shared canonical data, durable jobs, and provenance underneath;
+separate product views do not require separate backend stacks.
+
+Implement authorization before exposing the new views. The current `/company/` page
+loads the analyst shell and full firm snapshot; hiding the company list cannot make
+it a CFO portal. Add explicit CFO company scope and FDE company/workflow assignments,
+apply them to reads, writes, downloads, exports, and runs, and test denied cross-company
+access. Do not equate the current firm `operator` role with the planned FDE role.
+
+Financial work should build on existing revenue, AR, vendor-spend and sector metrics.
+Define missing financial-model inputs and calculations before promising forecasting
+or valuation. FDE work should distinguish proposed, approved, implemented, and measured
+outcomes; existing findings and run traces are not an automation executor.
+
+## 2. Validate the shared data-to-result loop
+
+Canonical imports and the company-review → sector-merge interpretation chain are in
+the code. Verify the deployed image before running the new `load-synthetic` management
+command: pulling Git alone does not update AWS tasks. Seed only the intended demo
+scope and update `DEMO_ACCESS.md` if identities change.
+
+Validate one company from source CSV/XLSX through mapping review, exceptions,
+canonical rows, financial metrics, and reviewer findings. Verify identical financial
+results for CFO and analyst at the same company/period scope. Then connect an FDE
+workflow investigation to an approved automation, operational baseline and measured
+outcome, and financial validation. That final automation-to-impact loop is still
+implementation work; never treat modeled savings as realized results.
 
 ## 3. Join recordings into the evidence graph
 

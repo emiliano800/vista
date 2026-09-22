@@ -35,6 +35,29 @@ XLSX for spreadsheets people maintain by hand, JSON for structured documents
 correspondence, `.md` for operating procedures, `.txt` for OCR/transcribed
 paper.
 
+## Use across the financial and automation platforms
+
+The same six-company records support three user views; do not create separate,
+contradictory financial fixtures for each audience.
+
+| View | What the demo should demonstrate |
+| --- | --- |
+| **PE analyst** | Financial performance and opportunities across authorized companies: invoiced revenue, receivables, purchasing and software spend, with reproducible calculations and source evidence. |
+| **Portco CFO** | The assigned company's subset of those same financial records, periods, and calculations. No other company's raw records or portfolio comparisons. |
+| **FDE** | Assigned workflow evidence, process bottlenecks, automation candidates, exceptions, and operational results. Workflow events and operating procedures explain how work happens. |
+
+The financial platform shares one model between analyst and CFO views. The FDE
+platform links operational findings and measured changes back to financial impact;
+planted anomalies and estimated benefits are not realized automation results.
+The current loader and interpretation pipeline provide canonical records and
+findings, not a complete financial forecasting model or automation executor.
+Dedicated CFO/FDE experiences and their authorization remain planned work.
+
+`front_end_work/` contains mock source-company systems for inspecting workflow
+context. These static fixtures are not Vista's CFO or FDE platforms and have no
+production access controls. Keep the answer key as an evaluation oracle, never
+as evidence fed to a discovery agent or as proof of realized savings.
+
 ## Data-quality tiers
 
 | Tier | Headers | Dates | Money | Rows | Files |

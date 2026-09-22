@@ -12,6 +12,27 @@ Everything is one CloudFormation stack (`deploy/aws/template.yaml`) plus two scr
 `deploy.sh` builds and pushes the image and creates/updates the stack; `manage.sh` runs
 operator commands (`create-workspace`, `add-user`, `rotate-key`) inside AWS.
 
+## Product platforms and application access
+
+The product has two platforms: **financial intelligence** (PE analyst and portco
+CFO views) and **workflow automation** (FDE view). The CFO sees the assigned company's
+subset of the analyst's financial model; the analyst can compare authorized companies
+across the firm. The FDE focuses on workflow evidence, automation delivery, run
+outcomes, and exceptions within explicitly assigned scope. Operational improvements
+feed financial impact with traceable assumptions, not automatic claims of savings.
+
+This is the intended separation. The current AWS stack serves the existing analyst
+and company workspaces through the same API and worker. Dedicated CFO/FDE screens,
+assignment rules, and API authorization are pending; no separate FDE service or CFO
+stack is required by this documentation. `/company/` is currently an analyst page,
+not a company-restricted CFO session.
+
+AWS IAM controls who can deploy and administer infrastructure. Vista memberships
+control who can see financial records, workflow evidence, and results. Giving an
+engineer AWS access does not provision an FDE application account. Before launching
+these views, verify server-side company scope for CFOs and assigned-workflow scope
+for FDEs, including downloads, exports, and run traces.
+
 ## How the app is wired
 
 * The image is the root `Dockerfile`. Its entrypoint runs migrations on start

@@ -13,6 +13,20 @@ no backend, no build step. Demo purposes only.
 | `keystone_bearing_and_drive/` | Keystone Bearing & Drive (industrial) | Black top bar, green accents, portlets (NetSuite-style) | Medium |
 | `ridgeway_fasteners_and_supply/` | Ridgeway Fasteners & Supply (industrial) | QuickBooks Desktop / Fishbowl style, cream forms | Low |
 
+## What these UIs represent
+
+These pages mimic the companies' existing source systems. They are **not** the
+Vista PE analyst, portco CFO, or FDE platforms, and their static files do not enforce
+company permissions.
+
+In Vista's product direction, the analyst and CFO share a financial platform: the
+CFO sees only their company's subset of the analyst's authorized portfolio view.
+The separate FDE (forward-deployed engineer) platform focuses on workflow automations
+and operational results. These fixtures help explain the source workflows an FDE
+would investigate and the records that feed financial analysis; they do not execute
+automations or establish realized financial benefits. Dedicated CFO/FDE views remain
+implementation work in the main app.
+
 ## Running
 
 Open any `<company>/index.html` over a local static server (the pages load `data.js` and the shared
