@@ -12,6 +12,7 @@ from vista.agents.keys import agent_key_for
 from vista.agents.llm import chat
 from vista.agents.runtime import pricing as _pricing
 from vista.agents.runtime import run_phase
+from vista.computer_use.handler import handle_execute_workflow, sync_after_terminal
 from vista.config import settings
 from vista.db import tenant_session
 from vista.models.platform import Job
@@ -637,7 +638,8 @@ HANDLERS = {
     "synthetic_analyze": handle_synthetic_analyze,
     "extract_recording_files": handle_extract_recording_files,
     "analyze_submission": handle_analyze_submission,
+    "execute_workflow": handle_execute_workflow,
     **interpret.HANDLERS,
 }
 # Called by the worker with the job id once a job's terminal status is committed (barriers live here).
-AFTER_TERMINAL = {**interpret.AFTER_TERMINAL}
+AFTER_TERMINAL = {**interpret.AFTER_TERMINAL, "execute_workflow": sync_after_terminal}

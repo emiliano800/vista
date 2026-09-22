@@ -8,6 +8,7 @@ from fastapi.staticfiles import StaticFiles
 from vista.api import (
     analytics,
     company_workflows,
+    computer_use,
     deals,
     employees,
     evals,
@@ -76,6 +77,8 @@ for router in (
     evals.router,
     workflows.router,
     company_workflows.router,
+    computer_use.router,
+    computer_use.recorder_router,
 ):
     app.include_router(router)
     app.include_router(router, prefix="/api", include_in_schema=False)
