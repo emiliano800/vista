@@ -119,7 +119,7 @@ def test_tenant_admin_can_approve_and_the_stub_model_executes_nothing(client, mo
     run = client.get(f"/api/workflow-runs/{run['id']}", headers=headers).json()
     assert run["status"] == "stopped" and events(schema, run["agent_run_id"])[-1][0] == "result"
     analytics = client.get("/api/agents/analytics", headers=headers).json()
-    assert any(a["key"] == "computer_use" for a in analytics["agents"])
+    assert any(a["agent_key"] == "computer_use" for a in analytics["agents"])
 
 
 def test_documents_run_finishes_with_verification_finding_and_usage(client, monkeypatch):
@@ -136,7 +136,7 @@ def test_documents_run_finishes_with_verification_finding_and_usage(client, monk
     with tenant_session(schema) as session:
         finding = session.scalar(select(Finding).where(Finding.run_id == uuid.UUID(run["agent_run_id"])))
         assert finding.kind == "observed_fact" and finding.finding_type == "workflow.execution"
-        assert f"workflow_run:{run['id']}" in finding.evidence["refs"] and finding.evidence["verification"]["passed"] is True
+        assert f"workflow_run:{run['id']}" in finding.evidence["refs"] and finding.evidence["verification"]["verified"] is True
         assert session.scalar(select(UsageEvent.run_id).where(UsageEvent.run_id == uuid.UUID(run["agent_run_id"]))) is not None
         header = session.get(WorkflowRun, uuid.UUID(run["id"]))
         assert header.lease_until is None and header.definition_hash == version["definition_hash"]
@@ -285,7 +285,7 @@ def test_limits_fail_the_run_and_a_denied_step_stops_it(client, monkeypatch):
         )
 
     # deny
-    judge2 = ScriptedJudge({"action": "submit", "target": NONE})
+    judge2 = ScriptedJudge({"action": "extract", "target": NONE})
     monkeypatch.setattr("vista.computer_use.handler.judge", judge2)
     workflow, version = approved(client, headers, DOCS_ONLY, name="Deny me")
     run = start(client, headers, workflow, version).json()
@@ -296,7 +296,7 @@ def test_limits_fail_the_run_and_a_denied_step_stops_it(client, monkeypatch):
         f"/api/workflow-runs/{run['id']}/decision", headers=headers, json={"step_id": run["pending"]["step_id"], "decision": "deny"}
     )
     assert denied.status_code == 200
-    judge2.specs.append({"action": "submit", "target": NONE})
+    judge2.specs.append({"action": "extract", "target": NONE})
     _drain()
     run = client.get(f"/api/workflow-runs/{run['id']}", headers=headers).json()
     assert run["status"] in ("waiting_for_human", "stopped")  # a denied ambiguous step re-plans; a denied irreversible step stops

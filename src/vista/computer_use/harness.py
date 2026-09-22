@@ -181,6 +181,18 @@ class Action:
             "args": self.args,
         }
 
+    @classmethod
+    def from_json(cls, data: dict) -> Action:
+        """The checkpointed form: no literal value (it was already sent, or is re-resolved)."""
+        return cls(
+            step_id=data["step_id"],
+            seq=int(data["seq"]),
+            primitive=data["primitive"],
+            target=Candidate.from_json(data["target"]) if data.get("target") else None,
+            value_input=data.get("value_input"),
+            args=dict(data.get("args") or {}),
+        )
+
 
 @dataclass
 class ActionResult:
