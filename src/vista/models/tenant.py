@@ -701,6 +701,9 @@ class RecorderSubmission(TenantBase):
     __table_args__ = (
         UniqueConstraint("uploaded_by", "device_id", "source_id", name="uq_recorder_submission_source"),
         CheckConstraint("upload_status IN ('uploading', 'accepted')", name="ck_recorder_submission_status"),
+        CheckConstraint(
+            "analysis_status IN ('not_started', 'queued', 'running', 'succeeded', 'failed')", name="ck_recorder_submission_analysis"
+        ),
     )
 
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
@@ -714,3 +717,35 @@ class RecorderSubmission(TenantBase):
     verified_artifacts: Mapped[list] = mapped_column(JSONB, default=list)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     accepted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    # Cloud analysis of the accepted package: one Recording Reviewer run per attempt.
+    analysis_status: Mapped[str] = mapped_column(String(16), default="not_started")
+    analysis_run_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), nullable=True)
+    analysis_error: Mapped[str | None] = mapped_column(Text, nullable=True)
+
+
+class RecorderReport(TenantBase):
+    """The draft report the worker writes for one accepted recorder submission.
+
+    `observed` holds deterministic facts computed in code from the metadata-only
+    activity artifact; `interpretation` holds the model's reading of those facts and
+    never overrides them; `questions` are the focused prompts the employee answers.
+    A report stays private to the uploader until they publish it to the workspace."""
+
+    __tablename__ = "recorder_reports"
+    __table_args__ = (CheckConstraint("status IN ('draft', 'published')", name="ck_recorder_report_status"),)
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    submission_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("recorder_submissions.id"), unique=True)
+    run_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("agent_runs.id"), nullable=True)
+    uploaded_by: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), index=True)
+    canonical_company_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), nullable=True)
+    workspace: Mapped[dict] = mapped_column(JSONB)
+    status: Mapped[str] = mapped_column(String(16), default="draft", index=True)
+    coverage: Mapped[dict] = mapped_column(JSONB, default=dict)
+    observed: Mapped[dict] = mapped_column(JSONB, default=dict)
+    interpretation: Mapped[dict] = mapped_column(JSONB, default=dict)
+    questions: Mapped[list] = mapped_column(JSONB, default=list)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    published_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    published_by: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), nullable=True)

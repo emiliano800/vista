@@ -317,13 +317,15 @@ test("recorder intake proxy exposes enrollment and private upload operations onl
     for (const method of ["PUT", "PATCH", "DELETE"])
       assert.equal(await status(path, method), 405);
   }
-  for (const path of [base, `${submission}/upload-urls`, `${submission}/complete`])
+  for (const path of [base, `${submission}/upload-urls`, `${submission}/complete`, `${submission}/analyze`, `${submission}/answers`, `${submission}/publish`])
     assert.equal(await status(path, "POST"), 503);
-  for (const path of ["/recorder/workspaces", submission])
+  for (const path of ["/recorder/workspaces", submission, "/recorder/reports", `/recorder/reports/${submission.slice(-36)}`])
     assert.equal(await status(path, "POST"), 405);
-  for (const path of [`${submission}/upload-urls`, `${submission}/complete`])
+  for (const path of ["/recorder/reports", `/recorder/reports/${submission.slice(-36)}`])
+    assert.equal(await status(path, "GET"), 503);
+  for (const path of [`${submission}/upload-urls`, `${submission}/complete`, `${submission}/analyze`, `${submission}/answers`, `${submission}/publish`])
     for (const method of ["GET", "HEAD", "PUT", "PATCH", "DELETE"])
       assert.equal(await status(path, method), 405);
-  for (const path of [`${submission}/download`, `${submission}/publish`, `${submission}/analyze`, `${base}/not-a-uuid`])
+  for (const path of [`${submission}/download`, `${submission}/withdraw`, `${base}/not-a-uuid`, "/recorder/reports/not-a-uuid"])
     assert.equal(await status(path, "GET"), 404);
 });

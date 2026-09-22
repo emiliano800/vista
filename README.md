@@ -69,9 +69,9 @@ than a fourth management platform.
 | --- | --- |
 | **PE analyst portfolio** (`/signin/analyst/` → `/portfolio/`) | Firm-scoped financial metrics, company drill-downs, opportunities and evidence; currently also mixes in imports, tasks, and agents that need separating by audience |
 | **Company detail within analyst UI** (`/company/?id=…`) | Finance, records, findings, tasks, and agents for one company; still uses analyst authentication and a firm-wide snapshot, so it is not a CFO authorization boundary |
-| **Existing company workspace** (`/signin/` → `/account/`) | Company data sources, findings, agents, run traces, and recording evidence; an operational foundation, not the finished CFO or FDE platform |
+| **Existing company workspace** (`/signin/` → `/account/`) | Company data sources, findings, agents, run traces, and published recording reports; an operational foundation, not the finished CFO or FDE platform |
 | **Agent suite** (`src/vista/agents/`) | File Reviewer, Sector Merger, Report Generator, Recording Reviewer — durable jobs with per-call cost tracking and eval harness |
-| **Desktop recorder** (`src/recorder/`) | Electron task-mining: on-device analysis, employee review, and submission of reports plus selected media/documents |
+| **Desktop recorder** (`src/recorder/`) | Electron recorder: on-device capture, consented metadata-only upload with selected documents, cloud analysis into a draft report the employee answers and publishes |
 | **Backend** (`src/vista/`) | FastAPI + Postgres (schema-per-tenant isolation) + S3; durable job queue; append-only run/audit trail |
 
 Current financial metrics include invoiced revenue, outstanding and overdue AR,

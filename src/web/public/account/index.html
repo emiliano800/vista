@@ -52,6 +52,13 @@
             >0</span
           >
         </button>
+        <button data-view="recordings" class="nav-item">
+          <span data-icon="play"></span>Recordings<span
+            id="report-count"
+            class="nav-count"
+            >0</span
+          >
+        </button>
       </nav>
       <div class="sidebar-note">
         <span class="eyebrow">From source to decision</span>
@@ -131,6 +138,23 @@
         </button>
       </div>
       <div id="evidence-body"></div>
+    </dialog>
+    <dialog
+      id="report-dialog"
+      class="source-dialog"
+      aria-labelledby="report-title"
+    >
+      <div class="dialog-head">
+        <h2 id="report-title">Recording report</h2>
+        <button
+          id="close-report"
+          class="icon-button"
+          aria-label="Close report"
+        >
+          <span data-icon="close"></span>
+        </button>
+      </div>
+      <div id="report-body"></div>
     </dialog>
     <dialog id="run-dialog" class="source-dialog" aria-labelledby="run-title">
       <div class="dialog-head">

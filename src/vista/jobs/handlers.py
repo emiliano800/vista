@@ -29,6 +29,7 @@ from vista.models.tenant import (
     UsageEvent,
 )
 from vista.portfolio import interpret
+from vista.recorder_analysis import handle_analyze_submission
 from vista.review import SESSION_ID, status_for
 from vista.review import explain as explain_section
 from vista.storage import s3_client
@@ -635,6 +636,7 @@ HANDLERS = {
     "synthetic_discovery": handle_synthetic_discovery,
     "synthetic_analyze": handle_synthetic_analyze,
     "extract_recording_files": handle_extract_recording_files,
+    "analyze_submission": handle_analyze_submission,
     **interpret.HANDLERS,
 }
 # Called by the worker with the job id once a job's terminal status is committed (barriers live here).

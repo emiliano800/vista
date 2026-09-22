@@ -65,7 +65,7 @@ Keys and run-type mapping live in `src/vista/agents/keys.py`; handlers in
 | **File Reviewer** (`file_reviewer`) | `deal_analysis`, `employee_discovery`, `synthetic_discovery`, `canonical_review` | `discover.py`; `portfolio/interpret.py` for `canonical_review` | one division's tables (csv/xlsx) + deterministic profile; `canonical_review` reads only the tenant's canonical rows (customers, invoices, vendors, policies, purchase orders, inventory…) | `findings` kind `observed_fact` (file/column/row refs, confidence); `canonical_review` also `tasks`, `company_summaries`, and cites canonical record ids |
 | **Sector Merger** (`sector_merger`) | `synthetic_analyze`, `portfolio_merge` | `analyze.py`; `portfolio/interpret.py` for `portfolio_merge` | approved facts + one opportunity kind across sister companies in a sector (only `firm_companies` scope); `portfolio_merge` reads canonical rows plus structured findings of the successful `canonical_review` runs in its `successful_run_ids` | `platform.opportunities` (with `lineage`: `from_findings`/`from_runs`) → `findings` kind `proposed_automation`; rejected look-alikes logged as `step` events |
 | **Pipeline & Report Generator** (`report_generator`) | `company_summary` | handler only | open `findings` for a company | `company_summaries` (verified facts kept separate from hypotheses) |
-| **Recording Reviewer** (`recording_reviewer`) | `recording_review` (+ `extract_recording_files`) | handler only | recorder report bundle (cleaned, on-device redacted) | explanations awaiting employee approve/fix/explain; `findings` |
+| **Recording Reviewer** (`recording_reviewer`) | `recording_review` (+ `extract_recording_files`), `submission_analysis` (job `analyze_submission`) | handler only; `recorder_analysis.py` for `submission_analysis` | v1: recorder report bundle (cleaned, on-device redacted); v2: the accepted `recorder_submissions` package read back from S3 (metadata-only activity + shared documents) | v1: explanations awaiting employee approve/fix/explain; v2: one `recorder_reports` draft (observed facts computed in code, model interpretation kept apart, employee questions) that only the employee can publish |
 
 Internal (not user-facing) phases: **Config Proposer** (`propose.py`, facts →
 reviewable `ProposeOutput.proposals` (column_mapping / dedupe_merge / rule /
@@ -182,7 +182,9 @@ not a source for the six-company workspace.
 Status today: apart from the review → merge barrier above, no handler enqueues another — every run is started by an
 API route (`api/runs.py`, `api/synthetic.py`, `api/summaries.py`, `api/employees.py`,
 `api/recordings.py`, which queues `extract_recording_files` on upload and
-`explain_recording` on submit). The chain `synthetic_discovery → synthetic_analyze
+`explain_recording` on submit, and `api/recorder.py`, which queues `analyze_submission`
+automatically when a v2 upload is accepted — `recorder_uploads.queue_analysis` creates
+the `AgentRun` envelope first, then the job). The chain `synthetic_discovery → synthetic_analyze
 → company_summary` is human-driven through those routes; Proposer/Executor are
 wired only in tests/eval. Any new automatic hop must follow the contract above.
 

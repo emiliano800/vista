@@ -74,9 +74,27 @@ function server({ failDocumentOnce = false, badReceipt = false } = {}) {
       accepted = true;
       return Response.json(response());
     }
+    // Cloud analysis: the report lives on the server; the queue caches what it is told.
+    if (pathname === `/api/recorder/submissions/${id}`) return Response.json({ ...response(), ...cloud });
+    if (pathname === `/api/recorder/submissions/${id}/answers`) {
+      const { answers } = JSON.parse(options.body);
+      for (const q of cloud.report.questions) if (answers[q.id] !== undefined) q.answer = answers[q.id];
+      return Response.json({ ...response(), ...cloud });
+    }
+    if (pathname === `/api/recorder/submissions/${id}/publish`) {
+      assert.deepEqual(JSON.parse(options.body), { consent: true });
+      cloud.publication_status = 'published';
+      cloud.report.status = 'published';
+      return Response.json({ ...response(), ...cloud });
+    }
+    if (pathname === `/api/recorder/submissions/${id}/analyze`) {
+      cloud.analysis_status = 'queued';
+      return Response.json({ ...response(), ...cloud });
+    }
     throw new Error(`Unexpected request ${pathname}`);
   };
-  return { calls, objects, fetchImpl };
+  const cloud = { analysis_status: 'queued', analysis_error: null, analysis_run_id: null, publication_status: 'draft', report: null };
+  return { calls, objects, fetchImpl, cloud };
 }
 
 test('key-only enrollment resolves authorized companies and never guesses among several', async () => {
@@ -263,5 +281,54 @@ test('a mismatched receipt is not accepted and never deletes local evidence', as
     assert.equal(queue.entries()[0].status, 'failed');
     assert.equal(queue.entries()[0].receipt, null);
     assert.equal(fs.existsSync(path.join(f.dir, 'events.jsonl')), true);
+  } finally { f.cleanup(); }
+});
+
+
+test('accepted uploads poll for analysis, cache the draft report, take answers and publish only with consent', async () => {
+  const f = fixture();
+  try {
+    let clock = 1_000_000;
+    const srv = server();
+    const changes = [];
+    const queue = new SubmissionQueue(f.home, { fetchImpl: srv.fetchImpl, now: () => clock, onChange: (s) => changes.push(s.analysis?.status ?? null) });
+    queue.enqueue(f.root, 'session-1', f.config, { consent: true });
+    await queue.flush(f.config);
+    assert.equal(queue.entries()[0].status, 'accepted');
+    assert.throws(() => queue.acceptedEntry(f.config, 'session-2'), /Upload this session/);
+
+    await queue.refresh(f.config);
+    assert.equal(queue.entries()[0].analysis.status, 'queued');
+    const polls = () => srv.calls.filter((c) => c.method === undefined && /submissions\/[0-9a-f-]{36}$/.test(c.url)).length;
+    assert.equal(polls(), 1);
+    await queue.refresh(f.config); // too soon: no second poll
+    assert.equal(polls(), 1);
+    clock += 31000;
+    srv.cloud.analysis_status = 'succeeded';
+    srv.cloud.report = { id: 'r1', status: 'draft', questions: [{ id: 'q1', question: 'Which task?', answer: null }], observed: { switches: 3 } };
+    await queue.refresh(f.config);
+    assert.equal(polls(), 2);
+    assert.equal(queue.entries()[0].analysis.status, 'succeeded');
+    assert.equal(queue.entries()[0].analysis.report.observed.switches, 3);
+    clock += 31000;
+    await queue.refresh(f.config); // terminal: polling stops until forced
+    assert.equal(polls(), 2);
+    await queue.refresh(f.config, { force: true });
+    assert.equal(polls(), 3);
+
+    assert.throws(() => queue.answer(f.config, 'session-1', {}), /at least one/);
+    const answered = await queue.answer(f.config, 'session-1', { q1: 'Month-end close' });
+    assert.equal(answered.report.questions[0].answer, 'Month-end close');
+    assert.throws(() => queue.publish(f.config, 'session-1', {}), /Confirm/);
+    assert.equal(queue.entries()[0].analysis.publication, 'draft');
+    const published = await queue.publish(f.config, 'session-1', { consent: true });
+    assert.equal(published.publication, 'published');
+    assert.equal(queue.entries()[0].analysis.publication, 'published');
+    const requeued = await queue.reanalyze(f.config, 'session-1');
+    assert.equal(requeued.status, 'queued');
+    assert.ok(changes.includes('queued') && changes.includes('succeeded'));
+    const other = { ...f.config, workspace: { id: randomUUID(), kind: 'company' } };
+    assert.throws(() => queue.acceptedEntry(other, 'session-1'), /Reconnect the workspace/);
+    assert.ok(!JSON.stringify(queue.entries()).includes('PRIVATE'));
   } finally { f.cleanup(); }
 });

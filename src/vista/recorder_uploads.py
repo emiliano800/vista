@@ -12,12 +12,18 @@ from pydantic import AwareDatetime, BaseModel, ConfigDict, Field, StringConstrai
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from vista.agents.keys import agent_key_for
 from vista.auth import Principal
 from vista.config import settings
-from vista.db import platform_session, tenant_session
+from vista.db import platform_session, set_tenant_search_path, tenant_session
+from vista.jobs.queue import enqueue
 from vista.models.platform import FirmCompany
-from vista.models.tenant import Deal, DealMembership, RecorderSubmission
+from vista.models.tenant import AgentRun, Deal, DealMembership, RecorderReport, RecorderSubmission
+from vista.recorder_analysis import MAX_QUESTIONS, public_report
 from vista.storage import s3_client
+
+ANALYSIS_JOB = "analyze_submission"
+ANALYSIS_RUN_TYPE = "submission_analysis"
 
 MAX_ACTIVITY_BYTES = 4 * 1024 * 1024
 MAX_FILE_BYTES = 20 * 1024 * 1024
@@ -138,7 +144,11 @@ def submission_for(session: Session, principal: Principal, submission_id: uuid.U
     return row
 
 
-def public_submission(row: RecorderSubmission) -> dict:
+def report_for(session: Session, row: RecorderSubmission) -> RecorderReport | None:
+    return session.scalar(select(RecorderReport).where(RecorderReport.submission_id == row.id))
+
+
+def public_submission(row: RecorderSubmission, report: RecorderReport | None = None, *, full_report: bool = False) -> dict:
     return {
         "id": str(row.id),
         "source_id": row.source_id,
@@ -147,8 +157,11 @@ def public_submission(row: RecorderSubmission) -> dict:
         "canonical_company_id": str(row.canonical_company_id) if row.canonical_company_id else None,
         "manifest_hash": row.manifest_hash,
         "upload_status": row.upload_status,
-        "analysis_status": "not_started",
-        "publication_status": "draft",
+        "analysis_status": row.analysis_status,
+        "analysis_run_id": str(row.analysis_run_id) if row.analysis_run_id else None,
+        "analysis_error": row.analysis_error,
+        "publication_status": report.status if report is not None else "draft",
+        "report": public_report(report, full=full_report) if report is not None else None,
         "created_at": row.created_at,
         "receipt": {
             "submission_id": str(row.id),
@@ -162,7 +175,28 @@ def public_submission(row: RecorderSubmission) -> dict:
 
 
 def object_key(principal: Principal, row: RecorderSubmission, artifact: dict) -> str:
-    return f"{principal.tenant_schema}/recorder/submissions/{row.id}/{artifact['id']}/{artifact['sha256']}"
+    return artifact_key(principal.tenant_schema, row, artifact)
+
+
+def artifact_key(tenant_schema: str, row: RecorderSubmission, artifact: dict) -> str:
+    return f"{tenant_schema}/recorder/submissions/{row.id}/{artifact['id']}/{artifact['sha256']}"
+
+
+def read_artifact(tenant_schema: str, row: RecorderSubmission, artifact: dict, *, expected: dict | None = None) -> bytes:
+    """Read one verified artifact back for analysis, re-checking size and digest
+    against the manifest (and the receipt, when given) so a swapped object is
+    never analysed."""
+    key = artifact_key(tenant_schema, row, artifact)
+    try:
+        obj = s3_client().get_object(Bucket=settings.s3_bucket, Key=key)
+        with obj["Body"] as stream:
+            data = stream.read(artifact["size_bytes"] + 1)
+    except (BotoCoreError, ClientError) as exc:
+        raise RuntimeError(f"artifact {artifact['id']} could not be read from storage") from exc
+    digest = hashlib.sha256(data).hexdigest()
+    if len(data) != artifact["size_bytes"] or digest != artifact["sha256"] or (expected and expected.get("sha256") != digest):
+        raise RuntimeError(f"artifact {artifact['id']} no longer matches its verified receipt")
+    return data
 
 
 def signed_uploads(principal: Principal, row: RecorderSubmission) -> list[dict]:
@@ -238,12 +272,160 @@ def verify_objects(principal: Principal, row: RecorderSubmission) -> list[dict]:
     return verified
 
 
+def _workspace_label(session: Session, row: RecorderSubmission) -> str | None:
+    workspace = row.manifest["workspace"]
+    if workspace["kind"] == "deal":
+        return session.scalar(select(Deal.name).where(Deal.id == uuid.UUID(workspace["id"])))
+    with platform_session() as platform:
+        company = platform.get(FirmCompany, uuid.UUID(workspace["id"]))
+        return company.name if company else None
+
+
+def queue_analysis(session: Session, principal: Principal, row: RecorderSubmission) -> AgentRun | None:
+    """Hand the accepted package to the Recording Reviewer through the job queue.
+    One AgentRun envelope per attempt, created before the job (A2A contract);
+    a no-op while an attempt is queued or running or a published report exists."""
+    if row.upload_status != "accepted" or row.analysis_status in ("queued", "running"):
+        return None
+    report = report_for(session, row)
+    if report is not None and report.status == "published":
+        return None
+    workspace = row.manifest["workspace"]
+    run = AgentRun(
+        job_id=uuid.uuid4(),  # replaced once the job row exists
+        run_type=ANALYSIS_RUN_TYPE,
+        agent_key=agent_key_for(ANALYSIS_RUN_TYPE),
+        deal_id=uuid.UUID(workspace["id"]) if workspace["kind"] == "deal" else None,
+        company=(_workspace_label(session, row) or "")[:64] or None,
+        requested_by=row.uploaded_by,
+    )
+    session.add(run)
+    session.flush()
+    row.analysis_status, row.analysis_error, row.analysis_run_id = "queued", None, run.id
+    session.commit()  # the envelope must be visible before the worker can claim the job
+    set_tenant_search_path(session, principal.tenant_schema)  # a commit may hand back a different pooled connection
+    with platform_session() as platform:
+        job = enqueue(
+            platform,
+            principal.tenant_id,
+            ANALYSIS_JOB,
+            {"submission_id": str(row.id), "run_id": str(run.id), "parent_run_id": None},
+            idempotency_key=f"submission:{row.id}:{ANALYSIS_JOB}:{run.id}",
+        )
+        platform.commit()
+        job_id = job.id
+    run.job_id = job_id
+    session.commit()
+    set_tenant_search_path(session, principal.tenant_schema)
+    return run
+
+
 def accept_submission(session: Session, principal: Principal, row: RecorderSubmission) -> dict:
     if row.upload_status != "accepted":
         row.verified_artifacts = verify_objects(principal, row)
         row.upload_status = "accepted"
         row.accepted_at = datetime.now(UTC)
         session.flush()
-    result = public_submission(row)
+        session.commit()
+        set_tenant_search_path(session, principal.tenant_schema)
+    queue_analysis(session, principal, row)
+    result = public_submission(row, report_for(session, row))
     session.commit()
     return result
+
+
+class AnswersIn(StrictModel):
+    answers: dict[Annotated[str, StringConstraints(pattern=r"^q[0-9]{1,2}$")], Annotated[str, StringConstraints(max_length=2000)]] = Field(
+        min_length=1, max_length=MAX_QUESTIONS
+    )
+
+
+class PublishIn(StrictModel):
+    consent: Literal[True]
+
+
+def owned_draft_report(session: Session, principal: Principal, submission_id: uuid.UUID) -> tuple[RecorderSubmission, RecorderReport]:
+    row = submission_for(session, principal, submission_id, lock=True)
+    report = session.scalar(select(RecorderReport).where(RecorderReport.submission_id == row.id).with_for_update())
+    if report is None:
+        raise HTTPException(409, "This submission has no analysed report yet")
+    return row, report
+
+
+def record_answers(session: Session, principal: Principal, submission_id: uuid.UUID, body: AnswersIn) -> dict:
+    row, report = owned_draft_report(session, principal, submission_id)
+    if report.status != "draft":
+        raise HTTPException(409, "Answers are frozen once a report is published")
+    known = {q["id"] for q in report.questions}
+    if not set(body.answers) <= known:
+        raise HTTPException(422, "Unknown question")
+    now = datetime.now(UTC)
+    questions = []
+    for q in report.questions:
+        if q["id"] in body.answers:
+            text = body.answers[q["id"]].strip()
+            q = {**q, "answer": text or None, "answered_at": now.isoformat() if text else None}
+        questions.append(q)
+    report.questions = questions
+    report.updated_at = now
+    session.flush()
+    result = public_submission(row, report, full_report=True)
+    session.commit()
+    return result
+
+
+def publish_report(session: Session, principal: Principal, submission_id: uuid.UUID, body: PublishIn) -> dict:
+    """The employee's explicit, second consent: the draft becomes visible to the
+    workspace it was uploaded to. Idempotent; nothing else changes."""
+    row, report = owned_draft_report(session, principal, submission_id)
+    if row.analysis_status != "succeeded":
+        raise HTTPException(409, "Only a completed analysis can be published")
+    if report.status != "published":
+        report.status = "published"
+        report.published_at = datetime.now(UTC)
+        report.published_by = principal.user_id
+        report.updated_at = report.published_at
+        session.flush()
+    result = public_submission(row, report, full_report=True)
+    session.commit()
+    return result
+
+
+def readable_workspaces(session: Session, principal: Principal) -> set[tuple[str, str]]:
+    """Workspaces whose published reports this user may read: the canonical
+    company of their own tenant (any member/admin) and the deals they can view."""
+    allowed: set[tuple[str, str]] = set()
+    if principal.role in ("admin", "member"):
+        with platform_session() as platform:
+            company = platform.scalar(select(FirmCompany).where(FirmCompany.tenant_id == principal.tenant_id))
+            if company is not None:
+                allowed.add(("company", str(company.id)))
+    deals = session.scalars(select(DealMembership.deal_id).where(DealMembership.user_id == principal.user_id)).all()
+    if principal.role == "admin":
+        deals = session.scalars(select(Deal.id)).all()
+    allowed.update(("deal", str(d)) for d in deals)
+    return allowed
+
+
+def published_reports(session: Session, principal: Principal, *, limit: int, offset: int) -> list[dict]:
+    allowed = readable_workspaces(session, principal)
+    rows = session.scalars(
+        select(RecorderReport)
+        .where(RecorderReport.status == "published")
+        .order_by(RecorderReport.published_at.desc(), RecorderReport.id)
+        .offset(offset)
+        .limit(limit)
+    ).all()
+    return [public_report(r, full=False) for r in rows if (r.workspace["kind"], r.workspace["id"]) in allowed]
+
+
+def readable_report(session: Session, principal: Principal, report_id: uuid.UUID) -> RecorderReport:
+    report = session.get(RecorderReport, report_id)
+    if report is None:
+        raise HTTPException(404, "Report not found")
+    if report.uploaded_by == principal.user_id:
+        submission_for(session, principal, report.submission_id)  # still needs current upload access
+        return report
+    if report.status != "published" or (report.workspace["kind"], report.workspace["id"]) not in readable_workspaces(session, principal):
+        raise HTTPException(404, "Report not found")
+    return report

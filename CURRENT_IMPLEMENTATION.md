@@ -99,24 +99,30 @@ Electron app: one Start button, always-on-top orb overlay, on-device capture, do
 (AXDocument/lsof/Spotlight) with last-version snapshots, file agent at Stop,
 sensitive-section flags, keyboard/mouse insights with approval, suggested
 workflows/trends, hidden demo mode, and an agent-facing HTTP API with a batch
-review pipeline. Stop sends the cleaned report for cloud review; Submit also uploads
-recording media and selected document snapshots, then removes the local recording
-folder after success. See `src/recorder/README.md` for the capture and upload contract.
-These artifacts require explicit evidence access when implementing the new views.
+review pipeline. A connected app uses the **Upload session** flow: after Stop the
+employee approves a sharing package (activity metadata only — timestamps, app names,
+interaction types, counts — plus explicitly selected document snapshots), a disk-backed
+queue uploads it with checksum-bound signed URLs, the server verifies and accepts it,
+and the worker's Recording Reviewer analyses it into a private draft report with
+focused questions. The employee answers and publishes with a second explicit consent;
+only then does the report appear in the company workspace's Recordings view. Local
+originals are retained. The older v1 path (local Python analysis, report + media
+upload) still exists server-side for old installs but is not used by a connected app.
+See `src/recorder/README.md` for the capture and upload contract.
 
 ## Web surfaces
 
 Static pages on the Field Notes system: landing `/`, sign-in `/signin/`, analyst
 sign-in `/signin/analyst/`, company workspace `/account/` (Overview / Data sources /
-Findings / Agents / Runs, run-trace dialog, recording evidence under
-`/account/recordings/`), and the analyst portfolio UI. A Cloudflare Worker serves
+Findings / Agents / Runs / Recordings, run-trace dialog, and a report dialog for
+published recording reports), and the analyst portfolio UI. A Cloudflare Worker serves
 assets and proxies an explicit `/api` allow-list to the backend.
 
 ## Live deployment (AWS, account 630396228214, us-east-1)
 
 One CloudFormation stack `vista`: ECS Fargate `vista-api` + `vista-worker` (worker
 enabled, model **gpt-6-astra** via Secrets Manager), RDS Postgres (schema history in
-Alembic: platform ×3, tenant ×14 migrations, migrate-on-start with advisory lock),
+Alembic: platform ×4, tenant ×19 migrations, migrate-on-start with advisory lock),
 private versioned S3 `vista-reports-630396228214`, CloudWatch logs. Cloudflare
 serves bumpsolutions.org and proxies `/api`. Deploys: `deploy/aws/deploy.sh` from
 **emiliano800/vista main only** (needs a deployment-capable identity; the scoped
@@ -135,8 +141,11 @@ service container, and a wrangler dry-run on pushes to this repository's main br
 
 ## Known limits
 
-- Recording reports are not yet inputs to File Reviewer findings (parallel
-  pipelines; join is roadmap).
+- Recording reports (v1 and the new published v2 reports) are not yet inputs to
+  File Reviewer findings (parallel pipelines; join is roadmap). Published reports
+  cannot be withdrawn yet, and the recorder's local upload queue is never purged.
+- The v2 analysis is metadata-only by design: activities are known at application
+  level; the model's interpretation is a labelled hypothesis, not an observed fact.
 - Findings on real (non-synthetic) company data depend on the import pipeline;
   the agent import processor is stubbed behind a flag.
 - Public auth still lacks rate limiting; workforce SSO pending. Demo keys are

@@ -11,6 +11,7 @@ AGENT_KEY_BY_RUN_TYPE = {
     "canonical_review": "file_reviewer",
     "portfolio_merge": "sector_merger",
     "recording_review": "recording_reviewer",
+    "submission_analysis": "recording_reviewer",
 }
 
 AGENT_NAMES = {

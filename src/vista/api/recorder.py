@@ -6,11 +6,20 @@ from sqlalchemy import select, text
 from vista.auth import Principal, current_principal
 from vista.db import tenant_session
 from vista.models.tenant import RecorderSubmission
+from vista.recorder_analysis import public_report
 from vista.recorder_uploads import (
+    AnswersIn,
+    PublishIn,
     SubmissionCreate,
     accept_submission,
     manifest_hash,
     public_submission,
+    publish_report,
+    published_reports,
+    queue_analysis,
+    readable_report,
+    record_answers,
+    report_for,
     resolve_workspace,
     signed_uploads,
     submission_for,
@@ -78,13 +87,18 @@ def list_submissions(
             .offset(offset)
             .limit(limit)
         ).all()
-        return [public_submission(row) for row in rows if (row.manifest["workspace"]["kind"], row.manifest["workspace"]["id"]) in allowed]
+        return [
+            public_submission(row, report_for(session, row))
+            for row in rows
+            if (row.manifest["workspace"]["kind"], row.manifest["workspace"]["id"]) in allowed
+        ]
 
 
 @router.get("/submissions/{submission_id}")
 def get_submission(submission_id: uuid.UUID, principal: Principal = Depends(current_principal)) -> dict:
     with tenant_session(principal.tenant_schema) as session:
-        return public_submission(submission_for(session, principal, submission_id))
+        row = submission_for(session, principal, submission_id)
+        return public_submission(row, report_for(session, row), full_report=True)
 
 
 @router.post("/submissions/{submission_id}/upload-urls")
@@ -98,3 +112,44 @@ def upload_urls(submission_id: uuid.UUID, principal: Principal = Depends(current
 def complete_submission(submission_id: uuid.UUID, principal: Principal = Depends(current_principal)) -> dict:
     with tenant_session(principal.tenant_schema) as session:
         return accept_submission(session, principal, submission_for(session, principal, submission_id, lock=True))
+
+
+@router.post("/submissions/{submission_id}/analyze")
+def analyze_submission(submission_id: uuid.UUID, principal: Principal = Depends(current_principal)) -> dict:
+    """Re-run the analysis of an accepted upload (after a failure, or to refresh an
+    unpublished draft). No-op while an attempt is in flight or once published."""
+    with tenant_session(principal.tenant_schema) as session:
+        row = submission_for(session, principal, submission_id, lock=True)
+        if row.upload_status != "accepted":
+            raise HTTPException(409, "Finish the upload before requesting analysis")
+        queue_analysis(session, principal, row)
+        return public_submission(row, report_for(session, row), full_report=True)
+
+
+@router.post("/submissions/{submission_id}/answers")
+def answer_questions(submission_id: uuid.UUID, body: AnswersIn, principal: Principal = Depends(current_principal)) -> dict:
+    with tenant_session(principal.tenant_schema) as session:
+        return record_answers(session, principal, submission_id, body)
+
+
+@router.post("/submissions/{submission_id}/publish")
+def publish_submission(submission_id: uuid.UUID, body: PublishIn, principal: Principal = Depends(current_principal)) -> dict:
+    with tenant_session(principal.tenant_schema) as session:
+        return publish_report(session, principal, submission_id, body)
+
+
+@router.get("/reports")
+def list_reports(
+    limit: int = Query(50, ge=1, le=100),
+    offset: int = Query(0, ge=0),
+    principal: Principal = Depends(current_principal),
+) -> list[dict]:
+    """Published recording reports for the workspaces this user can read."""
+    with tenant_session(principal.tenant_schema) as session:
+        return published_reports(session, principal, limit=limit, offset=offset)
+
+
+@router.get("/reports/{report_id}")
+def get_report(report_id: uuid.UUID, principal: Principal = Depends(current_principal)) -> dict:
+    with tenant_session(principal.tenant_schema) as session:
+        return public_report(readable_report(session, principal, report_id), full=True)

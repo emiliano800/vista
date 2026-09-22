@@ -26,9 +26,9 @@ const workflowRead =
 const workflowWrite =
   /^\/api\/companies\/[a-z0-9-]{1,64}\/workflows(?:\/[0-9a-f-]{36}\/versions(?:\/[0-9a-f-]{36}\/decision)?)?$/i;
 const recorderRead =
-  /^\/api\/recorder\/(?:workspaces|submissions(?:\/[0-9a-f-]{36})?)$/i;
+  /^\/api\/recorder\/(?:workspaces|submissions(?:\/[0-9a-f-]{36})?|reports(?:\/[0-9a-f-]{36})?)$/i;
 const recorderWrite =
-  /^\/api\/recorder\/submissions(?:\/[0-9a-f-]{36}\/(?:upload-urls|complete))?$/i;
+  /^\/api\/recorder\/submissions(?:\/[0-9a-f-]{36}\/(?:upload-urls|complete|analyze|answers|publish))?$/i;
 const securityHeaders = {
   "X-Content-Type-Options": "nosniff",
   "Referrer-Policy": "no-referrer",

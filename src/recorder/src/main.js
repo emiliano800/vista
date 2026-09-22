@@ -1182,7 +1182,8 @@ const intakeQueue = new SubmissionQueue(HOME, {
       protocol: 2, status: state.status, url: state.binding.url, companyId: state.binding.workspace.id,
       submissionId: state.submission?.id ?? null, receipt: state.receipt, error: state.error,
       progress: { done: state.uploaded.length, total: state.manifest.artifacts.length },
-      analysis_status: 'not_started', publication_status: 'draft',
+      analysis_status: state.analysis?.status ?? 'not_started', publication_status: state.analysis?.publication ?? 'draft',
+      analysis: state.analysis ?? null,
     };
     writePrivate(UPLOADS_FILE, states);
     if (recorder) {
@@ -1195,7 +1196,10 @@ let uploadTimer = null;
 function resumeUploads(force = false) {
   if (!cloudSettings()) return;
   try {
-    intakeQueue.flush(cloudConfig(), { force }).catch(() => console.error('Upload queue paused; reconnect your workspace to retry.'));
+    const config = cloudConfig();
+    intakeQueue.flush(config, { force })
+      .then(() => intakeQueue.refresh(config, { force }))
+      .catch(() => console.error('Upload queue paused; reconnect your workspace to retry.'));
   } catch {
     console.error('Unlock your system keychain to resume pending uploads.');
   }
@@ -1214,6 +1218,20 @@ ipcMain.handle('cloud:retry', event => {
   resumeUploads(true);
   return cloudStatus();
 });
+// Cloud analysis of an uploaded session: status, the employee's answers, and the
+// explicit publish step. Every call talks to the server with the personal key and
+// re-checks that the session is bound to the connected workspace.
+async function withAnalysis(event, id, work) {
+  requireDashboard(event);
+  if (!ID_RE.test(String(id))) throw new Error('Invalid recording ID.');
+  await work(cloudConfig());
+  broadcastRecordings();
+  return sectionsFor(id);
+}
+ipcMain.handle('recordings:analysis', (event, id) => withAnalysis(event, id, (config) => intakeQueue.status(config, id)));
+ipcMain.handle('recordings:answer', (event, id, answers) => withAnalysis(event, id, (config) => intakeQueue.answer(config, id, answers)));
+ipcMain.handle('recordings:publish', (event, id, options) => withAnalysis(event, id, (config) => intakeQueue.publish(config, id, options)));
+ipcMain.handle('recordings:reanalyze', (event, id) => withAnalysis(event, id, (config) => intakeQueue.reanalyze(config, id)));
 ipcMain.handle('recordings:upload-preview', (event, id) => {
   requireDashboard(event);
   const c = cloudConfig();

@@ -17,7 +17,19 @@ async function settle(check) {
   assert.fail('Recorder UI did not settle');
 }
 
-function page({ connected = false, accepted = false } = {}) {
+const REPORT = {
+  id: '00000000-0000-0000-0000-00000000000a', submission_id: '00000000-0000-0000-0000-00000000000b', run_id: null, status: 'draft',
+  coverage: { note: 'Activities are known only at application level.', excluded: ['window_title'] },
+  observed: { events: 40, switches: 9, apps: [{ app: '<img src=x>Excel', share: 0.6, events: 30, copies: 5, pastes: 0 }, { app: 'Portal', share: 0.4, events: 10, copies: 0, pastes: 5 }], transfers: [{ from: '<img src=x>Excel', to: 'Portal', count: 5, mean_latency_s: 60 }] },
+  interpretation: { source: 'stub', summary: '', workflows: [], automation_candidates: [], documents: [] },
+  questions: [
+    { id: 'q1', source: 'observed', question: 'You copied from <img src=x>Excel and pasted into Portal 5 times. What moves?', about: {}, answer: null, answered_at: null },
+    { id: 'q2', source: 'observed', question: 'Most of the session was in Excel. Which task?', about: {}, answer: null, answered_at: null },
+  ],
+  questions_open: 2, questions_total: 2, published_at: null,
+};
+
+function page({ connected = false, accepted = false, analysis = null } = {}) {
   const dom = new JSDOM(html, { url: 'file:///recorder/ui/dashboard.html', runScripts: 'outside-only' });
   const win = dom.window;
   const errors = [];
@@ -32,7 +44,7 @@ function page({ connected = false, accepted = false } = {}) {
   const record = {
     recording_id: 'session-1', name: 'Recorded work', started_at: '2026-09-19T09:00:00Z', ended_at: '2026-09-19T09:10:00Z',
     active_seconds: 600, processing: 'awaiting_upload', upload_ready: true, counts: { total: 2 }, apps: [], annotations: 0,
-    upload: accepted ? { protocol: 2, status: 'accepted' } : null,
+    upload: accepted ? { protocol: 2, status: 'accepted', analysis_status: analysis?.status ?? 'not_started', publication_status: analysis?.publication ?? 'draft', analysis } : null,
   };
   const sections = {
     recording_id: record.recording_id, started_at: record.started_at, ended_at: record.ended_at,
@@ -40,7 +52,7 @@ function page({ connected = false, accepted = false } = {}) {
     insights: { flags: [], input: null, trends: null, summary: null, summary_counts: { flags: 0, open_flags: 0 } },
     review: { enabled: false, generating: false, summary: { total: 0, open: 0 }, items: {} }, workflows: null,
   };
-  const state = { discover: [], connect: [], submit: [], onReview: null };
+  const state = { discover: [], connect: [], submit: [], answers: [], publish: [], reanalyze: 0, refresh: 0, onReview: null };
   let connection = { connected, protocol: connected ? 2 : null, companyName: 'Company A', email: 'employee@example.com', url: binding.url };
   win.vista = {
     info: async () => ({ admin: false, demo: false, home: '/local', platform: 'linux', user: 'Employee', cloud: connection.connected, ai: { enabled: false } }),
@@ -68,6 +80,20 @@ function page({ connected = false, accepted = false } = {}) {
     ] }),
     submit: async (recordId, options) => { state.submit.push({ recordId, options }); return sections; },
     retryUploads: async () => connection,
+    analysis: async () => { state.refresh += 1; return sections; },
+    answerQuestions: async (recordId, answers) => {
+      state.answers.push({ recordId, answers });
+      for (const q of record.upload.analysis.report.questions) if (answers[q.id] !== undefined) q.answer = answers[q.id].trim() || null;
+      return sections;
+    },
+    publishReport: async (recordId, options) => {
+      state.publish.push({ recordId, options });
+      record.upload.analysis.publication = 'published';
+      record.upload.analysis.report.status = 'published';
+      record.upload.analysis.report.published_at = '2026-09-22T10:00:00Z';
+      return sections;
+    },
+    reanalyze: async () => { state.reanalyze += 1; record.upload.analysis.status = 'queued'; return sections; },
     onStatus() {}, onRecordings() {}, onSections() {}, onPermissions() {},
     onReview(callback) { state.onReview = callback; },
   };
@@ -163,10 +189,62 @@ test('receipt confirmation is shown as awaiting analysis, not a completed or pub
     await settle(() => ui.$('rec-rows').textContent.includes('Uploaded'));
     assert.equal(ui.$('rec-rows').querySelector('[data-submit]'), null);
     await ui.state.onReview('session-1');
-    assert.match(ui.$('rv-banner-t').textContent, /awaiting analysis/);
-    assert.match(ui.$('rv-banner-s').textContent, /Local originals are retained/);
+    assert.match(ui.$('rv-banner-t').textContent, /Uploaded — analysing/);
     assert.match(ui.$('rv-banner-s').textContent, /no report has been published/);
     assert.equal(ui.$('rv-submit').classList.contains('hidden'), true);
+    assert.equal(ui.$('rv-cloud').classList.contains('hidden'), false);
+    assert.match(ui.$('rv-cloud-body').textContent, /Recording Reviewer/);
+    assert.equal(ui.$('rv-cloud-publish'), null);
+    ui.$('rv-cloud-refresh').click();
+    await settle(() => ui.state.refresh === 1);
+    assert.deepEqual(ui.errors, []);
+  } finally { ui.dom.window.close(); }
+});
+
+test('a failed analysis can be retried from the review view', async () => {
+  const ui = page({ connected: true, accepted: true, analysis: { status: 'failed', error: 'artifact <b>lost</b>', publication: 'draft', report: null } });
+  try {
+    await settle(() => ui.state.onReview);
+    await ui.state.onReview('session-1');
+    assert.match(ui.$('rv-banner-t').textContent, /analysis failed/);
+    assert.equal(ui.$('rv-cloud-body').querySelector('b'), null);
+    assert.match(ui.$('rv-cloud-body').textContent, /artifact <b>lost<\/b>/);
+    ui.$('rv-cloud-retry').click();
+    await settle(() => ui.state.reanalyze === 1 && /analysing/.test(ui.$('rv-banner-t').textContent));
+    assert.deepEqual(ui.errors, []);
+  } finally { ui.dom.window.close(); }
+});
+
+test('a finished analysis shows observed facts apart from hypotheses, takes answers, and publishes only with consent', async () => {
+  const report = JSON.parse(JSON.stringify(REPORT));
+  const ui = page({ connected: true, accepted: true, analysis: { status: 'succeeded', error: null, publication: 'draft', report } });
+  try {
+    await settle(() => ui.state.onReview);
+    await ui.state.onReview('session-1');
+    assert.match(ui.$('rv-banner-t').textContent, /Report ready/);
+    const body = ui.$('rv-cloud-body');
+    assert.equal(body.querySelectorAll('img').length, 0);
+    assert.match(body.textContent, /Observed \(from metadata\)/);
+    assert.match(body.textContent, /Agent's reading \(hypotheses\)/);
+    assert.match(body.textContent, /No model interpretation/);
+    assert.match(body.textContent, /9 app switches/);
+    assert.equal(body.querySelectorAll('textarea[data-q]').length, 2);
+    assert.equal(ui.$('rv-cloud-publish').disabled, true);
+    body.querySelector('textarea[data-q="q1"]').value = ' Vendor statements ';
+    ui.$('rv-cloud-save').click();
+    await settle(() => ui.state.answers.length === 1);
+    assert.equal(JSON.stringify(ui.state.answers[0]), JSON.stringify({ recordId: 'session-1', answers: { q1: ' Vendor statements ', q2: '' } }));
+    await settle(() => /1 question to answer/.test(ui.$('rv-cloud-sub').textContent));
+    assert.equal(ui.state.publish.length, 0);
+    ui.$('rv-cloud-consent').checked = true;
+    ui.$('rv-cloud-consent').dispatchEvent(new ui.dom.window.Event('change'));
+    assert.equal(ui.$('rv-cloud-publish').disabled, false);
+    ui.$('rv-cloud-publish').click();
+    await settle(() => ui.state.publish.length === 1 && /Published/.test(ui.$('rv-banner-t').textContent));
+    assert.equal(JSON.stringify(ui.state.publish[0]), JSON.stringify({ recordId: 'session-1', options: { consent: true } }));
+    assert.equal(ui.$('rv-cloud-publish'), null);
+    assert.ok([...ui.$('rv-cloud-body').querySelectorAll('textarea')].every((t) => t.disabled));
+    assert.match(ui.$('rec-rows').textContent, /Published to workspace/);
     assert.deepEqual(ui.errors, []);
   } finally { ui.dom.window.close(); }
 });

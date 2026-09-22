@@ -125,7 +125,30 @@ with their `review` item plus `review.summary`; `explain(id, {force})`
 (re)generates; `decide(id, itemId, action, {label, note, answers})` applies
 Approve/Fix/Explain; `onSections` streams updates while the model runs.
 
-**Cloud review (`src/cloud.js`).** With Settings → Cloud workspace filled in
+**Upload session (`src/intake.js`, protocol 2 — what a connected app uses).**
+Settings → Cloud workspace takes a personal access key; the app fetches the
+workspaces that key may upload to (`GET /api/recorder/workspaces`) and the
+employee picks one explicitly. After Stop, **Upload session** previews the
+destination and the document snapshots, and the employee approves the sharing
+package. The package is metadata only — `activity.json` with timestamps, app
+names, interaction types and counts — plus the selected documents in full. No
+window titles, URLs, typed text, clipboard, screenshots or video leave the
+computer, and local originals are retained. A disk-backed queue
+(`~/Vista/upload-queue/`) registers the submission, uploads each artifact with a
+checksum-bound signed URL, and completes it; the server verifies sizes and
+hashes and returns an idempotent receipt.
+
+Acceptance queues the Recording Reviewer in the workspace. The app polls
+`GET /api/recorder/submissions/{id}` every 30 s while the analysis runs and
+shows the draft report in the review view: **observed facts** (time per app,
+switches, copy→paste between apps), the **agent's reading** labelled as
+hypotheses, and **questions only the employee can answer**. `Save answers`
+posts them (`…/answers`); **Publish** needs a second explicit consent
+(`…/publish`) and is the only way the report becomes visible to the company
+workspace. A failed analysis can be retried (`…/analyze`). The local queue
+caches the server's answers under `analysis`; the server is the source of truth.
+
+**Cloud review (`src/cloud.js`, legacy protocol 1).** With Settings → Cloud workspace filled in
 (website URL, company ID, access key), Stop uploads the redacted report
 (`manifest.json`, `processed/summary.json`, `processed/event_log.csv` — never
 `events.jsonl`, shots or video) to `POST /api/deals/{company}/recordings`, then

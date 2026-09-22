@@ -3,24 +3,27 @@
 ## Start here
 
 **Current priority: the employee recorder pipeline.** Workflow execution is deferred
-while we connect the app to the right workspace and accept uploads without requiring
-Python on the employee's computer.
+while the recorder pipeline is completed end to end: connect the app to the right
+workspace, accept uploads without requiring Python on the employee's computer, analyse
+them in the workspace, and let the employee review and publish the result.
 
 | Area | Current repository status |
 | --- | --- |
 | Workflow registry, immutable versions, approvals | Implemented and tested; no executor |
 | Recorder step 1: personal-key connection and company selection | Implemented and tested |
 | Recorder step 2: unprocessed-session upload, retry queue, verified private receipt | Implemented and tested |
-| Recorder step 3: cloud analysis, clarification, report generation and publication | Not implemented for the new intake format; this is the next engineering step |
+| Recorder step 3: cloud analysis, employee questions, draft report and explicit publication | Implemented and tested (metadata-only analysis; model interpretation kept apart from observed facts) |
 | Sandbox workflow execution | Deferred at the user's request |
 | Learning / reinforcement learning (RL) | Optional stretch goal, not a delivery dependency |
 
-The new recorder flow currently ends at **Uploaded — awaiting analysis**. A verified
-upload is not a completed report or a published company finding. Existing report
-and agent APIs remain separate from this new private intake path.
+The new recorder flow now runs: verified upload → automatic `analyze_submission` job →
+private draft report with focused questions → the employee answers and **publishes**
+→ the company workspace's Recordings view. Until the employee publishes, nothing is
+visible to anyone else, and a published report is still evidence, not a company
+finding or an automation. The legacy v1 report/media APIs remain separate.
 
 This document describes source code, not a fresh certification of the deployed AWS
-image or downloadable installers. The changes require backend migration `0018`,
+image or downloadable installers. The changes require backend migrations `0018` and `0019`,
 the updated Cloudflare Worker, and a newly built recorder installer. This update
 does not itself deploy AWS or publish a desktop release.
 
@@ -342,18 +345,22 @@ to replace that source with a different manifest is rejected.
 | `GET /api/recorder/submissions` | List the current uploader's accessible private submissions |
 | `GET /api/recorder/submissions/{id}` | Inspect one owned submission and receipt |
 | `POST /api/recorder/submissions/{id}/upload-urls` | Get short-lived, checksum-bound URLs for the approved artifacts |
-| `POST /api/recorder/submissions/{id}/complete` | Verify objects and accept the upload idempotently |
+| `POST /api/recorder/submissions/{id}/complete` | Verify objects, accept the upload idempotently, and queue the analysis |
+| `POST /api/recorder/submissions/{id}/analyze` | Re-queue the analysis after a failure or to refresh an unpublished draft (no-op while running or once published) |
+| `POST /api/recorder/submissions/{id}/answers` | Record the employee's answers to the draft report's questions (owner only, draft only) |
+| `POST /api/recorder/submissions/{id}/publish` | Explicit second consent: make the report visible to the upload workspace (owner only, idempotent) |
+| `GET /api/recorder/reports` | Published reports for the workspaces the caller can read (company members; deal viewers) |
+| `GET /api/recorder/reports/{id}` | One report with observed facts, interpretation, questions and answers |
 
 Ownership is enforced even between two users of the same company. Losing workspace
 access blocks subsequent operations. There is no public download, publish, analysis,
 or workflow execution route for these private submissions.
 
-The API currently reports `analysis_status: not_started` and
-`publication_status: draft`; these are fixed states while the next processing stage
-is absent. No analysis job is enqueued. New uploads do not appear as completed reports
-or findings in the company/portfolio pages. The existing v1 completed-report APIs
-remain available separately; do not assume their behavior has been replaced for
-older installed clients.
+`analysis_status` moves through `not_started → queued → running → succeeded|failed`
+and `publication_status` is `draft` until the employee publishes. The submission
+detail carries the draft report once analysis succeeds. The existing v1
+completed-report APIs remain available separately for older installed clients; the
+recorder itself no longer uses them when connected.
 
 ### Implementation and verification
 
@@ -386,35 +393,67 @@ acceptance test and new published installers are still required. Renderer tests 
 a mocked Electron bridge; they do not certify native capture permissions or an
 installer rollout.
 
-### Step 3 — cloud analysis and report publication: next, not implemented
+### Step 3 — cloud analysis and report publication: implemented
 
-1. Add a durable, idempotent analysis job for an accepted submission, using verified
-   artifact references. Adapt the existing task-mining pipeline to the metadata-only
-   format and make reduced observation coverage explicit; do not assume the removed
-   window/clipboard/typed-text fields are available.
-2. Extract approved documents and run backend interpretation with scoped inputs,
-   metered model calls, retry/recovery, and bounded cost. Keep raw source records
-   separate from inferred workflow findings.
-3. Persist a draft report, surface focused employee questions, and add explicit
-   publication permissions and a report/evidence view for the correct workspace.
-   Define how legacy deal destinations connect to canonical company views without
-   guessing by name or silently copying data across tenants.
+Accepting an upload creates a Recording Reviewer `AgentRun` (`run_type`
+`submission_analysis`) and queues one `analyze_submission` job through the platform
+queue (A2A contract: envelope first, idempotency key
+`submission:{id}:analyze_submission:{run_id}`, payload of ids only). The worker:
 
-Also still needed: dedicated device-token revocation/SSO if required, withdrawal and
-retention controls, and production monitoring. Recording evidence is not an accounting
-entry; suitable business documents still need mapping, validation, and import approval
-before becoming canonical financial records.
+1. Reads every artifact back from object storage and re-checks size and SHA-256
+   against the manifest and the receipt; a swapped or missing object fails the run and
+   the submission records `analysis_status: failed` with the error. The employee can
+   retry from the app (`POST …/analyze`), which creates a new run.
+2. Computes **observed facts in code** from the metadata-only activity artifact
+   (`src/vista/recorder_analysis.py`): active time and share per application,
+   switches, transitions, copy→paste transfers between applications, ping-pong loops,
+   and work stretches separated by idle gaps. Coverage is explicit: the report lists
+   the fields that were available and the ones that were not (window titles, URLs,
+   typed text, clipboard, screenshots), so nobody mistakes app-level activity for
+   document-level evidence. The original task-mining pipeline is not used here; it
+   needs fields the v2 artifact deliberately omits.
+3. Extracts shared documents with the existing bounded extractors and asks the model
+   for an **interpretation** — summary, workflow hypotheses, automation candidates,
+   up to three questions — through the metered `chat()` layer (one `model_call`
+   event and one `usage_events` row on the run). Items that name applications not in
+   the observed facts are dropped and counted as `rejected`. Without a model key the
+   stub tier produces an empty interpretation and the report still ships the facts.
+4. Stores one `recorder_reports` row per submission (tenant migration `0019`): the
+   observed facts, the interpretation, coverage, and the merged **questions**
+   (deterministic ones anchored to stretches and transfers, then the model's). A
+   re-run keeps answers the employee already gave to identical questions and never
+   replaces a published report.
+
+The employee sees the draft in the recorder (the app polls the submission every 30 s
+while analysis is in flight), answers the questions, and publishes with a second,
+explicit consent. Publication makes the report readable by the workspace it was
+uploaded to: for a canonical company, members and admins of that company's tenant;
+for a legacy deal destination, users with a role on that deal. Drafts are visible to
+the uploader only, even to admins of the same workspace. The company workspace's
+**Recordings** view lists published reports and opens each one with observed facts,
+the agent's reading (labelled as hypothesis), shared-document summaries, and the
+employee's answers. Analysts and other tenants do not see them; connecting legacy
+deal destinations to canonical company views is still explicit-mapping work.
+
+Still needed: dedicated device-token revocation/SSO if required, withdrawal and
+retention controls (a published report cannot yet be withdrawn), production
+monitoring, and joining published reports into File Reviewer findings. Recording
+evidence is not an accounting entry; suitable business documents still need mapping,
+validation, and import approval before becoming canonical financial records.
 
 ### Rollout checklist (separate from implementation)
 
-- Deploy the current backend image and apply migration `0018` using the existing AWS
-  deployment process, then verify service stability and the new authenticated APIs.
+- Deploy the current backend image and apply migrations `0018`–`0019` using the
+  existing AWS deployment process, then verify service stability and the new
+  authenticated APIs. The worker must run the new image too: analysis is a queued job.
 - Deploy/verify the matching Cloudflare Worker allow-list.
 - Build and publish a new recorder release; pushing source code does not update the
   already-downloadable installers. Test fresh installation and reconnection without
   a source checkout or Python installation.
-- Do not promise generated reports until step 3 is implemented and verified. The
-  successful end state of this release is a verified private upload awaiting analysis.
+- The successful end state of this release is a verified upload, an analysed draft the
+  employee can answer, and a report the employee chose to publish. Model
+  interpretation quality on real sessions has not been evaluated; treat it as a
+  hypothesis surface until an answer-key style eval exists for recordings.
 
 ## 7. Stretch goal: learning and RL (next-next step)
 
@@ -452,8 +491,10 @@ workflow assignments, connectors, execution verification, and measured financial
 impact are still additional implementation work. A proposed saving is not a realized
 result, and a completed agent analysis is not proof that an automation was deployed.
 
-**Implemented:** the workflow registry/approval foundation, plus recorder connection
-and verified private uploads that do not require local Python analysis.
-**Next:** cloud analysis and controlled report publication for those submissions.
-**Deferred:** sandbox workflow execution. **Stretch:** policy improvement and RL.
+**Implemented:** the workflow registry/approval foundation, recorder connection,
+verified private uploads that do not require local Python analysis, cloud analysis
+with a draft report and employee questions, and explicit publication into the
+company workspace. **Next:** withdrawal/retention controls and joining published
+recording evidence into File Reviewer findings. **Deferred:** sandbox workflow
+execution. **Stretch:** policy improvement and RL.
 Deployments and installer releases remain separate rollout steps.

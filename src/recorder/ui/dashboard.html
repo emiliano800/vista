@@ -397,6 +397,11 @@
             <button class="btn sm primary" id="rv-submit" title="Send the whole recording to your workspace and remove it from this computer"><svg class="ic" viewBox="0 0 24 24"><path d="M12 13v8"/><path d="M4 14.899A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.242"/><path d="m8 17 4-4 4 4"/></svg>Submit</button>
           </div>
 
+          <section class="card hidden" id="rv-cloud" style="margin:0 0 14px">
+            <h2 style="display:flex;justify-content:space-between;align-items:baseline"><span>Cloud analysis</span><span class="muted" style="text-transform:none;letter-spacing:0;font-weight:500" id="rv-cloud-sub"></span></h2>
+            <div id="rv-cloud-body"></div>
+          </section>
+
           <section class="card" style="margin:0 0 14px">
             <h2 style="display:flex;justify-content:space-between;align-items:baseline"><span>Session, by task</span><span class="muted" style="text-transform:none;letter-spacing:0;font-weight:500" id="vs-sub">Split where you switched windows</span></h2>
             <div class="rv-sum" id="rv-sum"></div>
@@ -630,7 +635,13 @@
       // uploading, failed (retry), uploaded (report only, older flow) or local.
       function uploadState(r) {
         const u = r?.upload;
-        if (u?.protocol === 2 && u.status === 'accepted') return { key: 'accepted', label: 'Uploaded · awaiting analysis', icon: 'cloudCheck', sub: 'Verified private draft. Local originals are retained; no report has been published.' };
+        if (u?.protocol === 2 && u.status === 'accepted') {
+          const a = u.analysis;
+          if (a?.publication === 'published') return { key: 'accepted', label: 'Published to workspace', icon: 'cloudCheck', sub: 'Your report is visible to your company workspace. Local originals are retained.' };
+          if (a?.status === 'succeeded') return { key: 'accepted', label: 'Report ready to review', icon: 'cloudCheck', sub: 'Answer the questions and publish when you are happy. Nothing is shared until you publish.' };
+          if (a?.status === 'failed') return { key: 'accepted', label: 'Uploaded · analysis failed', icon: 'alert', sub: a.error ?? 'The analysis could not finish; you can retry it.' };
+          return { key: 'accepted', label: 'Uploaded · analysing', icon: 'cloudCheck', sub: 'Verified private upload. The Recording Reviewer is reading the activity metadata; no report has been published.' };
+        }
         if (u?.protocol === 2 && (u.status === 'queued' || u.status === 'uploading')) return { key: u.status, label: u.status === 'queued' ? 'Queued for upload' : `Uploading ${u.progress?.done ?? 0}/${u.progress?.total ?? 0}`, icon: 'loader', sub: 'Uploads resume when this app is open and connected to the original workspace.' };
         if (r?.submitted || u?.status === 'submitted') return { key: 'submitted', label: 'Submitted', icon: 'cloudCheck', sub: u?.submittedAt ?? r?.submitted?.at ? new Date(u?.submittedAt ?? r.submitted.at).toLocaleString() : '' };
         if (u?.status === 'uploading') return { key: 'uploading', label: u.progress?.total ? `Uploading ${u.progress.done}/${u.progress.total}` : 'Uploading…', icon: 'loader', sub: '' };
@@ -706,9 +717,12 @@
         sb.innerHTML = up.key === 'uploading' || up.key === 'queued' ? `${icon('loader')}${esc(up.label)}` : up.key === 'failed' ? `${icon('upload')}Retry upload` : `${icon('upload')}${intake ? 'Upload session' : 'Submit'}`;
         sb.title = !info?.cloud ? 'Connect your company in Settings first' : 'Review the destination and document selection before uploading';
         if (intake) {
-          $('rv-banner-t').textContent = up.key === 'accepted' ? 'Uploaded — awaiting analysis' : up.key === 'failed' ? 'Upload needs attention' : ['uploading', 'queued'].includes(up.key) ? up.label : 'Ready to upload';
-          $('rv-banner-s').textContent = up.key === 'accepted' ? up.sub : up.key === 'failed' ? up.sub : 'Only activity metadata and the documents you choose will be shared. Local originals are retained. Cloud analysis is not enabled yet.';
+          const a = r.upload?.analysis;
+          const cloudTitle = a?.publication === 'published' ? 'Published to your workspace' : a?.status === 'succeeded' ? 'Report ready — answer and publish' : a?.status === 'failed' ? 'Uploaded — analysis failed' : 'Uploaded — analysing';
+          $('rv-banner-t').textContent = up.key === 'accepted' ? cloudTitle : up.key === 'failed' ? 'Upload needs attention' : ['uploading', 'queued'].includes(up.key) ? up.label : 'Ready to upload';
+          $('rv-banner-s').textContent = up.key === 'accepted' ? up.sub : up.key === 'failed' ? up.sub : 'Only activity metadata and the documents you choose will be shared. Local originals are retained. Analysis runs in your workspace after upload; nothing is published without your say-so.';
         }
+        renderCloudAnalysis(r, intake && up.key === 'accepted');
         $('rv-details-t').textContent = done && s ? `How this was analysed · ${(r.counts?.total ?? 0).toLocaleString()} events → ${s.steps} steps → ${s.cases} case${s.cases === 1 ? '' : 's'}` : finished && p !== 'done' ? 'How this was analysed' : `Analysing · ${STAGES[Math.max(0, Math.min(stageIdx, STAGES.length - 1))][1].toLowerCase()}…`;
 
         const out = (k) => {
@@ -850,6 +864,73 @@
         if (!s.open) parts.push('All confirmed.');
         if (rv.session && rv.session.status !== 'approved' && rv.session.status !== 'fixed' && rv.session.status !== 'explained') parts.push('General summary waiting.');
         return parts.join(' ');
+      }
+
+      // Cloud analysis card: observed facts stay separate from the agent's reading;
+      // the employee answers focused questions and publishes explicitly.
+      function renderCloudAnalysis(r, show) {
+        const card = $('rv-cloud');
+        card.classList.toggle('hidden', !show);
+        if (!show) return;
+        const a = r.upload?.analysis ?? { status: r.upload?.analysis_status ?? 'not_started', publication: 'draft', report: null };
+        const rep = a.report;
+        const body = $('rv-cloud-body');
+        const refresh = async (work) => {
+          try { await work(); recordings = await window.vista.recordings(); renderRecordings(); renderToday(); renderReview(); }
+          catch (e) { alert(e.message); }
+        };
+        if (a.status !== 'succeeded' || !rep) {
+          $('rv-cloud-sub').textContent = a.status === 'failed' ? 'Failed' : a.status === 'not_started' ? 'Waiting for the workspace' : 'Running';
+          body.innerHTML = a.status === 'failed'
+            ? `<p class="muted" style="font-size:13px;line-height:18px">${esc(a.error ?? 'The Recording Reviewer could not finish.')}</p><div class="act" style="display:flex;gap:6px"><button class="btn sm" id="rv-cloud-retry">Retry analysis</button><button class="btn sm" id="rv-cloud-refresh">Refresh</button></div>`
+            : `<p class="muted" style="font-size:13px;line-height:18px">The Recording Reviewer in your workspace is reading the activity metadata${rep === null ? '' : ''} — app names, timing and copy/paste patterns only. This page updates automatically.</p><div class="act"><button class="btn sm" id="rv-cloud-refresh">Refresh</button></div>`;
+          const retry = $('rv-cloud-retry'); if (retry) retry.onclick = () => refresh(() => window.vista.reanalyze(r.recording_id));
+          $('rv-cloud-refresh').onclick = () => refresh(() => window.vista.analysis(r.recording_id));
+          return;
+        }
+        const published = a.publication === 'published';
+        const questions = rep.questions ?? [];
+        const open = questions.filter((q) => !q.answer).length;
+        $('rv-cloud-sub').textContent = published ? `Published ${rep.published_at ? new Date(rep.published_at).toLocaleString() : ''}` : open ? `${open} question${open === 1 ? '' : 's'} to answer` : 'Draft — ready to publish';
+        const apps = (rep.observed?.apps ?? []).slice(0, 6);
+        const transfers = (rep.observed?.transfers ?? []).slice(0, 5);
+        const inter = rep.interpretation ?? {};
+        body.innerHTML = `
+          <p class="muted" style="font-size:12px;line-height:16px;margin:0 0 10px">${esc(rep.coverage?.note ?? '')}</p>
+          <div class="grid cols-2" style="margin:0 0 12px">
+            <div><h3 class="muted" style="font-size:12px;margin:0 0 6px">Observed (from metadata)</h3>
+              <div class="rank">${apps.length ? apps.map((x) => `<div class="row" style="grid-template-columns:1fr auto"><span>${esc(x.app)}</span><span class="muted">${Math.round(x.share * 100)}% · ${esc(String(x.events))} events</span><div class="bar" style="grid-column:1/-1"><i style="width:${Math.round(x.share * 100)}%"></i></div></div>`).join('') : '<div class="empty">No activity</div>'}</div>
+              <p class="muted" style="font-size:12px;margin:8px 0 0">${esc(String(rep.observed?.switches ?? 0))} app switches${transfers.length ? ` · copied between apps: ${transfers.map((t) => `${esc(t.from)} → ${esc(t.to)} ×${t.count}`).join(', ')}` : ''}</p>
+            </div>
+            <div><h3 class="muted" style="font-size:12px;margin:0 0 6px">Agent's reading (hypotheses)</h3>
+              ${inter.summary ? `<p style="font-size:13px;line-height:18px;margin:0 0 8px">${esc(inter.summary)}</p>` : '<p class="muted" style="font-size:13px;line-height:18px;margin:0 0 8px">No model interpretation was produced for this session.</p>'}
+              ${(inter.workflows ?? []).length ? `<ul style="margin:0 0 8px 16px;padding:0;font-size:13px;line-height:18px">${inter.workflows.map((w) => `<li><b>${esc(w.name)}</b> <span class="muted">${esc(w.apps.join(' · '))}${w.confidence != null ? ` · ${Math.round(w.confidence * 100)}%` : ''}</span></li>`).join('')}</ul>` : ''}
+              ${(inter.automation_candidates ?? []).length ? `<p class="muted" style="font-size:12px;margin:0 0 4px">Automation candidates</p><ul style="margin:0 0 8px 16px;padding:0;font-size:13px;line-height:18px">${inter.automation_candidates.map((c) => `<li><b>${esc(c.title)}</b>${c.rationale ? ` — ${esc(c.rationale)}` : ''}</li>`).join('')}</ul>` : ''}
+            </div>
+          </div>
+          <h3 class="muted" style="font-size:12px;margin:0 0 6px">Questions only you can answer</h3>
+          ${questions.length ? questions.map((q) => `<label style="display:block;margin:0 0 10px;font-size:13px;line-height:18px">${esc(q.question)}<textarea data-q="${esc(q.id)}" rows="2" style="width:100%;margin-top:4px" ${published ? 'disabled' : ''} placeholder="Your answer (optional)">${esc(q.answer ?? '')}</textarea></label>`).join('') : '<p class="muted" style="font-size:13px">No questions.</p>'}
+          ${published
+            ? '<p class="muted" style="font-size:13px;line-height:18px">Published. Your company workspace can now read this report; answers are frozen.</p>'
+            : `<div class="act" style="display:flex;gap:6px;align-items:center;flex-wrap:wrap"><button class="btn sm" id="rv-cloud-save" ${questions.length ? '' : 'disabled'}>Save answers</button><label style="display:flex;gap:6px;align-items:center;font-size:12px"><input type="checkbox" id="rv-cloud-consent" /> Share this report with my company workspace</label><button class="btn sm primary" id="rv-cloud-publish" disabled>Publish</button><button class="btn sm" id="rv-cloud-refresh">Refresh</button></div><p class="muted" style="font-size:12px;line-height:16px;margin:8px 0 0">Publishing shares the observed facts, the agent's reading, your answers and the document summaries above — not your recording, screenshots or typed text.</p>`}
+        `;
+        $('rv-cloud-refresh')?.addEventListener('click', () => refresh(() => window.vista.analysis(r.recording_id)));
+        const save = $('rv-cloud-save');
+        if (save) save.onclick = () => refresh(() => {
+          const answers = {};
+          body.querySelectorAll('textarea[data-q]').forEach((t) => { answers[t.dataset.q] = t.value; });
+          return window.vista.answerQuestions(r.recording_id, answers);
+        });
+        const consent = $('rv-cloud-consent'), publish = $('rv-cloud-publish');
+        if (consent && publish) {
+          consent.onchange = () => { publish.disabled = !consent.checked; };
+          publish.onclick = () => refresh(async () => {
+            const answers = {};
+            body.querySelectorAll('textarea[data-q]').forEach((t) => { if (t.value.trim()) answers[t.dataset.q] = t.value; });
+            if (Object.keys(answers).length) await window.vista.answerQuestions(r.recording_id, answers);
+            await window.vista.publishReport(r.recording_id, { consent: true });
+          });
+        }
       }
 
       function renderReviewSummary() {

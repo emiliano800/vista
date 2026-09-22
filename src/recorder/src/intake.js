@@ -197,9 +197,71 @@ export class SubmissionQueue {
     this.onChange(state);
   }
 
+  queueIdFor(config, id) {
+    const binding = uploadBinding(config);
+    return hash(JSON.stringify([binding.url, binding.userId, config.deviceId, id]));
+  }
+
+  // The accepted entry for one local recording, bound to the connected workspace.
+  acceptedEntry(config, id) {
+    const state = this.entries().find((entry) => entry.queueId === this.queueIdFor(config, id));
+    if (!state || state.status !== 'accepted' || !UUID.test(state.submission?.id ?? '')) throw new Error('Upload this session before working with its report.');
+    if (JSON.stringify(state.binding) !== JSON.stringify(uploadBinding(config))) throw new Error('Reconnect the workspace this session was uploaded to.');
+    return state;
+  }
+
+  // Cloud analysis and the draft report live on the server; the local copy is a
+  // cache for the dashboard. `detail` is a GET/POST /recorder/submissions/{id} body.
+  applyAnalysis(state, detail) {
+    if (detail.id !== state.submission.id) throw new Error('The server answered for a different submission.');
+    state.analysis = {
+      status: detail.analysis_status ?? 'not_started',
+      error: detail.analysis_error ?? null,
+      run_id: detail.analysis_run_id ?? null,
+      publication: detail.publication_status ?? 'draft',
+      report: detail.report ?? null,
+      checked_at: this.now(),
+    };
+    this.save(state);
+    return state;
+  }
+
+  // Poll accepted uploads whose analysis is still in flight (every 30 s at most).
+  async refresh(config, { force = false } = {}) {
+    for (const state of this.entries()) {
+      if (state.status !== 'accepted' || JSON.stringify(state.binding) !== JSON.stringify(uploadBinding(config))) continue;
+      const pending = !state.analysis || ['not_started', 'queued', 'running'].includes(state.analysis.status);
+      if (!force && (!pending || (state.analysis?.checked_at ?? 0) + 30000 > this.now())) continue;
+      try {
+        this.applyAnalysis(state, await cloudRequest(config, `/recorder/submissions/${state.submission.id}`, {}, this.fetch));
+      } catch {
+        if (state.analysis) { state.analysis.checked_at = this.now(); this.save(state); }
+      }
+    }
+  }
+
+  async submissionAction(config, id, action, body) {
+    const state = this.acceptedEntry(config, id);
+    const endpoint = `/recorder/submissions/${state.submission.id}${action ? `/${action}` : ''}`;
+    const options = action ? { method: 'POST', body: JSON.stringify(body ?? {}) } : {};
+    return this.applyAnalysis(state, await cloudRequest(config, endpoint, options, this.fetch)).analysis;
+  }
+
+  status(config, id) { return this.submissionAction(config, id, null); }
+  answer(config, id, answers) {
+    if (!answers || typeof answers !== 'object' || !Object.keys(answers).length) throw new Error('Answer at least one question.');
+    return this.submissionAction(config, id, 'answers', { answers });
+  }
+  // The employee's second, explicit consent: the draft becomes visible to the workspace.
+  publish(config, id, { consent } = {}) {
+    if (consent !== true) throw new Error('Confirm that the report may be shared with your workspace.');
+    return this.submissionAction(config, id, 'publish', { consent: true });
+  }
+  reanalyze(config, id) { return this.submissionAction(config, id, 'analyze', {}); }
+
   enqueue(root, id, config, options) {
     const binding = uploadBinding(config);
-    const queueId = hash(JSON.stringify([binding.url, binding.userId, config.deviceId, id]));
+    const queueId = this.queueIdFor(config, id);
     const previous = this.entries().find((state) => state.queueId === queueId);
     if (previous) {
       if (JSON.stringify(previous.binding) !== JSON.stringify(binding)) throw new Error('This upload is already bound to another workspace.');

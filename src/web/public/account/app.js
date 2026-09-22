@@ -53,7 +53,7 @@ let companies = [],
   preview = null,
   files = [],
   role = "viewer",
-  view = ["overview", "sources", "findings", "agents", "runs"].includes(
+  view = ["overview", "sources", "findings", "agents", "runs", "recordings"].includes(
     new URLSearchParams(location.search).get("view"),
   )
     ? new URLSearchParams(location.search).get("view")
@@ -64,6 +64,7 @@ let companies = [],
   generation = 0,
   agents = null,
   synthetic = [],
+  reports = [],
   agentFilter = { kind: "all", status: "open", agent: "all" };
 const AGENTS = [
   {
@@ -184,6 +185,7 @@ function render() {
   $("source-count").textContent = active?.files.length ?? 0;
   $("finding-count").textContent = count;
   $("run-count").textContent = agentRuns().length;
+  $("report-count").textContent = companyReports().length;
   $("as-of").textContent = active ? `Data as of ${day(active.as_of)}` : "";
   $("view-name").textContent = {
     overview: "Overview",
@@ -191,6 +193,7 @@ function render() {
     findings: "Findings",
     agents: "Agents",
     runs: "Runs",
+    recordings: "Recordings",
   }[view];
   document.title = `Vista · ${$("view-name").textContent}`;
   $("import-top").disabled = !company() || !canEdit();
@@ -212,7 +215,9 @@ function render() {
           ? agentsView()
           : view === "runs"
             ? runsView()
-            : active
+            : view === "recordings"
+              ? recordingsView()
+              : active
               ? overviewView()
               : welcomeView();
   bindContent();
@@ -288,6 +293,56 @@ function agentsView() {
     return `<section class="panel"><div class="panel-heading"><h2>${esc(a.name)}</h2>${r ? runTag(r.status) : '<span class="tag">Never run</span>'}</div><span class="eyebrow">${esc(a.layer)}</span><p>${esc(a.detail)}</p><dl class="small"><dt>Last run</dt><dd>${r ? `<button data-run="${esc(r.id)}" class="text-button">${esc(stamp(r.started_at ?? r.created_at))}</button>` : "—"}</dd><dt>Open findings</dt><dd>${number(open.filter((f) => f.agent_key === a.key).length)}</dd><dt>Spend this month</dt><dd>${spend ? `${cost(spend.cost_usd)} · ${number(spend.runs)} runs` : "$0.00"}</dd></dl><div class="actions">${control}</div></section>`;
   });
   return `<div class="page-heading"><div><span class="eyebrow">${esc(company().name)}</span><h1>Agents at <i>work.</i></h1><p>Four agents read this company's data, propose, and report. Every run leaves a trace you can inspect.</p></div></div>${agents ? "" : '<p class="quiet-note">Agent activity is unavailable right now.</p>'}<div class="overview-grid">${cards.join("")}</div><p class="spacing-4 small">Runs only start when you ask; agents never change source systems. Owners of this company can start runs.</p>`;
+}
+// Published recording reports for this company: what employees chose to share
+// from the desktop recorder after the Recording Reviewer analysed the upload.
+const companyReports = () =>
+  reports.filter(
+    (r) => r.workspace?.id === company()?.id || r.canonical_company_id === company()?.id,
+  );
+async function loadReports(current) {
+  try {
+    const rows = await api("/recorder/reports?limit=100");
+    if (current === generation) reports = rows;
+  } catch {
+    if (current === generation) reports = [];
+  }
+}
+const span = (session) =>
+  session?.started_at
+    ? `${new Date(session.started_at).toLocaleString()} – ${session.ended_at ? new Date(session.ended_at).toLocaleTimeString() : "…"}`
+    : "—";
+function recordingsView() {
+  const rows = companyReports();
+  return `<div class="page-heading"><div><span class="eyebrow">${esc(company().name)}</span><h1>Recordings, <i>as shared.</i></h1><p>Employees upload activity metadata from the desktop recorder, review the Recording Reviewer's draft, answer its questions and publish. Only published reports appear here.</p></div></div><section class="panel">${
+    rows.length
+      ? `<div class="table-wrap"><table><thead><tr><th>Session</th><th>Apps</th><th class="num">Switches</th><th class="num">Workflows</th><th class="num">Questions answered</th><th>Published</th><th></th></tr></thead><tbody>${rows
+          .map(
+            (r) =>
+              `<tr><td><strong>${esc(span(r.session))}</strong><small>${esc(r.summary ? r.summary.slice(0, 120) : "No model interpretation")}</small></td><td>${esc((r.apps ?? []).join(" · "))}</td><td class="num">${number(r.switches ?? 0)}</td><td class="num">${number(r.workflows ?? 0)}</td><td class="num">${number((r.questions_total ?? 0) - (r.questions_open ?? 0))} / ${number(r.questions_total ?? 0)}</td><td>${esc(stamp(r.published_at))}</td><td><button data-report="${esc(r.id)}" class="text-button">Open ${icon("arrow")}</button></td></tr>`,
+          )
+          .join("")}</tbody></table></div>`
+      : '<div class="empty"><h2>No published recordings yet.</h2><p>Reports appear once an employee uploads a session from the Vista recorder and publishes the reviewed draft.</p></div>'
+  }</section><p class="spacing-4 small">Observed facts are computed from metadata (app names, timing, copy and paste). Window titles, URLs, typed text and screenshots never leave the employee's computer. The agent's reading is a hypothesis until someone verifies it.</p>`;
+}
+function reportHtml(r) {
+  const o = r.observed ?? {};
+  const i = r.interpretation ?? {};
+  const apps = (o.apps ?? []).slice(0, 10);
+  const li = (items, f) =>
+    items.length ? `<ul class="small">${items.map(f).join("")}</ul>` : '<p class="small muted">None.</p>';
+  return `<p class="small"><strong>${esc(span(o.session))}</strong> · ${number(o.events ?? 0)} interactions · ${number(o.switches ?? 0)} app switches · published ${esc(stamp(r.published_at))}</p><p class="quiet-note">${esc(r.coverage?.note ?? "")} Not observed: ${esc((r.coverage?.excluded ?? []).join(", "))}.</p><h3>Observed</h3><div class="table-wrap"><table><thead><tr><th>Application</th><th class="num">Share of active time</th><th class="num">Events</th><th class="num">Copies</th><th class="num">Pastes</th></tr></thead><tbody>${apps
+    .map(
+      (a) =>
+        `<tr><td>${esc(a.app)}</td><td class="num">${Math.round((a.share ?? 0) * 100)}%</td><td class="num">${number(a.events)}</td><td class="num">${number(a.copies)}</td><td class="num">${number(a.pastes)}</td></tr>`,
+    )
+    .join("")}</tbody></table></div>${li(o.transfers ?? [], (t) => `<li>Copied from <strong>${esc(t.from)}</strong> into <strong>${esc(t.to)}</strong> ${number(t.count)}× (about ${number(t.mean_latency_s)}s apart)</li>`)}<h3>Agent's reading <span class="tag">${esc(i.source === "stub" ? "no model" : "hypothesis")}</span></h3>${i.summary ? `<p>${esc(i.summary)}</p>` : '<p class="small muted">No model interpretation was produced.</p>'}${li(i.workflows ?? [], (w) => `<li><strong>${esc(w.name)}</strong> — ${esc(w.apps.join(", "))}${w.evidence ? ` · ${esc(w.evidence)}` : ""} · ${Math.round((w.confidence ?? 0) * 100)}%</li>`)}${(i.automation_candidates ?? []).length ? `<h4>Automation candidates</h4>${li(i.automation_candidates, (c) => `<li><strong>${esc(c.title)}</strong>${c.rationale ? ` — ${esc(c.rationale)}` : ""}</li>`)}` : ""}${(i.documents ?? []).length ? `<h4>Shared documents</h4>${li(i.documents, (d) => `<li>${esc(d.filename)} <span class="muted">${esc(d.summary?.kind ?? "")}${d.summary?.rows != null ? ` · ${number(d.summary.rows)} rows` : ""}</span></li>`)}` : ""}<h3>Employee's answers</h3>${li(r.questions ?? [], (q) => `<li><em>${esc(q.question)}</em><br />${q.answer ? esc(q.answer) : '<span class="muted">Not answered</span>'}</li>`)}`;
+}
+async function showReport(id) {
+  $("report-body").innerHTML = '<p class="muted">Loading report…</p>';
+  $("report-dialog").showModal();
+  const r = await api(`/recorder/reports/${id}`);
+  $("report-body").innerHTML = reportHtml(r);
 }
 function runsView() {
   const all = agentRuns();
@@ -570,6 +625,9 @@ function bindContent() {
   document
     .querySelectorAll("[data-run]")
     .forEach((b) => (b.onclick = action(() => showRun(b.dataset.run))));
+  document
+    .querySelectorAll("[data-report]")
+    .forEach((b) => (b.onclick = action(() => showReport(b.dataset.report))));
   document
     .querySelectorAll("[data-start]")
     .forEach((b) => (b.onclick = action(() => startRun(b.dataset.start))));
@@ -958,7 +1016,7 @@ async function enterCompany() {
       active = loaded;
     }
     render();
-    await loadAgents(current);
+    await Promise.all([loadAgents(current), loadReports(current)]);
     if (current === generation) render();
   } catch (e) {
     if (current === generation) {
@@ -988,6 +1046,7 @@ $("import-dialog").addEventListener("cancel", (e) => {
 $("close-evidence").onclick = () => $("evidence-dialog").close();
 $("close-source").onclick = () => $("source-dialog").close();
 $("close-run").onclick = () => $("run-dialog").close();
+$("close-report").onclick = () => $("report-dialog").close();
 $("company").onchange = action(enterCompany);
 $("signout").onclick = action(async () => {
   await api("/auth/session", { method: "DELETE" });
