@@ -216,10 +216,12 @@ const SNAPSHOT = {
     },
   ],
   agents: [
-    { id: "harbor-ar", companyId: "c-harbor", status: "Active", review: 2 },
+    { id: "file_reviewer-harbor", companyId: "c-harbor", status: "Active", review: 2 },
   ],
-  runs: [{ id: "R-1", agentId: "harbor-ar", companyId: "c-harbor" }],
-  findings: [],
+  runs: [{ id: "R-1", agentId: "file_reviewer-harbor", companyId: "c-harbor" }],
+  findings: [
+    { id: "F-001", uuid: "11111111-1111-1111-1111-111111111111", companyId: "c-harbor", status: "Open", severity: "High", runId: "R-1" },
+  ],
   activity: [
     { at: "2026-09-01T00:00:00Z", companyId: "c-harbor", text: "old" },
     { at: "2026-09-18T00:00:00Z", companyId: "c-summit", text: "new" },
@@ -260,17 +262,9 @@ function storeFetch(extra = {}) {
         };
         return json(200, snapshot.companies[0].importExceptions[0]);
       },
-    "POST /api/workspace-agents/harbor-ar/status": (call) => {
-      snapshot.agents[0].status = call.body.status;
-      return json(200, snapshot.agents[0]);
-    },
-    "POST /api/workspace-agents/harbor-ar/run": () => {
-      snapshot.runs.push({
-        id: "R-2",
-        agentId: "harbor-ar",
-        companyId: "c-harbor",
-      });
-      return json(201, snapshot.runs.at(-1));
+    "POST /api/findings/F-001/status": (call) => {
+      snapshot.findings[0].status = call.body.status;
+      return json(200, snapshot.findings[0]);
     },
     ...extra,
   });
@@ -384,10 +378,11 @@ test("store mutations POST to the API and refresh the snapshot; realized value s
       "exception refs resolve to their uuid",
     );
 
-    await store.setAgentStatus("harbor-ar", "Paused");
-    assert.equal(store.agents()[0].status, "Paused");
-    const r = await store.runAgentNow("harbor-ar");
-    assert.equal(store.run(r.id).agentId, "harbor-ar");
+    // Finding triage addresses the ledger row by its display ref and refreshes the snapshot.
+    const f = await store.setFindingStatus("F-001", "Reviewed");
+    assert.equal(f.status, "Reviewed");
+    assert.equal(store.findings("c-harbor")[0].status, "Reviewed");
+    assert.equal(store.run("R-1").agentId, "file_reviewer-harbor");
     for (const c of fetch.calls.filter((c) => c.method === "POST"))
       assert.equal(c.headers["X-Vista-Request"], "1");
   } finally {

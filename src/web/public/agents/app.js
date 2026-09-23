@@ -12,7 +12,7 @@ import {
 } from "/lib/components.js";
 import { money, integer, date, age, DEMO_NOTE } from "/lib/format.js";
 import { runsChart, spendBars, spend } from "/lib/charts.js";
-import { agents, runs, run, companies, companyName, findings, setAgentStatus, runAgentNow, createTask, fleetAnalytics } from "/lib/store.js";
+import { agents, runs, run, companies, companyName, findings, createTask, fleetAnalytics } from "/lib/store.js";
 
 const analyst = await mountShell();
 const runId = qs().get("run");
@@ -29,11 +29,11 @@ async function list() {
     .slice(0, 12);
   $("view").innerHTML = `
     <div class="page-head">
-      <div><p class="eyebrow">${esc(analyst.firm)}</p><h1>Agents</h1><p class="muted">Each agent stands in for an employee process. It reads canonical records, does the work it can, and escalates what it cannot.</p></div>
+      <div><p class="eyebrow">${esc(analyst.firm)}</p><h1>Agents</h1><p class="muted">Each agent stands in for an employee process. It reads canonical records, does the work it can, and escalates what it cannot. Runs start from a company's data or from "Run portfolio analysis"; every run leaves a trace here.</p></div>
     </div>
     <div class="kpi-strip">
-      <div class="kpi"><span>Agents</span><b>${esc(integer(all.length))}</b><small>${esc(all.filter((a) => a.status === "Active").length)} active · ${esc(all.filter((a) => a.status === "Paused").length)} paused</small></div>
-      <div class="kpi"><span>Cases processed</span><b>${esc(integer(all.reduce((n, a) => n + a.cases, 0)))}</b></div>
+      <div class="kpi"><span>Agents</span><b>${esc(integer(all.length))}</b><small>${esc(all.filter((a) => a.status === "Running").length)} running · ${esc(all.filter((a) => a.status === "Failed").length)} failed last run</small></div>
+      <div class="kpi"><span>Runs</span><b>${esc(integer(all.reduce((n, a) => n + a.cases, 0)))}</b></div>
       <div class="kpi"><span>Need review</span><b>${esc(integer(all.reduce((n, a) => n + a.review, 0)))}</b><small>escalated to a human</small></div>
       <div class="kpi"><span>Findings</span><b>${esc(integer(findings().length))}</b></div>
       <div class="kpi"><span>Model cost</span><b>${esc(money(totalCost))}</b><small>all runs to date</small></div>
@@ -46,7 +46,7 @@ async function list() {
           `<a class="button quiet sm" href="/agents/?company=${esc(c.id)}" ${c.id === companyFilter ? 'aria-current="page"' : ""}>${esc(c.name)}</a>`,
       )
       .join("")}</div>
-    <div class="agent-cards">${shown.length ? shown.map(card).join("") : `<p class="empty">No agents deployed for this company yet. Agents are deployed from a company's Agents tab after its first import.</p>`}</div>
+    <div class="agent-cards">${shown.length ? shown.map(card).join("") : `<p class="empty">No agent has run for this company yet. Run the portfolio analysis after its first import.</p>`}</div>
     ${section(
       "Recent runs",
       table(
@@ -73,31 +73,6 @@ async function list() {
         { rowHref: (r) => `/agents/?run=${r.id}`, empty: "No runs yet." },
       ),
     )}`;
-  $("view")
-    .querySelectorAll("[data-action]")
-    .forEach((b) => {
-      b.onclick = async () => {
-        const [action, id] = b.dataset.action.split(":");
-        const a = agents().find((x) => x.id === id);
-        try {
-          if (action === "pause") await setAgentStatus(id, "Paused");
-          if (action === "resume") await setAgentStatus(id, "Active");
-          if (action === "run") {
-            const r = await runAgentNow(id);
-            list();
-            return message(
-              `${a.name} ran on ${companyName(a.companyId)}.`,
-              "success",
-              { href: `/agents/?run=${r.id}`, label: `Open ${r.id} →` },
-            );
-          }
-        } catch (error) {
-          return message(error.message, "danger");
-        }
-        list();
-        message(`${a.name} ${action}d.`, "success");
-      };
-    });
 }
 
 // ---- Suite fleet: four named agents, their throughput, spend and quality --------
@@ -162,7 +137,7 @@ function fleetHtml(fleet) {
         ${kinds}
       </div>
       <div class="agent-cards">${cards}</div>`,
-      { eyebrow: "Recording Reviewer · File Reviewer · Report Generator · Sector Merger" },
+      { eyebrow: "Recording Reviewer · File Reviewer · Report Generator · Sector Merger · across every company in this firm" },
     )}
     <div class="two-col block">
       <section><h2>Throughput · last ${esc(fleet.window_days)} days</h2>${runsChart(fleet.by_day)}<p class="muted small">Runs per day; failed runs in rust. Hover a bar for spend.</p></section>
@@ -178,19 +153,17 @@ function card(a) {
     .sort((x, y) => (x.startedAt < y.startedAt ? 1 : -1))[0];
   return `<article class="agent-card paper">
     <div class="block-head"><h3>${esc(a.name)}</h3>${badge(a.status)}</div>
-    <p class="muted">${esc(companyName(a.companyId))} · represents ${esc(a.represents)}</p>
+    <p class="muted">${esc(a.companyId ? companyName(a.companyId) : "Firm-level (across companies)")} · ${esc(a.represents)}</p>
     <div class="figures">
       <div>Last run<b>${esc(age(a.lastRunAt))} ago</b></div>
-      <div>Cases processed<b>${esc(integer(a.cases))}</b></div>
-      <div>Need review<b class="${a.review ? "attn" : ""}">${esc(a.review)}</b></div>
+      <div>Runs<b>${esc(integer(a.cases))}</b></div>
+      <div>Need review<b class="${a.review ? "attn" : ""}">${esc(a.review)}</b><small>open high-severity findings</small></div>
       <div>Findings<b>${esc(a.findings)}</b></div>
-      <div>Run cost<b>${esc(money(a.cost))}</b></div>
+      <div>Model cost<b>${esc(money(a.cost))}</b><small>metered per call</small></div>
     </div>
     ${a.lastFailure ? `<p class="fail">Last failure: ${esc(a.lastFailure)}</p>` : ""}
     <div class="actions">
-      ${latest ? `<a class="button quiet sm" href="/agents/?run=${esc(latest.id)}">View activity</a>` : ""}
-      <button class="sm" data-action="run:${esc(a.id)}">Run now</button>
-      ${a.status === "Paused" ? `<button class="sm" data-action="resume:${esc(a.id)}">Resume</button>` : `<button class="sm" data-action="pause:${esc(a.id)}">Pause</button>`}
+      ${latest ? `<a class="button quiet sm" href="/agents/?run=${esc(latest.id)}">View latest run</a>` : ""}
     </div>
   </article>`;
 }

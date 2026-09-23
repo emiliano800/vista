@@ -11,7 +11,8 @@ from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from vista.config import settings
-from vista.models.platform import Opportunity, PortfolioActivity
+from vista.db import tenant_session
+from vista.models.platform import Opportunity, PortfolioActivity, Tenant
 from vista.models.tenant import (
     Customer,
     ImportException,
@@ -27,10 +28,8 @@ from vista.models.tenant import (
     Task,
     Vendor,
     VendorPurchase,
-    WorkspaceAgent,
-    WorkspaceAgentRun,
-    WorkspaceFinding,
 )
+from vista.portfolio import ledger
 from vista.portfolio import serializers as ser
 from vista.portfolio.access import CompanyRef, FirmContext, company_session, reporting_period, today
 from vista.portfolio.metrics import CompanyMetrics, company_metrics, portfolio_metrics
@@ -177,24 +176,29 @@ def load_company(ref: CompanyRef, include_records: bool = True) -> tuple[dict, C
         jobs, open_x = company_imports(session)
         records = company_records(session) if include_records else {}
         tasks = [ser.task(t) for t in session.scalars(select(Task).order_by(Task.created_at))]
-        agents = session.scalars(select(WorkspaceAgent).order_by(WorkspaceAgent.created_at)).all()
-        agent_ref = {a.id: a.ref for a in agents}
-        runs = session.scalars(select(WorkspaceAgentRun).order_by(WorkspaceAgentRun.started_at)).all()
-        run_ref = {r.id: r.ref for r in runs}
-        findings = [
-            ser.finding(f, agent_ref.get(f.agent_id), run_ref.get(f.run_id))
-            for f in session.scalars(select(WorkspaceFinding).order_by(WorkspaceFinding.found_at))
-        ]
+        # The agent layer is read straight from the ledger the company workspace and the
+        # recorder write to; nothing is mirrored for the analyst.
+        agents, runs, findings = ledger.tenant_ledger(session, ref.slug, ref.id)
     c.update(records)
     c["importJobs"] = jobs
     c["importExceptions"] = open_x
     c["metrics"] = m.as_dict()
     c["integration"] = integration(c, m, len(open_x), len(jobs))
     c["_tasks"] = tasks
-    c["_agents"] = [ser.agent(a) for a in agents]
-    c["_runs"] = [ser.run(r, agent_ref[r.agent_id]) for r in runs]
+    c["_agents"] = agents
+    c["_runs"] = runs
     c["_findings"] = findings
     return c, m
+
+
+def firm_ledger(session: Session, ctx: FirmContext) -> tuple[list[dict], list[dict], list[dict]]:
+    """Runs that belong to the firm rather than one company (the Sector Merger's, in the
+    firm's home tenant). They carry no companyId; their findings cite the companies."""
+    home = session.get(Tenant, ctx.firm.home_tenant_id)
+    if home is None:
+        return [], [], []
+    with tenant_session(home.schema_name) as ts:
+        return ledger.tenant_ledger(ts, ctx.firm.slug, None)
 
 
 def _days_between(a: str | None, now: date) -> int:
@@ -334,6 +338,10 @@ def snapshot(session: Session, ctx: FirmContext, include_records: bool = True) -
         runs += c.pop("_runs")
         findings += c.pop("_findings")
         companies.append(c)
+    firm_agents, firm_runs, firm_findings = firm_ledger(session, ctx)
+    agents += firm_agents
+    runs += firm_runs
+    findings += firm_findings
     opportunities, activity = firm_layer(session, ctx)
     open_opps = [o for o in opportunities if o["status"] not in CLOSED_OPP]
     for c, m in loaded:

@@ -1,22 +1,26 @@
 """Fleet analytics for the four suite agents: throughput, outcomes, spend and quality
 in one read, so the /agents page can render without stitching /runs, /findings and
-/usage together client-side."""
+/usage together client-side. A firm member's view spans every company tenant the firm
+is authorised for (plus the firm's home tenant); a workspace member's view is their own
+tenant filtered to their deals."""
 
 import uuid
 from collections import defaultdict
 from datetime import UTC, datetime, timedelta
 from decimal import Decimal
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from sqlalchemy import select
 
 from vista.agents.keys import AGENT_KEYS, AGENT_NAMES
 from vista.api.evals import EvalOut
 from vista.auth import Principal, current_principal
-from vista.db import tenant_session
+from vista.db import platform_session, tenant_session
+from vista.models.platform import Tenant
 from vista.models.tenant import AgentRun, EvalRun, Finding, UsageEvent
 from vista.permissions import visible_deal_clause
+from vista.portfolio.access import load_firm_context
 
 router = APIRouter(tags=["agents"])
 
@@ -84,42 +88,72 @@ def _month_start(now: datetime) -> datetime:
     return now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
 
 
+def _collect(session, deal_filter, visible_to: uuid.UUID | None) -> tuple[list, list, list, list]:
+    """One tenant's share of the fleet: its suite runs (deal-filtered for a plain workspace
+    member), the findings and metered usage of those runs, and its latest evals."""
+    runs_q = select(AgentRun).where(AgentRun.agent_key.in_(AGENT_KEYS))
+    if deal_filter and visible_to is not None:
+        runs_q = runs_q.where(visible_deal_clause(AgentRun.deal_id, visible_to))
+    runs = session.scalars(runs_q.order_by(AgentRun.created_at.desc())).all()
+    run_ids: set[uuid.UUID] = {r.id for r in runs}
+    findings = (
+        session.execute(select(Finding.run_id, Finding.kind, Finding.status, Finding.agent_key).where(Finding.run_id.in_(run_ids))).all()
+        if run_ids
+        else []
+    )
+    usage = (
+        session.execute(
+            select(
+                UsageEvent.run_id,
+                UsageEvent.model,
+                UsageEvent.company,
+                UsageEvent.agent_key,
+                UsageEvent.created_at,
+                UsageEvent.input_tokens,
+                UsageEvent.output_tokens,
+                UsageEvent.cost_usd,
+            ).where(UsageEvent.run_id.in_(run_ids))
+        ).all()
+        if run_ids
+        else []
+    )
+    return runs, findings, usage, _latest_evals(session)
+
+
+def _fleet_schemas(principal: Principal) -> list[tuple[str, bool]]:
+    """(schema, deal_filtered) for every tenant the caller's fleet view spans. A firm member
+    sees every company tenant the firm is authorised for plus the firm's home tenant, with
+    firm scope as the authorisation; a plain workspace member sees their own tenant filtered
+    to the deals they belong to."""
+    try:
+        with platform_session() as platform:
+            ctx = load_firm_context(platform, principal)
+            home = platform.get(Tenant, ctx.firm.home_tenant_id)
+            schemas = [(c.schema, False) for c in ctx.companies]
+            if home is not None:
+                schemas.append((home.schema_name, False))
+            return schemas
+    except HTTPException:
+        return [(principal.tenant_schema, principal.role != "admin")]
+
+
 @router.get("/agents/analytics", response_model=FleetAnalyticsOut)
 def agents_analytics(principal: Principal = Depends(current_principal)) -> FleetAnalyticsOut:
     now = datetime.now(UTC)
     month = _month_start(now)
     window_start = (now - timedelta(days=WINDOW_DAYS - 1)).replace(hour=0, minute=0, second=0, microsecond=0)
-    with tenant_session(principal.tenant_schema) as session:
-        runs_q = select(AgentRun).where(AgentRun.agent_key.in_(AGENT_KEYS))
-        if principal.role != "admin":
-            runs_q = runs_q.where(visible_deal_clause(AgentRun.deal_id, principal.user_id))
-        runs = session.scalars(runs_q.order_by(AgentRun.created_at.desc())).all()
-        run_ids: set[uuid.UUID] = {r.id for r in runs}
-
-        findings = (
-            session.execute(
-                select(Finding.run_id, Finding.kind, Finding.status, Finding.agent_key).where(Finding.run_id.in_(run_ids))
-            ).all()
-            if run_ids
-            else []
-        )
-        usage = (
-            session.execute(
-                select(
-                    UsageEvent.run_id,
-                    UsageEvent.model,
-                    UsageEvent.company,
-                    UsageEvent.agent_key,
-                    UsageEvent.created_at,
-                    UsageEvent.input_tokens,
-                    UsageEvent.output_tokens,
-                    UsageEvent.cost_usd,
-                ).where(UsageEvent.run_id.in_(run_ids))
-            ).all()
-            if run_ids
-            else []
-        )
-        quality = _latest_evals(session)
+    runs: list = []
+    findings: list = []
+    usage: list = []
+    quality: list = []
+    for schema, deal_filtered in _fleet_schemas(principal):
+        with tenant_session(schema) as session:
+            r, f, u, q = _collect(session, deal_filtered, principal.user_id)
+        runs += r
+        findings += f
+        usage += u
+        quality += q
+    runs.sort(key=lambda r: r.created_at, reverse=True)
 
     per: dict[str, dict] = {
         k: {

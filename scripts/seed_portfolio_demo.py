@@ -17,7 +17,7 @@ import argparse
 import json
 import sys
 import uuid
-from datetime import UTC, date, datetime
+from datetime import UTC, date, datetime, timedelta
 from decimal import Decimal
 from pathlib import Path
 
@@ -31,18 +31,20 @@ from vista.config import settings  # noqa: E402
 from vista.db import platform_session, tenant_session  # noqa: E402
 from vista.models.platform import Firm, FirmCompany, FirmMembership, Opportunity, PortfolioActivity, Tenant, User  # noqa: E402
 from vista.models.tenant import (  # noqa: E402
+    AgentRun,
+    AgentRunEvent,
+    CompanySummary,
     Customer,
+    Finding,
     ImportJob,
     Invoice,
     RecordProvenance,
     SourceFile,
     Subscription,
     Task,
+    UsageEvent,
     Vendor,
     VendorPurchase,
-    WorkspaceAgent,
-    WorkspaceAgentRun,
-    WorkspaceFinding,
 )
 from vista.portfolio.service import ensure_company_deal  # noqa: E402
 from vista.security import token_digest  # noqa: E402
@@ -314,9 +316,14 @@ def seed_records(session: Session, fc: FirmCompany, c: dict) -> dict[str, int]:
     return counts
 
 
-def seed_workspace(session: Session, fc: FirmCompany, fixture: dict, slug: str) -> dict[str, int]:
-    """Tasks, agents, runs and findings that belong to this company (agent layer, kept apart from facts)."""
-    counts = {"tasks": 0, "agents": 0, "runs": 0, "findings": 0}
+RUN_STATUS = {"Complete": "succeeded", "Failed": "failed", "Needs review": "succeeded"}
+
+
+def seed_workspace(session: Session, fc: FirmCompany, fixture: dict, slug: str, requested_by: uuid.UUID) -> dict[str, int]:
+    """Tasks and the agent layer that belong to this company. Runs and findings go into the
+    same ledger (`agent_runs`, `agent_run_events`, `findings`, `usage_events`) the company
+    workspace and the recorder use; the analyst derives its agents from them."""
+    counts = {"tasks": 0, "runs": 0, "findings": 0}
     for t in fixture["tasks"]:
         if t["companyId"] != slug:
             continue
@@ -344,58 +351,83 @@ def seed_workspace(session: Session, fc: FirmCompany, fixture: dict, slug: str) 
             completed_at=ts(t.get("completedAt")),
         )
         counts["tasks"] += 1
-    for a in fixture["agents"]:
-        if a["companyId"] != slug:
-            continue
+    runs = [r for r in fixture["runs"] if r["companyId"] == slug]
+    known_runs = {r["id"] for r in runs}
+    for f in fixture["findings"]:
+        # A finding always hangs off a run; invent a minimal one when the fixture has none.
+        if f["companyId"] == slug and f.get("runId") and f["runId"] not in known_runs:
+            runs.append({"id": f["runId"], "companyId": slug, "startedAt": f["foundAt"], "status": "Complete", "goal": "", "events": []})
+            known_runs.add(f["runId"])
+    for r in runs:
+        started = ts(r["startedAt"])
+        run_id = sid(f"run:{r['id']}")
         upsert(
             session,
-            WorkspaceAgent,
-            sid(f"agent:{a['id']}"),
-            company_id=fc.id,
-            ref=a["id"],
-            name=a["name"],
-            status=a.get("status", "Active"),
-            last_run_at=ts(a.get("lastRunAt")),
-            payload={k: a[k] for k in ("represents", "cases", "review", "findings", "lastFailure", "cost") if k in a},
-            synthetic_demo=True,
+            AgentRun,
+            run_id,
+            job_id=sid(f"job:{r['id']}"),
+            run_type="employee_discovery",
+            deal_id=fc.deal_id,
+            requested_by=requested_by,
+            status=RUN_STATUS.get(r.get("status", "Complete"), "succeeded"),
+            created_at=started,
+            started_at=started,
+            finished_at=started + timedelta(minutes=max(1, len(r.get("events", [])))),
+            company=fc.name[:64],
+            agent_key="file_reviewer",
         )
-        counts["agents"] += 1
-    session.flush()
-    for r in fixture["runs"]:
-        if r["companyId"] != slug:
-            continue
-        upsert(
-            session,
-            WorkspaceAgentRun,
-            sid(f"run:{r['id']}"),
-            company_id=fc.id,
-            agent_id=sid(f"agent:{r['agentId']}"),
-            ref=r["id"],
-            status=r.get("status", "Complete"),
-            started_at=ts(r["startedAt"]),
-            needs_review=int(r.get("needsReview") or 0),
-            model_cost=dec(r.get("modelCost")),
-            payload={k: r[k] for k in ("goal", "sources", "events", "output", "evidence", "corrections") if k in r},
-            synthetic_demo=True,
-        )
+        session.execute(AgentRunEvent.__table__.delete().where(AgentRunEvent.run_id == run_id))
+        session.execute(UsageEvent.__table__.delete().where(UsageEvent.run_id == run_id))
+        session.execute(CompanySummary.__table__.delete().where(CompanySummary.run_id == run_id))
+        seq = 1
+        session.add(AgentRunEvent(run_id=run_id, seq=seq, event_type="step", data={"message": "started", "goal": r.get("goal", "")}))
+        seq += 1
+        if r.get("sources"):
+            session.add(AgentRunEvent(run_id=run_id, seq=seq, event_type="tool_call", data={"tool": "read_files", "files": r["sources"]}))
+            seq += 1
+        for i, (_hhmm, text) in enumerate(r.get("events", [])):
+            session.add(
+                AgentRunEvent(
+                    run_id=run_id, seq=seq, event_type="step", data={"message": text}, created_at=started + timedelta(minutes=i + 1)
+                )
+            )
+            seq += 1
+        session.add(AgentRunEvent(run_id=run_id, seq=seq, event_type="result", data={"needs_review": int(r.get("needsReview") or 0)}))
+        if r.get("modelCost"):
+            session.add(
+                UsageEvent(
+                    run_id=run_id,
+                    model="synthetic_seed",
+                    cost_usd=dec(r["modelCost"], "0.000001"),
+                    agent_key="file_reviewer",
+                    company=fc.name[:64],
+                    created_at=started,
+                )
+            )
+        if r.get("output"):
+            session.add(CompanySummary(run_id=run_id, content=r["output"], stats={"synthetic_demo": True}, created_at=started))
         counts["runs"] += 1
+    session.flush()
     for f in fixture["findings"]:
         if f["companyId"] != slug:
             continue
         upsert(
             session,
-            WorkspaceFinding,
+            Finding,
             sid(f"finding:{f['id']}"),
-            company_id=fc.id,
+            run_id=sid(f"run:{f['runId']}"),
             ref=f["id"],
-            agent_id=sid(f"agent:{f['agentId']}") if f.get("agentId") else None,
-            run_id=sid(f"run:{f['runId']}") if f.get("runId") else None,
+            company_id=fc.id,
+            company=fc.name[:64],
+            agent_key="file_reviewer",
+            kind=f.get("kind", "inefficiency"),
             title=f["title"],
             detail=f.get("detail", ""),
             severity=f.get("severity", "Medium"),
-            status=f.get("status", "New"),
-            found_at=ts(f["foundAt"]),
+            status=(f.get("status") or "open").lower(),
+            evidence={"source": "synthetic_seed", "fixture_run": f["runId"]},
             synthetic_demo=True,
+            created_at=ts(f["foundAt"]),
         )
         counts["findings"] += 1
     return counts
@@ -500,12 +532,13 @@ def main() -> int:
         schema = schemas[c["id"]]
         migrate_tenant_schema(schema)
         with platform_session() as platform:
-            ensure_company_deal(platform, platform.get(FirmCompany, company_ids[c["id"]]), schema, analyst_user_id)
+            fc = platform.get(FirmCompany, company_ids[c["id"]])
+            ensure_company_deal(platform, fc, schema, analyst_user_id)
             platform.commit()
+            platform.expunge(fc)
         with tenant_session(schema) as ts_:
-            fc = FirmCompany(id=company_ids[c["id"]])
             counts = seed_records(ts_, fc, c)
-            counts.update(seed_workspace(ts_, fc, fixture, c["id"]))
+            counts.update(seed_workspace(ts_, fc, fixture, c["id"], analyst_user_id))
             ts_.commit()
         report["companies"][c["name"]] = counts
 

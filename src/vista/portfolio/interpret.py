@@ -5,8 +5,8 @@ Two run types, both durable jobs under the A2A contract in AGENTS.md:
 * `canonical_review` (File Reviewer) — one company tenant. Reads only canonical
   tables (customers, invoices, vendors, purchases, subscriptions, policies,
   purchase orders/lines, inventory), profiles them, applies code-computed checks
-  and one model call per table, and writes `findings` (ledger), their workspace
-  mirrors, a `company_summaries` narrative and a follow-up task per High finding.
+  and one model call per table, and writes `findings` (the one ledger every view
+  reads), a `company_summaries` narrative and a follow-up task per High finding.
 * `portfolio_merge` (Sector Merger) — firm home tenant. Re-validates every company
   id in the payload against `platform.firm_companies`, joins one sector's canonical
   tables on exact shared keys, confirms candidates with one model call per
@@ -57,9 +57,6 @@ from vista.models.tenant import (
     UsageEvent,
     Vendor,
     VendorPurchase,
-    WorkspaceAgent,
-    WorkspaceAgentRun,
-    WorkspaceFinding,
 )
 from vista.portfolio.access import CompanyRef, FirmContext, company_session, load_firm_context, reporting_period, today
 from vista.portfolio.service import log_activity, money2, next_ref
@@ -334,8 +331,13 @@ def _upsert_finding(
     detail: str,
     evidence: dict,
     structured: Structured | None = None,
+    platform: Session | None = None,
+    firm_id: uuid.UUID | None = None,
+    company_id: uuid.UUID | None = None,
 ) -> tuple[Finding, bool]:
-    """Ledger finding keyed by (agent, kind, title, company). Dismissed rows stay dismissed."""
+    """Ledger finding keyed by (agent, kind, title, company). Dismissed rows stay dismissed.
+    Under a firm context a new finding gets its firm-wide display ref (F-012) and the
+    platform company id, so the analyst pages address the same row the ledger holds."""
     title = title[:512]
     existing = ts.scalar(
         select(Finding).where(
@@ -344,6 +346,10 @@ def _upsert_finding(
     )
     f = existing or Finding(run_id=run.id, agent_key=run.agent_key, company=run.company, kind=kind, title=title)
     f.detail, f.evidence, f.run_id = detail, evidence, run.id
+    if company_id is not None:
+        f.company_id = company_id
+    if f.ref is None and platform is not None and firm_id is not None:
+        f.ref = next_ref(platform, firm_id, "finding", "F", 3)
     if structured is not None:
         f.finding_type, f.severity, f.effect, f.blocking = (
             structured.finding_type,
@@ -729,66 +735,19 @@ def canonical_checks(ts: Session, now: date) -> list[Check]:
     return out
 
 
-def _workspace_agent(ts: Session, company: CompanyRef, ref: str, name: str, represents: str) -> WorkspaceAgent:
-    a = ts.scalar(select(WorkspaceAgent).where(WorkspaceAgent.ref == ref))
-    if a is None:
-        a = WorkspaceAgent(
-            company_id=company.id,
-            ref=ref,
-            name=name,
-            status="Active",
-            payload={"represents": represents, "cases": 0, "review": 0, "findings": 0, "cost": 0},
-        )
-        ts.add(a)
-        ts.flush()
-    return a
-
-
-def _mirror_finding(
-    ts: Session,
-    platform: Session,
-    ctx: FirmContext,
-    company: CompanyRef,
-    agent: WorkspaceAgent,
-    run: WorkspaceAgentRun,
-    title: str,
-    detail: str,
-    severity: str,
-    at: datetime,
-) -> WorkspaceFinding:
-    wf = ts.scalar(select(WorkspaceFinding).where(WorkspaceFinding.company_id == company.id, WorkspaceFinding.title == title))
-    if wf is None:
-        wf = WorkspaceFinding(
-            company_id=company.id,
-            ref=next_ref(platform, ctx.firm.id, "finding", "F", 3),
-            agent_id=agent.id,
-            run_id=run.id,
-            title=title,
-            detail=detail,
-            severity=severity,
-            status="Open",
-            found_at=at,
-        )
-        ts.add(wf)
-        ts.flush()
-    else:
-        wf.detail, wf.severity, wf.run_id = detail, severity, run.id
-    return wf
-
-
-def _task_for(
-    ts: Session, platform: Session, ctx: FirmContext, company: CompanyRef, wf: WorkspaceFinding, check: Check, at: datetime
-) -> Task | None:
-    if ts.scalar(select(Task).where(Task.source_type == "finding", Task.source_id == wf.ref)) is not None:
+def _task_for(ts: Session, platform: Session, ctx: FirmContext, company: CompanyRef, f: Finding, check: Check, at: datetime) -> Task | None:
+    """One follow-up task per High finding, keyed to the finding's display ref."""
+    source_id = f.ref or str(f.id)
+    if ts.scalar(select(Task).where(Task.source_type == "finding", Task.source_id == source_id)) is not None:
         return None
     t = Task(
         company_id=company.id,
         ref=next_ref(platform, ctx.firm.id, "task", "T", 3),
         title=f"Review: {check.title}"[:255],
-        description=f"{check.detail} Evidence: {len(check.ids)} canonical {check.table} records cited on finding {wf.ref}."[:4000],
+        description=f"{check.detail} Evidence: {len(check.ids)} canonical {check.table} records cited on finding {source_id}."[:4000],
         category="Agent exception",
         source_type="finding",
-        source_id=wf.ref,
+        source_id=source_id,
         priority=check.severity,
         status="Open",
         created_by="File Reviewer",
@@ -824,36 +783,6 @@ def review_company(
         cost = Decimal(0)
         created = updated = 0
         model_facts = 0
-        events: list[list[str]] = [
-            [at.strftime("%H:%M"), f"Loaded {sum(len(t.rows) for t in tables):,} canonical rows across {len(tables)} tables."]
-        ]
-        agent = _workspace_agent(
-            ts,
-            company,
-            f"file-reviewer-{company.slug}",
-            "File Reviewer",
-            "Imported canonical records — data quality and working-capital review",
-        )
-        n_runs = len(ts.scalars(select(WorkspaceAgentRun.id).where(WorkspaceAgentRun.agent_id == agent.id)).all())
-        wrun = WorkspaceAgentRun(
-            company_id=company.id,
-            agent_id=agent.id,
-            ref=f"run-{agent.ref}-{n_runs + 1:04d}",
-            status="Complete",
-            started_at=at,
-            payload={
-                "goal": "Review the canonical records the fact layer imported and surface evidence-linked observations.",
-                "sources": [f"canonical/{t.name}" for t in tables],
-                "events": events,
-                "output": "",
-                "evidence": [],
-                "corrections": [],
-                "ledger_run_id": str(run_id),
-            },
-        )
-        ts.add(wrun)
-        ts.flush()
-
         checks = canonical_checks(ts, now)
         high = 0
         for c in checks:
@@ -865,7 +794,9 @@ def review_company(
                 "confidence": 1.0,
                 "computed_by": "code",
             }
-            f, is_new = _upsert_finding(ts, run, c.kind, c.title, c.detail, evidence, c.structured())
+            f, is_new = _upsert_finding(
+                ts, run, c.kind, c.title, c.detail, evidence, c.structured(), platform=platform, firm_id=ctx.firm.id, company_id=company.id
+            )
             created += is_new
             updated += not is_new
             seq = _emit(
@@ -882,12 +813,10 @@ def review_company(
                     "affected": len(c.ids),
                 },
             )
-            wf = _mirror_finding(ts, platform, ctx, company, agent, wrun, c.title, c.detail, c.severity, at)
-            events.append([at.strftime("%H:%M"), f"{c.severity}: {c.title}"])
             if c.severity == "High":
                 high += 1
-                if wf.status == "Open":
-                    _task_for(ts, platform, ctx, company, wf, c, at)
+                if f.status == "open":
+                    _task_for(ts, platform, ctx, company, f, c, at)
 
         for table in tables:
             profile = discover.profile_table(table)
@@ -920,33 +849,18 @@ def review_company(
                     title,
                     fact["value"],
                     {**fact["source_ref"], "confidence": fact["confidence"], "computed_by": "model" if r.source != "stub" else "profile"},
+                    platform=platform,
+                    firm_id=ctx.firm.id,
+                    company_id=company.id,
                 )
                 created += is_new
                 updated += not is_new
                 model_facts += 1
                 seq = _emit(ts, run_id, seq, "finding", {"finding_id": str(f.id), "title": f.title})
-                if fact["confidence"] >= 0.85:
-                    _mirror_finding(ts, platform, ctx, company, agent, wrun, title, fact["value"], "Low", at)
 
         stats = {"tables": {t.name: len(t.rows) for t in tables}, "checks": len(checks), "high": high, "model_facts": model_facts}
         narrative = _narrative(company, checks, stats)
         ts.add(CompanySummary(run_id=run_id, content=narrative, stats=stats))
-        wrun.payload = {
-            **wrun.payload,
-            "events": events,
-            "output": narrative,
-            "evidence": [{"entity": c.table, "ids": c.ids[:5], "companyId": str(company.id)} for c in checks],
-        }
-        wrun.model_cost = cost.quantize(Decimal("0.0001"))
-        wrun.needs_review = high
-        agent.last_run_at = at
-        agent.payload = {
-            **(agent.payload or {}),
-            "cases": (agent.payload or {}).get("cases", 0) + len(checks),
-            "review": high,
-            "findings": len(checks) + model_facts,
-            "cost": round(float((agent.payload or {}).get("cost", 0)) + float(cost), 4),
-        }
         _finish(ts, run, seq, {"findings_created": created, "findings_updated": updated, "high": high, "cost_usd": str(cost)})
         ts.commit()
     log_activity(
@@ -1369,7 +1283,7 @@ def merge_sector(
                     "proposed_automation",
                     f"{kind}: {row['title']}",
                     row["detail"],
-                    {
+                    evidence={
                         "sector": sector,
                         "opportunity_kind": kind,
                         "opportunity_ref": opp.ref,
@@ -1382,6 +1296,8 @@ def merge_sector(
                         "from_findings": lineage["from_findings"],
                         "from_runs": lineage["from_runs"],
                     },
+                    platform=platform,
+                    firm_id=firm_id,
                 )
                 seq = _emit(
                     ts,
@@ -1420,45 +1336,6 @@ def merge_sector(
             },
         )
         ts.commit()
-    for ref in refs_by_short.values():
-        with company_session(ref) as ts:
-            agent = _workspace_agent(
-                ts,
-                ref,
-                f"sector-merger-{ref.slug}",
-                "Sector Merger",
-                f"Cross-company comparison across the firm's {sector.replace('_', ' ')} companies",
-            )
-            n = len(ts.scalars(select(WorkspaceAgentRun.id).where(WorkspaceAgentRun.agent_id == agent.id)).all())
-            ts.add(
-                WorkspaceAgentRun(
-                    company_id=ref.id,
-                    agent_id=agent.id,
-                    ref=f"run-{agent.ref}-{n + 1:04d}",
-                    status="Complete",
-                    started_at=at,
-                    model_cost=(cost / max(len(refs_by_short), 1)).quantize(Decimal("0.0001")),
-                    payload={
-                        "goal": f"Join canonical tables across {', '.join(sorted(shorts))} on exact shared keys.",
-                        "sources": [f"canonical/{t}" for k in kinds for t in sorted(analyze.KIND_TABLES[k])],
-                        "events": [
-                            [at.strftime("%H:%M"), f"{created} new and {updated} updated opportunities: {', '.join(opp_refs) or 'none'}"]
-                        ],
-                        "output": f"{created + updated} cross-company opportunities proposed for the {sector.replace('_', ' ')} sector.",
-                        "evidence": [],
-                        "corrections": [],
-                        "ledger_run_id": str(run_id),
-                    },
-                )
-            )
-            agent.last_run_at = at
-            agent.payload = {
-                **(agent.payload or {}),
-                "cases": (agent.payload or {}).get("cases", 0) + created + updated,
-                "findings": created + updated,
-                "cost": round(float((agent.payload or {}).get("cost", 0)) + float(cost) / max(len(refs_by_short), 1), 4),
-            }
-            ts.commit()
     for ref in refs_by_short.values():
         platform.get(FirmCompany, ref.id).analysis_run_at = at
     return {

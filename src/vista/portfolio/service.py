@@ -1,5 +1,5 @@
 """Write-side operations for the portfolio workspace: company onboarding,
-tasks, opportunities, agents, findings, exception decisions and the
+tasks, opportunities, finding triage, exception decisions and the
 deterministic purchasing analysis. Every write logs portfolio activity."""
 
 from __future__ import annotations
@@ -17,13 +17,11 @@ from vista.db import tenant_session
 from vista.models.platform import Firm, FirmCompany, Opportunity, PortfolioActivity, Tenant
 from vista.models.tenant import (
     Deal,
+    Finding,
     ImportException,
     Task,
     Vendor,
     VendorPurchase,
-    WorkspaceAgent,
-    WorkspaceAgentRun,
-    WorkspaceFinding,
 )
 from vista.portfolio.access import CompanyRef, FirmContext, company_session, reporting_period
 from vista.tenancy import migrate_tenant_schema
@@ -147,9 +145,9 @@ def create_task(platform: Session, ctx: FirmContext, company: CompanyRef, body: 
     with company_session(company) as ts:
         ts.add(task)
         if task.source_type == "finding" and task.source_id:
-            f = ts.scalar(select(WorkspaceFinding).where(WorkspaceFinding.ref == task.source_id))
-            if f and f.status == "Open":
-                f.status = "Actioned"
+            f = _finding_in(ts, task.source_id)
+            if f and f.status == "open":
+                f.status = "actioned"
         ts.commit()
     if task.source_type == "opportunity" and task.source_id:
         o = platform.scalar(select(Opportunity).where(Opportunity.firm_id == ctx.firm.id, Opportunity.ref == task.source_id))
@@ -360,84 +358,49 @@ def run_portfolio_analysis(platform: Session, ctx: FirmContext) -> list[Opportun
     return found
 
 
-# ---- Agents & findings --------------------------------------------------------------
+# ---- Finding triage ------------------------------------------------------------------
+
+FINDING_STATUSES = {"Open": "open", "Reviewed": "reviewed", "Actioned": "actioned", "Dismissed": "dismissed"}
 
 
-def _find_agent(ctx: FirmContext, ref: str):
-    for company in ctx.companies:
-        with company_session(company) as ts:
-            a = ts.scalar(select(WorkspaceAgent).where(WorkspaceAgent.ref == ref))
-            if a is not None:
-                ts.expunge(a)
-                return company, a
-    raise HTTPException(404, "Agent not found")
+def _finding_in(ts: Session, ref: str) -> Finding | None:
+    """A ledger finding by its display ref (F-012) or its uuid."""
+    if _is_uuid(ref):
+        return ts.get(Finding, uuid.UUID(ref))
+    return ts.scalar(select(Finding).where(Finding.ref == ref))
 
 
-def set_agent_status(platform: Session, ctx: FirmContext, ref: str, status: str) -> WorkspaceAgent:
-    if status not in ("Active", "Paused"):
-        raise HTTPException(422, "Agent status must be Active or Paused")
-    company, _ = _find_agent(ctx, ref)
-    with company_session(company) as ts:
-        a = ts.scalar(select(WorkspaceAgent).where(WorkspaceAgent.ref == ref))
-        a.status = status
-        if status == "Active" and (a.payload or {}).get("lastFailure"):
-            a.payload = {**a.payload, "lastFailure": None}
-        ts.commit()
-    log_activity(platform, ctx.firm.id, company.id, f"{a.name} agent {'paused' if status == 'Paused' else 'resumed'} by analyst.", "agent")
-    platform.commit()
-    return a
+def _finding_scopes(platform: Session, ctx: FirmContext) -> list[tuple[uuid.UUID | None, str]]:
+    """(company id, schema) for every tenant the firm's findings live in: each company
+    tenant plus the firm's home tenant, where the Sector Merger writes."""
+    scopes: list[tuple[uuid.UUID | None, str]] = [(c.id, c.schema) for c in ctx.companies]
+    home = platform.get(Tenant, ctx.firm.home_tenant_id)
+    if home is not None:
+        scopes.append((None, home.schema_name))
+    return scopes
 
 
-def run_agent_now(platform: Session, ctx: FirmContext, ref: str) -> WorkspaceAgentRun:
-    company, _ = _find_agent(ctx, ref)
-    at = now()
-    with company_session(company) as ts:
-        a = ts.scalar(select(WorkspaceAgent).where(WorkspaceAgent.ref == ref))
-        n = (ts.scalar(select(func.count()).select_from(WorkspaceAgentRun).where(WorkspaceAgentRun.agent_id == a.id)) or 0) + 1
-        hhmm = at.strftime("%H:%M")
-        run = WorkspaceAgentRun(
-            company_id=company.id,
-            agent_id=a.id,
-            ref=f"run-{a.ref}-{n:04d}",
-            status="Complete",
-            started_at=at,
-            needs_review=0,
-            model_cost=Decimal("0.03"),
-            payload={
-                "goal": f"Re-run {a.name} on the latest imported records.",
-                "sources": ["Imported canonical records (this workspace)"],
-                "events": [
-                    [hhmm, "Loaded canonical records for the company."],
-                    [hhmm, "No new exceptions compared with the previous run."],
-                ],
-                "output": "No change since the last run.",
-                "evidence": [],
-                "corrections": [],
-            },
-        )
-        ts.add(run)
-        a.last_run_at = at
-        a.status = "Active"
-        a.payload = {**(a.payload or {}), "cost": round(float((a.payload or {}).get("cost", 0)) + 0.03, 2)}
-        ts.commit()
-    log_activity(platform, ctx.firm.id, company.id, f"{a.name} agent ran on demand; no new exceptions.", "agent", at)
-    platform.commit()
-    return run
-
-
-def set_finding_status(platform: Session, ctx: FirmContext, ref: str, status: str) -> WorkspaceFinding:
-    if status not in ("Open", "Reviewed", "Actioned", "Dismissed"):
+def set_finding_status(platform: Session, ctx: FirmContext, ref: str, status: str) -> dict:
+    """Triage is the analyst's only write to a finding, and it lands on the same row the
+    company workspace, the Sector Merger and the recorder read. Dismissed findings are
+    invisible to downstream agents (A2A contract)."""
+    if status not in FINDING_STATUSES:
         raise HTTPException(422, f"Unknown finding status {status!r}")
-    for company in ctx.companies:
-        with company_session(company) as ts:
-            f = ts.scalar(select(WorkspaceFinding).where(WorkspaceFinding.ref == ref))
+    from vista.portfolio import ledger
+
+    for company_id, schema in _finding_scopes(platform, ctx):
+        with tenant_session(schema) as ts:
+            f = _finding_in(ts, ref)
             if f is None:
                 continue
-            f.status = status
+            f.status = FINDING_STATUSES[status]
+            ts.flush()
+            scope_slug = next((c.slug for c in ctx.companies if c.id == company_id), ctx.firm.slug)
+            view = ledger.finding_view(f, ledger.agent_id(f.agent_key or "file_reviewer", scope_slug), company_id)
             ts.commit()
-        log_activity(platform, ctx.firm.id, company.id, f"Finding {ref} {status.lower()} by analyst.", "finding")
+        log_activity(platform, ctx.firm.id, company_id, f"Finding {view['id']} {status.lower()} by analyst.", "finding")
         platform.commit()
-        return f
+        return view
     raise HTTPException(404, "Finding not found")
 
 

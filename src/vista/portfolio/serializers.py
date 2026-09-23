@@ -24,9 +24,6 @@ from vista.models.tenant import (
     Task,
     Vendor,
     VendorPurchase,
-    WorkspaceAgent,
-    WorkspaceAgentRun,
-    WorkspaceFinding,
 )
 
 
@@ -297,56 +294,6 @@ def opportunity(o: Opportunity) -> dict:
         "generatedBy": o.generated_by,
         "lineage": o.lineage or {},
         "syntheticDemo": o.synthetic_demo,
-    }
-
-
-def finding(f: WorkspaceFinding, agent_ref: str | None, run_ref: str | None) -> dict:
-    return {
-        "id": f.ref,
-        "companyId": sid(f.company_id),
-        "title": f.title,
-        "detail": f.detail,
-        "severity": f.severity,
-        "status": f.status,
-        "agentId": agent_ref,
-        "runId": run_ref,
-        "foundAt": iso(f.found_at),
-    }
-
-
-def agent(a: WorkspaceAgent) -> dict:
-    p = a.payload or {}
-    return {
-        "id": a.ref,
-        "companyId": sid(a.company_id),
-        "name": a.name,
-        "represents": p.get("represents", ""),
-        "status": a.status,
-        "lastRunAt": iso(a.last_run_at),
-        "cases": p.get("cases", 0),
-        "review": p.get("review", 0),
-        "findings": p.get("findings", 0),
-        "lastFailure": p.get("lastFailure"),
-        "cost": p.get("cost", 0),
-    }
-
-
-def run(r: WorkspaceAgentRun, agent_ref: str) -> dict:
-    p = r.payload or {}
-    return {
-        "id": r.ref,
-        "agentId": agent_ref,
-        "companyId": sid(r.company_id),
-        "goal": p.get("goal", ""),
-        "startedAt": iso(r.started_at),
-        "status": r.status,
-        "sources": p.get("sources", []),
-        "events": p.get("events", []),
-        "output": p.get("output", ""),
-        "evidence": p.get("evidence", []),
-        "corrections": p.get("corrections", []),
-        "modelCost": num(r.model_cost),
-        "needsReview": r.needs_review,
     }
 
 

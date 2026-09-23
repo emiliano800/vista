@@ -320,7 +320,55 @@ def test_interpretation_is_queued_with_lineage_and_executed_by_the_worker(client
 
     snap = client.get("/api/portfolio", headers=headers).json()
     assert snap["findings"], "interpretation findings reach the analyst workspace through the API"
-    assert all(f["companyId"] in (a, b) for f in snap["findings"])
+    # The analyst reads the ledger itself: company findings come from each company tenant, the
+    # Sector Merger's proposed automations from the firm's home tenant (no company of their own).
+    company_findings = [f for f in snap["findings"] if f["companyId"]]
+    firm_findings = [f for f in snap["findings"] if f["companyId"] is None]
+    assert company_findings and all(f["companyId"] in (a, b) for f in company_findings)
+    assert all(f["agentKey"] == "sector_merger" and f["kind"] == "proposed_automation" for f in firm_findings)
+    assert all(f["ref"] and f["ref"].startswith("F-") and f["id"] == f["ref"] for f in snap["findings"]), "firm-wide display refs"
+    with tenant_session(company_schema(a)) as ts:
+        ledger_ids = {str(f.id) for f in ts.scalars(select(Finding))}
+    assert {f["uuid"] for f in company_findings if f["companyId"] == a} == ledger_ids, "no mirror: the snapshot is the ledger"
+    review_view = next(r for r in snap["runs"] if r["id"] == str(review_run.id))
+    assert review_view["companyId"] == a and review_view["status"] == "Complete" and review_view["agentKey"] == "file_reviewer"
+    assert review_view["sources"] and review_view["events"] and review_view["output"], "run narrative is derived from its trace"
+    merge_view = next(r for r in snap["runs"] if r["id"] == merge_run_id)
+    assert merge_view["companyId"] is None and merge_view["status"] == "Complete" and merge_view["agentKey"] == "sector_merger"
+    agents = {(x["agentKey"], x["companyId"]): x for x in snap["agents"]}
+    assert agents[("file_reviewer", a)]["cases"] == 1 and agents[("file_reviewer", a)]["status"] == "Active"
+    assert agents[("sector_merger", None)]["cases"] == 1
+    assert all(f["agentId"] == agents[("file_reviewer", f["companyId"])]["id"] for f in company_findings)
+
+    # Triage writes to the same row the merger reads; a task keyed to a finding actions it.
+    target = company_findings[0]
+    triaged = client.post(f"/api/findings/{target['ref']}/status", headers=headers, json={"status": "Reviewed"})
+    assert triaged.status_code == 200, triaged.text
+    assert triaged.json()["status"] == "Reviewed" and triaged.json()["uuid"] == target["uuid"]
+    by_uuid = client.post(f"/api/findings/{target['uuid']}/status", headers=headers, json={"status": "Dismissed"})
+    assert by_uuid.status_code == 200 and by_uuid.json()["status"] == "Dismissed"
+    with tenant_session(company_schema(a if target["companyId"] == a else b)) as ts:
+        assert ts.get(Finding, uuid.UUID(target["uuid"])).status == "dismissed"
+    assert client.post(f"/api/findings/{target['ref']}/status", headers=headers, json={"status": "Bogus"}).status_code == 422
+    assert client.post(f"/api/findings/{target['ref']}/status", headers=other, json={"status": "Open"}).status_code == 404
+    open_one = next(f for f in company_findings if f["status"] == "Open" and f["uuid"] != target["uuid"])
+    task = client.post(
+        "/api/tasks",
+        headers=headers,
+        json={"title": "Check", "companyId": open_one["companyId"], "sourceType": "finding", "sourceId": open_one["ref"]},
+    )
+    assert task.status_code == 201, task.text
+    refreshed = client.get("/api/portfolio", headers=headers).json()
+    assert next(f for f in refreshed["findings"] if f["uuid"] == open_one["uuid"])["status"] == "Actioned"
+
+    # Fleet analytics for a firm member span every company tenant plus the firm's home tenant.
+    fleet = client.get("/api/agents/analytics", headers=headers)
+    assert fleet.status_code == 200, fleet.text
+    per_agent = {x["agent_key"]: x for x in fleet.json()["agents"]}
+    assert fleet.json()["runs_total"] == 3
+    assert per_agent["file_reviewer"]["runs"] == 2 and per_agent["sector_merger"]["runs"] == 1
+    assert per_agent["file_reviewer"]["findings_total"] == len(company_findings)
+    assert client.get("/api/agents/analytics", headers=other).json()["runs_total"] == 0
     for c in snap["companies"]:
         assert c["analysisRunAt"]
         assert {s["key"]: s["status"] for s in c["integration"]["steps"]}["analysis"] == "Complete"

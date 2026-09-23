@@ -40,6 +40,8 @@ export const tasks = () => current().tasks;
 export const opportunities = () => current().opportunities;
 export const findings = (companyId) =>
   current().findings.filter((f) => !companyId || f.companyId === companyId);
+// Agents are derived server-side from the ledger: one per (agent key, company) that
+// has run; firm-level runs (the Sector Merger's) carry companyId null.
 export const agents = (companyId) =>
   current().agents.filter((a) => !companyId || a.companyId === companyId);
 export const runs = (companyId) =>
@@ -155,11 +157,10 @@ export const setOpportunityStatus = (id, status) =>
   mutate(`/opportunities/${id}/status`, { status });
 export const createTask = (input) => mutate("/tasks", input);
 export const updateTask = (id, patch) => mutate(`/tasks/${id}`, patch);
+// Finding triage lands on the same ledger row the company workspace and the agents
+// read; `id` is the display ref (F-012) or the finding uuid.
 export const setFindingStatus = (id, status) =>
-  mutate(`/workspace-findings/${id}/status`, { status });
-export const setAgentStatus = (id, status) =>
-  mutate(`/workspace-agents/${id}/status`, { status });
-export const runAgentNow = (id) => mutate(`/workspace-agents/${id}/run`);
+  mutate(`/findings/${id}/status`, { status });
 
 // Evidence rows for an opportunity's evidence references.
 export function evidenceRows(ref) {

@@ -896,7 +896,7 @@ function agentsTab() {
                 render: (a) => `${esc(age(a.lastRunAt))} ago`,
               },
               {
-                label: "Cases",
+                label: "Runs",
                 num: true,
                 render: (a) => esc(integer(a.cases)),
               },
@@ -916,7 +916,7 @@ function agentsTab() {
             list,
             { rowHref: (a) => `/agents/?company=${c.id}` },
           )
-        : `<p class="empty">No agents are deployed at ${esc(c.name)} yet. Run the initial analysis from the Agents page.</p>`,
+        : `<p class="empty">No agent has run for ${esc(c.name)} yet. Run the portfolio analysis from the overview after the first import.</p>`,
     )}
     ${section(
       "Recent runs",

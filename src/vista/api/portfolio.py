@@ -1,5 +1,5 @@
 """PE analyst API: portfolio, company workspace, imports, opportunities, tasks
-and workspace agents. Every handler resolves the caller's firm first and only
+and finding triage. Every handler resolves the caller's firm first and only
 ever touches companies linked to that firm."""
 
 from __future__ import annotations
@@ -381,24 +381,11 @@ def update_task(task_ref: str, body: TaskPatch, ctx: FirmContext = Depends(write
         return ser.task(service.update_task(session, ctx, task_ref, body.model_dump(exclude_unset=True)))
 
 
-# ---- Agents & findings ---------------------------------------------------------------------
+# ---- Findings (the ledger the company workspace and the agents share) ------------------
 
 
-@router.post("/workspace-agents/{agent_ref}/status")
-def agent_status(agent_ref: str, body: StatusChange, ctx: FirmContext = Depends(writer_context)) -> dict:
-    with platform_session() as session:
-        return ser.agent(service.set_agent_status(session, ctx, agent_ref, body.status))
-
-
-@router.post("/workspace-agents/{agent_ref}/run", status_code=201)
-def agent_run(agent_ref: str, ctx: FirmContext = Depends(writer_context)) -> dict:
-    with platform_session() as session:
-        run = service.run_agent_now(session, ctx, agent_ref)
-    return ser.run(run, agent_ref)
-
-
-@router.post("/workspace-findings/{finding_ref}/status")
+@router.post("/findings/{finding_ref}/status")
 def finding_status(finding_ref: str, body: StatusChange, ctx: FirmContext = Depends(writer_context)) -> dict:
+    """Analyst triage of a ledger finding by display ref (F-012) or uuid."""
     with platform_session() as session:
-        f = service.set_finding_status(session, ctx, finding_ref, body.status)
-    return ser.finding(f, None, None)
+        return service.set_finding_status(session, ctx, finding_ref, body.status)

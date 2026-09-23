@@ -151,6 +151,12 @@ class Finding(TenantBase):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     company: Mapped[str | None] = mapped_column(String(64), nullable=True, index=True)
     agent_key: Mapped[str | None] = mapped_column(String(32), nullable=True, index=True)
+    # Analyst-facing identity: a firm-wide display ref (F-012) assigned when the finding is
+    # written under a firm context, and the platform.firm_companies id it belongs to. Both
+    # nullable: findings raised from the company workspace carry neither and are shown by uuid.
+    ref: Mapped[str | None] = mapped_column(String(16), nullable=True, unique=True)
+    company_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), nullable=True, index=True)
+    synthetic_demo: Mapped[bool] = mapped_column(Boolean, default=False)
     # Structured layer for agent-to-agent consumption: dotted type (data_quality.duplicate_entity, ...),
     # the canonical entities it is about, and the effect on analysis built on those entities.
     finding_type: Mapped[str | None] = mapped_column(String(64), nullable=True, index=True)
@@ -603,56 +609,6 @@ class RecordProvenance(TenantBase):
     confidence: Mapped[float] = mapped_column(Float, default=1.0)
     human_verified: Mapped[bool] = mapped_column(Boolean, default=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
-
-
-# ---- Agent interpretation layer for the portfolio workspace -----------------------
-# Workspace agents, their runs and findings are interpretations, never business facts.
-# Display detail lives in `payload`; the indexed columns are what the API filters on.
-
-
-class WorkspaceAgent(TenantBase):
-    __tablename__ = "workspace_agents"
-
-    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    company_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), index=True)
-    ref: Mapped[str] = mapped_column(String(64), unique=True)
-    name: Mapped[str] = mapped_column(String(255))
-    status: Mapped[str] = mapped_column(String(16), default="Active")  # Active|Paused
-    last_run_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
-    payload: Mapped[dict] = mapped_column(JSONB, default=dict)  # represents, cases, review, findings, lastFailure, cost
-    synthetic_demo: Mapped[bool] = mapped_column(Boolean, default=False)
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
-
-
-class WorkspaceAgentRun(TenantBase):
-    __tablename__ = "workspace_agent_runs"
-
-    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    company_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), index=True)
-    agent_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("workspace_agents.id", ondelete="CASCADE"), index=True)
-    ref: Mapped[str] = mapped_column(String(64), unique=True)
-    status: Mapped[str] = mapped_column(String(16), default="Complete")
-    started_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
-    needs_review: Mapped[int] = mapped_column(Integer, default=0)
-    model_cost: Mapped[Decimal] = mapped_column(Numeric(10, 4), default=0)
-    payload: Mapped[dict] = mapped_column(JSONB, default=dict)  # goal, sources, events, output, evidence, corrections
-    synthetic_demo: Mapped[bool] = mapped_column(Boolean, default=False)
-
-
-class WorkspaceFinding(TenantBase):
-    __tablename__ = "workspace_findings"
-
-    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    company_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), index=True)
-    ref: Mapped[str] = mapped_column(String(16), unique=True)
-    agent_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("workspace_agents.id"), nullable=True)
-    run_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("workspace_agent_runs.id"), nullable=True)
-    title: Mapped[str] = mapped_column(Text)
-    detail: Mapped[str] = mapped_column(Text, default="")
-    severity: Mapped[str] = mapped_column(String(16), default="Medium")
-    status: Mapped[str] = mapped_column(String(16), default="Open")  # Open|Reviewed|Actioned|Dismissed
-    found_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
-    synthetic_demo: Mapped[bool] = mapped_column(Boolean, default=False)
 
 
 class Workflow(TenantBase):
