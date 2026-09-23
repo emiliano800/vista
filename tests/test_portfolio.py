@@ -244,3 +244,66 @@ def test_new_company_gets_one_deal_that_both_views_resolve_by_id(client):
         assert ensure_company_deal(session, fc, schema, fc.deal_id) == fc.deal_id
         with tenant_session(schema) as ts:
             assert len(ts.scalars(select(Deal)).all()) == 1
+
+
+def test_published_recorder_reports_reach_the_analyst_company_page(client):
+    """The recorder's reports live in the company tenant beside the findings. The analyst
+    sees exactly the published ones for that company (by company id or by its Deal); drafts
+    and other workspaces stay invisible, and another firm gets nothing."""
+    from datetime import UTC, datetime
+
+    from vista.db import tenant_session
+    from vista.models.platform import FirmCompany, Tenant
+    from vista.models.tenant import RecorderReport, RecorderSubmission
+
+    headers, _ = make_firm()
+    other, _ = make_firm()
+    cid = client.post("/api/portfolio/companies", headers=headers, json={"name": "Cedar Climate"}).json()["id"]
+    with platform_session() as session:
+        fc = session.get(FirmCompany, uuid.UUID(cid))
+        schema, deal_id = session.get(Tenant, fc.tenant_id).schema_name, str(fc.deal_id)
+    employee = uuid.uuid4()
+
+    def seed(ts, workspace, status, summary):
+        sub = RecorderSubmission(
+            uploaded_by=employee,
+            device_id=uuid.uuid4(),
+            source_id=uuid.uuid4().hex,
+            manifest={"workspace": workspace},
+            manifest_hash=uuid.uuid4().hex * 2,
+            upload_status="accepted",
+        )
+        ts.add(sub)
+        ts.flush()
+        report = RecorderReport(
+            submission_id=sub.id,
+            uploaded_by=employee,
+            workspace=workspace,
+            status=status,
+            observed={"session": {"started_at": "2026-09-20T09:00:00Z"}, "apps": [{"app": "QuickBooks"}], "switches": 4},
+            interpretation={"summary": summary, "workflows": [{"name": "AP entry"}]},
+            questions=[{"question": "Is this daily?", "answer": "Yes"}],
+            published_at=datetime.now(UTC) if status == "published" else None,
+        )
+        ts.add(report)
+        ts.flush()
+        return str(report.id)
+
+    with tenant_session(schema) as ts:
+        by_deal = seed(ts, {"kind": "deal", "id": deal_id}, "published", "Re-keys invoices from email into QuickBooks")
+        by_company = seed(ts, {"kind": "company", "id": cid}, "published", "Copies PO numbers by hand")
+        draft = seed(ts, {"kind": "deal", "id": deal_id}, "draft", "Not yet shared")
+        elsewhere = seed(ts, {"kind": "deal", "id": str(uuid.uuid4())}, "published", "Another workspace")
+        ts.commit()
+
+    listed = client.get(f"/api/companies/{cid}/reports", headers=headers)
+    assert listed.status_code == 200, listed.text
+    assert {r["id"] for r in listed.json()} == {by_deal, by_company}
+    assert all("observed" not in r and r["status"] == "published" for r in listed.json()), "list view is the summary shape"
+    full = client.get(f"/api/companies/{cid}/reports/{by_deal}", headers=headers).json()
+    assert full["observed"]["apps"][0]["app"] == "QuickBooks" and full["questions"][0]["answer"] == "Yes"
+    assert full["summary"] == "Re-keys invoices from email into QuickBooks" and full["workflows"] == 1
+    for hidden in (draft, elsewhere):
+        assert client.get(f"/api/companies/{cid}/reports/{hidden}", headers=headers).status_code == 404
+    assert client.get(f"/api/companies/{cid}/reports", headers=other).status_code == 404
+    assert client.get(f"/api/companies/{cid}/reports/{by_deal}", headers=other).status_code == 404

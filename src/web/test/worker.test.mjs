@@ -287,6 +287,11 @@ test("portfolio proxy exposes policies, purchasing and inventory reads and the i
   assert.equal(await status("/findings/8f1c2a3e-0b4d-4c5e-9f6a-7b8c9d0e1f2a/status", "POST"), 503);
   assert.equal(await status("/findings/not-a-ref/status", "POST"), 404);
   assert.equal(await status("/workspace-findings/F-012/status", "POST"), 404);
+  // Published recorder reports reach the analyst's company page read-only.
+  assert.equal(await status(`${company}/reports`, "GET"), 503);
+  assert.equal(await status(`${company}/reports/8f1c2a3e-0b4d-4c5e-9f6a-7b8c9d0e1f2a`, "GET"), 503);
+  assert.equal(await status(`${company}/reports`, "POST"), 405);
+  assert.equal(await status(`${company}/reports/not-a-uuid`, "GET"), 404);
   assert.equal(await status("/workspace-agents/file-reviewer-harbor/run", "POST"), 404);
 });
 

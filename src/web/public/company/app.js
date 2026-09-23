@@ -40,6 +40,7 @@ import {
   resolveException,
   companyName,
 } from "/lib/store.js";
+import { api } from "/lib/auth.js";
 
 const TABS = [
   ["overview", "Overview"],
@@ -52,6 +53,7 @@ const TABS = [
   ["purchasing", "Purchase orders"],
   ["inventory", "Inventory"],
   ["findings", "Findings"],
+  ["recordings", "Recordings"],
   ["tasks", "Tasks"],
   ["agents", "Agents"],
 ];
@@ -173,6 +175,7 @@ function render() {
       purchasing,
       inventory,
       findings: findingsTab,
+      recordings: recordingsTab,
       tasks: tasksTab,
       agents: agentsTab,
     }[tab] ?? overview;
@@ -841,6 +844,122 @@ function findingsTab() {
         });
       };
     });
+}
+
+// ---- Recordings: what employees chose to publish from the desktop recorder ----------
+// Read-only here. Drafts stay private to the employee; only published reports exist
+// from the analyst's side, and they are the same rows the company workspace shows.
+const sessionSpan = (s) =>
+  s?.started_at
+    ? `${date(s.started_at)} ${new Date(s.started_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}–${s.ended_at ? new Date(s.ended_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "…"}`
+    : "—";
+
+async function recordingsTab() {
+  $("tab").innerHTML = `<p class="muted">Loading published recordings…</p>`;
+  let rows;
+  try {
+    rows = await api(`/companies/${c.id}/reports`);
+  } catch (error) {
+    $("tab").innerHTML = `<p class="empty">${esc(error.message)}</p>`;
+    return;
+  }
+  $("tab").innerHTML = section(
+    `Published recordings (${rows.length})`,
+    table(
+      [
+        {
+          label: "Session",
+          render: (r) =>
+            `<b>${esc(sessionSpan(r.session))}</b><small>${esc(r.summary ? r.summary.slice(0, 140) : "No model interpretation")}</small>`,
+        },
+        { label: "Apps", render: (r) => esc((r.apps ?? []).join(" · ")) },
+        { label: "Switches", num: true, render: (r) => esc(integer(r.switches ?? 0)) },
+        { label: "Workflows", num: true, render: (r) => esc(integer(r.workflows ?? 0)) },
+        {
+          label: "Automation candidates",
+          num: true,
+          render: (r) => esc(integer(r.automation_candidates ?? 0)),
+        },
+        {
+          label: "Questions answered",
+          num: true,
+          render: (r) =>
+            `${esc(integer((r.questions_total ?? 0) - (r.questions_open ?? 0)))} / ${esc(integer(r.questions_total ?? 0))}`,
+        },
+        { label: "Published", render: (r) => esc(date(r.published_at)) },
+        {
+          label: "",
+          render: (r) => `<button class="sm" data-report="${esc(r.id)}">Open</button>`,
+        },
+      ],
+      rows,
+      {
+        empty:
+          "No published recordings yet. Reports appear once an employee uploads a session from the Vista recorder and publishes the reviewed draft.",
+      },
+    ),
+    {
+      eyebrow:
+        "Employee evidence · observed facts computed from activity metadata; the agent's reading is a hypothesis until verified",
+    },
+  );
+  $("tab")
+    .querySelectorAll("[data-report]")
+    .forEach((b) => {
+      b.onclick = () => openReportDialog(b.dataset.report);
+    });
+}
+
+function reportHtml(r) {
+  const o = r.observed ?? {};
+  const i = r.interpretation ?? {};
+  const list = (items, f) =>
+    items.length
+      ? `<ul class="checklist">${items.map((x) => `<li><span>${f(x)}</span></li>`).join("")}</ul>`
+      : `<p class="muted">None.</p>`;
+  return `
+    <p class="muted">${esc(sessionSpan(o.session))} · ${esc(integer(o.events ?? 0))} interactions · ${esc(integer(o.switches ?? 0))} app switches · published ${esc(date(r.published_at))}</p>
+    ${r.coverage?.note ? `<p class="muted">${esc(r.coverage.note)}${(r.coverage.excluded ?? []).length ? ` Not observed: ${esc(r.coverage.excluded.join(", "))}.` : ""}</p>` : ""}
+    <h3>Observed</h3>
+    ${table(
+      [
+        { label: "Application", render: (a) => esc(a.app) },
+        { label: "Share of active time", num: true, render: (a) => `${Math.round((a.share ?? 0) * 100)}%` },
+        { label: "Events", num: true, render: (a) => esc(integer(a.events ?? 0)) },
+        { label: "Copies", num: true, render: (a) => esc(integer(a.copies ?? 0)) },
+        { label: "Pastes", num: true, render: (a) => esc(integer(a.pastes ?? 0)) },
+      ],
+      (o.apps ?? []).slice(0, 10),
+      { empty: "No application activity was shared." },
+    )}
+    ${list(o.transfers ?? [], (t) => `Copied from <b>${esc(t.from)}</b> into <b>${esc(t.to)}</b> ${esc(integer(t.count))}× (about ${esc(integer(t.mean_latency_s))}s apart)`)}
+    <h3>Agent's reading ${badge(i.source === "stub" ? "no model" : "hypothesis")}</h3>
+    ${i.summary ? `<p>${esc(i.summary)}</p>` : `<p class="muted">No model interpretation was produced.</p>`}
+    ${list(i.workflows ?? [], (w) => `<b>${esc(w.name)}</b> — ${esc((w.apps ?? []).join(", "))}${w.evidence ? ` · ${esc(w.evidence)}` : ""} · ${Math.round((w.confidence ?? 0) * 100)}%`)}
+    ${(i.automation_candidates ?? []).length ? `<h4>Automation candidates</h4>${list(i.automation_candidates, (a) => `<b>${esc(a.title)}</b>${a.rationale ? ` — ${esc(a.rationale)}` : ""}`)}` : ""}
+    ${(i.documents ?? []).length ? `<h4>Shared documents</h4>${list(i.documents, (d) => `${esc(d.filename)} <span class="muted">${esc(d.summary?.kind ?? "")}${d.summary?.rows != null ? ` · ${esc(integer(d.summary.rows))} rows` : ""}</span>`)}` : ""}
+    <h3>Employee's answers</h3>
+    ${list(r.questions ?? [], (q) => `<i>${esc(q.question)}</i><br>${q.answer ? esc(q.answer) : `<span class="muted">Not answered</span>`}`)}`;
+}
+
+async function openReportDialog(id) {
+  let dialog = $("report-dialog");
+  if (!dialog) {
+    dialog = document.createElement("dialog");
+    dialog.id = "report-dialog";
+    dialog.className = "form-dialog";
+    document.body.append(dialog);
+  }
+  dialog.innerHTML = `<div class="dialog-body"><div class="dialog-head"><div><p class="eyebrow">Recording report · ${esc(c.name)}</p><h2>Loading report…</h2></div><button type="button" class="ghost sm" data-close>Close</button></div><div id="report-body"></div></div>`;
+  dialog.querySelector("[data-close]").onclick = () => dialog.close();
+  dialog.showModal();
+  try {
+    const r = await api(`/companies/${c.id}/reports/${id}`);
+    dialog.querySelector("h2").textContent = sessionSpan(r.session);
+    $("report-body").innerHTML = reportHtml(r);
+  } catch (error) {
+    $("report-body").innerHTML = `<p class="empty">${esc(error.message)}</p>`;
+  }
 }
 
 function tasksTab() {

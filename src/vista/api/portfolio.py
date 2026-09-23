@@ -13,7 +13,7 @@ from pydantic import BaseModel, Field
 from sqlalchemy import select
 
 from vista.db import platform_session
-from vista.models.tenant import ImportException, ImportJob, SourceFile
+from vista.models.tenant import ImportException, ImportJob, RecorderReport, SourceFile
 from vista.portfolio import imports as import_service
 from vista.portfolio import interpret, service
 from vista.portfolio import serializers as ser
@@ -21,6 +21,7 @@ from vista.portfolio.access import FirmContext, company_session, firm_context, w
 from vista.portfolio.imports import job_mappings
 from vista.portfolio.processors import DATASETS
 from vista.portfolio.state import company_imports, company_records, firm_layer, load_company, snapshot
+from vista.recorder_analysis import public_report
 
 router = APIRouter(tags=["portfolio"])
 
@@ -176,6 +177,45 @@ def company_import_jobs(company_id: str, ctx: FirmContext = Depends(firm_context
     with company_session(ref) as ts:
         jobs, _open = company_imports(ts)
     return jobs
+
+
+# ---- Recorder reports (employee evidence, published by the employee) --------------------
+
+
+def _report_scopes(ref) -> set[tuple[str, str]]:
+    """The upload workspaces that mean "this company": the firm company itself, or the
+    Deal the company workspace and the recorder scope by. Re-checked per row even though
+    the schema is the company's, so a report never leaks across a re-linked tenant."""
+    scopes = {("company", str(ref.id))}
+    if ref.deal_id:
+        scopes.add(("deal", str(ref.deal_id)))
+    return scopes
+
+
+@router.get("/companies/{company_id}/reports")
+def company_reports(company_id: str, ctx: FirmContext = Depends(firm_context)) -> list[dict]:
+    """Published recording reports for this company. Drafts stay private to the employee
+    until they publish; nothing here can change that."""
+    ref = ctx.company(company_id)
+    scopes = _report_scopes(ref)
+    with company_session(ref) as ts:
+        rows = ts.scalars(
+            select(RecorderReport)
+            .where(RecorderReport.status == "published")
+            .order_by(RecorderReport.published_at.desc(), RecorderReport.id)
+            .limit(200)
+        ).all()
+        return [public_report(r, full=False) for r in rows if (r.workspace.get("kind"), r.workspace.get("id")) in scopes]
+
+
+@router.get("/companies/{company_id}/reports/{report_id}")
+def company_report(company_id: str, report_id: uuid.UUID, ctx: FirmContext = Depends(firm_context)) -> dict:
+    ref = ctx.company(company_id)
+    with company_session(ref) as ts:
+        r = ts.get(RecorderReport, report_id)
+        if r is None or r.status != "published" or (r.workspace.get("kind"), r.workspace.get("id")) not in _report_scopes(ref):
+            raise HTTPException(404, "Report not found")
+        return public_report(r, full=True)
 
 
 class ExceptionDecision(BaseModel):
