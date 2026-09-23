@@ -211,8 +211,8 @@ wired only in tests/eval. Any new automatic hop must follow the contract above.
 - Tests: `uv run pytest` (DB tests skip if Postgres down; live-model tests are
   opt-in via `pytest -m live`) · `npm test` · lint: `uv run ruff check . && uv run
   ruff format --check .` (repo-wide; CI enforces) · `npx wrangler deploy --dry-run`
-- Provisioning (operator-only): `python -m vista.manage create-workspace|add-user|
-  rotate-key|provision-firm|seed-portfolio-demo`; in AWS via `deploy/aws/manage.sh`
+- Provisioning (operator-only): `python -m vista.manage migrate|create-workspace|
+  add-user|rotate-key|seed-portfolio|load-synthetic`; in AWS via `deploy/aws/manage.sh`
   (prefer `--output-file PATH` so keys skip CloudWatch).
 - E2E recipe: `.agents/skills/vista-api-e2e-testing` skill.
 
@@ -280,6 +280,9 @@ wired only in tests/eval. Any new automatic hop must follow the contract above.
   ANALYST key, not Meridian — scripts must select keys by section, not position.
 - Old "Vista Solutions / Vista Demo" key was revoked 2026-09-19 (rotation,
   replacement destroyed unread).
+- Not yet deployed as of 2026-09-23: the ledger / company-import commits
+  (platform migration `0005`, tenant `0020`–`0021`, new `/api/deals/{deal}/imports…`
+  and `/api/companies/{id}/reports` routes). Deploy the image and the Worker together.
 
 ## Gotchas
 

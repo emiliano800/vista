@@ -46,9 +46,12 @@ the backend owns firm membership, company scope, metrics, imports,
 opportunities, tasks and agent state under `/api/portfolio/*`.
 
 Each portfolio company is its own tenant, linked to the firm through
-`platform.firm_companies`, so a company's own workspace and the analyst's
-portfolio view read the same records. Seed the demo firm (Northstar, Harbor
-Heating, Summit Mechanical, analyst user) with:
+`platform.firm_companies` (and to its Deal through `deal_id`), so a company's own
+workspace and the analyst's portfolio view read the same records, findings, runs
+and published recording reports. A company member can import records from
+`/account/` through the same canonical contract the wizard uses and run the File
+Reviewer over them. Seed the demo firm (Northstar, Harbor Heating, Summit
+Mechanical, analyst user) with:
 
 ```
 uv run python scripts/seed_portfolio_demo.py
@@ -71,7 +74,7 @@ deploy/aws/manage.sh --output-file ./key.json rotate-key \
 ### Meridian Risk Partners, LLC
 
 - Sign-in email (identity only): `demo@meridianrisk.com`
-- Company ID (for the desktop recorder): `5038cf16-3f4a-495f-8249-cd9091e233f5`
+- Deal ID (legacy v1 recorder connections only; the current recorder picks the workspace from the key): `5038cf16-3f4a-495f-8249-cd9091e233f5`
 - Access key:
 
 ```
@@ -128,24 +131,31 @@ cfc4ae699bfd7c089740167a64dad9e66e4350f7656b56d2c7904de7458efaeb
 76b39d58aa43c4b4d9d997693de1edfeaf32c07f0f66c3289b809f2d30f0d540
 ```
 
-## How uploading a report works (and where it lives)
+## How uploading a session works (and where it lives)
 
-1. **Record.** The Electron desktop app captures a work session locally
-   (screenshots, video, raw keystrokes never leave the machine).
-2. **Analyse on-device.** On Stop, the task-mining pipeline runs locally:
-   redaction/PII masking -> keystroke aggregation -> sessionization -> activity
-   labeling -> case correlation -> automation scoring.
-3. **Review.** The employee approves/fixes the AI explanation of each stretch.
-4. **Upload.** Pressing "Upload report" POSTs one JSON bundle — manifest,
-   summary, and the cleaned activity CSV only — to
-   `POST /api/deals/{company_id}/recordings` with the personal access key.
-   (The seed script uploads through this exact endpoint.)
-5. **Storage — yes, durable S3.** The bundle is written to the private S3
-   bucket `vista-reports-630396228214` under a content-addressed key
-   (`<tenant>/deals/<company>/recordings/<id>/<sha256>.json`). The bucket has
-   **versioning enabled**, public access fully blocked, and S3's standard
-   99.999999999% (11 nines) object durability. Postgres (RDS) stores only
-   metadata + the S3 pointer; the API streams evidence back from S3 on demand.
-   Uploads are idempotent — retrying or re-uploading the same session updates
-   the same record instead of duplicating it, and a Postgres advisory lock
-   serialises retries.
+The current recorder (protocol 2) never sends screenshots, video, window titles,
+URLs or typed text:
+
+1. **Connect once.** The employee enters their personal access key; the app
+   fetches the workspaces that key may upload to and the employee picks one.
+2. **Record.** The desktop app captures a work session locally; everything raw
+   stays in `~/Vista/recordings/<id>/`.
+3. **Upload session.** After Stop the employee approves a sharing package:
+   `activity.json` (timestamps, app names, interaction types, counts) plus any
+   documents they explicitly tick. A disk-backed queue registers the submission
+   (`POST /api/recorder/submissions`), uploads each artifact with a
+   checksum-bound signed URL, and completes it; the server re-reads and verifies
+   every object and returns an idempotent receipt.
+4. **Analyse in the workspace.** Acceptance queues the Recording Reviewer
+   (`analyze_submission`). It computes observed facts in code, asks the model for
+   a labelled interpretation and a few questions, and stores a private draft
+   (`recorder_reports`). Only the uploader can see the draft.
+5. **Answer and publish.** The employee answers the questions in the app and
+   publishes with a second explicit consent. Only then does the report appear in
+   the company workspace's Recordings view and, read-only, on the analyst's
+   company page.
+6. **Storage.** Artifacts live in the private, versioned S3 bucket
+   `vista-reports-630396228214` under per-tenant keys; Postgres (RDS) holds the
+   manifest, receipt, analysis status and the report. The two v1 reports each demo
+   workspace shipped with were uploaded through the legacy
+   `POST /api/deals/{deal}/recordings` path, which stays available for old installs.

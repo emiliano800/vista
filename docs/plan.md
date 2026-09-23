@@ -1,5 +1,10 @@
 # Plan: agent suite on synthetic data — build and test order
 
+Status (2026-09-23): steps 1–4 shipped as written. Steps 5–7 were superseded by the
+canonical import contract (`src/vista/portfolio/imports.py`), the interpretation
+chain (`portfolio/interpret.py`) and the analyst workspace; Propose/Execute remain
+test/eval-only. Kept as the reference for the phase shape and test tiers.
+
 Scope for this PR: the smallest vertical slice that lets every agent phase be
 developed and tested without spending tokens, plus the two on-demand paths that
 do spend tokens (provider smoke test, answer-key eval). No MCP, no external

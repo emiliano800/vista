@@ -63,7 +63,8 @@ files/<id>/<name> the *last* version of each document, copied once at Stop
 processed/        output of `taskmining run`, executed automatically on Stop
 ```
 
-**Submit** uploads the report, then every file above to the workspace
+**Submit** (legacy protocol 1; a connected app uses **Upload session** below)
+uploads the report, then every file above to the workspace
 (`<tenant>/deals/<deal>/recordings/<id>/media/…`), then deletes the folder.
 Only a metadata stub stays in `~/Vista/submitted/<id>/`; section labels are kept
 three ways — in the recording row (`Recording.sections`), in

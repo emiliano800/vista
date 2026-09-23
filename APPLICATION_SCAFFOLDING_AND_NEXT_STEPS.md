@@ -248,8 +248,8 @@ Required additions, not implemented yet:
 Reuse `AgentRun`, events, usage, S3 artifacts, and canonical record provenance rather
 than creating a disconnected execution ledger. Do not treat the current
 [executor phase](src/vista/agents/execute.py), which returns action dictionaries,
-as a connector implementation. Likewise, the legacy portfolio `run_agent_now()`
-display path must not stand in for an actual queued execution.
+as a connector implementation. (The analyst's agent view is derived from that same
+ledger since 2026-09-23; the former display-only `run_agent_now()` path is gone.)
 
 ## 6. Current milestone: recorder connection and private uploads
 
@@ -433,8 +433,10 @@ for a legacy deal destination, users with a role on that deal. Drafts are visibl
 the uploader only, even to admins of the same workspace. The company workspace's
 **Recordings** view lists published reports and opens each one with observed facts,
 the agent's reading (labelled as hypothesis), shared-document summaries, and the
-employee's answers. Analysts and other tenants do not see them; connecting legacy
-deal destinations to canonical company views is still explicit-mapping work.
+employee's answers. Since 2026-09-23 the analyst's company page lists the same
+published reports read-only (`GET /api/companies/{id}/reports`, matched by the
+company id or the company's Deal from `firm_companies.deal_id`); other tenants and
+other firms do not see them.
 
 Still needed: dedicated device-token revocation/SSO if required, withdrawal and
 retention controls (a published report cannot yet be withdrawn), production

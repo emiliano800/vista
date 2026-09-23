@@ -128,7 +128,7 @@ aws logs tail /vista/vista/api --follow
 aws logs tail /vista/vista/worker --follow
 
 # management task (example: seed the demo portfolio)
-deploy/aws/manage.sh --output-file /tmp/key.json seed-portfolio-demo
+deploy/aws/manage.sh --output-file /tmp/key.json seed-portfolio
 
 # redeploy backend (deployer identity + Docker running)
 deploy/aws/deploy.sh

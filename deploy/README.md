@@ -54,12 +54,14 @@ uv run python -m vista.jobs.worker      # second terminal: AI review of recordin
 ```
 
 The provisioning command prints a personal access key once. Store it in your password
-manager. Open `http://127.0.0.1:8000`, sign in with that key and copy the company ID.
-In the desktop recorder's Settings → Cloud workspace, enter that URL, the ID and the
-same key. Connect, record a session, stop and wait for analysis, then choose **Upload
-report** in My recordings. Refresh the website to see it. An empty workspace stays
-empty until you upload a report. Use `npm start -- --dashboard` in `src/recorder` to
-launch the recorder; its existing OS capture permissions still apply.
+manager. Open `http://127.0.0.1:8000` and sign in with that key. In the desktop
+recorder's one-time setup screen enter the same key (with the local URL as the
+advanced website override), pick the workspace, record a session, stop, choose
+**Upload session** and approve the sharing package. The worker analyses it into a
+draft; answer its questions and **Share with my company**. The report then appears
+under Recordings in `/account/`. An empty workspace stays empty until an employee
+publishes a report or a member imports records. Use `npm start -- --dashboard` in
+`src/recorder` to launch the recorder; its existing OS capture permissions still apply.
 
 ## One-server backend with HTTPS
 
@@ -89,11 +91,11 @@ the instance/task IAM role), and `VISTA_ALLOWED_ORIGINS` (a JSON array of the tw
 origins). Set `VISTA_MIGRATE_ON_START=true` or run `.venv/bin/python -m vista.manage migrate`
 as the release command before starting the API. Use a private bucket and credentials scoped
 to that bucket. `VISTA_COOKIE_SECURE` defaults to true; only disable it for local HTTP
-development. Recording reports upload without OpenAI credentials or the job worker; the
-AI review of a recording (`explain_recording` jobs, `GET /api/recordings/{id}/review`)
-needs both `VISTA_OPENAI_API_KEY` and a running worker (`python -m vista.jobs.worker`).
-Without a key the worker still runs and marks every stretch as needing the employee's own
-explanation.
+development. Recorder uploads are accepted without OpenAI credentials or the job
+worker, but the analysis that turns an upload into a draft report (`analyze_submission`
+jobs) needs a running worker (`python -m vista.jobs.worker`); without
+`VISTA_OPENAI_API_KEY` the worker still computes the observed facts and ships an empty
+model interpretation. The same worker runs the File Reviewer over imported records.
 
 ## Connect Cloudflare
 
@@ -143,14 +145,15 @@ Existing access keys remain valid after migration, but only their digests remain
 Postgres. This migration cannot recover plaintext keys on downgrade; back up the DB
 before upgrading and rotate a key if its owner has lost it.
 
-Reuploading the same session by the same user to the same company is idempotent.
-After editing local notes, wait for reanalysis and upload again to replace the visible
-snapshot. Previous content-addressed blobs remain in storage; retention/deletion
-administration, automatic background syncing, password/email login and browser screen
-recording are outside this first version. Uploads are capped at 8 MiB and 50,000 steps;
-larger sessions must be shortened. CSV exports neutralize spreadsheet formulas; JSON
-retains the exact uploaded evidence. Reports still contain business information (labels,
-case IDs and notes); review before sharing.
+Members also import company records through `/account/` (canonical contract by Deal:
+detect, map, decide exceptions, approve) and can run the File Reviewer over them; the
+analyst sees the same rows and findings. Re-uploading the same recorder session by the
+same user to the same workspace returns the same submission; a package is immutable
+once queued. Bounds: one activity artifact up to 4 MiB / 50,000 events, at most ten
+documents of 20 MiB each, 50 MiB per package. Retention/deletion administration,
+withdrawal of a published report, password/email login and browser screen recording are
+outside this version. Published reports and shared documents still contain business
+information; review before sharing.
 
 ## Verify
 

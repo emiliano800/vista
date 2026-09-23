@@ -10,7 +10,8 @@
 
 Everything is one CloudFormation stack (`deploy/aws/template.yaml`) plus two scripts:
 `deploy.sh` builds and pushes the image and creates/updates the stack; `manage.sh` runs
-operator commands (`create-workspace`, `add-user`, `rotate-key`) inside AWS.
+operator commands (`create-workspace`, `add-user`, `rotate-key`, `seed-portfolio`,
+`load-synthetic`, `migrate`) inside AWS.
 
 ## Product platforms and application access
 
@@ -97,13 +98,13 @@ AWS; nothing else in Cloudflare changes.
 
 ### Desktop recorder
 
-In the recorder's Settings → Cloud workspace, enter the website URL
-(`https://bumpsolutions.org`), the company ID from `create-workspace` and the access key.
-With a workspace connected, Stop uploads the redacted report and submits the session's
-stretches for AI review; the worker (`WORKER_DESIRED_COUNT=1` + `OPENAI_API_KEY`) writes the
-explanations, the recorder polls them back, and Approve / Fix / Explain decisions sync to the
-workspace. Employees never need an OpenAI key. Without a worker the review stays
-"Explaining…" until one runs.
+On first launch the recorder asks for the employee's personal access key (the website
+defaults to `https://bumpsolutions.org`), fetches the workspaces that key may upload to
+and lets the employee pick one. After Stop, **Upload session** sends only the approved
+metadata package (plus explicitly selected documents); the worker
+(`WORKER_DESIRED_COUNT=1` + `OPENAI_API_KEY`) analyses it into a private draft the
+employee answers and publishes. Employees never need an OpenAI key. Without a worker
+the submission stays "awaiting analysis" until one runs.
 
 ## Day-to-day
 
@@ -122,16 +123,12 @@ workspace. Employees never need an OpenAI key. Without a worker the review stays
 
 ### Deploy from GitHub Actions
 
-`.github/workflows/deploy-aws.yml` runs `deploy.sh` on every push to `main` that touches
-backend code (and on demand via *Run workflow*). It needs one of these repository secrets:
-
-- `AWS_DEPLOY_ROLE_ARN` — an IAM role trusting GitHub's OIDC provider (no long-lived keys), or
-- `AWS_ACCESS_KEY_ID` + `AWS_SECRET_ACCESS_KEY` — keys for a deploy IAM user.
-
-The identity needs CloudFormation, ECR, ECS, IAM (task roles), EC2 describe, Secrets Manager
-and Logs permissions (`AdministratorAccess` is the simplest; narrow later). Optional repository variables: `AWS_REGION`, `STACK_NAME`,
-`WORKER_DESIRED_COUNT`. Stack parameters not supplied (`OpenAIApiKey`, `AllowedOrigins`,
-`ProvisioningKey`) keep their previous values.
+Not configured. There is no deploy workflow in `.github/workflows/` (CI runs lint,
+tests and a Worker dry-run only); backend deploys are run by hand with
+`deploy/aws/deploy.sh` from a deployment-capable identity. When a workflow is added it
+should use an IAM role trusting GitHub's OIDC provider rather than long-lived keys, and
+stack parameters not supplied (`OpenAIApiKey`, `AllowedOrigins`, `ProvisioningKey`) keep
+their previous values.
 
 Changing `ALLOWED_ORIGINS` also requires updating the bucket CORS rule in the template if the
 browser uploads documents through presigned URLs.

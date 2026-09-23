@@ -1,8 +1,10 @@
 # Vista — Current Implementation
 
-Implementation reference; the product-surface review below was checked against
-repository commit `72c3871` on 2026-09-21. Deployment notes are historical and must
-be rechecked against AWS before assuming a newly pulled change is live.
+Implementation reference; checked against repository commit `8303656` on
+2026-09-23. Deployment notes are historical and must be rechecked against AWS before
+assuming a newly pulled change is live: the ledger/company-import commits of
+2026-09-23 (platform migration `0005`, tenant migrations `0020`–`0021`) are in
+`main` and not yet deployed.
 (Roadmap: `NEXT_STEPS.md`. Business: `BUSINESS_COURSE_OF_ACTION.md`.)
 
 ## Product direction and current coverage
@@ -31,11 +33,11 @@ modeled financial benefit, and validated realized impact.
 src/vista/            FastAPI backend
   agents/             agent suite: discover/propose/execute/analyze phases,
                       LLM runtime + cassettes, eval harness, synthetic-data tools
-  portfolio/          firm-scoped PE portfolio: access, imports, metrics,
-                      processors, serializers, service, state
+  portfolio/          firm-scoped PE portfolio: access, imports, interpret,
+                      ledger, metrics, processors, serializers, service, state
   api/                routers: sessions, deals, employees, findings, runs, usage,
-                      analytics, evals, imports, portfolio, recordings, summaries,
-                      synthetic, tenants
+                      analytics, evals, company_imports, portfolio, recorder,
+                      recordings, summaries, synthetic, tenants, workflows
   jobs/               Postgres-backed durable queue, worker, scheduler, handlers
 src/taskmining/       on-device task-mining pipeline (redact → sessionize →
                       discover → analytics → report bundle)
@@ -95,10 +97,13 @@ same tenant tables; nothing is mirrored per surface.
 
 Tenant schemas hold canonical records with **row-level provenance**
 (`data_source_type`, source file, import job, `synthetic_demo` flag): customers,
-invoices, vendors, vendor purchases, subscriptions, tasks — plus the raw source
-layer (`source_files`, import jobs/mappings/exceptions). Imports flow
-upload → analyze → mapping review → validate → import, with original files kept in
-S3 and every committed row traceable back. The import processor is pluggable
+invoices, vendors, vendor purchases, subscriptions, policies, purchase orders and
+lines, inventory balances, tasks — plus the raw source layer (`source_files`,
+import jobs/mappings/exceptions). Imports flow upload → detect → mapping review →
+validate (exceptions) → approve → canonical rows, with original files kept in S3
+and every committed row traceable back. The same contract serves the analyst
+wizard (`/api/companies/{id}/imports…`) and the company workspace
+(`/api/deals/{deal}/imports…`). The import processor is pluggable
 (`VISTA_IMPORT_PROCESSOR=demo|agent`; deterministic demo parser today).
 
 ## The agent suite
@@ -108,10 +113,10 @@ call metered into `usage_events` (tokens + $ at real model rates):
 
 | Agent | Trigger | What it does |
 | --- | --- | --- |
-| **File Reviewer** | on demand / scheduled | Profiles a division's tables in code, has the model interpret them, writes observed-fact findings with file/column evidence + confidence |
+| **File Reviewer** | on demand / scheduled | Profiles a division's tables (or, as `canonical_review`, a company's canonical rows) in code, has the model interpret them, writes evidence-linked findings with a firm-wide ref; started from the analyst's portfolio analysis or from the company workspace |
 | **Sector Merger** | on demand | Portfolio Analyst across sister companies in a sector; one call per opportunity kind; proposals cite companies, shared keys, table refs; look-alike traps get rejected and logged |
 | **Report Generator** | on demand | Company summary over open findings; keeps verified facts separate from hypotheses |
-| **Recording Reviewer** | recorder submit | Explains low-confidence stretches of recordings; employee approves/fixes/explains; below-threshold always waits for the employee |
+| **Recording Reviewer** | recorder upload | v2: analyses an accepted metadata-only package into a private draft report (facts computed in code, model interpretation kept apart, questions for the employee) that only the employee can publish; v1 (legacy installs): explains low-confidence stretches for approve/fix/explain |
 
 Infrastructure around them: append-only `agent_runs`/`agent_run_events` traces
 (every tool call and model call), findings with kind/status triage, `/usage` with
@@ -153,7 +158,7 @@ allow-list to the backend.
 
 One CloudFormation stack `vista`: ECS Fargate `vista-api` + `vista-worker` (worker
 enabled, model **gpt-6-astra** via Secrets Manager), RDS Postgres (schema history in
-Alembic: platform ×4, tenant ×19 migrations, migrate-on-start with advisory lock),
+Alembic: platform ×5, tenant ×21 migrations in `main`; migrate-on-start with advisory lock),
 private versioned S3 `vista-reports-630396228214`, CloudWatch logs. Cloudflare
 serves bumpsolutions.org and proxies `/api`. Deploys: `deploy/aws/deploy.sh` from
 **emiliano800/vista main only** (needs a deployment-capable identity; the scoped
@@ -163,9 +168,9 @@ visible in the workspaces.
 
 ## Tests
 
-~140 Python tests (isolation, permissions, jobs, agents + evals, imports,
-recordings/review, web/session, config, AWS script safety) + ~87 JS tests
-(recorder units, workspace UI, worker proxy). Live-model tests are opt-in
+181 Python tests (isolation, permissions, jobs, agents + evals, canonical imports
+from both surfaces, the interpretation chain, recordings/review, web/session, config,
+AWS script safety) + 126 JS tests (recorder units, workspace UI, worker proxy). Live-model tests are opt-in
 (`pytest -m live`); everything else runs on stubs and spends nothing. CI runs
 lint (`ruff check` + `ruff format --check`), both suites against a Postgres
 service container, and a wrangler dry-run on pushes to this repository's main branch.

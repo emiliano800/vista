@@ -92,7 +92,7 @@ standard connectors, and a portfolio-wide ontology pass; one-off custom code doe
 | **Company detail within analyst UI** (`/company/?id=…`) | Finance, records, findings, tasks, and agents for one company; still uses analyst authentication and a firm-wide snapshot, so it is not a CFO authorization boundary |
 | **Existing company workspace** (`/signin/` → `/account/`) | Canonical imports (same contract as the analyst), records with provenance, findings, agents, run traces, and published recording reports, all on the ledger the analyst reads; an operational foundation, not the finished CFO or FDE platform |
 | **Agent suite** (`src/vista/agents/`) | File Reviewer, Sector Merger, Report Generator, Recording Reviewer — durable jobs with per-call cost tracking and eval harness |
-| **Desktop recorder** (`src/recorder/`) | Electron recorder: on-device capture, consented metadata-only upload with selected documents, cloud analysis into a draft report the employee answers and publishes |
+| **Desktop recorder** (`src/recorder/`) | Electron recorder: on-device capture, consented metadata-only upload with selected documents, cloud analysis into a draft report the employee answers and publishes; published reports show in the company workspace and on the analyst's company page |
 | **Backend** (`src/vista/`) | FastAPI + Postgres (schema-per-tenant isolation) + S3; durable job queue; append-only run/audit trail |
 
 Current financial metrics include invoiced revenue, outstanding and overdue AR,

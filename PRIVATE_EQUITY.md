@@ -65,8 +65,9 @@ Almost all of this is manual today: exports, spreadsheets, and calls.
   every model call metered — because in PE, a figure that cannot be sourced cannot
   be put in front of an investment committee.
 - The **desktop recorder** addresses the founder-led-operations problem: it captures
-  how work is actually done at a company, with employees reviewing every explanation
-  before anything leaves the machine.
+  how work is actually done at a company. Only activity metadata the employee
+  approves leaves the machine, and the resulting report is theirs to answer and
+  publish before anyone else sees it.
 
 ## Glossary
 
