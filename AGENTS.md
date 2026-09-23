@@ -115,7 +115,10 @@ CUA loops (observe → decide → act → verify) but deliberately bounded; the 
    value is resolved by code. The ledger and every remote request record the name,
    never the value.
 4. **Sandbox only.** `environment == "sandbox"` is an eligibility rule; browser steps run
-   in the recorder's own partition, desktop steps refuse private/sign-in windows.
+   in the recorder's own partition by default (opt-in `VISTA_CU_BROWSER=chrome` drives a
+   tab in the employee's own Chrome over its DevTools port instead — same vocabulary,
+   candidates and gates, but the employee's profile), desktop steps refuse
+   private/sign-in windows.
 5. **Limits enforced per step in code** — `max_steps`, `max_runtime_seconds`,
    `max_cost_usd` (summed from `usage_events`) — and mirrored on the device.
 6. **Risk gate.** `submit` always pauses; any primitive with `p_irreversible ≥`
@@ -146,7 +149,10 @@ desktop steps — presence + offers on its 30 s tick, claim with explicit consen
 (`consent.version = computer-use-v1`), 3 s session poll as heartbeat, one result per
 step, stop. Drivers (`src/recorder/src/computer-use/`): **browser** = a visible
 Electron `BrowserWindow` in its own partition (`persist:vista-computer-use`) driven over
-CDP — candidates come from the accessibility tree (≤40 named controls), clicks/typing go
+CDP, or with `VISTA_CU_BROWSER=chrome` a new tab in the employee's running Chrome
+(`browser-chrome.js`, `VISTA_CU_CHROME_ENDPOINT`, default `http://127.0.0.1:9222`) —
+candidates come from the accessibility tree (≤40 named controls; unnamed table rows are
+named in code from their first cells), clicks/typing go
 through CDP input or the real pointer (`@nut-tree-fork/nut-js`, optional); **desktop** =
 frontmost-window accessibility tree (macOS System Events) + nut-js pointer/keyboard,
 `null` elsewhere. Every targeted step cites the observation it was chosen from; stale

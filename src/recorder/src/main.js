@@ -25,6 +25,7 @@ import { ANCHORS_FILE, applyPlanEdits, compilePlan, PLAN_EDITS_FILE, PLAN_FILE, 
 import { ComputerUseClient } from './computer-use/client.js';
 import { defaultHarnesses } from './computer-use/harnesses.js';
 import { openSandboxPage } from './computer-use/browser-electron.js';
+import { openChromePage } from './computer-use/browser-chrome.js';
 import { macosBackend } from './computer-use/desktop-macos.js';
 import { nutPointer } from './computer-use/pointer.js';
 
@@ -1303,7 +1304,10 @@ async function buildHarnesses() {
   const settings = () => recorder?.settings ?? DEFAULT_SETTINGS;
   const pointer = await nutPointer();
   const desktopBackend = await macosBackend({ activeWindow: recorder?.activeWindow ?? null });
-  return defaultHarnesses({ openPage: openSandboxPage(), pointer, desktopBackend, settings });
+  // VISTA_CU_BROWSER=chrome drives a tab in the employee's own Chrome (DevTools port) instead
+  // of the recorder's isolated window — the employee's profile, so opt-in only.
+  const openPage = process.env.VISTA_CU_BROWSER === 'chrome' ? openChromePage() : openSandboxPage();
+  return defaultHarnesses({ openPage, pointer, desktopBackend, settings });
 }
 ipcMain.handle('cu:status', (event) => { requireDashboard(event); return computerUse.status(); });
 ipcMain.handle('cu:list', (event) => { requireDashboard(event); return computerUse.tick(); });
