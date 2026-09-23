@@ -4,7 +4,9 @@ import { test } from 'node:test';
 import { BrowserHarness, HALO_SCRIPT, candidatesFromAX } from '../src/computer-use/browser.js';
 import { ChromeConnection, GEOMETRY_SCRIPT, openChromePage, screenPointFrom } from '../src/computer-use/browser-chrome.js';
 import { DesktopHarness, candidatesFromElements } from '../src/computer-use/desktop.js';
+import { linuxBackend, parseGeometry } from '../src/computer-use/desktop-linux.js';
 import { parseElements } from '../src/computer-use/desktop-macos.js';
+import { nutPointer } from '../src/computer-use/pointer.js';
 import { capabilitiesOf, defaultHarnesses } from '../src/computer-use/harnesses.js';
 
 const ax = (id, role, name, extra = {}) => ({ backendDOMNodeId: id, role: { value: role }, name: { value: name }, ...extra });
@@ -394,6 +396,45 @@ test('desktop-macos: parses the System Events listing', () => {
     { id: 'ax:0', role: 'button', name: 'Save', x: 300, y: 500, width: 80, height: 30, enabled: true },
     { id: 'ax:1', role: 'text field', name: 'Vendor', x: 100, y: 100, width: 200, height: 24, enabled: false },
   ]);
+});
+
+test('desktop-linux: parses xdotool geometry; the backend is null without a display or the bus', async () => {
+  assert.deepEqual(parseGeometry('Window 1\n  Position: 10,29 (screen: 0)\n  Geometry: 1600x1127'), { x: 10, y: 29, width: 1600, height: 1127 });
+  assert.equal(parseGeometry('garbage'), null);
+  const saved = process.env.DISPLAY;
+  delete process.env.DISPLAY;
+  try {
+    assert.equal(await linuxBackend({ nut: Promise.resolve({}), available: async () => true }), null);
+  } finally {
+    if (saved != null) process.env.DISPLAY = saved;
+  }
+  if (process.platform === 'linux') {
+    process.env.DISPLAY = process.env.DISPLAY ?? ':0';
+    assert.equal(await linuxBackend({ nut: Promise.resolve({}), available: async () => false }), null);
+    assert.equal(await linuxBackend({ nut: Promise.resolve(null), available: async () => true }), null);
+    if (saved == null) delete process.env.DISPLAY;
+  }
+});
+
+test('pointer: the real pointer jumps straight to the target (no glide)', async () => {
+  const calls = [];
+  const fake = {
+    Point: class {
+      constructor(x, y) {
+        this.x = x;
+        this.y = y;
+      }
+    },
+    mouse: { setPosition: async (p) => calls.push(['set', p.x, p.y]), move: async () => calls.push(['move']), leftClick: async () => calls.push(['click']) },
+  };
+  const p = await nutPointer(Promise.resolve(fake));
+  await p.moveTo(40, 50);
+  await p.click();
+  assert.deepEqual(calls, [
+    ['set', 40, 50],
+    ['click'],
+  ]);
+  assert.equal(await nutPointer(Promise.resolve(null)), null);
 });
 
 test('registry: drivers are advertised only when their platform pieces exist', () => {
