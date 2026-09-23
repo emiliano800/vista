@@ -125,20 +125,14 @@ def make_tasks(slug: str, base_url: str, n: int, seed: int) -> list[dict]:
         name, cid = c[cfg["name_col"]], c[cfg["id_col"]]
         primary = next((k for k in contacts if k[cfg["related"][1]] == cid and k.get("is_primary") == "Y"), None)
         if tier == "lookup":
-            goal = (
-                f"Open the declared crm_url, go to the {cfg['module']} module and filter the Clients table to the client named in "
-                f"CLIENT_NAME so that its row (account manager, producer, billing city, status) is visible. Do not open other modules."
-            )
+            goal = f"In the {cfg['module']} module, the Clients table is filtered to the client {name} and its row is visible."
             criteria = [
                 f"The Clients table shows the client {name} ({cid}).",
                 f"The row for {name} shows account manager {c['account_manager_name']} and producer {c['producer_name']}.",
             ]
             expect = [name, cid, c["account_manager_name"], c["producer_name"]]
         else:
-            goal = (
-                f"Open the declared crm_url, go to the {cfg['module']} module, filter the Clients table to the client named in "
-                f"CLIENT_NAME and open that client's record so its contacts and policies are visible."
-            )
+            goal = f"In the {cfg['module']} module, the record for the client {name} ({cid}) is open, with its contacts visible."
             criteria = [f"The record for {name} ({cid}) is open."]
             if primary:
                 criteria.append(f"The client's contacts include {primary[cfg['related'][2]]}.")
@@ -194,7 +188,7 @@ def score(tasks: list[dict], results_dir: Path) -> dict:
         wrong_target = 0
         for d in plans:
             control, label = controls.get(d.get("edge"), "").lower(), str(d["target"]).lower()
-            fits = control in label or ("row" in control and (t["client"]["name"].lower() in label or t["client"]["id"].lower() in label))
+            fits = control in label or ("row" in control and t["client"]["name"].lower() in label)
             wrong_target += 0 if fits else 1
         verification = ((run.get("result") or {}).get("verification")) or r.get("verification") or {}
         for d in reversed(data):
