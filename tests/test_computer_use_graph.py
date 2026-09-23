@@ -294,3 +294,28 @@ def test_a_run_comes_back_as_a_graph_delta_that_merges_into_a_draft_without_touc
     assert DEFINITION["graph"] == GRAPH  # nothing mutated the approved graph
     assert merge_run({k: v for k, v in DEFINITION.items() if k != "graph"}, state, "run-1", True) is None
     assert merge_run(DEFINITION, PlannerState(), "run-1", True) is None
+
+
+def test_a_move_from_another_state_is_re_asked_over_the_located_states_own_moves():
+    # Jev puts the run on the "just navigated" state but picks the later typing move (its field is on
+    # screen). Instead of pausing, the planner asks once more with only that state's recorded moves.
+    at = edge("click")["frm"]
+    later = edge("type_value", "input_1")
+    obs = books(("button", "New bill"), ("textbox", "Supplier"))
+    judge = ScriptedJudge(
+        {"node": node_label(NODES[at]), "edge": edge_label(later), "target": "textbox: Supplier"},
+        {"edge": edge_label(edge("click")), "target": "button: New bill"},
+    )
+    decision, state, detail = step(judge, obs, state=PlannerState(n=1, node=at))
+    # (the fixture's click edge carries `policy: confirm`, so the re-asked move reaches the policy gate)
+    assert isinstance(decision, Pause) and decision.reason == "confirm" and decision.request["target"]["label"] == "button: New bill"
+    assert detail["rejudged"] is True and detail["edge"] == edge("click")["id"] and detail["node"] == at
+    assert len(judge.states) == 2
+    second = judge.states[1]["plan"]
+    assert second["where_i_may_be"] == [node_label(NODES[at])]
+    assert edge_label(later) not in second["moves_recorded_from_here"]
+    assert all(EDGES[e["id"]]["frm"] == at for e in GRAPH["edges"] if edge_label(e) in second["moves_recorded_from_here"])
+    # A second answer that still names nothing fitting falls through to the usual gates.
+    judge = ScriptedJudge({"node": node_label(NODES[at]), "edge": edge_label(later), "target": "textbox: Supplier"}, {"edge": NONE})
+    decision, _, detail = step(judge, obs, state=PlannerState(n=1, node=at))
+    assert isinstance(decision, Act) and decision.action.primitive == "wait" and detail["rejudged"] is True
