@@ -55,6 +55,9 @@ class PlannerState:
     consecutive_none: int = 0
     observation: dict | None = None  # last observation, JSON
     pending: dict | None = None  # an action handed to the recorder and not yet answered: {"action", "gated"}
+    node: str | None = None  # graph planner: the state key the run is believed to be in
+    trajectory: list[dict] = field(default_factory=list)  # graph planner: edges acted on, {"edge", "step_id", "seq", "effect_seen"}
+    proposals: list[dict] = field(default_factory=list)  # graph planner: edges that paused for a person, {"edge", "step_id"}
 
     @classmethod
     def from_checkpoint(cls, data: dict | None) -> PlannerState:
@@ -68,6 +71,9 @@ class PlannerState:
             consecutive_none=int(data.get("consecutive_none", 0)),
             observation=data.get("observation"),
             pending=data.get("pending"),
+            node=data.get("node"),
+            trajectory=list(data.get("trajectory", [])),
+            proposals=list(data.get("proposals", [])),
         )
 
     def to_checkpoint(self) -> dict:
@@ -80,6 +86,9 @@ class PlannerState:
             "consecutive_none": self.consecutive_none,
             "observation": self.observation,
             "pending": self.pending,
+            "node": self.node,
+            "trajectory": self.trajectory,
+            "proposals": self.proposals,
         }
 
     def executed(self, step_id: str) -> bool:
