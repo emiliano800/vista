@@ -5,24 +5,64 @@ Distilled from the original business plan (full text in git history:
 
 ## What Vista is
 
-Financial and operating intelligence for lower-middle-market private equity.
-The product direction as of 2026-09-21 is two platforms with three user views:
+The AI operating platform for private equity rollups, delivered as a service.
+Direction as of 2026-09-23: **AI services on the outside, software platform
+underneath.**
 
-- **Financial platform — PE analyst:** financial performance, model inputs and
-  assumptions, opportunities, and validated impact across authorized portfolio companies.
-- **Financial platform — portco CFO:** the assigned company's subset of the same
-  financial model and evidence, supporting company financial review and validation.
-- **Automation platform — FDE (forward-deployed engineer):** workflow discovery,
-  automation delivery, exceptions, and measured operational results within assigned scope.
+A PE firm acquires a business and sends it to Vista. Vista connects the existing
+systems, maps and records employee workflows, builds and deploys agents to automate
+those workflows, and monitors exceptions and outcomes over time. The customer buys
+an outcome — faster integration, lower SG&A, fewer manual processes, unified
+visibility across the rollup — not a dashboard to configure.
 
-Shared canonical records and evidence connect the platforms. An FDE's operational
-result can support a financial conclusion only with a baseline, explicit assumptions,
-and validation. The long-term agent vision remains bounded administrative execution
-with review; dedicated CFO/FDE views and end-to-end automation are not yet shipped.
+The same platform is used every time: recorder, workflow-learning system, connectors,
+agent runtime, evaluation, permissions, portfolio data layer. The three user views
+sit on top of it:
 
-**Positioning:** "Vista connects portfolio financial analysis with the workflows
-behind it. PE analysts see across authorized companies, CFOs understand their own
-company's financial picture, and FDEs deliver automations with measurable results."
+- **PE analyst** and **portco CFO:** the reporting and visibility layer the service
+  delivers — financial performance, assumptions, opportunities, and validated impact
+  within authorized scope. The CFO sees the company-scoped subset of the same model.
+- **FDE (forward-deployed engineer):** Vista's own delivery surface — workflow
+  discovery, agent configuration and testing, approvals, exceptions, and measured
+  operational results within assigned scope.
+
+Shared canonical records and evidence connect the views. An operational result can
+support a financial conclusion only with a baseline, explicit assumptions, and
+validation. Connectors, an agent runtime acting in customer systems, and dedicated
+CFO/FDE views are not yet shipped.
+
+**Positioning:** "Vista is the AI operating platform for PE rollups. We initially
+deploy alongside the customer to consolidate systems and automate workflows. Every
+deployment expands our workflow library and improves the platform, so future
+portfolio companies are onboarded with progressively less human implementation."
+
+Do not describe Vista as an AI consulting company. Services are how Vista enters the
+market and collects the proprietary knowledge (system mappings, workflow
+demonstrations, exception handling, agent trajectories, human corrections, outcomes)
+needed to build the product. The moat is that company #101 in a category does not
+start from zero.
+
+### Why services-first fits this market
+
+- Every acquisition has different systems, schemas, processes, terminology,
+  exceptions, and accounting practices. Pure SaaS dies on "who implements this?";
+  Vista answers "Vista will."
+- PE economics support it: eliminating $2M of SG&A or accelerating five tuck-ins
+  justifies a six-figure engagement, not a per-seat budget fight.
+- Each implementation teaches repeated patterns ("every HVAC rollup does this") that
+  become product.
+
+### Services → software trajectory
+
+Target mix, directionally: year 1 ~70% services / 30% software; year 2 ~40/60;
+long term 10–20% high-value deployment / 80–90% recurring software. Revenue must
+scale with portfolio companies, workflows, and agents — not with Vista headcount.
+The stages are consulting → tech-enabled services → AI-native services → software;
+the recorder, reusable workflow library, agent learning, standard connectors, and a
+portfolio-wide ontology are what move Vista along that ladder.
+
+**Feature test:** does this reduce the Vista human labor required to deploy the
+next customer? If not, it is deprioritized.
 
 ## Who buys it and who uses it
 
@@ -30,8 +70,10 @@ company's financial picture, and FDEs deliver automations with measurable result
   responsible for post-acquisition improvement.
 - **Financial users:** PE analysts and portco CFOs; the CFO's financial visibility
   is a company-scoped subset, not a separate set of numbers.
-- **Implementation users:** FDEs responsible for assigned workflows and automation
-  outcomes; this role does not automatically carry portfolio financial access.
+- **Implementation users:** Vista FDEs responsible for assigned workflows and
+  automation outcomes; this role does not automatically carry portfolio financial
+  access. Target: one FDE handling 10, then 30, then most companies with near-zero
+  Vista involvement.
 - **Evidence contributors:** employees, bookkeepers, and operations staff supplying
   records and reviewing explanations through a minimal recorder/verification surface.
 
@@ -78,11 +120,20 @@ in `NEXT_STEPS.md`. The canonical demo now uses six insurance and industrial com
 
 ## Commercial structure (validate through the pilot)
 
-Implementation fee (discovery/cleanup/migration) + recurring per-company subscription
-+ portfolio/usage pricing for cross-company capabilities and heavy agent use. Do not
-promise unlimited customization or unlimited agent usage before support costs are
-known. Long-term economic test: recurring revenue covers infra + service while
-implementation effort declines across similar deployments.
+Priced on economic value, not seats:
+
+- **Initial deployment fee** — discovery, system connection, workflow recording,
+  agent build and verification, data standardization. Indicative $100k–$500k+
+  depending on portfolio size and systems.
+- **Recurring platform fee** — indicative $5k–$30k+ per portfolio company per month
+  for the agents, monitoring, reporting layer, and portfolio data layer.
+- **Outcome / usage pricing (optional)** — tied to automation volume or documented
+  savings once measurement is trustworthy.
+
+A 20-company rollup should be a large contract. Do not promise unlimited
+customization or unlimited agent usage before support costs are known. Long-term
+economic test: recurring revenue covers infra + service while deployment effort per
+company declines across similar deployments.
 
 ## Metrics that matter
 
@@ -91,8 +142,9 @@ implementation effort declines across similar deployments.
 - **Adoption:** active operational users; share of work done in Vista.
 - **Financial:** documented collection improvements / realized cost reductions —
   never equate "time saved" with realized savings, and label scenario math as such.
-- **Delivery economics:** engineering hours per company; reusable vs custom;
-  support + inference cost per tenant (already tracked via `usage_events`).
+- **Delivery economics (the productization metric):** Vista hours per company
+  deployed; reusable vs custom; share of workflows served from the library vs built
+  new; support + inference cost per tenant (already tracked via `usage_events`).
 
 ## Standing risks and how we hold them off
 
@@ -100,7 +152,9 @@ implementation effort declines across similar deployments.
 - **Surveillance backlash** → employee surface stays minimal; consent and retention
   policy ship before any observation feature; findings framed as questions, not
   accusations.
-- **Consulting trap** → limit supported configurations; track custom engineering hours.
+- **Consulting trap** (headcount ∝ revenue) → limit supported configurations; track
+  Vista hours per deployment and require them to fall; ship every custom fix into
+  the workflow library or connector set rather than leaving it in one customer.
 - **Unreliable automation** → permissions, review gates, append-only audit logs,
   recoverable actions (all already in the architecture).
 - **Unsubstantiated synergies** → every claim cites source records; observed fact /

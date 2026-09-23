@@ -23,21 +23,28 @@ Key product principles:
   (current) → read-only connectors (email, QuickBooks) → shadowing → scoped execution
   with review gates.
 
-## Product direction — 2026-09-21
+## Product direction — 2026-09-23
 
-Two platforms, three user views:
+Vista is the AI operating platform for PE rollups, delivered as a service: Vista
+connects an acquired company's systems, records employee workflows, builds and
+deploys agents to run them, and monitors exceptions over time. "AI services on the
+outside, software platform underneath" — not a consultancy. The feature test is
+whether a change reduces Vista human labor for the next deployment. Details in
+BUSINESS_COURSE_OF_ACTION.md; roadmap ordering in NEXT_STEPS.md.
 
-- **Financial platform / PE analyst:** financial performance, model inputs and
+One platform, three user views:
+
+- **Reporting / PE analyst:** financial performance, model inputs and
   assumptions, opportunities, and validated impact across explicitly authorized
-  portfolio companies. Lead with financial decisions and evidence.
-- **Financial platform / portco CFO:** the assigned company's subset of the same
+  portfolio companies. This is the visibility layer the service delivers.
+- **Reporting / portco CFO:** the assigned company's subset of the same
   analyst financial model, metric definitions, periods, and evidence. No sibling
   company data or portfolio-wide comparisons. Visibility is a subset; write and
   approval permissions must be defined independently rather than assuming read-only.
-- **Automation platform / FDE (forward-deployed engineer):** assigned workflows,
-  automation proposals/configuration, testing, approvals, execution status,
-  exceptions, and measured operational outcomes. FDE access is a separate scope,
-  not inherited analyst access to the full portfolio's financial data.
+- **Deployment / FDE (forward-deployed engineer):** Vista's own delivery surface —
+  assigned workflows, automation proposals/configuration, testing, approvals,
+  execution status, exceptions, and measured operational outcomes. FDE access is a
+  separate scope, not inherited analyst access to the full portfolio's financial data.
 
 Keep shared canonical data and provenance behind these views. Link FDE outcomes to
 financial implications with explicit baselines and assumptions; observed facts,

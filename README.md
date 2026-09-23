@@ -1,18 +1,33 @@
 # Vista
 
-Financial and operating intelligence for lower-middle-market private equity.
-Vista is organized around **two platforms with three user views**: a financial
-platform for the **PE analyst** and **portfolio-company CFO (portco CFO)**, and an
-automation platform for the **forward-deployed engineer (FDE)**. They share canonical
-company records, evidence, and agent results, with different scope and responsibilities.
+**Vista is the AI operating platform for private equity rollups.** It helps PE
+firms integrate acquired businesses by connecting their systems, learning their
+workflows, and deploying AI agents to run them.
 
-The CFO view is the company-scoped subset of the analyst's financial view. The FDE
-view focuses on workflows, automation delivery, and operational results. Financial
-impact links back to that evidence; a proposed saving is not a realized result.
+Vista is delivered as a service with a software platform underneath. A PE firm
+acquires a business and hands it to Vista; Vista is accountable for getting the
+integration and automation live, rather than shipping software for the customer to
+configure. Every deployment uses the same platform — recorder, workflow learning,
+connectors, agent runtime, evaluation, permissions, and the portfolio data layer —
+and every deployment is expected to make the next one need less Vista human labor.
 
-This is the product direction as of **2026-09-21**. The current code has analyst and
-company workspaces; dedicated CFO/FDE experiences and their access controls are still
-to be implemented. See the implementation map below.
+The services flow for each acquired company:
+
+1. **Connect** the existing systems (accounting, CRM, field-service, email, files).
+2. **Map and record** employee workflows with the Vista recorder and imports.
+3. **Build and deploy** agents that automate those workflows behind review gates.
+4. **Monitor** exceptions and outcomes; improve the agents over time.
+5. **Report** the unified operating and financial picture to the PE firm and CFO.
+
+The analyst and CFO financial views are the reporting and visibility layer that
+the service delivers, not a separate product. The FDE (forward-deployed engineer)
+is the Vista person who runs a deployment. All three views share canonical company
+records, evidence, and agent results. A proposed saving is not a realized result.
+
+This is the product direction as of **2026-09-23**. The current code has analyst and
+company workspaces, discovery agents, and the recorder; connectors, an agent runtime
+that acts in customer systems, and dedicated CFO/FDE access controls are still to be
+implemented. See the implementation map below.
 
 **Live demo:** https://bumpsolutions.org — company sign-in at `/signin/`, PE analyst
 sign-in at `/signin/analyst/`. Demo keys (synthetic data only): [DEMO_ACCESS.md](DEMO_ACCESS.md).
@@ -27,13 +42,13 @@ Docs:
 - [DESIGN.md](DESIGN.md) — the "Field Notes" design system every surface uses
 - [deploy/README.md](deploy/README.md) · [deploy/aws/README.md](deploy/aws/README.md) — hosting and AWS operations
 
-## Who each platform serves
+## Who each view serves
 
-| Platform / view | Scope | Main questions and outputs |
+| View | Scope | Main questions and outputs |
 | --- | --- | --- |
-| **Financial — PE analyst** | Companies explicitly authorized for the PE firm | How are companies performing? What drives revenue, receivables, spend, and financial opportunities? Compare companies, inspect model inputs and assumptions, and distinguish potential benefits from measured results. |
-| **Financial — portco CFO** | The CFO's assigned company within that same financial model | What is happening in my company? Review company financials, reconcile source data, investigate exceptions, and validate company-level impact. No sibling-company records or portfolio-wide comparisons. |
-| **Automation — FDE** | Explicitly assigned companies and workflows | What should be automated, how will it work, and did it work? Inspect workflow evidence, configure and test proposed automations, track approvals, runs, failures, exceptions, and operational outcomes. |
+| **Reporting — PE analyst** | Companies explicitly authorized for the PE firm | How are companies performing? What drives revenue, receivables, spend, and financial opportunities? Compare companies, inspect model inputs and assumptions, and distinguish potential benefits from measured results. |
+| **Reporting — portco CFO** | The CFO's assigned company within that same financial model | What is happening in my company? Review company financials, reconcile source data, investigate exceptions, and validate company-level impact. No sibling-company records or portfolio-wide comparisons. |
+| **Deployment — FDE** | Explicitly assigned companies and workflows | What should be automated, how will it work, and did it work? Inspect workflow evidence, configure and test proposed automations, track approvals, runs, failures, exceptions, and operational outcomes. This is Vista's own delivery surface. |
 
 The analyst and CFO use the same metric definitions, reporting periods, source
 records, and calculations within their permitted scope. The CFO is a subset of
@@ -42,26 +57,32 @@ rights must be specified separately. FDE access is a separate assignment, not an
 automatic grant of all portfolio financial information. A person may hold multiple
 roles only through explicit authorization.
 
-Financial modeling is the focus of the financial platform; a complete forecasting,
-valuation, or three-statement model is not implemented by the current metrics pages.
-Keep unavailable inputs visible as missing rather than filling them with agent guesses.
+The reporting views show what the service has connected, automated, and measured;
+a complete forecasting, valuation, or three-statement model is not implemented by
+the current metrics pages. Keep unavailable inputs visible as missing rather than
+filling them with agent guesses.
 
-## How the views connect
+## How a deployment flows through the platform
 
-1. Import and validate company records with file/sheet/row provenance.
-2. The financial views expose company results and, for the analyst, authorized
-   portfolio comparisons and opportunities.
-3. The FDE investigates the underlying workflow and proposes an automation with a
-   baseline, expected outcome, and approval requirements.
-4. Track implementation and measured operational results, such as cycle time,
-   rework, error rates, and manual effort. Source-system changes require review.
+1. Connect systems and import company records with file/sheet/row provenance.
+2. Employees demonstrate workflows with the recorder; agents convert demonstrations
+   and records into observed facts and proposed automations.
+3. The FDE verifies the proposal — baseline, expected outcome, approval requirements —
+   and deploys the agent within its permitted scope.
+4. Agents run the workflow; exceptions route to people; every action is auditable.
+   Track measured operational results such as cycle time, rework, error rates, and
+   manual effort. Source-system changes require review.
 5. The CFO and analyst see the relevant financial impact with its assumptions and
    evidence. Minutes saved alone do not establish realized cost savings.
 
 This is the intended end-to-end workflow. Current findings, tasks, and run traces
 provide a foundation; they do not constitute a shipped automation execution platform.
-Employee recording and verification remain evidence inputs to these views, rather
-than a fourth management platform.
+The recorder is how Vista learns a company's operations without sending consultants
+to interview every employee: the employee does the job, Vista observes and proposes.
+
+The design test for every feature: **does it reduce the Vista human labor needed to
+deploy the next company?** Reusable workflow library, recorder-to-agent learning,
+standard connectors, and a portfolio-wide ontology pass; one-off custom code does not.
 
 ## Current implementation map
 
