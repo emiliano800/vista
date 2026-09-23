@@ -1,12 +1,14 @@
 // Electron smoke test for the browser driver: `npx electron test/cu-browser-smoke.mjs`.
 // Opens the sandbox page on a local form, observes it through the accessibility tree,
 // types into a field, clicks the button and checks the page reacted. Exits 0/1.
+import { writeFile } from 'node:fs/promises';
 import http from 'node:http';
 
 import { app } from 'electron';
 
 import { BrowserHarness } from '../src/computer-use/browser.js';
 import { openSandboxPage } from '../src/computer-use/browser-electron.js';
+import { nutPointer } from '../src/computer-use/pointer.js';
 
 const PAGE = `<!doctype html><title>Sandbox form</title>
 <form onsubmit="event.preventDefault(); document.getElementById('out').textContent='saved:'+document.getElementById('inv').value">
@@ -29,8 +31,11 @@ async function main() {
     if (!cond) code = 1;
   };
   try {
+    const pointer = await nutPointer();
+    console.log(`     pointer: ${pointer ? 'real (nut-js)' : 'none — CDP input'}`);
     const h = new BrowserHarness({
       open: openSandboxPage({ width: 900, height: 600 }),
+      pointer,
     });
     const nav = await h.perform({ action: 'navigate', value: url });
     check(nav.ok, `navigate: ${nav.description}`);
@@ -59,6 +64,13 @@ async function main() {
     check(table.result.count === 1 && table.result.columns[0] === 'Invoice', `table: ${JSON.stringify(table.result)}`);
     const shot = await h.perform({ action: 'screenshot' });
     check(shot.evidence?.screenshot_base64?.length > 100, 'screenshot captured');
+    if (process.env.VISTA_SMOKE_SHOT) await writeFile(process.env.VISTA_SMOKE_SHOT, Buffer.from(shot.evidence.screenshot_base64, 'base64'));
+    const halo = await h.page.send('Runtime.evaluate', {
+      expression: `(() => { const h = document.getElementById('vista-pointer-halo'); const r = h?.getBoundingClientRect(); return h ? { x: r.x + r.width / 2, y: r.y + r.height / 2 } : null; })()`,
+      returnByValue: true,
+    });
+    check(halo.result?.value && halo.result.value.x > 0, `pointer halo drawn in the page at ${JSON.stringify(halo.result?.value)}`);
+    check(!click.observation.candidates.some((c) => c.id === 'vista-pointer-halo' || /halo/i.test(c.name)), 'halo is not an enumerated candidate');
     const priv = await h.perform({ action: 'navigate', value: `${url}?login` });
     check(priv.ok && priv.observation.sensitive === true && priv.observation.candidates.length === 0, 'sign-in-like URL flagged, no candidates');
     const refused = await h.perform({ action: 'press', value: 'Enter' });
