@@ -44,6 +44,7 @@ from vista.models.tenant import (  # noqa: E402
     WorkspaceAgentRun,
     WorkspaceFinding,
 )
+from vista.portfolio.service import ensure_company_deal  # noqa: E402
 from vista.security import token_digest  # noqa: E402
 from vista.storage import ensure_bucket  # noqa: E402
 from vista.tenancy import migrate_platform, migrate_tenant_schema  # noqa: E402
@@ -485,6 +486,7 @@ def main() -> int:
     ensure_bucket()
     with platform_session() as session:
         firm = seed_firm(session, args.analyst_key.lower() if args.analyst_key else None)
+        analyst_user_id = session.scalar(select(FirmMembership.user_id).where(FirmMembership.firm_id == firm.id))
         fcs = {c["id"]: seed_company(session, firm, c) for c in companies}
         session.flush()
         schemas = {slug: session.get(Tenant, fc.tenant_id).schema_name for slug, fc in fcs.items()}
@@ -497,6 +499,9 @@ def main() -> int:
     for c in companies:
         schema = schemas[c["id"]]
         migrate_tenant_schema(schema)
+        with platform_session() as platform:
+            ensure_company_deal(platform, platform.get(FirmCompany, company_ids[c["id"]]), schema, analyst_user_id)
+            platform.commit()
         with tenant_session(schema) as ts_:
             fc = FirmCompany(id=company_ids[c["id"]])
             counts = seed_records(ts_, fc, c)

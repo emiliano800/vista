@@ -219,3 +219,28 @@ def test_realized_value_requires_an_implemented_completed_task(client):
     assert validated["realizedResult"] is None, "only an Implemented outcome may carry a realized amount"
     assert client.post(f"/api/tasks/{ref}", headers=headers, json={"status": "Bogus"}).status_code == 422
     assert client.post("/api/opportunities/OP-999999/status", headers=headers, json={"status": "Dismissed"}).status_code == 404
+
+
+def test_new_company_gets_one_deal_that_both_views_resolve_by_id(client):
+    """The analyst's company and the employee-facing surfaces (company workspace, recorder)
+    must point at the same rows: creating a company creates its Deal and records the id."""
+    from sqlalchemy import select
+
+    from vista.db import tenant_session
+    from vista.models.platform import FirmCompany, Tenant
+    from vista.models.tenant import Deal
+    from vista.portfolio.service import ensure_company_deal
+
+    headers, _ = make_firm()
+    cid = client.post("/api/portfolio/companies", headers=headers, json={"name": "Cedar Climate"}).json()["id"]
+    with platform_session() as session:
+        fc = session.get(FirmCompany, uuid.UUID(cid))
+        schema = session.get(Tenant, fc.tenant_id).schema_name
+        assert fc.deal_id is not None
+        with tenant_session(schema) as ts:
+            deals = ts.scalars(select(Deal)).all()
+            assert [d.id for d in deals] == [fc.deal_id] and deals[0].name == "Cedar Climate"
+        # Idempotent: resolving again reuses the same Deal rather than creating a second one.
+        assert ensure_company_deal(session, fc, schema, fc.deal_id) == fc.deal_id
+        with tenant_session(schema) as ts:
+            assert len(ts.scalars(select(Deal)).all()) == 1

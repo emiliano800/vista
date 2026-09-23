@@ -51,6 +51,12 @@ class CompanyRef:
     schema: str
     row: FirmCompany
 
+    @property
+    def deal_id(self) -> uuid.UUID | None:
+        """The Deal inside the company tenant that deal-scoped routes (company workspace,
+        recorder) use for the same company."""
+        return self.row.deal_id
+
 
 @dataclass
 class FirmContext:

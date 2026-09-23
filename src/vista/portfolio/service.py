@@ -13,8 +13,10 @@ from fastapi import HTTPException
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
+from vista.db import tenant_session
 from vista.models.platform import Firm, FirmCompany, Opportunity, PortfolioActivity, Tenant
 from vista.models.tenant import (
+    Deal,
     ImportException,
     Task,
     Vendor,
@@ -67,9 +69,30 @@ def _slug(session: Session, firm_id: uuid.UUID, name: str) -> str:
     return slug[:64]
 
 
+def ensure_company_deal(platform: Session, fc: FirmCompany, schema: str, created_by: uuid.UUID) -> uuid.UUID:
+    """The one Deal inside the company tenant that every deal-scoped surface (company
+    workspace, recorder) uses for this company. Reuses the tenant's Deal of the same
+    name, creates it otherwise, and records the id on `firm_companies.deal_id` so
+    analyst and employee views resolve the company to the same rows by id."""
+    with tenant_session(schema) as ts:
+        deal = ts.get(Deal, fc.deal_id) if fc.deal_id else None
+        if deal is None:
+            deal = ts.scalar(select(Deal).where(Deal.name == fc.name).order_by(Deal.created_at))
+        if deal is None:
+            deal = Deal(name=fc.name, created_by=created_by)
+            ts.add(deal)
+            ts.flush()
+        deal_id = deal.id
+        ts.commit()
+    if fc.deal_id != deal_id:
+        fc.deal_id = deal_id
+        platform.flush()
+    return deal_id
+
+
 def create_company(session: Session, ctx: FirmContext, profile: dict, synthetic_demo: bool | None = None) -> FirmCompany:
-    """Creates the company's tenant (own schema, migrated) and links it to the firm.
-    Status starts as `onboarding` until an import is approved."""
+    """Creates the company's tenant (own schema, migrated), its Deal, and links both to
+    the firm. Status starts as `onboarding` until an import is approved."""
     name = profile["name"].strip()
     if not name:
         raise HTTPException(422, "Company name is required")
@@ -93,6 +116,8 @@ def create_company(session: Session, ctx: FirmContext, profile: dict, synthetic_
     log_activity(session, ctx.firm.id, fc.id, f"{name} added to the portfolio as a new acquisition.", "import")
     session.commit()
     migrate_tenant_schema(schema)
+    ensure_company_deal(session, fc, schema, ctx.principal.user_id)
+    session.commit()
     return fc
 
 

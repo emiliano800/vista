@@ -58,6 +58,7 @@ from vista.portfolio import imports  # noqa: E402
 from vista.portfolio.access import CompanyRef, FirmContext, load_firm_context  # noqa: E402
 from vista.portfolio.interpret import release_sector_barrier, run_portfolio_interpretation  # noqa: E402
 from vista.portfolio.processors import AUTO_CONFIDENCE, get_processor, workbook_sheets  # noqa: E402
+from vista.portfolio.service import ensure_company_deal  # noqa: E402
 from vista.security import token_digest  # noqa: E402
 from vista.storage import ensure_bucket  # noqa: E402
 from vista.tenancy import migrate_platform, migrate_tenant_schema  # noqa: E402
@@ -347,6 +348,12 @@ def main() -> int:
     migrate_tenant_schema(schema_for("firm"))
     for _sector, c, _root in companies:
         migrate_tenant_schema(schema_for(c["slug"]))
+    with platform_session() as platform:
+        # Every company tenant carries one Deal the employee-facing surfaces scope by.
+        for _sector, c, _root in companies:
+            fc = platform.get(FirmCompany, sid(f"company:{c['slug']}"))
+            ensure_company_deal(platform, fc, schema_for(c["slug"]), user.id)
+        platform.commit()
 
     processor = get_processor(args.processor)
     report = {"firm": FIRM["name"], "replaced_firms": retired, "as_of": manifest.get("as_of_date"), "companies": {}}

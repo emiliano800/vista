@@ -95,6 +95,10 @@ class FirmCompany(PlatformBase):
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     firm_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("platform.firms.id", ondelete="CASCADE"), index=True)
     tenant_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("platform.tenants.id"), unique=True)
+    # The Deal row inside the company tenant that the company workspace and the recorder
+    # scope by. Both views resolve a company through this id, never by name. Bare uuid
+    # (no FK) because the deal lives in another schema; null only until the tenant exists.
+    deal_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), nullable=True)
     slug: Mapped[str] = mapped_column(String(64))
     name: Mapped[str] = mapped_column(String(255))
     location: Mapped[str] = mapped_column(String(255), default="")
