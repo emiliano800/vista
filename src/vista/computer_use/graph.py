@@ -72,10 +72,15 @@ class Graph:
 def observed_role(observation: Observation) -> str:
     """The app role code reads off the observation — the same function the recorder used."""
     facts = observation.facts
-    if observation.harness == "documents":
+    if observation.harness in ("documents", "local"):
         names = [c.name for c in observation.candidates if c.kind == "document"]
         roles = {_DOC_ROLE.get("." + n.rsplit(".", 1)[-1].lower().rstrip(")"), "documents") for n in names if "." in n}
-        return roles.pop() if len(roles) == 1 else "documents"
+        if len(roles) == 1:
+            return roles.pop()
+        if observation.harness == "local" and not names:
+            local = {c.attrs.get("harness") for c in observation.candidates}
+            return "browser" if local == {"http"} else "workspace" if local == {"workspace"} else "documents"
+        return "documents"
     if observation.harness == "http":
         return "browser"
     if observation.harness == "workspace":

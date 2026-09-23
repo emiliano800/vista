@@ -231,6 +231,7 @@ def _execute(session, tenant_schema: str, job: Job, run: WorkflowRun, owner: str
         run.status = status
         run.finished_at = _now()
         run.error = error
+        run.cost_usd = run_cost(session, run.agent_run_id)
         run.pending = None
         run.pending_step_id = None
         if outcome is not None:
@@ -479,6 +480,7 @@ def _execute(session, tenant_schema: str, job: Job, run: WorkflowRun, owner: str
                 },
             )
             ledger.usage(judgment)
+            run.cost_usd = run_cost(session, run.agent_run_id)
             run.checkpoint = state.to_checkpoint()
             session.commit()
 
