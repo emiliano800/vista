@@ -131,13 +131,113 @@ Jev selects.
   offline against the code graph before it may propose edges — and even then
   only into a *draft*, behind the same two checkpoints.
 
-## 7. Non-goals
+## 7. Data signature v2 — covering every kind of user input
+
+Today's grammar (`state.py`): `doc|rec|field|fact|dialog:<name>` + `msg:open`,
+derived from the events the recorder hooks. To be complete, define tokens over
+*input channels* — every way data enters or leaves the employee's hands — rather
+than over event types:
+
+| Token | Meaning | Recorder source |
+|---|---|---|
+| `field:<control>` | text typed or pasted into a control now holds a value | keystrokes coalesced to commit, paste |
+| `sel:<control>` | a choice was made (dropdown, radio, checkbox, toggle, tab) | click on option/`has_value` flip |
+| `file:<name>` | a file picked, dropped, downloaded or attached | file dialog, drop, download |
+| `clip:<slot>` | clipboard holds a copied value (by slot name) | copy |
+| `rec:<name>` | a record row is selected / open | row click, detail open |
+| `doc:<name>` | a document is open | window/tab open |
+| `fact:<name>` | a value was read off the screen | read/extract |
+| `dialog:<name>` | a screen, module or dialog is open | window/AX tree |
+| `msg:open` | a message/thread is open | mail/chat window |
+| `nav:<screen>` | location changed within the app | URL/title class, AX landmark |
+| `key:<combo>` | a shortcut fired | key event |
+| `drag:<from>→<to>` | drag-and-drop between two controls | mouse down/up over controls |
+
+Rules:
+- **Closed and testable:** every recorder event type maps to exactly one token
+  kind *or* to "non-essential". A test enumerates event types and fails on gaps.
+- **Advance only on what the next action can legally use.** Scroll, hover,
+  mouse travel, focus without change, window resize → non-essential frame.
+- **Names only, never values.** Tokens carry the control/slot/doc *name*
+  (normalised, §11); the value stays in `anchors.json` on device.
+
+## 8. Words typed across frames
+
+Typing spans many frames but is **one transition**: the key frame is the moment
+the control holds a value (`has_value` flips), the frames in between are
+non-essential. The recorder already coalesces keystrokes into one `type_value`
+edge whose `slot` says where the text came from (`input:<name>`, `fact:<name>`).
+
+Partial state during typing:
+- The signature advances only on **commit** — Enter, blur, option selected.
+- Anything that appears mid-typing (autocomplete list, search-as-you-type
+  filter, validation error) is its own key frame (`dialog:autocomplete`,
+  `dialog:validation`) with its own outgoing edge, so a run can handle "pick the
+  suggestion" as a recorded move.
+- The typed text never enters the graph, only its slot — so length, wording and
+  corrections are irrelevant to matching.
+
+## 9. Jev at design time and at run time
+
+The same typed question twice, over different candidate sets:
+
+| | Design time (compile / review) | Run time (execution) |
+|---|---|---|
+| Given | key frame A, key frame B, recorded events between | current key frame, its observed edges, live AX candidates |
+| Jev picks | which edge type explains A→B (`type_value` from `input:X` vs `fact:Y`; essential or noise; `confirm`/`always_ask`) | which edge to take; which live control realises its control label (`target`); which slot (`value`); did the effect land (`effect_seen`) |
+| Enumerated by | code from recorder events | code from the harness observation |
+| Output | edge on a *draft* graph | one bounded action |
+
+Jev never explains a frame and never invents a label, slot or edge.
+
+## 10. Larger model vs Jev
+
+- **Jev** (System One, typed, cheap, probabilities): anything of the form
+  *choose among these / how likely / grade on this rubric*. All run-time
+  decisions. Design-time edge classification.
+- **Larger model** (GPT-sol/astra): anything that needs generation or open-world
+  reading — explaining a frame, naming a task, drafting the goal and success
+  criteria, describing a candidate automation to the FDE, reading a document into
+  candidate facts, proposing *generalised* control labels from aliases (§11).
+- **Rule:** free text or a label that did not exist in the input → larger model,
+  offline, into a draft a human approves. One of N given options at run time →
+  Jev. **No large model in the run loop.**
+
+## 11. Generalisation — not overfitting control labels
+
+A control label like `textbox "Search clients (12)"` or
+`row "MER-C0010 · Valley Electric"` is a fingerprint of one recording. Mitigations,
+cheapest first:
+
+1. **Normalise in code at compile time.** Strip values, IDs, dates, counts,
+   case and punctuation: `row "MER-C0010 · Valley Electric"` → `row {client}`,
+   `"Search clients (12)"` → `search clients`. The graph stores the normalised
+   label; `anchors.json` keeps the exact one locally.
+2. **Store a descriptor, not a string.** `(role, normalised name, nearest
+   landmark/section, position class — "table row", "dialog primary button",
+   "form field #3")`. Run-time matching scores live candidates on all of these,
+   so a renamed textbox with the same role in the same form still matches.
+3. **Merge aliases across recordings.** N recordings of one task yield differently
+   worded labels for the same node; they become one edge with N aliases and a
+   support count — support tells you what actually generalised.
+4. **Role-level labels from the larger model, offline.** From the aliases it
+   proposes "the client search box"; the FDE approves it into the draft. Jev
+   never invents labels.
+5. **Runtime slack belongs to Jev, bounded.** `target` is a choice over live
+   controls with probabilities; no candidate above threshold → `off_plan` pause,
+   never a guess. Generalisation cannot turn into a wrong click.
+6. **Measure it.** Hold out one recording per task; the graph compiled from the
+   others must locate every key frame and offer the taken edge in the held-out
+   one. Report *held-out locate rate* and *held-out edge coverage* per task —
+   that is the overfit metric, alongside benchmark success rate.
+
+## 12. Non-goals
 
 Real RL / gradient updates in the loop; free-form coordinates, selectors or
 scripts from the model; self-modifying approved workflows; uploading
 screenshots, titles, URLs or typed values.
 
-## 8. Success criteria
+## 13. Success criteria
 
 - A recording compiles to a graph whose every edge cites its source events.
 - The employee can remove or gate any move before sharing; nothing leaves the
