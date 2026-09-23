@@ -133,8 +133,9 @@ def node_label(n: dict) -> str:
     return f"{n['app_role']} · {n['activity']} · holding {holding}" + (" · end" if n.get("terminal") else "")
 
 
-# Candidate kinds a control of this action class can be; the target and edge questions are
-# asked together, so code reconciles them afterwards within Jev's own target distribution.
+# Candidate kinds a control of this action class can be. The target is judged *per offered edge*
+# ("which candidate is the control this move was recorded on"), over these kinds only, so the
+# edge Jev picks and the target it picks can never disagree about what is being acted on.
 TARGET_KINDS = {
     "type_value": {"field"},
     "click": {"interactive", "link", "row"},
@@ -142,25 +143,21 @@ TARGET_KINDS = {
 }
 
 
+def target_question(e: dict) -> str:
+    return f"target:{e['id']}"
+
+
+def target_candidates(e: dict, candidates: list[Candidate]) -> list[Candidate]:
+    kinds = TARGET_KINDS.get(e["action_class"])
+    return [c for c in candidates if kinds is None or c.kind in kinds]
+
+
 def target_for(edge: dict | None, judgment: Judgment, candidates: list[Candidate]) -> tuple[Candidate | None, float | None]:
-    """The judged target, unless the chosen edge cannot be performed on a candidate of that kind —
-    then the most probable candidate of a kind it can be performed on (still Jev's ranking, still
-    only among what was shown), or none."""
-    label, p = judgment.choice("target")
-    by_label = {c.label: c for c in candidates}
-    chosen = by_label.get(label) if label != NONE else None
-    kinds = TARGET_KINDS.get(edge["action_class"]) if edge else None
-    if chosen is None or kinds is None or chosen.kind in kinds:
-        return chosen, p
-    probabilities = judgment.probabilities("target")
-    fitting = [c for c in candidates if c.kind in kinds]
-    if not fitting:
-        return None, 0.0
-    mass = sum(probabilities.get(c.label, 0.0) for c in fitting)
-    if mass <= 0:
-        return None, 0.0
-    best = max(fitting, key=lambda c: probabilities.get(c.label, 0.0))
-    return best, probabilities.get(best.label, 0.0) / mass
+    if edge is None or edge["action_class"] not in TARGETED or target_question(edge) not in judgment.answers:
+        return None, None
+    label, p = judgment.choice(target_question(edge))
+    by_label = {c.label: c for c in target_candidates(edge, candidates)}
+    return (by_label.get(label), p) if label != NONE else (None, p)
 
 
 def edge_label(e: dict) -> str:
@@ -233,13 +230,18 @@ def graph_questions(
             "false": "No: it only opens, reads, selects, types into a field, or waits.",
         },
     )
-    if observation.candidates:
-        questions["target"] = pick(
-            "Which candidate in `observation.candidates` is the control the chosen move was recorded on? "
-            "Match by meaning — a “Save” button may be labelled “Post”; a supplier field may be called “Vendor”.",
-            [c.label for c in observation.candidates],
-            "None of these is that control.",
-        )
+    for e in edges:
+        fitting = target_candidates(e, observation.candidates)
+        if e["action_class"] in TARGETED and fitting:
+            control = f"the control “{e['control']}”" if e.get("control") else "the control"
+            slot = f" (it types the value named {e['slot']})" if e.get("slot") else ""
+            questions[target_question(e)] = pick(
+                f"If the next move is “{edge_label(e)}”: which candidate in `observation.candidates` is {control} that move "
+                f"was recorded on{slot}? Match by meaning — a “Save” button may be labelled “Post”, a supplier field “Vendor” — "
+                "but a field for one thing is never the field for another.",
+                [c.label for c in fitting],
+                "None of these is that control.",
+            )
     if values:
         questions["value"] = pick(
             "If the chosen move types something, which of these declared inputs or gathered values is the one the move's slot names?",
@@ -311,10 +313,7 @@ def plan_graph_step(
     matching = [e for e in offered if edge_label(e) == edge_choice] if edge_choice not in (NONE, DONE) else []
     edge = next((e for e in matching if node and e["frm"] == node["key"]), matching[0] if matching else None)
     p_irreversible = judgment.noul("irreversible")
-    target: Candidate | None = None
-    p_target = None
-    if "target" in questions:
-        target, p_target = target_for(edge, judgment, observation.candidates)
+    target, p_target = target_for(edge, judgment, observation.candidates)
     judged_value = None
     p_value = None
     if "value" in questions:
@@ -338,7 +337,7 @@ def plan_graph_step(
         "p_irreversible": round(p_irreversible, 3),
         "effect_seen": last.get("effect_seen") if last_effect and last else None,
     }
-    p_targets = judgment.probabilities("target") if "target" in questions else {}
+    p_targets = judgment.probabilities(target_question(edge)) if edge and target_question(edge) in judgment.answers else {}
     candidates_out = [
         {"id": c.id, "label": c.label, "role": c.role, "p": round(p_targets.get(c.label, 0.0), 3) if p_targets else None}
         for c in observation.candidates[:12]
