@@ -283,6 +283,50 @@ small native actuator (`@nut-tree/nut-js`, pinned, ≥ 7 days published). Refuse
 input seen by `uiohook` (same path as overlay Pause). Coordinates only as fallback from
 *current* AX bounds, never from the recording.
 
+### 8.1 Region targets — "which part of the screen", not "which node"
+
+Accessibility nodes are the precise target when the page or app exposes them, but a
+recorded workflow is really *where the employee clicked*, and legacy apps, canvases,
+PDFs and remote desktops expose few or no nodes. The second target model therefore
+is a **region**: a rectangle of the current window, code-enumerated, that Jev picks
+among exactly like a control. The contract does not change — the model still never
+emits a coordinate.
+
+**Enumeration (code, per observation).** The harness captures the window (browser:
+`Page.captureScreenshot`; desktop: `screencapture`/platform equivalent of the front
+window only) and produces ≤ 40 regions from, in priority order:
+
+1. **Control boxes** — every enumerated AX/DOM candidate's bounding box (so a region and a
+   node candidate are the same thing when a tree exists; the region carries the node id).
+2. **Recorded anchors** — the normalized `(x, y, w, h)` of the control clicked in the
+   recordings for this edge, stored in `anchors.json` *on the device* and in the graph only
+   as a role/label + normalized box (no title, no text, no pixels), re-projected onto the
+   current window bounds. Ranked first for the edge being considered.
+3. **Visual segmentation fallback** — when fewer than N controls are exposed: connected
+   components / a coarse grid over the screenshot, each captioned in code with the AX
+   names whose boxes intersect it or, if none, an on-device OCR label (redacted with the
+   recorder's existing `redactText`). Regions overlapping a secure text field or a
+   sensitive window are dropped, not offered.
+
+Each region is a `Candidate{ id: 'r:<n>', role: 'region', name: <caption>, kind,
+attrs: { box: [x,y,w,h] (normalized), node?: <backendNodeId|ax id>, has_value?, disabled? } }`.
+
+**Decision.** `target` stays a `choice` over the enumerated ids. The state shown to Jev
+adds the screenshot **only** as the consented artifact (`artifact_key`) plus, in code, a
+numbered overlay of the offered regions, so the question is literally "which numbered
+region". No free-form `x,y` question exists; a region outside the offered set is `NONE`.
+
+**Actuation.** `click` on a region → real pointer to the region centre (nut-js) after the
+harness re-checks the observation is current and the window has not moved/resized
+(`stale_observation` otherwise); `type` on a region → click to focus, then insert text —
+never a synthesized value. If the region carries a node id, the node path is used and
+the pointer only travels there, so both models converge to the same action.
+
+**Feedback.** The run's post-action observation records whether the expected effect
+appeared (`effect_seen`) *and* the region actually hit (current box), so a recorded
+anchor that drifts (layout change) loses support on that edge and the graph delta
+proposes the new box for the next draft — again only through review/approval.
+
 **Run as recording** — capture stays on during a session (own `recordings/<id>` with
 `kind: "run"`), so a run is reviewable and uploadable through the existing consent flow
 and feeds `merge_run()` with `effect_seen` evidence.
