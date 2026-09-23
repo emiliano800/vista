@@ -1,7 +1,7 @@
 import re
 from contextlib import contextmanager
 
-from sqlalchemy import create_engine, text
+from sqlalchemy import create_engine, event, text
 from sqlalchemy.orm import Session, sessionmaker
 
 from vista.config import settings
@@ -18,10 +18,24 @@ def validate_tenant_schema(schema: str) -> str:
     return schema
 
 
+def _pin_search_path(session: Session, schema: str) -> None:
+    """`SET search_path` is connection state, and a pooled session may sit on a different
+    connection after every commit — one another helper left on `platform` or on another
+    tenant. Re-assert the schema whenever this session begins a transaction, so a handler
+    that commits mid-way (checkpoints, leases) keeps writing where it started."""
+    statement = text(f'SET search_path TO "{schema}"')
+
+    @event.listens_for(session, "after_begin")
+    def _set(session_, transaction, connection):
+        connection.execute(statement)
+
+    session.execute(statement)
+
+
 @contextmanager
 def platform_session():
     with SessionLocal() as session:
-        session.execute(text("SET search_path TO platform"))
+        _pin_search_path(session, "platform")
         yield session
 
 
@@ -31,7 +45,7 @@ def tenant_session(schema: str):
     excluded from search_path so tenant code cannot silently touch shared tables."""
     validate_tenant_schema(schema)
     with SessionLocal() as session:
-        session.execute(text(f'SET search_path TO "{schema}"'))
+        _pin_search_path(session, schema)
         yield session
 
 

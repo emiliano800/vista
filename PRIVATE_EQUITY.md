@@ -60,8 +60,8 @@ Almost all of this is manual today: exports, spreadsheets, and calls.
   with evidence and calculations, tasks, imports, and agent runs across all companies.
 - Each **company workspace** is isolated (schema-per-tenant) so that a portfolio
   company's data never bleeds into another's, while the firm can still see across them.
-- **Agents** (File Reviewer, Sector Merger, Report Generator, Recording Reviewer)
-  take on the recurring jobs above, with every number traced back to a source row and
+- **Agents** (File Reviewer, Sector Merger, Report Generator, Recording Reviewer, and
+  the sandbox-only Computer Use Agent) take on the recurring jobs above, with every number traced back to a source row and
   every model call metered — because in PE, a figure that cannot be sourced cannot
   be put in front of an investment committee.
 - The **desktop recorder** addresses the founder-led-operations problem: it captures

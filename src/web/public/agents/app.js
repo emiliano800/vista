@@ -75,14 +75,15 @@ async function list() {
     )}`;
 }
 
-// ---- Suite fleet: four named agents, their throughput, spend and quality --------
+// ---- Suite fleet: five named agents, their throughput, spend and quality --------
 const SUITE_TRIGGER = {
   recording_reviewer: "Runs when an employee submits a recording",
   file_reviewer: "Reads a division's exports on request",
   report_generator: "Summarizes findings into a company report",
   sector_merger: "Compares sister companies in a sector",
+  computer_use: "Runs an approved sandbox workflow through an employee's recorder, one bounded step at a time",
 };
-const RUN_LABEL = { queued: "Queued", running: "Running", succeeded: "Complete", failed: "Failed" };
+const RUN_LABEL = { queued: "Queued", running: "Running", succeeded: "Complete", failed: "Failed", waiting: "Waiting", stopped: "Stopped" };
 const KIND_LABEL = { observed_fact: "Observed facts", inefficiency: "Inefficiencies", proposed_automation: "Proposed automations" };
 const PHASE_LABEL = { discover: "Discover", execute: "Execute", analyze: "Analyze" };
 const pct = (v) => `${Math.round(Number(v) * 100)}%`;

@@ -1,4 +1,4 @@
-"""Fleet analytics for the four suite agents: throughput, outcomes, spend and quality
+"""Fleet analytics for the five suite agents: throughput, outcomes, spend and quality
 in one read, so the /agents page can render without stitching /runs, /findings and
 /usage together client-side. A firm member's view spans every company tenant the firm
 is authorised for (plus the firm's home tenant); a workspace member's view is their own
@@ -33,7 +33,7 @@ class AgentFleetOut(BaseModel):
     runs: int
     succeeded: int
     failed: int
-    active: int  # queued + running
+    active: int  # queued + running + waiting
     last_run_at: datetime | None
     last_status: str | None
     avg_seconds: float | None
@@ -179,7 +179,7 @@ def agents_analytics(principal: Principal = Depends(current_principal)) -> Fleet
         p["runs"] += 1
         p["succeeded"] += r.status == "succeeded"
         p["failed"] += r.status == "failed"
-        p["active"] += r.status in ("queued", "running")
+        p["active"] += r.status in ("queued", "running", "waiting")
         if p["last_run_at"] is None:
             p["last_run_at"], p["last_status"] = r.created_at, r.status
         if r.started_at and r.finished_at:

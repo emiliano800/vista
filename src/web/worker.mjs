@@ -26,6 +26,23 @@ const workflowRead =
   /^\/api\/companies\/[a-z0-9-]{1,64}\/workflows(?:\/[0-9a-f-]{36}(?:\/versions(?:\/[0-9a-f-]{36}(?:\/eligibility)?)?)?)?$/i;
 const workflowWrite =
   /^\/api\/companies\/[a-z0-9-]{1,64}\/workflows(?:\/[0-9a-f-]{36}\/versions(?:\/[0-9a-f-]{36}\/decision)?)?$/i;
+// The company workspace's own workflows (tenant-scoped; same shapes as the firm routes).
+const tenantWorkflowRead =
+  /^\/api\/workflows(?:\/[0-9a-f-]{36}(?:\/versions(?:\/[0-9a-f-]{36}(?:\/eligibility)?)?)?)?$/i;
+const tenantWorkflowWrite =
+  /^\/api\/workflows(?:\/[0-9a-f-]{36}\/versions(?:\/[0-9a-f-]{36}\/decision)?)?$/i;
+// Computer Use Agent: starting a run on an approved version, listing/reading runs,
+// deciding a paused step, stopping, and streaming a step's screenshot evidence.
+const workflowRunRead =
+  /^\/api\/(?:workflows\/[0-9a-f-]{36}\/runs|workflow-runs\/[0-9a-f-]{36}(?:\/steps\/[0-9a-f-]{36}\/screenshot)?)$/i;
+const workflowRunWrite =
+  /^\/api\/(?:workflows\/[0-9a-f-]{36}\/versions\/[0-9a-f-]{36}\/runs|workflow-runs\/[0-9a-f-]{36}\/(?:decision|stop))$/i;
+// The recorder's side of the computer-use protocol (personal key): presence + offers,
+// claim, poll, step results, stop.
+const recorderComputerUseRead =
+  /^\/api\/recorder\/computer-use\/sessions(?:\/[0-9a-f-]{36})?$/i;
+const recorderComputerUseWrite =
+  /^\/api\/recorder\/computer-use\/(?:sessions\/[0-9a-f-]{36}\/(?:claim|stop)|steps\/[0-9a-f-]{36}\/result)$/i;
 const recorderRead =
   /^\/api\/recorder\/(?:workspaces|submissions(?:\/[0-9a-f-]{36})?|reports(?:\/[0-9a-f-]{36})?)$/i;
 const recorderWrite =
@@ -52,8 +69,14 @@ async function handle(request, env) {
       !findingWrite.test(url.pathname) &&
       !workflowRead.test(url.pathname) &&
       !workflowWrite.test(url.pathname) &&
+      !tenantWorkflowRead.test(url.pathname) &&
+      !tenantWorkflowWrite.test(url.pathname) &&
       !recorderRead.test(url.pathname) &&
-      !recorderWrite.test(url.pathname)
+      !recorderWrite.test(url.pathname) &&
+      !workflowRunRead.test(url.pathname) &&
+      !workflowRunWrite.test(url.pathname) &&
+      !recorderComputerUseRead.test(url.pathname) &&
+      !recorderComputerUseWrite.test(url.pathname)
     )
       return new Response("Not found", { status: 404 });
     // Only explicitly allowed workspace operations reach the backend.
@@ -70,6 +93,16 @@ async function handle(request, env) {
       (workflowWrite.test(url.pathname) &&
         !workflowRead.test(url.pathname) &&
         request.method !== "POST") ||
+      (tenantWorkflowWrite.test(url.pathname) &&
+        !tenantWorkflowRead.test(url.pathname) &&
+        request.method !== "POST") ||
+      (workflowRunWrite.test(url.pathname) && request.method !== "POST") ||
+      (workflowRunRead.test(url.pathname) &&
+        !["GET", "HEAD"].includes(request.method)) ||
+      (recorderComputerUseWrite.test(url.pathname) &&
+        request.method !== "POST") ||
+      (recorderComputerUseRead.test(url.pathname) &&
+        !["GET", "HEAD"].includes(request.method)) ||
       (request.method === "POST" &&
         !url.pathname.endsWith("/recordings") &&
         !mediaUpload.test(url.pathname) &&
@@ -78,7 +111,10 @@ async function handle(request, env) {
         !portfolioWrite.test(url.pathname) &&
         !agentStart.test(url.pathname) &&
         !workflowWrite.test(url.pathname) &&
+        !tenantWorkflowWrite.test(url.pathname) &&
         !recorderWrite.test(url.pathname) &&
+        !workflowRunWrite.test(url.pathname) &&
+        !recorderComputerUseWrite.test(url.pathname) &&
         url.pathname !== "/api/auth/session") ||
       (request.method === "PUT" && !reviewSections.test(url.pathname)) ||
       (request.method === "DELETE" && url.pathname !== "/api/auth/session")

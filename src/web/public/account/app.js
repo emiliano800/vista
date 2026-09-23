@@ -42,6 +42,8 @@ const paths = {
   clock: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
   bot: '<rect x="4" y="8" width="16" height="12" rx="2"/><path d="M12 4v4M8 13h.01M16 13h.01M9 17h6"/>',
   play: '<path d="m7 5 12 7-12 7Z"/>',
+  workflow:
+    '<rect width="8" height="8" x="3" y="3" rx="2"/><path d="M7 11v4a2 2 0 0 0 2 2h4"/><rect width="8" height="8" x="13" y="13" rx="2"/>',
 };
 const icon = (name) =>
   `<svg class="icon" viewBox="0 0 24 24" aria-hidden="true">${paths[name] ?? paths.file}</svg>`;
@@ -55,7 +57,7 @@ let companies = [],
   wizard = null,
   files = [],
   role = "viewer",
-  view = ["overview", "sources", "findings", "agents", "runs", "recordings"].includes(
+  view = ["overview", "sources", "findings", "agents", "runs", "recordings", "workflows"].includes(
     new URLSearchParams(location.search).get("view"),
   )
     ? new URLSearchParams(location.search).get("view")
@@ -112,6 +114,14 @@ const AGENTS = [
       "Proposal-only Portfolio Analyst comparing sister companies in the same sector for consolidation opportunities.",
     trigger: "Analyze the company's sector.",
   },
+  {
+    key: "computer_use",
+    name: "Computer Use Agent",
+    layer: "Execution",
+    detail:
+      "Carries out an approved sandbox workflow one bounded step at a time — through an employee's recorder for browser and desktop steps — pausing before anything irreversible and verifying the result by reading it back.",
+    trigger: "Starts only from Workflows → Run in sandbox.",
+  },
 ];
 const agentName = (key) =>
   AGENTS.find((a) => a.key === key)?.name ?? key ?? "Agent";
@@ -126,6 +136,7 @@ const stamp = (value) => (value ? new Date(value).toLocaleString() : "—");
 const canEdit = () => role === "owner" || role === "member";
 const company = () => companies.find((c) => c.id === $("company").value);
 const isMeridian = () => /meridian risk partners/i.test(company()?.name ?? "");
+let workflows = [];
 function message(text = "") {
   $("message").textContent = text;
   $("message").hidden = !text;
@@ -215,6 +226,7 @@ function render() {
   $("as-of").textContent = latest
     ? `Last import ${stamp(latest.completedAt ?? latest.createdAt)}`
     : "";
+  $("workflow-count").textContent = workflows.length;
   $("view-name").textContent = {
     overview: "Overview",
     sources: "Data sources",
@@ -222,6 +234,7 @@ function render() {
     agents: "Agents",
     runs: "Runs",
     recordings: "Recordings",
+    workflows: "Workflows",
   }[view];
   document.title = `Vista · ${$("view-name").textContent}`;
   $("import-top").disabled = !company() || !canEdit();
@@ -245,13 +258,15 @@ function render() {
             ? runsView()
             : view === "recordings"
               ? recordingsView()
-              : recordCount()
-                ? overviewView()
-                : welcomeView();
+              : view === "workflows"
+                ? workflowsView()
+                : recordCount()
+                  ? overviewView()
+                  : welcomeView();
   bindContent();
 }
 const runTag = (status) =>
-  `<span class="tag ${status === "succeeded" ? "success" : status === "failed" ? "danger" : status === "running" || status === "queued" ? "warning" : ""}">${esc({ queued: "Queued", running: "Running", succeeded: "Succeeded", failed: "Failed" }[status] ?? status)}</span>`;
+  `<span class="tag ${status === "succeeded" ? "success" : status === "failed" ? "danger" : status === "running" || status === "queued" || status.startsWith("waiting") ? "warning" : ""}">${esc({ queued: "Queued", running: "Running", succeeded: "Succeeded", failed: "Failed", waiting: "Waiting", waiting_for_harness: "Waiting for recorder", waiting_for_human: "Needs your decision", stopped: "Stopped" }[status] ?? status)}</span>`;
 const agentRuns = () =>
   (agents?.runs ?? []).filter(
     (r) => r.deal_id === company()?.id || r.deal_id === null,
@@ -322,7 +337,7 @@ function agentsView() {
     else control = `<span class="small muted">${esc(a.trigger)}</span>`;
     return `<section class="panel"><div class="panel-heading"><h2>${esc(a.name)}</h2>${r ? runTag(r.status) : '<span class="tag">Never run</span>'}</div><span class="eyebrow">${esc(a.layer)}</span><p>${esc(a.detail)}</p><dl class="small"><dt>Last run</dt><dd>${r ? `<button data-run="${esc(r.id)}" class="text-button">${esc(stamp(r.started_at ?? r.created_at))}</button>` : "—"}</dd><dt>Open findings</dt><dd>${number(open.filter((f) => f.agent_key === a.key).length)}</dd><dt>Spend this month</dt><dd>${spend ? `${cost(spend.cost_usd)} · ${number(spend.runs)} runs` : "$0.00"}</dd></dl><div class="actions">${control}</div></section>`;
   });
-  return `<div class="page-heading"><div><span class="eyebrow">${esc(company().name)}</span><h1>Agents at <i>work.</i></h1><p>Four agents read this company's data, propose, and report. Every run leaves a trace you can inspect.</p></div></div>${agents ? "" : '<p class="quiet-note">Agent activity is unavailable right now.</p>'}<div class="overview-grid">${cards.join("")}</div><p class="spacing-4 small">Runs only start when you ask; agents never change source systems. Owners of this company can start runs.</p>`;
+  return `<div class="page-heading"><div><span class="eyebrow">${esc(company().name)}</span><h1>Agents at <i>work.</i></h1><p>Five agents read this company's data, propose, report — and, for approved workflows, act in a sandbox. Every run leaves a trace you can inspect.</p></div></div>${agents ? "" : '<p class="quiet-note">Agent activity is unavailable right now.</p>'}<div class="overview-grid">${cards.join("")}</div><p class="spacing-4 small">Runs only start when you ask; agents never change source systems. The Computer Use Agent acts only in the sandbox, on an approved version, through an employee's recorder, and pauses before anything irreversible. Owners of this company can start runs.</p>`;
 }
 // Published recording reports for this company: what employees chose to share
 // from the desktop recorder after the Recording Reviewer analysed the upload.
@@ -337,6 +352,185 @@ async function loadReports(current) {
   } catch {
     if (current === generation) reports = [];
   }
+}
+async function loadWorkflows(current) {
+  try {
+    const rows = await api("/workflows?limit=100");
+    if (current === generation) workflows = rows;
+  } catch {
+    if (current === generation) workflows = [];
+  }
+  await loadWorkflowExecution(current);
+}
+// ---- Computer Use Agent: eligibility and runs per approved version --------------
+// Eligibility is the approval gate plus whether a harness is connected right now
+// (an employee's recorder for browser/desktop tools). Runs are listed per workflow.
+let workflowRuns = {},
+  eligibility = {},
+  runConfirm = null,
+  runPoll = null;
+const REASONS = {
+  execution_permission_required: "Only the workspace owner can run a workflow.",
+  version_superseded: "A newer version exists; decide on it first.",
+  version_not_approved: "This version is not approved.",
+  unsupported_environment: "Only sandbox workflows can run.",
+  definition_hash_mismatch: "The approved definition no longer matches the stored version.",
+  no_harness_for_tools: "Some allowed tools have no harness yet.",
+  harness_not_connected:
+    "No employee's recorder is connected — an employee must open the Vista Recorder, connect this company and keep it running.",
+  connection_missing: "No HTTP connection is configured for this company.",
+};
+const eligibilityReason = (code) => REASONS[code] ?? code;
+async function loadWorkflowExecution(current) {
+  const approved = workflows.filter((w) => w.latest_version?.status === "approved");
+  const results = await Promise.allSettled(
+    approved.flatMap((w) => [
+      api(`/workflows/${w.id}/versions/${w.latest_version.id}/eligibility`).then((e) => ["eligibility", w.latest_version.id, e]),
+      api(`/workflows/${w.id}/runs?limit=20`).then((r) => ["runs", w.id, r]),
+    ]),
+  );
+  if (current !== generation) return;
+  const nextEligibility = {},
+    nextRuns = {};
+  for (const r of results) {
+    if (r.status !== "fulfilled") continue;
+    const [kind, id, value] = r.value;
+    if (kind === "eligibility") nextEligibility[id] = value;
+    else nextRuns[id] = value;
+  }
+  eligibility = nextEligibility;
+  workflowRuns = nextRuns;
+}
+const RUN_TERMINAL = new Set(["succeeded", "failed", "stopped"]);
+function workflowRunControls(w) {
+  const v = w.latest_version;
+  if (v.status !== "approved") return "";
+  const e = eligibility[v.id];
+  if (!e) return '<span class="small muted">Checking whether this version can run…</span>';
+  if (role !== "owner") return '<span class="small muted">Only the workspace owner can run a workflow.</span>';
+  const reasons = [...e.reasons, ...(e.availability?.reasons ?? [])];
+  if (!e.execution_available)
+    return `<span class="small muted">Cannot run now: ${esc(reasons.map(eligibilityReason).join(" "))}${e.availability?.unmapped_tools?.length ? ` (${esc(e.availability.unmapped_tools.join(", "))})` : ""}</span>`;
+  const d = v.definition ?? {};
+  if (runConfirm === v.id)
+    return `<div class="run-confirm"><p class="small">Runs <b>v${v.number}</b> in the sandbox with at most ${esc(d.limits?.max_steps ?? "?")} steps, ${esc(d.limits?.max_runtime_seconds ?? "?")} s and $${esc(d.limits?.max_cost_usd ?? "?")}. Inputs: ${esc((d.required_inputs ?? []).join(", ") || "none")}. Browser and desktop steps run on the connected employee's computer only after they accept; anything irreversible waits for you here.</p><button class="primary" data-run-confirm="${esc(w.id)}" data-version="${esc(v.id)}">${icon("play")}Start run</button><button data-run-cancel="1">Cancel</button></div>`;
+  return `<button class="primary" data-run-workflow="${esc(v.id)}">${icon("play")}Run in sandbox</button>`;
+}
+function workflowRunsHtml(w) {
+  const runs = workflowRuns[w.id] ?? [];
+  if (!runs.length) return "";
+  return `<ul class="run-list small">${runs
+    .slice(0, 5)
+    .map(
+      (r) =>
+        `<li>${runTag(r.status)} v${esc(r.version_number)} · ${esc(r.mode)} · ${number(r.steps_used)}/${number(r.limits?.max_steps ?? 0)} steps · ${cost(r.cost_usd)} · ${esc(stamp(r.created_at))} <button class="text-button" data-workflow-run="${esc(r.id)}">Open ${icon("arrow")}</button></li>`,
+    )
+    .join("")}</ul>`;
+}
+async function startWorkflowRun(workflowId, versionId) {
+  const run = await api(`/workflows/${workflowId}/versions/${versionId}/runs`, {
+    method: "POST",
+    body: JSON.stringify({ mode: "sandbox" }),
+  });
+  runConfirm = null;
+  workflowRuns = { ...workflowRuns, [workflowId]: [run, ...(workflowRuns[workflowId] ?? [])] };
+  render();
+  await showWorkflowRun(run.id);
+}
+// One executed step from the ledger: `tool_call` events carry the harness, the primitive,
+// the target label and the *name* of the input a value came from — never the value.
+function stepListHtml(events) {
+  const steps = events.filter((e) => e.event_type === "tool_call" && e.data?.harness);
+  if (!steps.length) return "";
+  return `<ol class="step-list">${steps
+    .map((e) => {
+      const d = e.data;
+      return `<li><span class="tag ${d.ok === false ? "danger" : d.executed ? "success" : ""}">${esc(d.tool ?? "step")}</span> <b>${esc(d.harness)}</b>${d.target ? ` → ${esc(d.target)}` : ""}${d.value_input ? ` <span class="muted">(value from input <code>${esc(d.value_input)}</code>)</span>` : ""}${d.description ? `<br><span class="small">${esc(d.description)}</span>` : ""}${d.error ? `<br><span class="small muted">${esc(typeof d.error === "string" ? d.error : JSON.stringify(d.error))}</span>` : ""}</li>`;
+    })
+    .join("")}</ol>`;
+}
+function pauseCardHtml(run) {
+  const p = run.pending ?? {};
+  const cands = p.candidates ?? [];
+  return `<section class="pause-card"><h3>The agent wants to: ${esc(p.description ?? p.action ?? "act")}</h3><p class="small">${esc(p.harness ?? "")} · <b>${esc(p.action ?? "")}</b>${p.target ? ` on ${esc(p.target.role)} “${esc(p.target.label)}”` : ""}${p.value_from ? ` · value from input <code>${esc(p.value_from)}</code>` : ""} · irreversible ${Math.round((p.risk?.irreversible ?? 0) * 100)}% · ${esc({ irreversible: "paused before an irreversible action", no_action: "no safe next step could be chosen", ambiguous_target: "the target was ambiguous", missing_value: "a value was missing", dry_run: "dry run stopped before the first write", submit: "submit always waits for you" }[p.reason] ?? p.reason ?? "")}</p>${
+    cands.length
+      ? `<details open><summary class="small">What the agent could see (${cands.length})</summary><ul class="candidates small">${cands.map((c) => `<li class="${c.id === p.chosen ? "chosen" : ""}">${esc(c.label)}${c.p != null ? ` <span class="muted">${Math.round(c.p * 100)}%</span>` : ""}${c.id === p.chosen ? " ← chosen" : ""}</li>`).join("")}</ul></details>`
+      : ""
+  }<p class="small muted">${run.harness?.screenshots ? `<a href="/api/workflow-runs/${esc(run.id)}/steps/${esc(p.step_id)}/screenshot" target="_blank" rel="noopener">Screenshot evidence</a>` : "Screenshots stay on the employee's computer."}</p>${
+    role === "owner"
+      ? `<div class="actions"><button class="primary" data-decide-step="approve" data-run-id="${esc(run.id)}" data-step="${esc(p.step_id)}">${icon("check")}Approve step</button><button data-decide-step="deny" data-run-id="${esc(run.id)}" data-step="${esc(p.step_id)}">Deny</button><button data-stop-run="${esc(run.id)}">Stop run</button></div>`
+      : '<p class="small muted">Only the workspace owner can decide.</p>'
+  }</section>`;
+}
+function harnessWaitHtml(run) {
+  const p = run.pending ?? {};
+  if (p.kind === "offer")
+    return `<section class="pause-card"><h3>Waiting for an employee's recorder</h3><p class="small">This run needs ${esc((p.harness_kinds ?? []).join(" and ") || "a harness")} on an employee's computer. ${p.harness?.connected ? "A recorder is connected; the employee must press Start and accept." : "The employee must open the Vista Recorder, go to Computer use and accept the offer."}</p>${role === "owner" ? `<div class="actions"><button data-stop-run="${esc(run.id)}">Stop run</button></div>` : ""}</section>`;
+  return `<section class="pause-card"><h3>Running on the employee's computer</h3><p class="small">Step ${esc(p.seq ?? "?")}: ${esc(p.description ?? p.action ?? "")} (${esc(p.harness ?? "")})${run.harness?.connected === false ? " · the recorder is no longer connected" : ""}</p>${role === "owner" ? `<div class="actions"><button data-stop-run="${esc(run.id)}">Stop run</button></div>` : ""}</section>`;
+}
+function outcomeHtml(run) {
+  const o = run.outcome ?? {};
+  if (run.status === "stopped") return `<section class="pause-card"><h3>Stopped</h3><p class="small">${esc(run.error ?? "The run was stopped.")}</p></section>`;
+  if (run.status === "failed" && !o.criteria?.length) return `<section class="pause-card"><h3>Failed</h3><p class="small">${esc(run.error ?? o.reason ?? "The run did not finish.")}</p></section>`;
+  return `<section class="pause-card"><h3>${o.verified ? "Verified" : "Not verified"}: ${number(o.matched ?? 0)} of ${number(o.checked ?? 0)} criteria met</h3><p class="small">Independent read-back of the final state, goal met ${Math.round((o.p_goal ?? 0) * 100)}%.</p>${(o.criteria ?? []).length ? `<ul class="small">${o.criteria.map((c) => `<li>${c.met ? "✓" : "✗"} ${esc(c.criterion ?? c.text ?? "")}${c.p != null ? ` <span class="muted">${Math.round(c.p * 100)}%</span>` : ""}</li>`).join("")}</ul>` : ""}${run.error ? `<p class="small muted">${esc(run.error)}</p>` : ""}</section>`;
+}
+function workflowRunHtml(run, trace) {
+  const head = `<p class="small"><b>${esc(run.workflow_name)}</b> v${esc(run.version_number)} · ${esc(run.mode)} · ${runTag(run.status)}<br>${number(run.steps_used)} of ${number(run.limits?.max_steps ?? 0)} steps · ${cost(run.cost_usd)} of $${esc(run.limits?.max_cost_usd ?? "?")} · started ${esc(stamp(run.started_at ?? run.created_at))}${run.finished_at ? ` · finished ${esc(stamp(run.finished_at))}` : ""}</p>`;
+  const body =
+    run.status === "waiting_for_human"
+      ? pauseCardHtml(run)
+      : run.status === "waiting_for_harness"
+        ? harnessWaitHtml(run)
+        : RUN_TERMINAL.has(run.status)
+          ? outcomeHtml(run)
+          : role === "owner"
+            ? `<div class="actions"><button data-stop-run="${esc(run.id)}">Stop run</button></div>`
+            : "";
+  const steps = stepListHtml(trace?.events ?? []);
+  return `${head}${body}${steps ? `<h3>Steps</h3>${steps}` : ""}${trace ? `<details><summary class="small">Full run trace</summary>${traceHtml(trace, { steps: false })}</details>` : ""}`;
+}
+async function showWorkflowRun(id) {
+  clearInterval(runPoll);
+  $("run-body").innerHTML = '<p class="muted">Loading run…</p>';
+  $("run-dialog").showModal();
+  const refresh = async () => {
+    const run = await api(`/workflow-runs/${id}`);
+    let trace = null;
+    try {
+      trace = await api(`/runs/${run.agent_run_id}`);
+    } catch {
+      /* trace is optional */
+    }
+    if (!$("run-dialog").open) return clearInterval(runPoll);
+    $("run-body").innerHTML = workflowRunHtml(run, trace);
+    bindRunDialog();
+    if (RUN_TERMINAL.has(run.status)) {
+      clearInterval(runPoll);
+      workflowRuns = { ...workflowRuns, [run.workflow_id]: (workflowRuns[run.workflow_id] ?? []).map((r) => (r.id === run.id ? run : r)) };
+      if (view === "workflows") render();
+    }
+  };
+  await refresh();
+  runPoll = setInterval(() => refresh().catch(() => clearInterval(runPoll)), 3000);
+}
+function bindRunDialog() {
+  document.querySelectorAll("#run-body [data-decide-step]").forEach(
+    (b) =>
+      (b.onclick = action(async () => {
+        await api(`/workflow-runs/${b.dataset.runId}/decision`, {
+          method: "POST",
+          body: JSON.stringify({ step_id: b.dataset.step, decision: b.dataset.decideStep, reason: "Decided from the company workspace" }),
+        });
+        await showWorkflowRun(b.dataset.runId);
+      })),
+  );
+  document.querySelectorAll("#run-body [data-stop-run]").forEach(
+    (b) =>
+      (b.onclick = action(async () => {
+        await api(`/workflow-runs/${b.dataset.stopRun}/stop`, { method: "POST", body: JSON.stringify({ reason: "Stopped from the company workspace" }) });
+        await showWorkflowRun(b.dataset.stopRun);
+      })),
+  );
 }
 const span = (session) =>
   session?.started_at
@@ -366,13 +560,65 @@ function reportHtml(r) {
       (a) =>
         `<tr><td>${esc(a.app)}</td><td class="num">${Math.round((a.share ?? 0) * 100)}%</td><td class="num">${number(a.events)}</td><td class="num">${number(a.copies)}</td><td class="num">${number(a.pastes)}</td></tr>`,
     )
-    .join("")}</tbody></table></div>${li(o.transfers ?? [], (t) => `<li>Copied from <strong>${esc(t.from)}</strong> into <strong>${esc(t.to)}</strong> ${number(t.count)}× (about ${number(t.mean_latency_s)}s apart)</li>`)}<h3>Agent's reading <span class="tag">${esc(i.source === "stub" ? "no model" : "hypothesis")}</span></h3>${i.summary ? `<p>${esc(i.summary)}</p>` : '<p class="small muted">No model interpretation was produced.</p>'}${li(i.workflows ?? [], (w) => `<li><strong>${esc(w.name)}</strong> — ${esc(w.apps.join(", "))}${w.evidence ? ` · ${esc(w.evidence)}` : ""} · ${Math.round((w.confidence ?? 0) * 100)}%</li>`)}${(i.automation_candidates ?? []).length ? `<h4>Automation candidates</h4>${li(i.automation_candidates, (c) => `<li><strong>${esc(c.title)}</strong>${c.rationale ? ` — ${esc(c.rationale)}` : ""}</li>`)}` : ""}${(i.documents ?? []).length ? `<h4>Shared documents</h4>${li(i.documents, (d) => `<li>${esc(d.filename)} <span class="muted">${esc(d.summary?.kind ?? "")}${d.summary?.rows != null ? ` · ${number(d.summary.rows)} rows` : ""}</span></li>`)}` : ""}<h3>Employee's answers</h3>${li(r.questions ?? [], (q) => `<li><em>${esc(q.question)}</em><br />${q.answer ? esc(q.answer) : '<span class="muted">Not answered</span>'}</li>`)}`;
+    .join("")}</tbody></table></div>${li(o.transfers ?? [], (t) => `<li>Copied from <strong>${esc(t.from)}</strong> into <strong>${esc(t.to)}</strong> ${number(t.count)}× (about ${number(t.mean_latency_s)}s apart)</li>`)}<h3>Agent's reading <span class="tag">${esc(i.source === "stub" ? "no model" : "hypothesis")}</span></h3>${i.summary ? `<p>${esc(i.summary)}</p>` : '<p class="small muted">No model interpretation was produced.</p>'}${li(i.workflows ?? [], workflowItem)}${(i.automation_candidates ?? []).length ? `<h4>Automation candidates</h4>${li(i.automation_candidates, (c) => `<li><strong>${esc(c.title)}</strong>${c.rationale ? ` — ${esc(c.rationale)}` : ""}</li>`)}` : ""}${(i.documents ?? []).length ? `<h4>Shared documents</h4>${li(i.documents, (d) => `<li>${esc(d.filename)} <span class="muted">${esc(d.summary?.kind ?? "")}${d.summary?.rows != null ? ` · ${number(d.summary.rows)} rows` : ""}</span></li>`)}` : ""}<h3>Employee's answers</h3>${li(r.questions ?? [], (q) => `<li><em>${esc(q.question)}</em><br />${q.answer ? esc(q.answer) : '<span class="muted">Not answered</span>'}</li>`)}`;
+}
+// What to do about one judged workflow: the employee question it raised, the numbered
+// steps, and — only when a prefilled draft exists and the viewer may act — a Draft button.
+// The steps and the draft are templated by the backend from the facts; nothing is generated here.
+function actionsHtml(actions, key) {
+  if (!actions?.instructions?.length) return "";
+  const steps = actions.instructions.map((s) => `<li>${esc(s)}</li>`).join("");
+  const asked = actions.question ? `<p class="small">Asked the employee: <em>${esc(actions.question)}</em></p>` : "";
+  const draft =
+    actions.draft_definition && canEdit()
+      ? `<p class="actions"><button class="primary" data-draft="${esc(key)}">${icon("workflow")}Draft workflow</button><span class="small muted">sandbox · draft · needs owner approval</span></p>`
+      : "";
+  return `<details class="what-to-do"><summary>What to do</summary>${asked}<ol class="small">${steps}</ol>${draft}<p class="small draft-result" data-draft-result="${esc(key)}" hidden></p></details>`;
+}
+function workflowItem(w) {
+  return `<li><strong>${esc(w.name)}</strong> — ${esc(w.apps.join(", "))}${w.evidence ? ` · ${esc(w.evidence)}` : ""} · ${Math.round((w.confidence ?? 0) * 100)}%${actionsHtml(w.actions, w.candidate ?? "")}</li>`;
+}
+// Wire every Draft workflow button under `root`: POST the prefilled definition to the
+// workspace's own workflows API, report the result in place, and refresh the Workflows nav.
+function bindDrafts(root, lookup, after) {
+  root.querySelectorAll("[data-draft]").forEach(
+    (b) =>
+      (b.onclick = async () => {
+        const draft = lookup(b.dataset.draft);
+        if (!draft) return;
+        const out = root.querySelector(`[data-draft-result="${b.dataset.draft}"]`);
+        b.disabled = true;
+        try {
+          const created = await api("/workflows", {
+            method: "POST",
+            body: JSON.stringify({ name: draft.name.slice(0, 255), definition: draft.definition }),
+          });
+          workflows = [created, ...workflows.filter((w) => w.id !== created.id)];
+          $("workflow-count").textContent = workflows.length;
+          if (out) {
+            out.hidden = false;
+            out.textContent = `Draft v${created.latest_version.number} created — awaiting owner approval under Workflows.`;
+          }
+          if (after) await after(created);
+        } catch (e) {
+          b.disabled = false;
+          if (out) {
+            out.hidden = false;
+            out.textContent = e.message;
+          }
+        }
+      }),
+  );
 }
 async function showReport(id) {
   $("report-body").innerHTML = '<p class="muted">Loading report…</p>';
   $("report-dialog").showModal();
   const r = await api(`/recorder/reports/${id}`);
   $("report-body").innerHTML = reportHtml(r);
+  bindDrafts($("report-body"), (key) => {
+    const w = (r.interpretation?.workflows ?? []).find((x) => x.candidate === key);
+    return w?.actions?.draft_definition ? { name: w.name, definition: w.actions.draft_definition } : null;
+  });
 }
 function runsView() {
   const all = agentRuns();
@@ -443,9 +689,9 @@ function agentFindingsBlock() {
       "",
     )}</div><div class="filterbar" role="group" aria-label="Source agent">${chip("agent", "all", "All agents", all.length)}${AGENTS.map((a) => chip("agent", a.key, a.name, all.filter((f) => f.agent_key === a.key).length)).join("")}</div>${agentFindingRows(rows)}</section>`;
 }
-function traceHtml(run) {
+function traceHtml(run, { steps = true } = {}) {
   const events = run.events ?? [];
-  return `<p class="small">${esc(agentName(run.agent_key))} · ${esc(run.run_type)} · ${runTag(run.status)}<br>Started ${esc(stamp(run.started_at ?? run.created_at))} · Finished ${esc(stamp(run.finished_at))}${run.error ? `<br><span class="muted">${esc(run.error)}</span>` : ""}</p>${
+  return `${steps && run.run_type === "workflow_execution" ? stepListHtml(events) : ""}<p class="small">${esc(agentName(run.agent_key))} · ${esc(run.run_type)} · ${runTag(run.status)}<br>Started ${esc(stamp(run.started_at ?? run.created_at))} · Finished ${esc(stamp(run.finished_at))}${run.error ? `<br><span class="muted">${esc(run.error)}</span>` : ""}</p>${
     events.length
       ? `<div class="table-wrap"><table><thead><tr><th class="num">#</th><th>Event</th><th>Detail</th><th>At</th></tr></thead><tbody>${events
           .map(
@@ -485,7 +731,7 @@ async function showAgentFinding(id) {
             )
             .join("")}</dl></details>`
         : ""
-    }</div><div id="tab-trace" hidden><p class="muted">Loading run trace…</p></div>${
+    }${ev.verification ? `<h3>Verification</h3><p class="small">${ev.verification.verified ? "Verified" : "Not verified"}: ${number(ev.verification.matched ?? 0)} of ${number(ev.verification.checked ?? 0)} criteria met (goal met ${Math.round((ev.verification.p_goal ?? 0) * 100)}%).</p>` : ""}${actionsHtml(ev.actions, f.id)}</div><div id="tab-trace" hidden><p class="muted">Loading run trace…</p></div>${
       canEdit()
         ? `<div class="actions section-gap">${[
             "reviewed",
@@ -530,6 +776,16 @@ async function showAgentFinding(id) {
         $("evidence-dialog").close();
         render();
       })),
+  );
+  bindDrafts(
+    $("evidence-body"),
+    () => (ev.actions?.draft_definition ? { name: f.title, definition: ev.actions.draft_definition } : null),
+    async () => {
+      if (f.status === "open" || f.status === "reviewed") {
+        const updated = await api(`/findings/${f.id}`, { method: "PATCH", body: JSON.stringify({ status: "actioned" }) });
+        Object.assign(f, updated);
+      }
+    },
   );
 }
 async function startReview() {
@@ -645,6 +901,28 @@ function exceptionRows(list) {
     )
     .join("");
 }
+const versionTag = (status) =>
+  `<span class="tag ${status === "approved" ? "success" : status === "rejected" ? "danger" : "warning"}">${esc(status)}</span>`;
+function workflowsView() {
+  const heading = `<div class="page-heading"><div><span class="eyebrow">${esc(company().name)}</span><h1>Workflows, <i>version by version.</i></h1><p>Drafts come from recorder findings (Findings → Proposed automation → Draft workflow) or from the firm's analysts. Every version is approved or rejected exactly as written; a new version starts unapproved again. An approved sandbox version can be run by the Computer Use Agent, one bounded step at a time.</p></div></div>`;
+  if (!workflows.length)
+    return `${heading}<div class="empty"><h2>No workflows yet.</h2><p>Open a published recording or a proposed-automation finding and press <b>Draft workflow</b> to create the first draft.</p></div>`;
+  const rows = workflows
+    .map((w) => {
+      const v = w.latest_version;
+      const d = v.definition ?? {};
+      const decision = v.decision ? `${v.decision.decision} · ${v.decision.reason || "no reason given"}` : "awaiting a decision";
+      const buttons =
+        role === "owner" && v.status === "draft"
+          ? `<button class="primary" data-decide="approved" data-workflow="${esc(w.id)}" data-version="${esc(v.id)}">${icon("check")}Approve v${v.number}</button><button data-decide="rejected" data-workflow="${esc(w.id)}" data-version="${esc(v.id)}">Reject</button>`
+          : role === "owner"
+            ? ""
+            : '<span class="small muted">Only the workspace owner can approve or reject.</span>';
+      return `<article class="finding-row"><div><span class="eyebrow">v${v.number} · ${esc(v.status)}</span><h3>${esc(w.name)}</h3><p>${esc(d.goal ?? "")}</p><details><summary class="small">Definition</summary><dl class="small"><dt>Inputs</dt><dd>${esc((d.required_inputs ?? []).join(", "))}</dd><dt>Tools</dt><dd>${esc((d.allowed_tools ?? []).join(", "))}</dd><dt>Success</dt><dd>${(d.success_criteria ?? []).map((c) => `<div>${esc(c)}</div>`).join("")}</dd><dt>Limits</dt><dd>${esc(`${d.limits?.max_steps ?? "?"} steps · ${d.limits?.max_runtime_seconds ?? "?"} s · $${d.limits?.max_cost_usd ?? "?"} per run · ${d.environment ?? "sandbox"}`)}</dd></dl></details><p class="spacing-2 small">${esc(decision)} · created ${esc(stamp(v.created_at))}</p>${workflowRunsHtml(w)}</div><section>${versionTag(v.status)}<div class="actions">${buttons}${workflowRunControls(w)}</div></section></article>`;
+    })
+    .join("");
+  return `${heading}<section class="panel">${rows}</section>`;
+}
 function findingsView() {
   return `<div class="page-heading"><div><span class="eyebrow">From records to recommendations</span><h1>Attention, with <i>evidence.</i></h1><p>Decide the records Vista was unsure about, then review what the agents observed. Every finding cites the rows behind it.</p></div></div><section class="panel"><div class="panel-heading"><h2>Import exceptions</h2><span class="small">${number(openExceptions.length)} open</span></div>${exceptionRows(openExceptions)}</section><p class="spacing-4 small">Marking a finding reviewed records your assessment. It does not resolve the discrepancy or count it as realized savings.</p>${agentFindingsBlock()}`;
 }
@@ -721,6 +999,37 @@ function bindContent() {
         else renderApprove();
       })),
   );
+  document.querySelectorAll("[data-decide]").forEach(
+    (b) =>
+      (b.onclick = action(async () => {
+        const updated = await api(`/workflows/${b.dataset.workflow}/versions/${b.dataset.version}/decision`, {
+          method: "POST",
+          body: JSON.stringify({ decision: b.dataset.decide, reason: "Decided from the company workspace" }),
+        });
+        workflows = workflows.map((w) => (w.id === b.dataset.workflow ? { ...w, latest_version: updated } : w));
+        render();
+      })),
+  );
+  document.querySelectorAll("[data-run-workflow]").forEach(
+    (b) =>
+      (b.onclick = () => {
+        runConfirm = b.dataset.runWorkflow;
+        render();
+      }),
+  );
+  document.querySelectorAll("[data-run-cancel]").forEach(
+    (b) =>
+      (b.onclick = () => {
+        runConfirm = null;
+        render();
+      }),
+  );
+  document
+    .querySelectorAll("[data-run-confirm]")
+    .forEach((b) => (b.onclick = action(() => startWorkflowRun(b.dataset.runConfirm, b.dataset.version))));
+  document
+    .querySelectorAll("[data-workflow-run]")
+    .forEach((b) => (b.onclick = action(() => showWorkflowRun(b.dataset.workflowRun))));
 }
 function openDialog(dialog) {
   if (!dialog.open) dialog.showModal();
@@ -1064,7 +1373,7 @@ async function enterCompany() {
       datasets = await api(`/deals/${company().id}/import-datasets`);
     if (current !== generation) return;
     render();
-    await Promise.all([loadAgents(current), loadReports(current)]);
+    await Promise.all([loadAgents(current), loadReports(current), loadWorkflows(current)]);
     if (current === generation) render();
   } catch (e) {
     if (current === generation) {
@@ -1093,7 +1402,10 @@ $("import-dialog").addEventListener("cancel", (e) => {
 });
 $("close-evidence").onclick = () => $("evidence-dialog").close();
 $("close-source").onclick = () => $("source-dialog").close();
-$("close-run").onclick = () => $("run-dialog").close();
+$("close-run").onclick = () => {
+  clearInterval(runPoll);
+  $("run-dialog").close();
+};
 $("close-report").onclick = () => $("report-dialog").close();
 $("company").onchange = action(enterCompany);
 $("signout").onclick = action(async () => {

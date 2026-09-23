@@ -4,9 +4,10 @@
 
 Operating intelligence for lower-middle-market private equity. A PE firm gets a
 portfolio workspace over its acquired companies; each company is an isolated tenant
-workspace; four AI agents (File Reviewer, Sector Merger, Report Generator, Recording
-Reviewer) run as durable jobs producing evidence-linked findings, cross-company
-opportunities, and reports, with per-call cost tracking. Docs: README.md (entry),
+workspace; five AI agents (File Reviewer, Sector Merger, Report Generator, Recording
+Reviewer, Computer Use Agent) run as durable jobs producing evidence-linked findings,
+cross-company opportunities, reports and — for approved sandbox workflows — bounded,
+verified execution, with per-call cost tracking. Docs: README.md (entry),
 CURRENT_IMPLEMENTATION.md (what exists), NEXT_STEPS.md (roadmap),
 BUSINESS_COURSE_OF_ACTION.md (business plan), DESIGN.md (Field Notes design system),
 DEMO_ACCESS.md (public demo keys — synthetic data only).
@@ -15,13 +16,15 @@ Key product principles:
 - Observed facts vs recommendations vs realized results stay distinct; every agent
   finding cites source records (file/column/row provenance).
 - Application code validates, calculates, and enforces permissions; the LLM
-  interprets and proposes. Agents never change source systems.
+  interprets and proposes. Agents never change source systems; the Computer Use
+  Agent acts only in the sandbox, on an approved version, behind review gates.
 - Company data stays separated (schema-per-tenant); portfolio analysis only over
   explicitly authorized scope (platform `firm_companies`).
 - User's long-term vision: one autonomous agent per back-office employee that knows
   only the role and discovers inefficiencies itself; autonomy ladder = records agent
   (current) → read-only connectors (email, QuickBooks) → shadowing → scoped execution
-  with review gates.
+  with review gates. The last rung exists as the Computer Use Agent (bounded, sandbox
+  only); real-system connectors are still deferred.
 
 ## Product direction — 2026-09-23
 
@@ -59,7 +62,10 @@ the same canonical contract and reads the same findings, runs and recorder repor
 as the analyst (see "One ledger" under Architecture decisions). Dedicated CFO/FDE
 roles and views are not implemented. Current firm roles are
 `analyst/operator/admin/viewer`; never relabel `operator` as an FDE role without
-implementing its scope. Enforce company/workflow restrictions server-side before
+implementing its scope. Tenant (company workspace) roles are `admin/member/viewer`
+(`tenancy.py`); `owner` is a *deal-membership* role, not a tenant role — the workspace
+UI gates on the deal role while the API enforces tenant `admin` for workflow decisions
+and runs (`api/company_workflows.py`, `api/computer_use.py`). Enforce company/workflow restrictions server-side before
 exposing new views, including evidence, exports, and job/run endpoints. A financial
 metrics dashboard is not yet a full forecasting/valuation model, and an agent run
 is not proof of a deployed workflow automation.
@@ -74,14 +80,64 @@ Keys and run-type mapping live in `src/vista/agents/keys.py`; handlers in
 | **File Reviewer** (`file_reviewer`) | `deal_analysis`, `employee_discovery`, `synthetic_discovery`, `canonical_review` | `discover.py`; `portfolio/interpret.py` for `canonical_review` | one division's tables (csv/xlsx) + deterministic profile; `canonical_review` reads only the tenant's canonical rows (customers, invoices, vendors, policies, purchase orders, inventory…) | `findings` kind `observed_fact` (file/column/row refs, confidence); `canonical_review` also `tasks`, `company_summaries`, and cites canonical record ids |
 | **Sector Merger** (`sector_merger`) | `synthetic_analyze`, `portfolio_merge` | `analyze.py`; `portfolio/interpret.py` for `portfolio_merge` | approved facts + one opportunity kind across sister companies in a sector (only `firm_companies` scope); `portfolio_merge` reads canonical rows plus structured findings of the successful `canonical_review` runs in its `successful_run_ids` | `platform.opportunities` (with `lineage`: `from_findings`/`from_runs`) → `findings` kind `proposed_automation`; rejected look-alikes logged as `step` events |
 | **Pipeline & Report Generator** (`report_generator`) | `company_summary` | handler only | open `findings` for a company | `company_summaries` (verified facts kept separate from hypotheses) |
-| **Recording Reviewer** (`recording_reviewer`) | `recording_review` (+ `extract_recording_files`), `submission_analysis` (job `analyze_submission`) | handler only; `recorder_analysis.py` for `submission_analysis` | v1: recorder report bundle (cleaned, on-device redacted); v2: the accepted `recorder_submissions` package read back from S3 (metadata-only activity + shared documents) | v1: explanations awaiting employee approve/fix/explain; v2: one `recorder_reports` draft (observed facts computed in code, model interpretation kept apart, employee questions) that only the employee can publish |
+| **Recording Reviewer** (`recording_reviewer`) | `recording_review` (+ `extract_recording_files`), `submission_analysis` (job `analyze_submission`) | handler only; `recorder_analysis.py` for `submission_analysis` | v1: recorder report bundle (cleaned, on-device redacted); v2: the accepted `recorder_submissions` package read back from S3 (metadata-only activity + shared documents) | v1: explanations awaiting employee approve/fix/explain; v2: one `recorder_reports` draft (observed facts computed in code; workflow candidates derived from the transfers/loops/stretches in those facts and judged by Jev — `VISTA_RECORDER_INTERPRETER=jev`, the default — or interpreted by the chat model with `=chat`; employee questions) that only the employee can publish. On publish, each judged workflow becomes a `findings` row — kind `proposed_automation` when Jev scored it mechanical enough, else `inefficiency` — citing `report:<id>`, `candidate:<cN>`, `run:<id>`, and carrying the employee's answer plus `actions`: a numbered FDE checklist and, for automation candidates, a prefilled `WorkflowDefinition` (`recorder_uploads.record_findings`, deduped per run) |
+| **Computer Use Agent** (`computer_use`) | `workflow_execution` (job `execute_workflow`) | `computer_use/handler.py` (loop), `planner.py` (Jev judgments), `harness*.py` (documents / http / workspace locally; browser / desktop through the employee's recorder), `tools.py` (label → primitives → harness kinds) | one *approved* `workflow_versions` row pinned by `definition_hash`, its bound inputs (documents from accepted submissions, canonical records, declared values), and the candidates each harness enumerates (accessibility-tree controls, document rows, declared input names, allow-listed endpoints) | `workflow_runs` (mutable header: status, checkpoint, limits, lease), `harness_sessions`/`harness_steps`/`harness_devices`, one `tool_call` event per step and one `usage_events` row per judgment on its `AgentRun`, an approval `Task` when paused, and exactly one `findings` row kind `observed_fact` / `finding_type=workflow.execution` with the verification outcome, steps, cost and undo hints |
 
 Internal (not user-facing) phases: **Config Proposer** (`propose.py`, facts →
 reviewable `ProposeOutput.proposals` (column_mapping / dedupe_merge / rule /
 workflow_change; no table yet — consumed in-memory by tests/eval) and
 **Division Executor** (`execute.py`, approved proposals → `findings`/`tasks`,
 scope-checked). Every phase is `prepare → chat → parse → apply` via
-`agents/runtime.run_phase`; only `chat` touches a model.
+`agents/runtime.run_phase`; only `chat` touches a model — or `agents/jev.judge`,
+the one other function that does. `judge` asks TypeSafe Jev (System One) for *typed*
+judgments: code enumerates the facts and the candidates, the model only selects and
+grades among them (a probability, a label with its distribution, a position on an
+ordered rubric), so nothing it returns can name an app or record code did not put in
+front of it and `parse` is trivial. It has the same stub / cassette (`VISTA_JEV_CASSETTE`)
+/ live modes as `chat`, is metered exactly like it (one `usage_events` row, `jev` pricing
+in `runtime.py`, input tokens only), and never generates prose — templated wording and
+every threshold stay in code, so a policy change never re-runs inference.
+
+### Computer Use Agent — bounded, not arbitrary
+
+The fifth agent is the only one that *acts*. It is computer use in the sense of today's
+CUA loops (observe → decide → act → verify) but deliberately bounded; the contract is:
+
+1. **Closed action vocabulary.** `navigate, click, type_value, press, read, extract,
+   http_get, submit, create_task, screenshot, wait, done, ask_human, none`
+   (`computer_use/harness.py`). No scripts, no shell, no free-form tool arguments.
+2. **Targets only from code-enumerated candidates.** Every step is one `judge` call
+   whose `target` is a `choice` over the ≤40 candidates the harness enumerated
+   (accessibility-tree controls, document rows, endpoints); the model cannot name an
+   element it was not shown.
+3. **Typed values only from declared inputs.** `type_value` picks an input *name*; the
+   value is resolved by code. The ledger and every remote request record the name,
+   never the value.
+4. **Sandbox only.** `environment == "sandbox"` is an eligibility rule; browser steps run
+   in the recorder's own partition, desktop steps refuse private/sign-in windows.
+5. **Limits enforced per step in code** — `max_steps`, `max_runtime_seconds`,
+   `max_cost_usd` (summed from `usage_events`) — and mirrored on the device.
+6. **Risk gate.** `submit` always pauses; any primitive with `p_irreversible ≥`
+   `VISTA_COMPUTER_USE_RISK_THRESHOLD` (0.3) pauses; two consecutive `none`s pause.
+   Paused runs are `waiting_for_human` with an approval `Task`; only tenant `admin`
+   decides, per step, by `step_id`.
+7. **Independent verification.** A separate `judge` call over the *final observation
+   and the success criteria only* (no plan history) decides `succeeded`/`failed`.
+8. **Kill switch and lease.** Stop from the workspace or the recorder (⌘⇧Esc) at any
+   time; a run-level lease (`lease_owner/lease_until`) stops two workers from acting.
+9. **Everything on the ledger.** Observe/act as `tool_call`, judgments as `model_call`
+   + `usage_events`, pauses as `step` + `handoff`, the outcome as `finding` + `result`.
+
+Stub Jev (no `VISTA_TYPESAFE_API_KEY`) answers `none` → the agent executes nothing and
+pauses at step 1. That is the safe default, not a bug.
+
+Employee side: the worker cannot reach a laptop, so the recorder *pulls* browser and
+desktop steps — presence + offers on its 30 s tick, claim with explicit consent
+(`consent.version = computer-use-v1`), 3 s session poll as heartbeat, one result per
+step, stop. This build's recorder ships **placeholder** browser/desktop harnesses that
+advertise no capability and answer `harness_unsupported` (the run then pauses for a
+person); the page/desktop drivers are a separate change behind the same interface
+(`src/recorder/src/computer-use/harnesses.js`).
 
 ## A2A (agent-to-agent) protocol
 
@@ -137,7 +193,15 @@ auditable. The rules below are the contract.
 - `observed_fact` → Config Proposer is automatic. Proposals → Division Executor,
   and anything → source systems, require a human `approved` status first.
 - Recording Reviewer never hands off below the confidence threshold; it waits for
-  the employee.
+  the employee. Its findings exist only after the employee publishes; the workspace's
+  **Draft workflow** button then creates a *draft* version through `api/company_workflows.py`
+  (tenant-scoped twin of `api/workflows.py`: `member`/`owner` draft, `owner` decides),
+  and a draft still needs a decision before it is eligible. An approved sandbox version
+  can then be run by the Computer Use Agent (`POST /workflows/{w}/versions/{v}/runs`,
+  tenant `admin`), which adds two more gates: the *employee's consent* in the recorder
+  before any browser/desktop step, and the *risk gate* (every `submit`, anything judged
+  irreversible) that parks the run in `waiting_for_human` until the admin approves that
+  exact step.
 - An agent may *suggest* the next hop by emitting a `handoff` event with
   `"pending_review": true` and no `job_id`; the API turns that into a real
   enqueue only on approval.
@@ -150,10 +214,19 @@ auditable. The rules below are the contract.
   not by mutating the parent.
 - Cost accrues to the run that made the call (`usage_events.run_id`); A2A adds no
   hidden spend.
+- The Computer Use Agent is the first handler that *suspends*: when a step needs the
+  recorder or a human it checkpoints, releases its lease and returns; the API enqueues
+  the resume job with a per-step idempotency key (`workflow_run:{id}:resume:{seq}`,
+  `…:decision:{seq}:{decision}`, `…:stop`) and the handler files a watchdog job
+  (`…:watchdog:{seq}`, `run_at` = step expiry) so an unanswered step expires instead
+  of hanging. `queue.enqueue(..., run_at=)` is additive.
 
 **7. Versioning.**
 - New run types: add to `AGENT_KEY_BY_RUN_TYPE`, `HANDLERS`, the `/api` allow-list
-  in `src/web/worker.mjs`, and this table. Payload changes must stay
+  in `src/web/worker.mjs`, and this table. Tenant workflow routes (`/api/workflows…`)
+  are allow-listed there as `tenantWorkflowRead`/`tenantWorkflowWrite`, mirroring the firm ones; run routes as
+  `workflowRunRead`/`workflowRunWrite`, the recorder's computer-use protocol as
+  `recorderComputerUseRead`/`recorderComputerUseWrite`. Payload changes must stay
   backward-readable by in-flight jobs (additive fields only; never rename).
 
 **Two-layer pipeline over `synthetic_data/`.** Layer 1 (facts) is the import
@@ -201,7 +274,10 @@ wired only in tests/eval. Any new automatic hop must follow the contract above.
 
 ## Stack & commands
 
-- Python 3.12, FastAPI, SQLAlchemy 2, Alembic, Postgres 16, MinIO/S3, uv; Electron
+- Python 3.12, FastAPI, SQLAlchemy 2, Alembic, Postgres 16, MinIO/S3, uv; TypeSafe Jev
+  (`VISTA_TYPESAFE_API_KEY`; stub answers without it — recorder workflow candidates and
+  every Computer Use Agent judgment; `VISTA_COMPUTER_USE_*` thresholds/timeouts in
+  `config.py`) beside the OpenAI-compatible model; Electron
   recorder; Cloudflare Worker + static web; Node 22 for JS tests (installed under
   `~/.local/bin`).
 - Start infra: `docker compose up -d` (MinIO image is `quay.io/minio/minio`).
@@ -260,7 +336,9 @@ wired only in tests/eval. Any new automatic hop must follow the contract above.
 
 - AWS account 630396228214, us-east-1, CloudFormation stack `vista`: ECS cluster
   `vista` with `vista-api` and `vista-worker` (WorkerDesiredCount=1), model
-  **gpt-6-astra** (key in Secrets Manager `vista/openai-api-key`), RDS
+  **gpt-6-astra** (key in Secrets Manager `vista/openai-api-key`; TypeSafe key, when
+  supplied, in `vista/typesafe-api-key` as `VISTA_TYPESAFE_API_KEY` — without it Jev is
+  stub and the Computer Use Agent executes nothing), RDS
   `vista-postgres`, S3 `vista-reports-630396228214`, endpoint
   `https://vi-6526b1efec4446e48c627173e9e805ce.ecs.us-east-1.on.aws`.
 - Cloudflare Worker `vista` serves bumpsolutions.org and auto-builds on push

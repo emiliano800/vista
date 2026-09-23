@@ -635,6 +635,132 @@ class WorkflowApproval(TenantBase):
     decided_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
 
+class WorkflowRun(TenantBase):
+    """One execution of one approved workflow version by the Computer Use Agent. A mutable
+    header (status, lease, checkpoint); the immutable step ledger is `agent_run_events` on
+    `agent_run_id`, and spend is `usage_events`. `definition_hash` is pinned at launch and
+    re-checked on every resume so an edited definition can never be run under an old approval."""
+
+    __tablename__ = "workflow_runs"
+    __table_args__ = (
+        CheckConstraint("mode IN ('dry_run', 'sandbox')", name="ck_workflow_run_mode"),
+        CheckConstraint(
+            "status IN ('queued', 'running', 'waiting_for_harness', 'waiting_for_human', 'succeeded', 'failed', 'stopped')",
+            name="ck_workflow_run_status",
+        ),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    workflow_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("workflows.id"))
+    workflow_version_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("workflow_versions.id"))
+    definition_hash: Mapped[str] = mapped_column(String(64))
+    agent_run_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("agent_runs.id"), unique=True)
+    company_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True))
+    requested_by: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True))
+    mode: Mapped[str] = mapped_column(String(16), default="sandbox")  # dry_run|sandbox
+    status: Mapped[str] = mapped_column(String(24), default="queued", index=True)
+    inputs: Mapped[dict] = mapped_column(JSONB, default=dict)
+    limits: Mapped[dict] = mapped_column(JSONB, default=dict)
+    steps_used: Mapped[int] = mapped_column(Integer, default=0)
+    cost_usd: Mapped[Decimal] = mapped_column(Numeric(12, 6), default=0)
+    checkpoint: Mapped[dict] = mapped_column(JSONB, default=dict)
+    harness_session_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("harness_sessions.id"), nullable=True)
+    pending_step_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), nullable=True)
+    pending: Mapped[dict | None] = mapped_column(JSONB, nullable=True)  # what the workspace shows while waiting
+    outcome: Mapped[dict | None] = mapped_column(JSONB, nullable=True)  # verification summary when terminal
+    stop_requested: Mapped[bool] = mapped_column(Boolean, default=False)
+    lease_until: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    lease_owner: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    deadline_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    error: Mapped[str | None] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+    started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    finished_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+
+class HarnessDevice(TenantBase):
+    """A recorder that polls for computer-use work for this company; `last_seen_at` is presence."""
+
+    __tablename__ = "harness_devices"
+    __table_args__ = (UniqueConstraint("user_id", "device_id", name="uq_harness_device"),)
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    user_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True))
+    device_id: Mapped[str] = mapped_column(String(128))
+    company_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True))
+    platform: Mapped[str] = mapped_column(String(32), default="")
+    capabilities: Mapped[dict] = mapped_column(JSONB, default=dict)  # {"browser": true, "desktop": false, ...}
+    last_seen_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class HarnessSession(TenantBase):
+    """The employee's consented execution session for one run; one device holds the lease."""
+
+    __tablename__ = "harness_sessions"
+    __table_args__ = (CheckConstraint("status IN ('active', 'closed')", name="ck_harness_session_status"),)
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    workflow_run_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("workflow_runs.id"), unique=True)
+    device_id: Mapped[str] = mapped_column(String(128))
+    user_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True))
+    kinds: Mapped[list] = mapped_column(JSONB, default=list)
+    capabilities: Mapped[dict] = mapped_column(JSONB, default=dict)
+    consent: Mapped[dict] = mapped_column(JSONB)  # {"version", "accepted_at", "screenshots"}
+    lease_token: Mapped[str] = mapped_column(String(64))
+    lease_until: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    status: Mapped[str] = mapped_column(String(16), default="active")  # active|closed
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    closed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+
+class HarnessStep(TenantBase):
+    """A step request for the recorder and its answer. `seq` is the planner's step number, so a
+    retried job cannot file the same step twice."""
+
+    __tablename__ = "harness_steps"
+    __table_args__ = (
+        CheckConstraint("status IN ('pending', 'claimed', 'done', 'failed', 'expired')", name="ck_harness_step_status"),
+        UniqueConstraint("workflow_run_id", "seq", name="uq_harness_step_seq"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    workflow_run_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("workflow_runs.id"))
+    seq: Mapped[int] = mapped_column(Integer)
+    harness_session_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("harness_sessions.id"), nullable=True)
+    harness: Mapped[str] = mapped_column(String(16))  # browser|desktop
+    request: Mapped[dict] = mapped_column(JSONB)
+    result: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
+    status: Mapped[str] = mapped_column(String(16), default="pending")
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    claimed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+
+class HarnessConnection(TenantBase):
+    """An allow-listed HTTP endpoint set for a company — the minimal company-bound connection.
+    `config` = {"base_url", "allow_paths": [...], "token_env"}; the token lives only in the
+    worker's environment."""
+
+    __tablename__ = "harness_connections"
+    __table_args__ = (
+        CheckConstraint("kind IN ('http')", name="ck_harness_connection_kind"),
+        CheckConstraint("status IN ('active', 'disabled')", name="ck_harness_connection_status"),
+        UniqueConstraint("company_id", "name", name="uq_harness_connection_name"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    company_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True))
+    kind: Mapped[str] = mapped_column(String(16), default="http")
+    name: Mapped[str] = mapped_column(String(64))
+    config: Mapped[dict] = mapped_column(JSONB, default=dict)
+    status: Mapped[str] = mapped_column(String(16), default="active")
+    created_by: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
 class RecorderSubmission(TenantBase):
     __tablename__ = "recorder_submissions"
     __table_args__ = (

@@ -88,4 +88,7 @@ class EligibilityOut(BaseModel):
     version_id: uuid.UUID
     eligible: bool
     reasons: list[str]
-    execution_available: Literal[False] = False
+    # True only when the approval gate passes AND every allowed tool has a harness that is
+    # connected for this company right now (`computer_use.tools.availability`).
+    execution_available: bool = False
+    availability: dict | None = None

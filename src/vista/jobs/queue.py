@@ -16,9 +16,10 @@ def enqueue(
     payload: dict,
     idempotency_key: str | None = None,
     max_attempts: int = 3,
+    run_at: datetime | None = None,
 ) -> Job:
     """Insert a job. If an idempotency_key is given and a job already exists for
-    (tenant, kind, key), return the existing job instead of inserting."""
+    (tenant, kind, key), return the existing job instead of inserting. `run_at` defers it."""
     if idempotency_key is not None:
         existing = session.scalar(
             select(Job).where(
@@ -36,6 +37,8 @@ def enqueue(
         idempotency_key=idempotency_key,
         max_attempts=max_attempts,
     )
+    if run_at is not None:
+        job.run_at = run_at  # a deferred job (e.g. a watchdog) is not due until then
     session.add(job)
     session.flush()
     return job

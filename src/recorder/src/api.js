@@ -156,6 +156,20 @@ export function routes(actions, jobs) {
       return s.sections.find((x) => x.id === sectionId) ?? notFound('Section');
     }],
 
+    // Computer-use sessions: the same consent contract as uploads — nothing starts without
+    // `consent: true`, which the caller may only send after showing the employee the notice.
+    ['GET', /^\/computer-use\/status$/, () => actions.computerUse.status()],
+    ['GET', /^\/computer-use\/sessions$/, () => actions.computerUse.tick()],
+    ['POST', /^\/computer-use\/sessions\/([^/]+)\/start$/, async ({ params: [id], body }) => {
+      if (body.consent !== true) throw new ApiError(400, 'Employee consent is required before a computer-use session: pass consent: true after showing the notice.');
+      try {
+        return await actions.computerUse.start(id, { consent: true, shareScreenshots: body.share_screenshots === true });
+      } catch (e) {
+        throw new ApiError(e.code === 'busy' ? 409 : e.code ? 400 : 500, e.message);
+      }
+    }],
+    ['POST', /^\/computer-use\/sessions\/([^/]+)\/stop$/, ({ body }) => actions.computerUse.stop(body.reason || 'stopped through the agent API')],
+    ['GET', /^\/computer-use\/sessions\/([^/]+)\/steps$/, ({ params: [id] }) => ({ session_id: id, steps: actions.computerUse.steps(id) })],
     ['GET', /^\/jobs\/([^/]+)$/, ({ params: [id] }) => jobs.get(id) ?? notFound('Job')],
 
     ['POST', /^\/batches$/, ({ body }) => {

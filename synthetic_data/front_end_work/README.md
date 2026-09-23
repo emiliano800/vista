@@ -1,8 +1,9 @@
 # Front-end work — demo UIs for the six synthetic portfolio companies
 
 Six deliberately simple, visually distinct, read-only front ends — one per company — that display that
-company's synthetic back-office data (CRM, policies/orders, billing, HR, documents, …). Static HTML/CSS/JS,
-no backend, no build step. Demo purposes only.
+company's synthetic back-office data (CRM, policies/orders, billing, HR, documents, …), plus one **writable**
+sandbox entry form (`_sandbox/`) that the Computer Use Agent can act on. Static HTML/CSS/JS, no backend, no build step.
+Demo purposes only.
 
 | Folder | Company | Look & feel (mimics the company's real system) | Data quality |
 |---|---|---|---|
@@ -12,6 +13,7 @@ no backend, no build step. Demo purposes only.
 | `northfield_industrial_components/` | Northfield Industrial Components (industrial) | Dark plant-floor ERP console, orange accents (Epicor-style) | High |
 | `keystone_bearing_and_drive/` | Keystone Bearing & Drive (industrial) | Black top bar, green accents, portlets (NetSuite-style) | Medium |
 | `ridgeway_fasteners_and_supply/` | Ridgeway Fasteners & Supply (industrial) | QuickBooks Desktop / Fishbowl style, cream forms | Low |
+| `_sandbox/` | *(none — writable destination)* | Plain vendor-invoice entry form; the only fixture that accepts writes (see `_sandbox/README.md`) | — |
 
 ## What these UIs represent
 

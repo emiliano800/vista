@@ -117,6 +117,7 @@ the submission stays "awaiting analysis" until one runs.
 | Rotate a key | `deploy/aws/manage.sh rotate-key --user USER_UUID` |
 | Load the six synthetic companies into the analyst workspace | `deploy/aws/manage.sh load-synthetic --analyst-key ANALYST_KEY --replace-firm northstar` (the key is the existing analyst's; `--replace-firm` removes the HVAC demo firm; add `--no-analyze` to skip the interpretation agents) |
 | Run agent jobs and recording AI review in AWS | set `WORKER_DESIRED_COUNT=1` (and `OPENAI_API_KEY`) in `deploy/aws/.env`, redeploy |
+| Enable Jev (recorder workflow candidates, Computer Use Agent) | set `TYPESAFE_API_KEY` in `deploy/aws/.env`, redeploy; stored as `vista/typesafe-api-key`, injected as `VISTA_TYPESAFE_API_KEY` into both tasks |
 | API logs | `aws logs tail /vista/vista/api --follow` |
 | Shell into a running API task | `aws ecs execute-command --cluster vista --task <task-id> --container Main --interactive --command /bin/sh` (needs the Session Manager plugin) |
 | Scale | change `ApiMinTasks` / `ApiMaxTasks` / `ApiCpu` / `ApiMemory` parameters and redeploy |

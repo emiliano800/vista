@@ -30,6 +30,20 @@ class Settings(BaseSettings):
     openai_base_url: str | None = None
     # OpenRouter provider pinning: comma-separated ("nvidia" → only that provider, no fallbacks)
     openai_provider_only: str = ""
+    # TypeSafe Jev (System One): typed judgments over code-supplied candidates, via agents/jev.py.
+    # Unset → stub answers (no / none / 0), so nothing is proposed without a model.
+    typesafe_api_key: str | None = None
+    typesafe_model: str = "jev-latest"
+    typesafe_base_url: str = "https://api.typesafe.ai/v1"
+    # Which model interprets a recorder submission: "jev" judges workflow candidates code derived
+    # from the observed facts; "chat" is the prose-JSON interpretation by the OpenAI-compatible model.
+    recorder_interpreter: str = "jev"  # jev|chat
+    # Computer Use Agent (bounded execution of approved sandbox workflows through the recorder).
+    computer_use_enabled: bool = True
+    computer_use_risk_threshold: float = 0.3  # p(irreversible) at which a run pauses for a person
+    computer_use_step_timeout_s: int = 180  # how long a step may wait for the recorder before it expires
+    computer_use_lease_s: int = 300  # run-level lease held by the worker that is planning
+    computer_use_offer_ttl_s: int = 1800  # how long a run waits for an employee to accept before it fails
 
     def openai_client(self):
         from openai import OpenAI

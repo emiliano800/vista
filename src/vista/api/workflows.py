@@ -108,4 +108,7 @@ def version_eligibility(
     with company_session(company) as session:
         workflow = service.get_workflow(session, company.id, workflow_id, lock=True)
         version = service.get_version(session, workflow, version_id)
-        return service.execution_eligibility(session, workflow, version, ctx.membership.role)
+        from vista.computer_use import tools
+
+        availability = tools.availability(session, company.id, version.definition.get("allowed_tools", []))
+        return service.execution_eligibility(session, workflow, version, ctx.membership.role, availability=availability)

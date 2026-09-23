@@ -120,7 +120,11 @@ def record_decision(session: Session, workflow: Workflow, version: WorkflowVersi
     return result
 
 
-def execution_eligibility(session: Session, workflow: Workflow, version: WorkflowVersion, role: str) -> EligibilityOut:
+def execution_eligibility(
+    session: Session, workflow: Workflow, version: WorkflowVersion, role: str, *, availability=None
+) -> EligibilityOut:
+    """The approval gate (policy reasons) plus, when the caller passes a
+    `computer_use.tools.Availability`, whether anything can actually run it now."""
     decision = decision_for(session, version)
     reasons = []
     if role not in EXECUTION_ROLES:
@@ -134,4 +138,11 @@ def execution_eligibility(session: Session, workflow: Workflow, version: Workflo
     digest = definition_hash(version.definition)
     if digest != version.definition_hash or (decision is not None and decision.definition_hash != digest):
         reasons.append("definition_hash_mismatch")
-    return EligibilityOut(version_id=version.id, eligible=not reasons, reasons=reasons)
+    available = availability is not None and bool(availability.available)
+    return EligibilityOut(
+        version_id=version.id,
+        eligible=not reasons,
+        reasons=reasons,
+        execution_available=not reasons and available,
+        availability=availability.to_json() if availability is not None else None,
+    )
