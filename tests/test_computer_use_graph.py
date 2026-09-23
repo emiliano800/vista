@@ -69,6 +69,7 @@ class ScriptedJudge:
             probs = {k: 0.0 for k in questions[q]["criteria"]}
             assert label in probs, f"{q}: {label!r} was never offered; offered {list(probs)}"
             probs[label] = p
+            probs.update(spec.get(f"{q}_also", {}))
             answers[q] = {"type": "choice", "choice": label, "confidence": p, "probabilities": probs}
 
         if "effect_seen" in questions:
@@ -198,6 +199,30 @@ def test_submit_edges_always_pause_and_done_finishes():
     done_state = PlannerState(n=6, node=submit["to"])
     decision, _, detail = step(ScriptedJudge({"edge": DONE}), obs, state=done_state)
     assert isinstance(decision, Finish) and decision.reason == "done" and detail["next_action"] == "done"
+
+
+def test_a_target_of_the_wrong_kind_for_the_edge_is_reconciled_within_jevs_own_distribution():
+    # Edge and target are judged together, so Jev can pick the submit edge yet point at the textbox it
+    # just filled. Code keeps only candidates a submit can act on and renormalises Jev's ranking over them.
+    submit = edge("submit")
+    state = PlannerState(n=5, node=submit["frm"])
+    obs = books(("textbox", "Invoice number"), ("button", "Save"), ("button", "Clear"))
+    spec = {
+        "edge": edge_label(submit),
+        "target": "textbox: Invoice number",
+        "p_target": 0.8,
+        "target_also": {"button: Save": 0.18, "button: Clear": 0.02},
+        "irreversible": 0.9,
+    }
+    decision, _, detail = step(ScriptedJudge(spec), obs, state=state)
+    assert isinstance(decision, Pause) and decision.reason == "irreversible"
+    assert detail["target"] == "button: Save" and detail["p_target"] == 0.9
+    # A type edge, conversely, never lands on a button.
+    typing = edge("type_value", "input_1")
+    state = PlannerState(n=2, node=typing["frm"])
+    spec = {"edge": edge_label(typing), "target": "button: Save", "p_target": 0.7}
+    decision, _, detail = step(ScriptedJudge(spec), obs, state=state)
+    assert isinstance(decision, Pause) and decision.reason == "ambiguous_target" and detail["target"] is None
 
 
 def test_off_plan_is_defined_not_judged():
