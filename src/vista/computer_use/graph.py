@@ -133,6 +133,36 @@ def node_label(n: dict) -> str:
     return f"{n['app_role']} · {n['activity']} · holding {holding}" + (" · end" if n.get("terminal") else "")
 
 
+# Candidate kinds a control of this action class can be; the target and edge questions are
+# asked together, so code reconciles them afterwards within Jev's own target distribution.
+TARGET_KINDS = {
+    "type_value": {"field"},
+    "click": {"interactive", "link", "row"},
+    "submit": {"interactive", "link", "row"},
+}
+
+
+def target_for(edge: dict | None, judgment: Judgment, candidates: list[Candidate]) -> tuple[Candidate | None, float | None]:
+    """The judged target, unless the chosen edge cannot be performed on a candidate of that kind —
+    then the most probable candidate of a kind it can be performed on (still Jev's ranking, still
+    only among what was shown), or none."""
+    label, p = judgment.choice("target")
+    by_label = {c.label: c for c in candidates}
+    chosen = by_label.get(label) if label != NONE else None
+    kinds = TARGET_KINDS.get(edge["action_class"]) if edge else None
+    if chosen is None or kinds is None or chosen.kind in kinds:
+        return chosen, p
+    probabilities = judgment.probabilities("target")
+    fitting = [c for c in candidates if c.kind in kinds]
+    if not fitting:
+        return None, 0.0
+    mass = sum(probabilities.get(c.label, 0.0) for c in fitting)
+    if mass <= 0:
+        return None, 0.0
+    best = max(fitting, key=lambda c: probabilities.get(c.label, 0.0))
+    return best, probabilities.get(best.label, 0.0) / mass
+
+
 def edge_label(e: dict) -> str:
     what = e["action_class"].replace("_", " ")
     control = f" “{e['control']}”" if e.get("control") else ""
@@ -281,12 +311,10 @@ def plan_graph_step(
     matching = [e for e in offered if edge_label(e) == edge_choice] if edge_choice not in (NONE, DONE) else []
     edge = next((e for e in matching if node and e["frm"] == node["key"]), matching[0] if matching else None)
     p_irreversible = judgment.noul("irreversible")
-    label_to_candidate = {c.label: c for c in observation.candidates}
     target: Candidate | None = None
     p_target = None
     if "target" in questions:
-        label, p_target = judgment.choice("target")
-        target = label_to_candidate.get(label) if label != NONE else None
+        target, p_target = target_for(edge, judgment, observation.candidates)
     judged_value = None
     p_value = None
     if "value" in questions:
