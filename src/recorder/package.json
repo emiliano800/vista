@@ -10,11 +10,15 @@
     "start:demo": "electron . --demo",
     "test": "node --test test/*.test.js",
     "test:ui": "electron test/dashboard-smoke.mjs",
+    "test:browser": "electron test/cu-browser-smoke.mjs",
     "dist": "electron-builder"
   },
   "dependencies": {
     "get-windows": "^9.3.0",
     "uiohook-napi": "^1.5.5"
+  },
+  "optionalDependencies": {
+    "@nut-tree-fork/nut-js": "^4.2.6"
   },
   "devDependencies": {
     "electron": "~43.7.2",

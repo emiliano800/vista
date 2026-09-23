@@ -24,6 +24,9 @@ import { deviceId, discoverWorkspaces, documentOptions, planPreview, selectWorks
 import { ANCHORS_FILE, applyPlanEdits, compilePlan, PLAN_EDITS_FILE, PLAN_FILE, planSummary } from './plan.js';
 import { ComputerUseClient } from './computer-use/client.js';
 import { defaultHarnesses } from './computer-use/harnesses.js';
+import { openSandboxPage } from './computer-use/browser-electron.js';
+import { macosBackend } from './computer-use/desktop-macos.js';
+import { nutPointer } from './computer-use/pointer.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const UI = path.join(__dirname, '..', 'ui');
@@ -1293,6 +1296,15 @@ const computerUse = new ComputerUseClient({
     if (!status.active && globalShortcut.isRegistered(KILL_SWITCH)) globalShortcut.unregister(KILL_SWITCH);
   },
 });
+// The drivers need Electron ready and the recorder's window probe; until then the client
+// holds placeholders and advertises nothing. Demo mode keeps the placeholders on purpose.
+async function buildHarnesses() {
+  if (DEMO) return defaultHarnesses({ demo: true });
+  const settings = () => recorder?.settings ?? DEFAULT_SETTINGS;
+  const pointer = await nutPointer();
+  const desktopBackend = await macosBackend({ activeWindow: recorder?.activeWindow ?? null });
+  return defaultHarnesses({ openPage: openSandboxPage(), pointer, desktopBackend, settings });
+}
 ipcMain.handle('cu:status', (event) => { requireDashboard(event); return computerUse.status(); });
 ipcMain.handle('cu:list', (event) => { requireDashboard(event); return computerUse.tick(); });
 ipcMain.handle('cu:start', (event, runId, options) => {
@@ -1619,6 +1631,7 @@ async function startAgentApi() {
 app.commandLine.appendSwitch('enable-transparent-visuals');
 app.whenReady().then(async () => {
   recorder = await buildRecorder();
+  computerUse.harnesses = await buildHarnesses();
   tray = new Tray(trayIcon());
   updateTray(recorder.status());
   tray.on('click', () => createDashboard());

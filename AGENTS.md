@@ -144,10 +144,16 @@ pauses at step 1. That is the safe default, not a bug.
 Employee side: the worker cannot reach a laptop, so the recorder *pulls* browser and
 desktop steps — presence + offers on its 30 s tick, claim with explicit consent
 (`consent.version = computer-use-v1`), 3 s session poll as heartbeat, one result per
-step, stop. This build's recorder ships **placeholder** browser/desktop harnesses that
-advertise no capability and answer `harness_unsupported` (the run then pauses for a
-person); the page/desktop drivers are a separate change behind the same interface
-(`src/recorder/src/computer-use/harnesses.js`).
+step, stop. Drivers (`src/recorder/src/computer-use/`): **browser** = a visible
+Electron `BrowserWindow` in its own partition (`persist:vista-computer-use`) driven over
+CDP — candidates come from the accessibility tree (≤40 named controls), clicks/typing go
+through CDP input or the real pointer (`@nut-tree-fork/nut-js`, optional); **desktop** =
+frontmost-window accessibility tree (macOS System Events) + nut-js pointer/keyboard,
+`null` elsewhere. Every targeted step cites the observation it was chosen from; stale
+observation, changed front window, secure fields and private/sign-in/payment windows
+fail closed (`stale_observation` / `sensitive_window`). A computer advertises a harness
+only when its driver exists; otherwise `harness_unsupported` pauses the run for a person
+(`harnesses.js`). `npm run test:browser` is the real-Electron smoke for the browser driver.
 
 ## A2A (agent-to-agent) protocol
 
