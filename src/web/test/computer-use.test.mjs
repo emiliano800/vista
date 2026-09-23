@@ -115,6 +115,7 @@ function mount({ role = "owner", workflows = [workflow()], eligibility = null, r
     if (path === "/api/auth/me") return Response.json({ email: "owner@example.com" });
     if (path === "/api/deals") return Response.json([{ id: company, name: "Recorder Company" }]);
     if (path === `/api/deals/${company}/imports`) return Response.json({ role, imports: [] });
+    if (path === `/api/deals/${company}/import-datasets`) return Response.json({});
     if (path === "/api/runs?limit=100") return Response.json([]);
     if (path === "/api/findings?limit=200") return Response.json([]);
     if (path.startsWith("/api/usage")) return Response.json({ total_cost_usd: 0, total_input_tokens: 0, total_output_tokens: 0, runs: 0, groups: [] });

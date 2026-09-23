@@ -291,7 +291,7 @@ and feeds `merge_run()` with `effect_seen` evidence.
 
 | # | Slice | Scope | Exit criteria |
 | --- | --- | --- | --- |
-| 1 | Land `computer-use-agent` on `main` | rebase, migration `0020`, worker handler allow-list, `VISTA_TYPESAFE_*` in infra templates | `make test`, `make test-agents`, web + recorder tests green; runs pause at step 1 without drivers |
+| 1 | Land `computer-use-agent` on `main` | rebase, migration `0022`, worker handler allow-list, `VISTA_TYPESAFE_*` in infra templates | `make test`, `make test-agents`, web + recorder tests green; runs pause at step 1 without drivers |
 | 2 | State abstraction + `plan.json` | `taskmining/state.py` (shared abstraction), recorder `plan.js` (events → trajectory → graph), employee review card, 4th artifact in sharing package, server accepts `graph` in `WorkflowDefinition`, Reviewer's prefilled draft includes it, hash covers it | same recording ⇒ identical `graph` hash across runs of the compiler; two recordings of `synthetic_data/front_end_work` merge into one graph with a branch |
 | 3 | Planner over graph + shadow mode | `computer_use/graph.py` (`state_of`, `merge_run`), new questions in `planner.py`, cassettes, `mode: "shadow"` (observe + judge, never act; compare Jev's edge to what the employee does) | tier-1 tests with cassettes; shadow run produces per-edge agreement stats |
 | 4 | Browser driver + first real run | Electron CDP harness, host allow-list, consent screenshots, run-as-recording | invoice PDF (documents harness) → sandbox web form, `submit` approved by hand, `verify()` succeeded |

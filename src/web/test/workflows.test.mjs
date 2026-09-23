@@ -84,6 +84,7 @@ function mount({ role = "owner", existing = [] } = {}) {
     if (path === "/api/auth/me") return Response.json({ email: "owner@example.com" });
     if (path === "/api/deals") return Response.json([{ id: company, name: "Recorder Company" }]);
     if (path === `/api/deals/${company}/imports`) return Response.json({ role, imports: [] });
+    if (path === `/api/deals/${company}/import-datasets`) return Response.json({});
     if (path === "/api/runs?limit=100")
       return Response.json([
         { id: runId, run_type: "submission_analysis", deal_id: company, status: "succeeded", agent_key: "recording_reviewer", company: "Recorder Company", created_at: "2026-09-22T08:00:00Z", events: [] },
