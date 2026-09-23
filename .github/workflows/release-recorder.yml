@@ -59,11 +59,30 @@ jobs:
         run: npm run dist
         env:
           CSC_IDENTITY_AUTO_DISCOVERY: "false"
-      - name: Upload installers to the release
+      - name: Upload installers to the draft release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }}
           files: ${{ matrix.assets }}
+          # The release stays a draft until every platform has attached its installer:
+          # "latest/download" ignores drafts, so the download page keeps serving the
+          # previous version instead of a 404 while the builds run.
+          draft: true
           # A platform whose build produced nothing must fail its leg, not publish a
           # release whose "latest" download link 404s.
           fail_on_unmatched_files: true
+
+  publish:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Publish the release once all installers are attached
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }}
+        run: |
+          for asset in Vista-Recorder-mac-arm64.dmg Vista-Recorder-mac-x64.dmg Vista-Recorder-windows-setup.exe; do
+            gh release view "$TAG" --repo "$GITHUB_REPOSITORY" --json assets -q '.assets[].name' | grep -qx "$asset" \
+              || { echo "missing $asset"; exit 1; }
+          done
+          gh release edit "$TAG" --repo "$GITHUB_REPOSITORY" --draft=false --latest
