@@ -98,6 +98,12 @@ def step(judge, observation, *, state=None, mode="sandbox", inputs=INPUTS, defin
 def test_the_fixture_definition_validates_and_roles_are_read_off_observations():
     WorkflowDefinition.model_validate(DEFINITION)
     assert observed_role(pdf()) == "pdf"
+    # The worker's composed observation (no remote screen) is harness "local": the role still comes off the documents.
+    local_doc = Candidate("doc:invoice", "document", "invoice (INV-1042.pdf)", "document", {"input": "invoice", "harness": "documents"})
+    assert observed_role(Observation("local", {"documents_inputs": ["invoice"]}, [local_doc])) == "pdf"
+    endpoint = Candidate("http:erp:/bills", "endpoint", "erp /bills", "endpoint", {"harness": "http"})
+    assert observed_role(Observation("local", {}, [endpoint])) == "browser"
+    assert observed_role(Observation("local", {}, [])) == "documents"
     assert observed_role(books(("button", "Save"))) == "accounting"
     assert observed_role(Observation("browser", {"title": "Some site"}, [])) == "browser"
 
