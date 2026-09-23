@@ -102,7 +102,6 @@ app.whenReady().then(async () => {
       await new Promise(r => setTimeout(r, 50));
       return {
         days, hasWeek: !!document.querySelector('#week .d'), kpis: document.getElementById('k-hours').textContent,
-        adminHidden: document.getElementById('admin-settings').classList.contains('hidden'),
         submitBtn: !!document.getElementById('rv-submit') && !document.getElementById('rv-submit').classList.contains('hidden'),
         attn: document.getElementById('rv-note')?.className, editForm: !!document.querySelector('[data-form="0"]'),
         appRows: document.querySelectorAll('#docs .row.app').length, appBars: document.querySelectorAll('#docs .row.app .tr i').length, appFirst: document.querySelector('#docs .row.app .lb')?.textContent,
@@ -117,8 +116,6 @@ app.whenReady().then(async () => {
         closedDays: document.querySelectorAll('#rec-rows tr.day.closed').length,
         hiddenRecs: document.querySelectorAll('#rec-rows tr:not(.day).hidden').length,
         foldToggle: (() => { const d = document.querySelector('#rec-rows tr.day:not(.closed)'); d.click(); const after = document.querySelectorAll('#rec-rows tr:not(.day).hidden').length; document.querySelector('#rec-rows tr.day.closed').click(); return after; })(),
-        demoHidden: document.getElementById('demo-settings').classList.contains('hidden'),
-        demoReveal: (() => { for (let i = 0; i < 5; i++) document.getElementById('settings-title').click(); return !document.getElementById('demo-settings').classList.contains('hidden'); })(),
         flagRows: document.querySelectorAll('#flags .flag').length, flagOpen: document.querySelectorAll('#flags .flag:not(.dismissed)').length,
         flagBtns: !!document.querySelector('#flags [data-flag][data-decision="confirmed"]'), timelineFlag: !!document.querySelector('.strip i.flagged'),
         secChip: !!document.querySelector('#secs .fchip'), excludeBtn: !!document.querySelector('#flags [data-excl]'),
@@ -133,7 +130,7 @@ app.whenReady().then(async () => {
     const appsOk = out.appRows === 3 && out.appBars === 4 && out.appFirst === 'Outlook' && out.secsScroll === 'auto' && out.secCards === 2;
     const insightsOk = out.thumbs === 1 && out.dayRows === 3 && out.closedDays === 2 && out.hiddenRecs === 3 && out.foldToggle === 4 && out.demoReveal && out.flagRows === 2 && out.flagOpen === 1 && out.flagBtns && out.timelineFlag && out.secChip && out.excludeBtn && out.inputBody && out.trendRow && out.appTable && out.aiSummary && out.sumMarks >= 2 && out.approveBtn && out.fileAi;
     const wfOk = out.noFolder && out.progRing === '30' && out.submittingLabel && out.doneBtn && out.wfBtn === 1 && out.wfModal === 2 && out.wfCard && out.wfRows === 2 && out.wfSub.startsWith('2 suggested') && out.wfEnv && out.wfTrend && out.wfRecurring;
-    app.exit(errors.length || !insightsOk || !wfOk || !out.wsPill || !out.wsBanner || !out.hasWeek || out.days < 3 || !out.adminHidden || !out.editForm || out.electron || out.other || out.whatRecorded || !docsOk || !appsOk ? 1 : 0);
+    app.exit(errors.length || !insightsOk || !wfOk || !out.wsPill || !out.wsBanner || !out.hasWeek || out.days < 3 || !out.editForm || out.electron || out.other || out.whatRecorded || !docsOk || !appsOk ? 1 : 0);
   });
   w.loadFile(path.join(here, '..', 'ui', 'dashboard.html'));
 });

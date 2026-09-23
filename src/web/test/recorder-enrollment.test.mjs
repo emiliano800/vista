@@ -101,12 +101,15 @@ function page({ connected = false, accepted = false, analysis = null } = {}) {
   return { dom, state, errors, $: (key) => win.document.getElementById(key) };
 }
 
-test('ordinary employees can connect without admin mode, manual IDs or defaulting to the first company', async () => {
+test('first launch is a one-time setup screen: connect once, never see it again', async () => {
   const ui = page();
   try {
     await settle(() => ui.$('cloud-state').textContent.includes('Not connected'));
-    assert.equal(ui.$('admin-settings').contains(ui.$('cloud-enrollment')), false);
-    assert.equal(ui.$('view-settings').classList.contains('hidden'), false);
+    assert.equal(ui.$('view-setup').classList.contains('hidden'), false);
+    assert.equal(ui.$('view-today').classList.contains('hidden'), true);
+    assert.ok(ui.dom.window.document.querySelector('.shell').classList.contains('setup'));
+    assert.equal(ui.dom.window.document.querySelector('nav button[data-view="settings"]'), null);
+    assert.equal(ui.$('cloud-disconnect'), null);
     ui.$('cloud-key').value = 'synthetic-personal-access-key';
     ui.$('cloud-discover').click();
     await settle(() => ui.$('cloud-company').options.length === 3);
@@ -122,6 +125,10 @@ test('ordinary employees can connect without admin mode, manual IDs or defaultin
     assert.equal(ui.$('cloud-connect').disabled, false);
     ui.$('cloud-connect').click();
     await settle(() => ui.$('cloud-state').textContent.includes('Connected to Company B'));
+    assert.equal(ui.$('view-setup').classList.contains('hidden'), true);
+    assert.equal(ui.$('view-today').classList.contains('hidden'), false);
+    assert.ok(!ui.dom.window.document.querySelector('.shell').classList.contains('setup'));
+    assert.match(ui.$('who-sub').textContent, /Company B/);
     assert.equal(ui.state.connect.length, 1);
     assert.equal(ui.state.connect[0].workspace.id, other);
     assert.equal(ui.state.connect[0].workspace.kind, 'deal');
@@ -186,6 +193,7 @@ test('receipt confirmation is shown as awaiting analysis, not a completed or pub
   const ui = page({ connected: true, accepted: true });
   try {
     await settle(() => ui.state.onReview && ui.$('cloud-state').textContent.includes('Connected'));
+    assert.equal(ui.$('view-setup').classList.contains('hidden'), true, 'a connected app never shows setup');
     await settle(() => ui.$('rec-rows').textContent.includes('Uploaded'));
     assert.equal(ui.$('rec-rows').querySelector('[data-submit]'), null);
     await ui.state.onReview('session-1');

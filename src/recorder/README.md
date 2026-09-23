@@ -126,9 +126,13 @@ with their `review` item plus `review.summary`; `explain(id, {force})`
 Approve/Fix/Explain; `onSections` streams updates while the model runs.
 
 **Upload session (`src/intake.js`, protocol 2 — what a connected app uses).**
-Settings → Cloud workspace takes a personal access key; the app fetches the
-workspaces that key may upload to (`GET /api/recorder/workspaces`) and the
-employee picks one explicitly. After Stop, **Upload session** previews the
+The first launch is a one-time setup screen (there is no Settings view): it
+takes a personal access key, fetches the workspaces that key may upload to
+(`GET /api/recorder/workspaces`), and the employee picks one explicitly. Once
+connected the screen never returns unless the stored connection must be
+upgraded. Capture options are not configurable — every capture setting in
+`DEFAULT_SETTINGS` is on and `loadSettings` ignores saved overrides for them —
+because what leaves the computer is decided at upload time, not at capture. After Stop, **Upload session** previews the
 destination and the document snapshots, and the employee approves the sharing
 package. The package is metadata only — `activity.json` with timestamps, app
 names, interaction types and counts — plus the selected documents in full. No
@@ -160,7 +164,7 @@ build that opens without prompts, add the repository secrets `MAC_CSC_LINK`
 `APPLE_APP_SPECIFIC_PASSWORD` and `APPLE_TEAM_ID`; the workflow then signs with
 the Developer ID, enables the hardened runtime and notarizes automatically.
 
-**Cloud review (`src/cloud.js`, legacy protocol 1).** With Settings → Cloud workspace filled in
+**Cloud review (`src/cloud.js`, legacy protocol 1 — no longer reachable from the UI).** With an older connection file
 (website URL, company ID, access key), Stop uploads the redacted report
 (`manifest.json`, `processed/summary.json`, `processed/event_log.csv` — never
 `events.jsonl`, shots or video) to `POST /api/deals/{company}/recordings`, then
@@ -171,8 +175,8 @@ the result into `review.json` with `source: "cloud"`. Approve / Fix / Explain
 post to `POST …/review/{item}` and are kept locally if the workspace is
 unreachable (`sync_error`). Employees never hold an OpenAI key in this mode.
 
-Without a workspace, AI explanations run locally and need `OPENAI_API_KEY` (or
-Settings → AI explanations); `VISTA_OPENAI_MODEL` (default `gpt-4o-mini`) and
+Without a workspace, AI explanations run locally and need `OPENAI_API_KEY`
+(or `openaiApiKey` in `~/Vista/settings.json`); `VISTA_OPENAI_MODEL` (default `gpt-4o-mini`) and
 `VISTA_OPENAI_URL` (any OpenAI-compatible chat-completions endpoint) are
 optional. The key stays in the Electron main process.
 

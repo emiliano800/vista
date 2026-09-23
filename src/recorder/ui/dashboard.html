@@ -14,6 +14,10 @@
       a { color: var(--link); cursor: pointer; text-decoration: none; }
       a:hover { text-decoration: underline; }
       .shell { display: grid; grid-template-columns: var(--sidebar) 1fr; min-height: 100vh; }
+      /* First-run setup is the whole window: no navigation until the company is connected. */
+      .shell.setup { grid-template-columns: 1fr; }
+      .shell.setup nav { display: none; }
+      .shell.setup main { max-width: 640px; margin: 0 auto; }
       /* ---- sidebar ---- */
       nav { border-right: 1px solid var(--line); padding: var(--space-5) var(--space-3); background: var(--surface); display: flex; flex-direction: column; gap: 2px; }
       .brand { display: flex; align-items: center; gap: var(--space-2); font-family: var(--font-display); font-weight: 500; font-size: 22px; letter-spacing: -0.01em; padding: 0 var(--space-3); margin-bottom: var(--space-5); }
@@ -327,7 +331,6 @@
         <button data-view="today" class="active">This week</button>
         <button data-view="review" id="nav-review" class="hidden">Last session</button>
         <button data-view="recordings">My recordings <span id="n-rec" class="pill">0</span></button>
-        <button data-view="settings">Settings</button>
         <div class="spacer"></div>
         <div class="who"><b id="who-name">—</b><span id="who-sub">this computer</span></div>
       </nav>
@@ -497,48 +500,21 @@
         </div>
 
         <!-- ============ SETTINGS ============ -->
-        <div id="view-settings" class="hidden">
-          <h1 id="settings-title">Settings</h1>
-          <p class="lede">Defaults are set by your company; you can always make recording stricter.</p>
-          <div class="card set" id="settings"></div>
-          <section class="card set hidden" id="demo-settings">
-            <h2>Demo mode <span class="pill">hidden</span></h2>
-            <label><div>Simulated apps and input<span>Plays a scripted AP-clerk session (Outlook, Acrobat, QuickBooks, Excel) instead of recording this computer. Takes effect after the app restarts.</span></div><input type="checkbox" id="demo-mode"></label>
-            <div class="muted" id="demo-state" style="font-size:12px"></div>
-          </section>
+        <!-- ============ SETUP (first launch only) ============ -->
+        <div id="view-setup" class="hidden">
+          <h1>Connect your company.</h1>
+          <p class="lede">One-time setup. Paste the personal access key from your administrator, pick your company and confirm what gets shared. You will not see this screen again.</p>
           <section class="card" id="cloud-enrollment">
-            <h2>Connect your company</h2>
-            <p class="muted">Enter the personal access key from your administrator. Choose an authorized company, then confirm the sharing notice. No AWS or model-provider key is needed.</p>
             <label for="cloud-key">Personal access key</label><input id="cloud-key" type="password" autocomplete="off" placeholder="Stored securely using your system keychain" />
             <details style="margin-top:12px"><summary>Advanced: website address</summary><label for="cloud-url">Website address</label><input id="cloud-url" type="url" value="https://bumpsolutions.org" /></details>
-            <div style="margin-top:14px"><button class="btn primary" id="cloud-discover">Find my company</button> <button class="btn" id="cloud-disconnect">Disconnect</button></div>
+            <div style="margin-top:14px"><button class="btn primary" id="cloud-discover">Find my company</button></div>
             <div id="cloud-confirmation" class="hidden" style="margin-top:14px">
               <label for="cloud-company">Your company</label><select id="cloud-company"></select>
-              <div class="set"><label><div>Confirm recording and sharing<span>Capture stays local until I choose Upload session. The new upload shares app names, interaction types/counts and timestamps, plus only the document snapshots I select. Screenshots, video, typed text, clipboard contents, window titles and raw logs are not included. Uploads remain private drafts awaiting a future cloud-analysis step.</span></div><input id="cloud-consent" type="checkbox" /></label></div>
+              <div class="set"><label><div>Confirm recording and sharing<span>Capture stays on this computer until I choose Upload session. An upload shares app names, interaction types and counts, timestamps, and only the document snapshots I select. Screenshots, video, typed text, clipboard contents, window titles and raw logs are never included. The workspace analyses the upload into a draft only I can see; nothing is published until I choose to.</span></div><input id="cloud-consent" type="checkbox" /></label></div>
               <button class="btn primary" id="cloud-connect" disabled>Connect this company</button>
             </div>
             <p class="muted" id="cloud-state" role="status"></p>
           </section>
-          <div id="admin-settings" class="hidden">
-          <section class="card">
-            <h2>Private apps and words <span class="pill">admin</span></h2>
-            <p class="muted" style="margin:0 0 8px">Capture is muted while any of these apps are in front or these words appear in the window title.</p>
-            <input type="text" id="private-apps" placeholder="1Password, Bitwarden, KeePass" />
-            <div style="height:8px"></div>
-            <input type="text" id="private-titles" placeholder="password, bank, incognito" />
-            <div style="margin-top:10px"><button class="btn sm" id="save-private">Save</button> <span class="muted" id="saved-msg"></span></div>
-          </section>
-          <section class="card">
-            <h2>AI explanations <span class="pill">admin</span></h2>
-            <p class="muted" style="margin:0 0 8px">Any OpenAI-compatible endpoint (OpenAI, OpenRouter). <span class="mono">VISTA_OPENAI_*</span> in the environment or a <span class="mono">.env</span> in <span class="mono">~/Vista</span> or the repo overrides these fields.</p>
-            <p class="muted" id="ai-state" role="status" style="margin:0 0 8px"></p>
-            <input type="text" id="openai-key" placeholder="sk-…" autocomplete="off" />
-            <div style="height:8px"></div>
-            <input type="text" id="openai-model" placeholder="model (default: gpt-4.1-nano, or nvidia/nemotron-3-ultra-550b-a55b:free on OpenRouter)" />
-            <div class="set" style="margin-top:6px"><label><div>Also send up to 3 screenshots per section<span>Off: text only. On: low-resolution frames go to the model so it can see what was on screen.</span></div><input type="checkbox" id="openai-shots"></label></div>
-            <div style="margin-top:10px"><button class="btn sm" id="save-openai">Save</button> <span class="muted" id="saved-openai"></span></div>
-          </section>
-          </div>
         </div>
       </main>
     </div>
@@ -654,7 +630,8 @@
       document.querySelectorAll('nav button').forEach((b) => (b.onclick = () => show(b.dataset.view)));
       function show(v) {
         document.querySelectorAll('nav button').forEach((b) => b.classList.toggle('active', b.dataset.view === v));
-        for (const x of ['today', 'review', 'recordings', 'settings']) $('view-' + x).classList.toggle('hidden', x !== v);
+        for (const x of ['today', 'review', 'recordings', 'setup']) $('view-' + x).classList.toggle('hidden', x !== v);
+        document.querySelector('.shell').classList.toggle('setup', v === 'setup');
       }
 
       // ---- review: the analysis agent, shown when the dashboard comes back after Stop ----
@@ -1415,9 +1392,9 @@
       function renderCloud() {
         $('cloud-url').value = cloud?.url || 'https://bumpsolutions.org';
         $('cloud-state').textContent = cloud?.connected
-          ? `Connected to ${cloud.companyName} as ${cloud.email}. Uploads require your sharing confirmation. Cloud analysis is not enabled yet.`
+          ? `Connected to ${cloud.companyName} as ${cloud.email}. Uploads always ask for your confirmation first.`
           : cloud?.requiresReconnect ? 'Reconnect with your personal access key to upgrade this older connection.' : 'Not connected. Enter your personal access key to find your company.';
-        $('cloud-disconnect').disabled = !cloud?.connected;
+        if (cloud?.connected) $('who-sub').textContent = `${cloud.companyName} · ${cloud.email}`;
         if (info) info.cloud = !!cloud?.connected;
         renderRecordings();
         renderReview();
@@ -1455,17 +1432,12 @@
           $('cloud-confirmation').classList.add('hidden');
           info = await window.vista.info();
           renderCloud();
+          show('today');  // setup is done; the dashboard takes over for good
         } catch (e) { $('cloud-state').textContent = e.message; connectionReady(); }
       };
-      $('cloud-disconnect').onclick = async () => {
-        try {
-          cloud = await window.vista.cloudDisconnect();
-          enrollment = null;
-          $('cloud-confirmation').classList.add('hidden');
-          connectionReady(); renderCloud();
-        } catch (e) { $('cloud-state').textContent = e.message; }
-      };
-      window.vista.cloudStatus().then(value => { cloud = value; renderCloud(); if (!cloud.connected) show('settings'); }).catch(e => { $('cloud-state').textContent = e.message; });
+      // Not connected (first launch, or an older connection that must be upgraded): the
+      // setup screen is the whole window. Once connected it never shows again.
+      window.vista.cloudStatus().then(value => { cloud = value; renderCloud(); if (!cloud.connected) show('setup'); }).catch(e => { $('cloud-state').textContent = e.message; show('setup'); });
 
       // ---- recordings ----
       // Days folded shut in My recordings; today starts open, older days closed.
@@ -1672,61 +1644,6 @@
         if (reviewing === annotating) loadSections(reviewing);
       };
 
-      // ---- settings ----
-      const SETTINGS_UI = [
-        ['screenshots', 'Screenshots', 'Low-resolution frame when you change window, when the screen changes, and every 15 seconds.'],
-        ['changeDetect', 'Screenshot when the screen changes', 'Compares a tiny thumbnail twice a second; shoots when at least 4% of it moves (a new email, sheet or dialog).'],
-        ['video', 'Screen video', 'Low frame-rate recording of the screen, saved next to the events.'],
-        ['clipboard', 'Copied text', 'Shows where information is re-typed between systems.'],
-        ['keyContent', 'Typed characters', 'Off: only the number of keys is stored. On: what you type is kept in the log and shown in the review — never on sign-in, payment or private windows, and card, account and contact details are masked. Usually left off.'],
-        ['redact', 'Redact sensitive text', 'Off by default. On: emails, phone, card and account numbers become [EMAIL], [PHONE], [CARD] before saving, and your name becomes a code in the analysis.'],
-      ];
-      function renderSettings() {
-        if (!settings) return;
-        $('settings').innerHTML = SETTINGS_UI.map(([k, t, s]) => `<label><div>${t}<span>${s}</span></div><input type="checkbox" data-k="${k}" ${settings[k] ? 'checked' : ''}></label>`).join('');
-        $('settings').querySelectorAll('input').forEach((i) => (i.onchange = async () => { settings = await window.vista.setSettings({ [i.dataset.k]: i.checked }); }));
-        $('admin-settings').classList.toggle('hidden', !info?.admin);
-        $('demo-mode').checked = !!settings.demoMode;
-        $('demo-state').textContent = !!settings.demoMode === !!info?.demo ? (info?.demo ? 'Demo mode is on.' : '') : settings.demoMode ? 'Restart the app to enter demo mode.' : 'Restart the app to leave demo mode.';
-        if (info?.demo) $('demo-settings').classList.remove('hidden');
-        $('private-apps').value = settings.privateApps.join(', ');
-        $('private-titles').value = settings.privateTitles.join(', ');
-        $('openai-key').value = settings.openaiApiKey ?? '';
-        $('openai-model').value = settings.openaiModel ?? '';
-        $('openai-shots').checked = !!settings.clarifyScreenshots;
-        renderAiState();
-      }
-      function renderAiState() {
-        const ai = info?.ai;
-        if (!ai) return;
-        $('ai-state').textContent = ai.pendingCloudAnalysis ? 'Connected for private uploads. Cloud analysis is not enabled yet; no model key is needed here.'
-          : ai.key_source === 'cloud' ? 'AI explanations run in your company workspace.'
-          : ai.key_source === 'env' ? `AI explanations on · key from the environment · model ${ai.model}`
-          : ai.key_source === 'settings' ? `AI explanations on · key from Settings · model ${ai.model}`
-          : 'AI explanations off — no key found.';
-      }
-      // Hidden: five clicks on the Settings heading reveal the demo-mode card.
-      let titleClicks = 0;
-      $('settings-title').onclick = () => { if (++titleClicks >= 5) $('demo-settings').classList.remove('hidden'); };
-      $('demo-mode').onchange = async () => {
-        settings = await window.vista.setSettings({ demoMode: $('demo-mode').checked });
-        renderSettings();
-        if (confirm(`Restart Vista now to turn demo mode ${settings.demoMode ? 'on' : 'off'}?`)) window.vista.relaunch();
-      };
-      $('save-openai').onclick = async () => {
-        settings = await window.vista.setSettings({ openaiApiKey: $('openai-key').value.trim(), openaiModel: $('openai-model').value.trim(), clarifyScreenshots: $('openai-shots').checked });
-        info = await window.vista.info();
-        $('saved-openai').textContent = info.openai ? 'Saved — AI explanations are on' : 'Saved — no key, AI explanations are off';
-        renderAiState();
-        setTimeout(() => ($('saved-openai').textContent = ''), 2500);
-      };
-      $('save-private').onclick = async () => {
-        const split = (v) => v.split(',').map((s) => s.trim()).filter(Boolean);
-        settings = await window.vista.setSettings({ privateApps: split($('private-apps').value), privateTitles: split($('private-titles').value) });
-        $('saved-msg').textContent = 'Saved';
-        setTimeout(() => ($('saved-msg').textContent = ''), 1500);
-      };
-
       // ---- macOS permissions ----
       const PERMS = [
         ['accessibility', 'Accessibility', 'lets Vista see which window is in front'],
@@ -1765,7 +1682,7 @@
         $('who-sub').textContent = info.demo ? 'demo mode · simulated apps' : `${info.platform} · this computer`;
         $('home-path').textContent = info.home + '/recordings';
         $('rv-submit').title = info.cloud ? $('rv-submit').title : 'Not connected to a workspace yet — ask your Vista admin';
-        renderHero(status); renderRecordings(); renderToday(); renderSettings(); checkPermissions();
+        renderHero(status); renderRecordings(); renderToday(); checkPermissions();
         setInterval(async () => { if (status && status.state !== 'idle') { status = await window.vista.status(); renderHero(status); renderToday(); } }, 1000);
       })();
     </script>

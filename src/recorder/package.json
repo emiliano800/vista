@@ -1,6 +1,6 @@
 {
   "name": "vista-recorder",
-  "version": "0.2.1",
+  "version": "0.3.0",
   "description": "One-button desktop recorder for Vista task mining: always-on overlay, cross-platform input hooks, active-window + screenshot capture, on-device redaction.",
   "private": true,
   "type": "module",

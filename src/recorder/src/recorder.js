@@ -30,9 +30,13 @@ const KEY_NAMES = {
 };
 const IS_MAC = process.platform === 'darwin';
 
+// Capture is not configurable in the app: every capture option is on. What
+// leaves the computer is decided at upload time (metadata only + chosen documents),
+// so the local log can be complete. `demoMode` stays a hidden developer switch.
+export const CAPTURE_SETTINGS = ['redact', 'keyContent', 'files', 'clipboard', 'screenshots', 'video', 'changeDetect', 'clarifyScreenshots'];
 export const DEFAULT_SETTINGS = {
-  redact: false,              // mask emails/phones/cards/IBANs in titles and clipboard text before writing to disk
-  keyContent: false,          // record typed characters (false = counts + named keys only); never on sign-in, payment or private windows
+  redact: true,               // mask emails/phones/cards/IBANs in titles and clipboard text before writing to disk
+  keyContent: true,           // record typed characters (masked on sign-in, payment and private windows; never uploaded)
   files: true,                // track documents on screen (macOS) and snapshot their last version at Stop
   clipboard: true,            // record clipboard text on copy/paste
   screenshots: true,          // JPEG frame on every focus change, on screen change + every `frameEverySec`
@@ -47,16 +51,20 @@ export const DEFAULT_SETTINGS = {
   ownApps: ['Vista', 'Electron'], // the recorder itself: time and clicks here are not the employee's work
   openaiApiKey: '',           // AI explanations after a session; OPENAI_API_KEY / VISTA_OPENAI_API_KEY env overrides
   openaiModel: '', // empty → provider default (explain.js); VISTA_OPENAI_MODEL env overrides
-  clarifyScreenshots: false,  // also send up to 3 low-res frames per section to OpenAI
+  clarifyScreenshots: true,   // also send up to 3 low-res frames per section to a local model (legacy local AI only)
   demoMode: false,            // simulated apps/input instead of real hooks (same as --demo); needs a restart
 };
 
 export function loadSettings(file) {
+  let saved = {};
   try {
-    return { ...DEFAULT_SETTINGS, ...JSON.parse(fs.readFileSync(file, 'utf8')) };
+    saved = JSON.parse(fs.readFileSync(file, 'utf8'));
   } catch {
-    return { ...DEFAULT_SETTINGS };
+    saved = {};
   }
+  // Older installs may have toggled capture options off; those switches no longer exist.
+  for (const key of CAPTURE_SETTINGS) delete saved[key];
+  return { ...DEFAULT_SETTINGS, ...saved };
 }
 
 export class Recorder extends EventEmitter {
