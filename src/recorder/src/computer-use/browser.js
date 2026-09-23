@@ -27,7 +27,7 @@ export const MAX_TEXT = 4000;
 export const MAX_ROWS = 200;
 export const MAX_COLUMNS = 40;
 export const SETTLE_MS = 600;
-export const HOVER_MS = 700; // real pointer rests on the control before pressing, so a watcher can follow
+export const HOVER_MS = 60; // just long enough for the page to see the pointer land before it presses
 
 // Drawn into the sandbox page on every document: a ring that follows the pointer and
 // flashes on press, so the person watching sees where the agent is and when it clicks.

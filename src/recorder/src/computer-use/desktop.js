@@ -9,8 +9,8 @@
 //   openApp(name)             bring an application to the front
 //   screenshot()              base64 PNG of the frontmost window, or null
 //
-// (`desktop-macos.js` provides one; there is none for Windows or Linux yet, so `supported`
-// is false there and the workspace never offers this device a desktop run.)
+// (`desktop-macos.js` and `desktop-linux.js` provide one; there is none for Windows yet, so
+// `supported` is false there and the workspace never offers this device a desktop run.)
 //
 // Guards, all in code: a private or sign-in window (settings' private apps/titles plus the
 // recorder's sensitive-title list) refuses every step; the observation lists only named

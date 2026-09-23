@@ -26,6 +26,7 @@ import { ComputerUseClient } from './computer-use/client.js';
 import { defaultHarnesses } from './computer-use/harnesses.js';
 import { openSandboxPage } from './computer-use/browser-electron.js';
 import { openChromePage } from './computer-use/browser-chrome.js';
+import { linuxBackend } from './computer-use/desktop-linux.js';
 import { macosBackend } from './computer-use/desktop-macos.js';
 import { nutPointer } from './computer-use/pointer.js';
 
@@ -1303,7 +1304,7 @@ async function buildHarnesses() {
   if (DEMO) return defaultHarnesses({ demo: true });
   const settings = () => recorder?.settings ?? DEFAULT_SETTINGS;
   const pointer = await nutPointer();
-  const desktopBackend = await macosBackend({ activeWindow: recorder?.activeWindow ?? null });
+  const desktopBackend = (await macosBackend({ activeWindow: recorder?.activeWindow ?? null })) ?? (await linuxBackend());
   // VISTA_CU_BROWSER=chrome drives a tab in the employee's own Chrome (DevTools port) instead
   // of the recorder's isolated window — the employee's profile, so opt-in only.
   const openPage = process.env.VISTA_CU_BROWSER === 'chrome' ? openChromePage() : openSandboxPage();

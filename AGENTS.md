@@ -152,9 +152,10 @@ CDP, or with `VISTA_CU_BROWSER=chrome` a new tab in the employee's running Chrom
 (`browser-chrome.js`, `VISTA_CU_CHROME_ENDPOINT`, default `http://127.0.0.1:9222`) —
 candidates come from the accessibility tree (≤40 named controls; unnamed table rows are
 named in code from their first cells), clicks/typing go
-through CDP input or the real pointer (`@nut-tree-fork/nut-js`, optional); **desktop** =
-frontmost-window accessibility tree (macOS System Events) + nut-js pointer/keyboard,
-`null` elsewhere. Every targeted step cites the observation it was chosen from; stale
+through CDP input or the real pointer (`@nut-tree-fork/nut-js`, optional; it jumps to the
+control, no glide); **desktop** = frontmost-window accessibility tree (macOS System Events,
+or Linux AT-SPI2 via `desktop-linux-atspi.py` + xdotool) + nut-js pointer/keyboard, `null`
+elsewhere; `open_app` only raises a window that is already open. Every targeted step cites the observation it was chosen from; stale
 observation, changed front window, secure fields and private/sign-in/payment windows
 fail closed (`stale_observation` / `sensitive_window`). A computer advertises a harness
 only when its driver exists; otherwise `harness_unsupported` pauses the run for a person

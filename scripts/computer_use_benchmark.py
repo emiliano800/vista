@@ -208,7 +208,7 @@ def score(tasks: list[dict], results_dir: Path) -> dict:
                 "status": run.get("status"),
                 "ground_truth_ok": not missing and run.get("status") == "succeeded",
                 "missing_on_screen": missing,
-                "jev_verified": verification.get("passed"),
+                "jev_verified": verification.get("verified", verification.get("passed")),
                 "p_goal": verification.get("p_goal"),
                 "steps": len(acts) or run.get("steps"),
                 "pauses": len(r.get("decisions") or []),
