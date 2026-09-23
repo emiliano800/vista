@@ -23,7 +23,7 @@ import { DEFAULT_SETTINGS } from '../recorder.js';
 import { KEYS, isPrivateWindow } from './policy.js';
 
 export const MAX_CANDIDATES = 40;
-export const MAX_TEXT = 4000;
+export const MAX_TEXT = 12000;
 export const MAX_ROWS = 200;
 export const MAX_COLUMNS = 40;
 export const SETTLE_MS = 600;
@@ -100,12 +100,35 @@ function rowName(n, byId) {
     .join(' · ');
 }
 
+// `Accessibility.getFullAXTree` lists nodes depth by depth, which interleaves every table on the
+// page; document order (a walk from the root over `childIds`) keeps each table's rows together so
+// the cap of MAX_CANDIDATES falls on whole sections, not on whichever rows happen to be shallow.
+export function documentOrder(nodes) {
+  const byId = new Map((nodes ?? []).map((n) => [n.nodeId, n]));
+  const isChild = new Set();
+  for (const n of nodes ?? []) for (const id of n.childIds ?? []) isChild.add(id);
+  const roots = (nodes ?? []).filter((n) => !isChild.has(n.nodeId));
+  if (!roots.length || roots.length === nodes.length) return nodes ?? [];
+  const out = [];
+  const visited = new Set();
+  const stack = roots.reverse();
+  while (stack.length) {
+    const n = stack.pop();
+    if (!n || visited.has(n.nodeId)) continue;
+    visited.add(n.nodeId);
+    out.push(n);
+    const kids = (n.childIds ?? []).map((id) => byId.get(id)).filter(Boolean);
+    for (let i = kids.length - 1; i >= 0; i--) stack.push(kids[i]);
+  }
+  return out;
+}
+
 // Pure: AX nodes → candidates. Exported for tests.
 export function candidatesFromAX(nodes, { limit = MAX_CANDIDATES } = {}) {
   const out = [];
   const seen = new Set();
   const byId = new Map((nodes ?? []).map((n) => [n.nodeId, n]));
-  for (const n of nodes ?? []) {
+  for (const n of documentOrder(nodes)) {
     if (n.ignored || n.backendDOMNodeId == null) continue;
     const role = axValue(n.role);
     const kind = ROLE_KIND[role];

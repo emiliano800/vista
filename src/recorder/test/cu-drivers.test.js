@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
-import { BrowserHarness, HALO_SCRIPT, candidatesFromAX } from '../src/computer-use/browser.js';
+import { BrowserHarness, HALO_SCRIPT, candidatesFromAX, documentOrder } from '../src/computer-use/browser.js';
 import { ChromeConnection, GEOMETRY_SCRIPT, openChromePage, screenPointFrom } from '../src/computer-use/browser-chrome.js';
 import { DesktopHarness, candidatesFromElements } from '../src/computer-use/desktop.js';
 import { linuxBackend, parseGeometry } from '../src/computer-use/desktop-linux.js';
@@ -107,6 +107,30 @@ test('browser: unnamed table rows are named from their first cells; header rows 
       ['52', 'row', 'Named row'],
     ],
   );
+});
+
+test('browser: candidates follow document order, not the depth-first listing CDP returns', () => {
+  const n = (nodeId, role, name, childIds = [], depthExtra = {}) => ({ nodeId, backendDOMNodeId: Number(nodeId.replace(/\D/g, '')) || 900, role: { value: role }, name: { value: name }, childIds, ...depthExtra });
+  // CDP order: root, then both tables, then the deep rows of table B, then the shallower row of table A last.
+  const nodes = [
+    n('r1', 'RootWebArea', 'Page', ['t10', 't20']),
+    n('t10', 'table', 'Clients', ['g11']),
+    n('t20', 'table', 'Contacts', ['g21']),
+    n('g21', 'rowgroup', '', ['w22', 'w23']),
+    n('g11', 'rowgroup', '', ['w12']),
+    n('w22', 'row', 'Contact one'),
+    n('w23', 'row', 'Contact two'),
+    n('w12', 'row', 'Client row'),
+  ];
+  assert.deepEqual(
+    documentOrder(nodes).map((x) => x.nodeId),
+    ['r1', 't10', 'g11', 'w12', 't20', 'g21', 'w22', 'w23'],
+  );
+  assert.deepEqual(
+    candidatesFromAX(nodes, { limit: 3 }).map((c) => c.name),
+    ['Clients', 'Client row', 'Contacts'],
+  );
+  assert.equal(documentOrder(NODES), NODES); // no childIds: the listing is kept as-is
 });
 
 test('chrome: page point → screen point uses the window geometry the page reports', () => {
