@@ -20,7 +20,8 @@ import { JobStore } from './jobs.js';
 import { reviewFiles } from './filereview.js';
 import { FLAG_DECISIONS, INSIGHTS_FILE, buildInsights, insightsSummary, summarizeInsights } from './insights.js';
 import { WORKFLOWS_FILE, refineSessionWorkflow, sessionDigest, suggestWorkflows, workflowsStub } from './workflows.js';
-import { deviceId, discoverWorkspaces, documentOptions, selectWorkspace, SubmissionQueue, uploadBinding } from './intake.js';
+import { deviceId, discoverWorkspaces, documentOptions, planPreview, selectWorkspace, SubmissionQueue, uploadBinding } from './intake.js';
+import { ANCHORS_FILE, applyPlanEdits, compilePlan, PLAN_EDITS_FILE, PLAN_FILE, planSummary } from './plan.js';
 import { ComputerUseClient } from './computer-use/client.js';
 import { defaultHarnesses } from './computer-use/harnesses.js';
 
@@ -265,10 +266,84 @@ function readWorkflows(dir) {
 
 // Deterministic suggestions from the environment + actions; stub on the manifest
 // so later sessions can see which ones recur.
+// The recording as a state graph (plan.json, metadata only) plus the anchors a run
+// needs to find the same controls again (anchors.json: titles, URLs, coordinates —
+// this file never leaves the folder). Recompiled whenever the sections change.
+function buildPlan(recordingId) {
+  const dir = recDir(recordingId);
+  const m = readManifest(dir);
+  if (!m.ended_at || m.submitted) return null;
+  const events = readEvents(dir);
+  const edits = readSectionEdits(dir);
+  const excluded = buildSections(events, m).filter((s) => edits[s.id]?.excluded);
+  const { graph, anchors } = compilePlan({ recordingId, events, files: readFiles(dir), excluded, manifest: m });
+  fs.writeFileSync(path.join(dir, PLAN_FILE), JSON.stringify(graph, null, 2), { mode: 0o600 });
+  fs.writeFileSync(path.join(dir, ANCHORS_FILE), JSON.stringify(anchors, null, 2), { mode: 0o600 });
+  return graph;
+}
+
+function readPlanEdits(dir) {
+  try {
+    return JSON.parse(fs.readFileSync(path.join(dir, PLAN_EDITS_FILE), 'utf8'));
+  } catch {
+    return {};
+  }
+}
+
+// What the dashboard shows: the graph after the employee's edits, with the moves in the
+// order they were recorded so the list reads like the session did.
+function planFor(recordingId) {
+  const dir = recDir(recordingId);
+  let graph = null;
+  if (readManifest(dir).submitted) {
+    try {
+      graph = JSON.parse(fs.readFileSync(path.join(dir, PLAN_FILE), 'utf8'));
+    } catch {
+      graph = null;
+    }
+  } else graph = buildPlan(recordingId);
+  if (!graph) return null;
+  const edits = readPlanEdits(dir);
+  const reviewed = applyPlanEdits(graph, edits);
+  const first = (e) => Number(String(e.provenance[0]?.event_ids[0] ?? 'e0').slice(1));
+  const moves = graph.edges
+    .slice()
+    .sort((a, b) => first(a) - first(b))
+    .map((e) => ({
+      id: e.id, action: e.action_class, control: e.control, slot: e.slot, effect: e.effect,
+      role: graph.nodes.find((n) => n.key === e.frm)?.app_role ?? 'other',
+      policy: reviewed.edges.find((r) => r.id === e.id)?.policy ?? e.policy, excluded: !!edits[e.id]?.excluded,
+    }));
+  return { summary: planSummary(reviewed), moves, submitted: !!readManifest(dir).submitted };
+}
+
+function editPlan(recordingId, edgeId, { excluded, policy } = {}) {
+  if (!/^[0-9a-f]{16}$/.test(String(edgeId))) throw new Error('Invalid move.');
+  const dir = recDir(recordingId);
+  if (readManifest(dir).submitted) throw new Error('This session was submitted; edit it in the workspace.');
+  const edits = readPlanEdits(dir);
+  const cur = { ...(edits[edgeId] ?? {}) };
+  if (excluded !== undefined) cur.excluded = !!excluded;
+  if (policy !== undefined) {
+    if (policy !== null && policy !== 'always_ask' && policy !== 'confirm') throw new Error('A move can only be made to ask more often.');
+    if (policy === null) delete cur.policy;
+    else cur.policy = policy;
+  }
+  if (!cur.excluded && !cur.policy) delete edits[edgeId];
+  else edits[edgeId] = { ...cur, edited_at: new Date().toISOString() };
+  fs.writeFileSync(path.join(dir, PLAN_EDITS_FILE), JSON.stringify(edits, null, 2), { mode: 0o600 });
+  return planFor(recordingId);
+}
+
 function buildWorkflows(recordingId) {
   const dir = recDir(recordingId);
   const m = readManifest(dir);
   if (!m.ended_at || m.submitted) return readWorkflows(dir);
+  try {
+    buildPlan(recordingId);
+  } catch (e) {
+    console.error('Plan graph not compiled:', e?.message ?? e);
+  }
   const wf = suggestWorkflows({ manifest: m, events: readEvents(dir), files: readFiles(dir), summary: m.summary ?? null });
   fs.writeFileSync(path.join(dir, WORKFLOWS_FILE), JSON.stringify(wf, null, 2));
   fs.writeFileSync(path.join(dir, 'manifest.json'), JSON.stringify({ ...readManifest(dir), workflows: workflowsStub(wf) }, null, 2));
@@ -1246,7 +1321,7 @@ async function queueSubmission(id, options) {
   const config = cloudConfig();
   if (options?.consent !== true || JSON.stringify(options.expectedBinding) !== JSON.stringify(uploadBinding(config)))
     throw new Error('Review and confirm the upload destination and selected files again.');
-  intakeQueue.enqueue(RECORDINGS, id, config, options);
+  intakeQueue.enqueue(RECORDINGS, id, config, { ...options, ownApps: recorder?.settings?.ownApps ?? [] });
   resumeUploads(true);
   return sectionsFor(id);
 }
@@ -1272,7 +1347,13 @@ ipcMain.handle('recordings:reanalyze', (event, id) => withAnalysis(event, id, (c
 ipcMain.handle('recordings:upload-preview', (event, id) => {
   requireDashboard(event);
   const c = cloudConfig();
-  return { companyName: c.companyName, email: c.email, binding: uploadBinding(c), documents: documentOptions(RECORDINGS, id) };
+  let plan = null;
+  try {
+    plan = planPreview(RECORDINGS, id, { ownApps: recorder?.settings?.ownApps ?? [] });
+  } catch (e) {
+    console.error('Plan graph preview failed:', e?.message ?? e);
+  }
+  return { companyName: c.companyName, email: c.email, binding: uploadBinding(c), documents: documentOptions(RECORDINGS, id), plan };
 });
 ipcMain.handle('cloud:upload', async (event, id) => {
   requireDashboard(event);
@@ -1284,7 +1365,7 @@ ipcMain.handle('cloud:upload', async (event, id) => {
 // Order: report (idempotent) → every media file via signed URLs → move the
 // metadata stub to submitted/ → delete the recording folder. A failure at any
 // step leaves the folder in place with status 'failed' so Submit can be retried.
-const STUB_FILES = ['manifest.json', REVIEW_FILE, SECTIONS_FILE, 'annotations.jsonl', WORKFLOWS_FILE];
+const STUB_FILES = ['manifest.json', REVIEW_FILE, SECTIONS_FILE, 'annotations.jsonl', WORKFLOWS_FILE, PLAN_FILE, PLAN_EDITS_FILE];
 // files.json travels too, without the absolute paths.
 function writeFilesStub(dir, stub) {
   const files = readFiles(dir).map(publicFile);
@@ -1423,6 +1504,11 @@ ipcMain.handle('recordings:rerun-agents', async (_e, id) => {
 });
 ipcMain.handle('recordings:toggle-file', (_e, id, fileId, include) => toggleFile(id, fileId, include));
 ipcMain.handle('recordings:workflows', (_e, id) => readWorkflows(recDir(id)) ?? buildWorkflows(id));
+ipcMain.handle('recordings:plan', (_e, id) => planFor(id));
+ipcMain.handle('recordings:edit-plan', (event, id, edgeId, patch) => {
+  requireDashboard(event);
+  return editPlan(id, String(edgeId), patch ?? {});
+});
 ipcMain.handle('recordings:open-file', (_e, id, fileId) => {
   const dir = recDir(id);
   const f = readFiles(dir).find((x) => x.id === fileId && x.snapshot);

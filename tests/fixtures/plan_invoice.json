@@ -1,0 +1,283 @@
+{
+  "start": [
+    "e70bb61a6df0da3c"
+  ],
+  "nodes": [
+    {
+      "key": "5dc32def51fc8b31",
+      "app_role": "accounting",
+      "activity": "accounting",
+      "signature": [
+        "fact:f1",
+        "field:Amount"
+      ],
+      "terminal": false
+    },
+    {
+      "key": "71726d3c8985468e",
+      "app_role": "accounting",
+      "activity": "accounting",
+      "signature": [
+        "fact:f1",
+        "field:Amount",
+        "field:input_1"
+      ],
+      "terminal": false
+    },
+    {
+      "key": "8c7910891d037c71",
+      "app_role": "pdf",
+      "activity": "pdf",
+      "signature": [
+        "doc:d1",
+        "fact:f1"
+      ],
+      "terminal": false
+    },
+    {
+      "key": "e70bb61a6df0da3c",
+      "app_role": "pdf",
+      "activity": "pdf",
+      "signature": [
+        "doc:d1"
+      ],
+      "terminal": false
+    },
+    {
+      "key": "e8aae01d0a4260b9",
+      "app_role": "accounting",
+      "activity": "accounting",
+      "signature": [
+        "fact:f1"
+      ],
+      "terminal": true
+    }
+  ],
+  "edges": [
+    {
+      "id": "023b55bc9187a427",
+      "frm": "e70bb61a6df0da3c",
+      "to": "8c7910891d037c71",
+      "action_class": "read",
+      "control": "Total",
+      "slot": null,
+      "produces": [
+        "f1"
+      ],
+      "effect": [
+        "fact:f1"
+      ],
+      "stats": {
+        "support": 1,
+        "recorded": 1,
+        "executed": 0,
+        "verified_ok": 0,
+        "approved": 0,
+        "denied": 0,
+        "effect_missing": 0
+      },
+      "provenance": [
+        {
+          "source": "recording",
+          "id": "rec-invoice-1",
+          "event_ids": [
+            "e1"
+          ]
+        }
+      ],
+      "policy": "auto",
+      "anchor_ref": "rec-invoice-1:023b55bc9187a427"
+    },
+    {
+      "id": "108df173fec361d3",
+      "frm": "71726d3c8985468e",
+      "to": "71726d3c8985468e",
+      "action_class": "press",
+      "control": "Enter",
+      "slot": null,
+      "produces": [],
+      "effect": [],
+      "stats": {
+        "support": 1,
+        "recorded": 1,
+        "executed": 0,
+        "verified_ok": 0,
+        "approved": 0,
+        "denied": 0,
+        "effect_missing": 0
+      },
+      "provenance": [
+        {
+          "source": "recording",
+          "id": "rec-invoice-1",
+          "event_ids": [
+            "e7"
+          ]
+        }
+      ],
+      "policy": "auto",
+      "anchor_ref": "rec-invoice-1:108df173fec361d3"
+    },
+    {
+      "id": "2810bf9603134c60",
+      "frm": "8c7910891d037c71",
+      "to": "e8aae01d0a4260b9",
+      "action_class": "navigate",
+      "control": null,
+      "slot": null,
+      "produces": [],
+      "effect": [],
+      "stats": {
+        "support": 1,
+        "recorded": 1,
+        "executed": 0,
+        "verified_ok": 0,
+        "approved": 0,
+        "denied": 0,
+        "effect_missing": 0
+      },
+      "provenance": [
+        {
+          "source": "recording",
+          "id": "rec-invoice-1",
+          "event_ids": [
+            "e2"
+          ]
+        }
+      ],
+      "policy": "auto",
+      "anchor_ref": "rec-invoice-1:2810bf9603134c60"
+    },
+    {
+      "id": "3bc5fb9c95aadab6",
+      "frm": "71726d3c8985468e",
+      "to": "e8aae01d0a4260b9",
+      "action_class": "submit",
+      "control": "Cmd+S",
+      "slot": null,
+      "produces": [],
+      "effect": [
+        "field:Amount",
+        "field:input_1"
+      ],
+      "stats": {
+        "support": 1,
+        "recorded": 1,
+        "executed": 0,
+        "verified_ok": 0,
+        "approved": 0,
+        "denied": 0,
+        "effect_missing": 0
+      },
+      "provenance": [
+        {
+          "source": "recording",
+          "id": "rec-invoice-1",
+          "event_ids": [
+            "e8"
+          ]
+        }
+      ],
+      "policy": "always_ask",
+      "anchor_ref": "rec-invoice-1:3bc5fb9c95aadab6"
+    },
+    {
+      "id": "9d45e1fb1030c403",
+      "frm": "e8aae01d0a4260b9",
+      "to": "e8aae01d0a4260b9",
+      "action_class": "click",
+      "control": null,
+      "slot": null,
+      "produces": [],
+      "effect": [],
+      "stats": {
+        "support": 1,
+        "recorded": 1,
+        "executed": 0,
+        "verified_ok": 0,
+        "approved": 0,
+        "denied": 0,
+        "effect_missing": 0
+      },
+      "provenance": [
+        {
+          "source": "recording",
+          "id": "rec-invoice-1",
+          "event_ids": [
+            "e3"
+          ]
+        }
+      ],
+      "policy": "confirm",
+      "anchor_ref": "rec-invoice-1:9d45e1fb1030c403"
+    },
+    {
+      "id": "b9ad3d0bc5ae453e",
+      "frm": "e8aae01d0a4260b9",
+      "to": "5dc32def51fc8b31",
+      "action_class": "type_value",
+      "control": "Amount",
+      "slot": "f1",
+      "produces": [],
+      "effect": [
+        "field:Amount"
+      ],
+      "stats": {
+        "support": 1,
+        "recorded": 1,
+        "executed": 0,
+        "verified_ok": 0,
+        "approved": 0,
+        "denied": 0,
+        "effect_missing": 0
+      },
+      "provenance": [
+        {
+          "source": "recording",
+          "id": "rec-invoice-1",
+          "event_ids": [
+            "e4"
+          ]
+        }
+      ],
+      "policy": "confirm",
+      "anchor_ref": "rec-invoice-1:b9ad3d0bc5ae453e"
+    },
+    {
+      "id": "d1f09cc6fc8f07e0",
+      "frm": "5dc32def51fc8b31",
+      "to": "71726d3c8985468e",
+      "action_class": "type_value",
+      "control": null,
+      "slot": "input_1",
+      "produces": [],
+      "effect": [
+        "field:input_1"
+      ],
+      "stats": {
+        "support": 1,
+        "recorded": 1,
+        "executed": 0,
+        "verified_ok": 0,
+        "approved": 0,
+        "denied": 0,
+        "effect_missing": 0
+      },
+      "provenance": [
+        {
+          "source": "recording",
+          "id": "rec-invoice-1",
+          "event_ids": [
+            "e5",
+            "e6"
+          ]
+        }
+      ],
+      "policy": "confirm",
+      "anchor_ref": "rec-invoice-1:d1f09cc6fc8f07e0"
+    }
+  ],
+  "trajectories": 1,
+  "truncated": false,
+  "compiled_by": "recorder-plan/1"
+}

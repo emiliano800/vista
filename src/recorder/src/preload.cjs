@@ -26,6 +26,8 @@ contextBridge.exposeInMainWorld('vista', {
   decide: (id, itemId, action, body) => ipcRenderer.invoke('recordings:decide', id, itemId, action, body),
   editSection: (id, sectionId, patch) => ipcRenderer.invoke('recordings:edit-section', id, sectionId, patch),
   excludeSection: (id, sectionId, excluded) => ipcRenderer.invoke('recordings:exclude-section', id, sectionId, excluded),
+  plan: (id) => ipcRenderer.invoke('recordings:plan', id),
+  editPlan: (id, edgeId, patch) => ipcRenderer.invoke('recordings:edit-plan', id, edgeId, patch),
   decideFlag: (id, flagId, decision) => ipcRenderer.invoke('recordings:flag', id, flagId, decision),
   approveInsights: (id, approved) => ipcRenderer.invoke('recordings:approve-insights', id, approved),
   rerunAgents: (id) => ipcRenderer.invoke('recordings:rerun-agents', id),

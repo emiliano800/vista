@@ -14,6 +14,7 @@ from sqlalchemy.orm import Session
 
 from vista.agents.keys import agent_key_for
 from vista.auth import Principal
+from vista.automation.schemas import PlanGraph
 from vista.config import settings
 from vista.db import platform_session, set_tenant_search_path, tenant_session
 from vista.jobs.queue import enqueue
@@ -26,6 +27,7 @@ ANALYSIS_JOB = "analyze_submission"
 ANALYSIS_RUN_TYPE = "submission_analysis"
 
 MAX_ACTIVITY_BYTES = 4 * 1024 * 1024
+MAX_PLAN_BYTES = 1024 * 1024
 MAX_FILE_BYTES = 20 * 1024 * 1024
 MAX_TOTAL_BYTES = 50 * 1024 * 1024
 DOCUMENT_TYPES = {
@@ -52,7 +54,7 @@ class WorkspaceChoice(StrictModel):
 
 class ArtifactSpec(StrictModel):
     id: str = Field(pattern=r"^[a-z0-9_-]{1,64}$")
-    kind: Literal["activity", "document"]
+    kind: Literal["activity", "plan", "document"]
     filename: str = Field(min_length=1, max_length=255, pattern=r"^[^/\\\x00-\x1f]+$")
     content_type: str = Field(max_length=128)
     size_bytes: int = Field(strict=True, ge=1, le=MAX_FILE_BYTES)
@@ -65,7 +67,12 @@ class ArtifactSpec(StrictModel):
                 raise ValueError("Invalid activity artifact")
             if self.size_bytes > MAX_ACTIVITY_BYTES:
                 raise ValueError("Activity metadata exceeds the limit")
-        elif self.id == "activity" or DOCUMENT_TYPES.get(PurePosixPath(self.filename).suffix.lower()) != self.content_type:
+        elif self.kind == "plan":
+            if self.id != "plan" or self.filename != "plan.json" or self.content_type != "application/json":
+                raise ValueError("Invalid plan artifact")
+            if self.size_bytes > MAX_PLAN_BYTES:
+                raise ValueError("Plan graph exceeds the limit")
+        elif self.id in ("activity", "plan") or DOCUMENT_TYPES.get(PurePosixPath(self.filename).suffix.lower()) != self.content_type:
             raise ValueError("Unsupported document type")
         return self
 
@@ -80,7 +87,7 @@ class SubmissionCreate(StrictModel):
     started_at: AwareDatetime
     ended_at: AwareDatetime
     active_seconds: int = Field(strict=True, ge=0)
-    artifacts: list[ArtifactSpec] = Field(min_length=1, max_length=11)
+    artifacts: list[ArtifactSpec] = Field(min_length=1, max_length=12)
 
     @model_validator(mode="after")
     def bounded(self):
@@ -88,6 +95,8 @@ class SubmissionCreate(StrictModel):
             raise ValueError("Invalid session duration")
         if len({a.id for a in self.artifacts}) != len(self.artifacts) or sum(a.kind == "activity" for a in self.artifacts) != 1:
             raise ValueError("Exactly one activity artifact and unique artifact IDs are required")
+        if sum(a.kind == "plan" for a in self.artifacts) > 1:
+            raise ValueError("At most one plan artifact is allowed")
         if sum(a.size_bytes for a in self.artifacts) > MAX_TOTAL_BYTES:
             raise ValueError("Upload package exceeds the limit")
         return self
@@ -250,7 +259,7 @@ def verify_objects(principal: Principal, row: RecorderSubmission) -> list[dict]:
                     if size > artifact["size_bytes"]:
                         raise HTTPException(409, "An uploaded artifact does not match its manifest; retry the upload")
                     digest.update(chunk)
-                    if artifact["kind"] == "activity":
+                    if artifact["kind"] in ("activity", "plan"):
                         data.extend(chunk)
         except ClientError as exc:
             if exc.response.get("Error", {}).get("Code") in ("NoSuchKey", "404", "NotFound"):
@@ -268,6 +277,11 @@ def verify_objects(principal: Principal, row: RecorderSubmission) -> list[dict]:
                     raise ValueError("Event outside session")
             except (ValidationError, ValueError) as exc:
                 raise HTTPException(422, "Activity artifact is not valid metadata-only session data") from exc
+        elif artifact["kind"] == "plan":
+            try:
+                PlanGraph.model_validate_json(data)
+            except ValidationError as exc:
+                raise HTTPException(422, "Plan artifact is not a valid state graph") from exc
         verified.append({"id": artifact["id"], "sha256": digest.hexdigest(), "size_bytes": size, "version_id": obj.get("VersionId")})
     return verified
 
