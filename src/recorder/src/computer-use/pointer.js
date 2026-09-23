@@ -5,7 +5,7 @@ export async function loadNut() {
   try {
     const nut = await import('@nut-tree-fork/nut-js');
     nut.mouse.config.autoDelayMs = 20;
-    nut.mouse.config.mouseSpeed = 1500;
+    nut.mouse.config.mouseSpeed = 900; // px/s: slow enough that a person can watch it travel
     nut.keyboard.config.autoDelayMs = 15;
     return nut;
   } catch {
