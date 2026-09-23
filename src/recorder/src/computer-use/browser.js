@@ -27,7 +27,32 @@ export const MAX_TEXT = 4000;
 export const MAX_ROWS = 200;
 export const MAX_COLUMNS = 40;
 export const SETTLE_MS = 600;
-export const HOVER_MS = 350; // real pointer rests on the control before pressing, so a watcher can follow
+export const HOVER_MS = 700; // real pointer rests on the control before pressing, so a watcher can follow
+
+// Drawn into the sandbox page on every document: a ring that follows the pointer and
+// flashes on press, so the person watching sees where the agent is and when it clicks.
+// `aria-hidden` and `pointer-events:none` keep it out of the accessibility tree the
+// harness enumerates and out of the way of the clicks themselves.
+export const HALO_SCRIPT = `(() => {
+  if (window.__vistaHalo) return;
+  const halo = document.createElement('div');
+  halo.id = 'vista-pointer-halo';
+  halo.setAttribute('aria-hidden', 'true');
+  halo.style.cssText = 'position:fixed;z-index:2147483647;pointer-events:none;width:56px;height:56px;margin:-28px 0 0 -28px;' +
+    'border-radius:50%;border:4px solid #c2410c;background:rgba(194,65,12,.18);box-shadow:0 0 0 6px rgba(194,65,12,.25);' +
+    'left:-100px;top:-100px;transition:transform .12s ease-out,background .12s;';
+  const mount = () => (document.body || document.documentElement).appendChild(halo);
+  if (document.body) mount(); else document.addEventListener('DOMContentLoaded', mount, { once: true });
+  const at = (e) => { halo.style.left = e.clientX + 'px'; halo.style.top = e.clientY + 'px'; };
+  window.addEventListener('mousemove', at, true);
+  window.addEventListener('mousedown', (e) => {
+    at(e);
+    halo.style.transform = 'scale(.6)';
+    halo.style.background = 'rgba(194,65,12,.6)';
+    setTimeout(() => { halo.style.transform = ''; halo.style.background = 'rgba(194,65,12,.18)'; }, 220);
+  }, true);
+  window.__vistaHalo = true;
+})();`;
 
 // AX role → candidate kind. Anything not listed is not a target.
 const ROLE_KIND = {
@@ -221,6 +246,7 @@ export class BrowserHarness {
   }
 
   async _click(page, { x, y }) {
+    await page.send('Runtime.evaluate', { expression: HALO_SCRIPT }).catch(() => {});
     const screen = this.pointer && page.screenPoint ? await page.screenPoint(x, y) : null;
     if (screen) {
       await this.pointer.moveTo(screen.x, screen.y);
@@ -301,7 +327,10 @@ export class BrowserHarness {
       err.code = 'harness_unsupported';
       throw err;
     }
-    if (!this.page) this.page = await this.open();
+    if (!this.page) {
+      this.page = await this.open();
+      await this.page.send('Page.addScriptToEvaluateOnNewDocument', { source: HALO_SCRIPT }).catch(() => {});
+    }
     return this.page;
   }
 

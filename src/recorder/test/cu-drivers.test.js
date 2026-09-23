@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
-import { BrowserHarness, candidatesFromAX } from '../src/computer-use/browser.js';
+import { BrowserHarness, HALO_SCRIPT, candidatesFromAX } from '../src/computer-use/browser.js';
 import { DesktopHarness, candidatesFromElements } from '../src/computer-use/desktop.js';
 import { parseElements } from '../src/computer-use/desktop-macos.js';
 import { capabilitiesOf, defaultHarnesses } from '../src/computer-use/harnesses.js';
@@ -127,6 +127,10 @@ test('browser: a real pointer is used when the page can place the element on scr
   await h.perform({ action: 'type', target_id: '12', observation_id: clicked.observation.observation_id, value: 'x' });
   assert.equal(moves.length, 4); // typing travels to the field and clicks it before inserting text
   assert.equal(page.calls.some(([m]) => m === 'Input.dispatchMouseEvent'), false);
+  // the pointer halo is installed for every document and refreshed before each click
+  assert.ok(page.calls.some(([m, p]) => m === 'Page.addScriptToEvaluateOnNewDocument' && p.source === HALO_SCRIPT));
+  assert.ok(page.calls.some(([m, p]) => m === 'Runtime.evaluate' && p.expression === HALO_SCRIPT));
+  assert.ok(HALO_SCRIPT.includes('aria-hidden') && HALO_SCRIPT.includes('pointer-events:none'));
 });
 
 test('browser: navigate, press, extract, screenshot, wait', async () => {
