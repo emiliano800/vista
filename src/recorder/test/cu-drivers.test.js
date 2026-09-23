@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
 import { BrowserHarness, HALO_SCRIPT, candidatesFromAX } from '../src/computer-use/browser.js';
+import { ChromeConnection, GEOMETRY_SCRIPT, openChromePage, screenPointFrom } from '../src/computer-use/browser-chrome.js';
 import { DesktopHarness, candidatesFromElements } from '../src/computer-use/desktop.js';
 import { parseElements } from '../src/computer-use/desktop-macos.js';
 import { capabilitiesOf, defaultHarnesses } from '../src/computer-use/harnesses.js';
@@ -81,6 +82,76 @@ test('browser: AX tree → bounded, named, deduplicated candidates; values never
   assert.deepEqual(withValue[0].attrs, { has_value: true });
   assert.equal(JSON.stringify(withValue).includes('4111'), false);
   assert.equal(candidatesFromAX(Array.from({ length: 100 }, (_, i) => ax(i, 'button', `B${i}`))).length, 40);
+});
+
+test('browser: unnamed table rows are named from their first cells; header rows are not offered', () => {
+  const cell = (nodeId, role, name) => ({ nodeId, backendDOMNodeId: nodeId, role: { value: role }, name: { value: name } });
+  const nodes = [
+    { nodeId: 'r0', backendDOMNodeId: 50, role: { value: 'row' }, name: { value: '' }, childIds: ['h1', 'h2'] },
+    cell('h1', 'columnheader', 'Client ID'),
+    cell('h2', 'columnheader', 'Client name'),
+    { nodeId: 'r1', backendDOMNodeId: 51, role: { value: 'row' }, name: { value: '' }, childIds: ['c1', 'c2', 'c3', 'c4'] },
+    cell('c1', 'cell', 'MER-C0008'),
+    cell('c2', 'cell', 'Sterling Automotive Inc.'),
+    cell('c3', 'cell', ''),
+    cell('c4', 'cell', 'Auto Repair'),
+    cell('c5', 'cell', 'Worcester'),
+    { nodeId: 'r2', backendDOMNodeId: 52, role: { value: 'row' }, name: { value: 'Named row' }, childIds: ['c5'] },
+  ];
+  assert.deepEqual(
+    candidatesFromAX(nodes).map((x) => [x.id, x.kind, x.name]),
+    [
+      ['51', 'row', 'MER-C0008 · Sterling Automotive Inc. · Auto Repair'],
+      ['52', 'row', 'Named row'],
+    ],
+  );
+});
+
+test('chrome: page point → screen point uses the window geometry the page reports', () => {
+  const g = { sx: 100, sy: 80, w: 1200, h: 700, dpr: 2, hidden: false };
+  assert.deepEqual(screenPointFrom(g, 10, 20), { x: 220, y: 200 });
+  assert.equal(screenPointFrom(g, 1300, 20), null);
+  assert.equal(screenPointFrom({ ...g, hidden: true }, 10, 20), null);
+  assert.equal(screenPointFrom(null, 10, 20), null);
+  assert.match(GEOMETRY_SCRIPT, /screenX/);
+});
+
+test('chrome: the page adapter opens one tab, attaches flat, and closes it', async () => {
+  const sent = [];
+  const conn = {
+    send: async (method, params, sessionId) => {
+      sent.push([method, params, sessionId]);
+      if (method === 'Target.createTarget') return { targetId: 't1' };
+      if (method === 'Target.attachToTarget') return { sessionId: 's1' };
+      if (method === 'Runtime.evaluate') return { result: { value: params.expression === 'document.title' ? 'CRM' : 'http://crm.test/' } };
+      return {};
+    },
+    on: () => () => {},
+    close: () => sent.push(['close']),
+  };
+  const page = await openChromePage({ connect: async () => conn })();
+  assert.deepEqual(sent[0], ['Target.createTarget', { url: 'about:blank' }, undefined]);
+  assert.deepEqual(sent[1], ['Target.attachToTarget', { targetId: 't1', flatten: true }, undefined]);
+  assert.ok(sent.slice(2).every(([, , sid]) => sid === 's1'));
+  assert.equal(await page.title(), 'CRM');
+  assert.equal(await page.url(), 'http://crm.test/');
+  await page.close();
+  assert.deepEqual(sent.at(-2)[0], 'Target.closeTarget');
+  assert.deepEqual(sent.at(-1), ['close']);
+});
+
+test('chrome: the connection multiplexes replies by id and surfaces CDP errors', async () => {
+  const listeners = {};
+  const ws = { sent: [], send: (m) => ws.sent.push(JSON.parse(m)), addEventListener: (ev, fn) => (listeners[ev] = fn), close: () => {} };
+  const conn = new ChromeConnection(ws);
+  const a = conn.send('A', {}, 's1');
+  const b = conn.send('B');
+  assert.equal(ws.sent[0].sessionId, 's1');
+  assert.equal('sessionId' in ws.sent[1], false);
+  listeners.message({ data: JSON.stringify({ id: 2, result: { ok: 2 } }) });
+  listeners.message({ data: JSON.stringify({ id: 1, error: { message: 'No node' } }) });
+  assert.deepEqual(await b, { ok: 2 });
+  await assert.rejects(a, /No node/);
 });
 
 test('browser: observe, then a targeted click and type only against the cited observation', async () => {

@@ -83,17 +83,35 @@ function axValue(prop) {
   return typeof v === 'object' ? v.value : v;
 }
 
+const CELL_ROLES = new Set(['cell', 'gridcell', 'rowheader']);
+const ROW_NAME_CELLS = 3;
+
+// Chrome gives a table row no accessible name; code derives one from its first cells so a
+// row is a candidate the way a link or button is (its visible text, never anything hidden).
+// Header rows (column headers only) are not offered.
+function rowName(n, byId) {
+  const cells = (n.childIds ?? []).map((id) => byId.get(id)).filter(Boolean);
+  const data = cells.filter((c) => CELL_ROLES.has(axValue(c.role)));
+  if (!data.length) return '';
+  return data
+    .map((c) => String(axValue(c.name) ?? '').trim())
+    .filter(Boolean)
+    .slice(0, ROW_NAME_CELLS)
+    .join(' · ');
+}
+
 // Pure: AX nodes → candidates. Exported for tests.
 export function candidatesFromAX(nodes, { limit = MAX_CANDIDATES } = {}) {
   const out = [];
   const seen = new Set();
+  const byId = new Map((nodes ?? []).map((n) => [n.nodeId, n]));
   for (const n of nodes ?? []) {
     if (n.ignored || n.backendDOMNodeId == null) continue;
     const role = axValue(n.role);
     const kind = ROLE_KIND[role];
     if (!kind) continue;
     if (n.properties?.some((p) => p.name === 'hidden' && axValue(p) === true)) continue;
-    const name = String(axValue(n.name) ?? '')
+    const name = String(axValue(n.name) || (role === 'row' ? rowName(n, byId) : ''))
       .replace(/\s+/g, ' ')
       .trim()
       .slice(0, 200);
