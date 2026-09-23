@@ -18,6 +18,7 @@ from sqlalchemy import func, select, update
 
 from vista.agents.jev import judge
 from vista.computer_use import tools
+from vista.computer_use.graph import merge_run, plan_graph_step
 from vista.computer_use.harness import (
     CONTROL_PRIMITIVES,
     LOCAL_KINDS,
@@ -449,7 +450,7 @@ def _execute(session, tenant_schema: str, job: Job, run: WorkflowRun, owner: str
             decision = Act(Action.from_json(pending["action"]), gated=bool(pending.get("gated")))
         else:
             state.pending = None
-            decision, judgment, detail = plan_step(
+            decision, judgment, detail = (plan_graph_step if definition.get("graph") else plan_step)(
                 state,
                 definition,
                 run.inputs or {},
@@ -696,6 +697,7 @@ def conclude(
             "cost_usd": str(run.cost_usd or 0),
             "undo": state.undo,
             "artifacts": [h.get("artifact_key") for h in state.history if h.get("artifact_key")],
+            "graph_delta": merge_run(definition, state, str(run.id), passed),
         },
     )
     session.add(finding)

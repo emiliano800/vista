@@ -127,6 +127,15 @@ CUA loops (observe → decide → act → verify) but deliberately bounded; the 
    time; a run-level lease (`lease_owner/lease_until`) stops two workers from acting.
 9. **Everything on the ledger.** Observe/act as `tool_call`, judgments as `model_call`
    + `usage_events`, pauses as `step` + `handoff`, the outcome as `finding` + `result`.
+10. **Recorded moves only, when a graph exists.** A definition that carries a `PlanGraph`
+   (compiled on-device from recordings, `taskmining/state.py` + `recorder/src/plan.js`)
+   is planned by `computer_use/graph.py` instead of `planner.py`: code locates the run on
+   the graph (`node`), Jev picks among that state's *observed outgoing edges* (`edge`),
+   the edge fixes primitive/control/slot, a declared-input slot is resolved without
+   asking, a fact slot only from the step whose edge produced it, and an edge's
+   `policy` (`confirm`/`always_ask`) gates like the risk gate. No edge fits → `off_plan`
+   pause. Each run returns a `graph_delta` (executed/verified_ok/approved/denied/
+   effect_missing, provenance `run:<id>`) for a *draft*; the approved graph is immutable.
 
 Stub Jev (no `VISTA_TYPESAFE_API_KEY`) answers `none` → the agent executes nothing and
 pauses at step 1. That is the safe default, not a bug.
