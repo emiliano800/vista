@@ -50,7 +50,31 @@ Each portfolio company is its own tenant, linked to the firm through
 workspace and the analyst's portfolio view read the same records, findings, runs
 and published recording reports. A company member can import records from
 `/account/` through the same canonical contract the wizard uses and run the File
-Reviewer over them. Seed the demo firm (Northstar, Harbor Heating, Summit
+Reviewer over them.
+
+**Linking the six demo workspaces (one-time, after deploying the 2026-09-23
+code).** The company workspaces below were provisioned with `create-workspace`
+before `load-synthetic` created the analyst's companies, so each company exists
+in two tenants and `/account/` answers "This workspace is not linked to a
+portfolio company yet". Point each company at its workspace tenant by the Deal id
+listed under it, then reload the canonical rows into those tenants:
+
+```
+for pair in meridian:5038cf16-3f4a-495f-8249-cd9091e233f5 \
+            harborline:0568a70f-c3e3-410d-999f-85e528842e6e \
+            castlebrook:35f274ab-f63b-4e5a-8cff-6cdf82e6ee24 \
+            northfield:1632b3e6-349d-4e6b-afdd-aa4e6ad84678 \
+            keystone:aa7c8cc9-0458-48c3-8b56-ce16050b2da6 \
+            ridgeway:95bfad1d-f58d-40c4-9e6d-5df1f2e0ca54; do
+  deploy/aws/manage.sh link-workspace --firm vista-capital --company "${pair%%:*}" --deal "${pair#*:}"
+done
+deploy/aws/manage.sh load-synthetic --analyst-key ANALYST_KEY
+```
+
+`link-workspace` refuses a tenant already linked to another company;
+`load-synthetic` keeps the link and imports into the linked tenant. The analyst's
+"Run portfolio analysis" then rebuilds findings and opportunities from the
+reloaded rows. Seed the older HVAC demo firm (Northstar, Harbor Heating, Summit
 Mechanical, analyst user) with:
 
 ```

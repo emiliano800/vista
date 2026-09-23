@@ -34,6 +34,54 @@ def migrate() -> None:
     ensure_bucket()
 
 
+def link_workspace_command(parser: argparse.ArgumentParser, args: argparse.Namespace) -> None:
+    from sqlalchemy import select
+
+    from vista.models.platform import Firm, FirmCompany
+    from vista.portfolio.service import link_workspace
+
+    with platform_session() as session:
+        try:
+            candidates = [session.get(FirmCompany, uuid.UUID(args.company))]
+        except ValueError:
+            query = select(FirmCompany).join(Firm, Firm.id == FirmCompany.firm_id).where(FirmCompany.slug == args.company)
+            if args.firm:
+                query = query.where(Firm.slug == args.firm)
+            candidates = list(session.scalars(query))
+        candidates = [c for c in candidates if c is not None]
+        if not candidates:
+            parser.error("Company not found in platform.firm_companies")
+        if len(candidates) > 1:
+            names = ", ".join(f"{session.get(Firm, c.firm_id).slug}/{c.slug} ({c.id})" for c in candidates)
+            parser.error(f"Several firms have a company with that slug; pass --firm or the company uuid: {names}")
+        fc = candidates[0]
+        deal_id = args.deal
+        if args.tenant is not None:
+            tenant = session.get(Tenant, args.tenant)
+        else:
+            tenant = None
+            for candidate in session.scalars(select(Tenant)):
+                with tenant_session(candidate.schema_name) as data:
+                    if data.get(Deal, args.deal) is not None:
+                        tenant = candidate
+                        break
+        if tenant is None:
+            parser.error("Workspace tenant not found")
+        resolved = link_workspace(session, fc, tenant, deal_id)
+        print(
+            json.dumps(
+                {
+                    "company_id": str(fc.id),
+                    "slug": fc.slug,
+                    "tenant_id": str(tenant.id),
+                    "schema": tenant.schema_name,
+                    "deal_id": str(resolved),
+                },
+                indent=2,
+            )
+        )
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     commands = parser.add_subparsers(dest="command", required=True)
@@ -49,6 +97,15 @@ def main():
     add.add_argument("--role", choices=["member", "viewer"], default="member")
     rotate = commands.add_parser("rotate-key")
     rotate.add_argument("--user", required=True, type=uuid.UUID)
+    link = commands.add_parser(
+        "link-workspace",
+        help="point a portfolio company at an existing company workspace tenant so employees and the analyst share one tenant",
+    )
+    link.add_argument("--company", required=True, help="firm company slug or uuid (platform.firm_companies)")
+    link.add_argument("--firm", default=None, help="firm slug, when more than one firm has a company with that slug")
+    tenant_or_deal = link.add_mutually_exclusive_group(required=True)
+    tenant_or_deal.add_argument("--tenant", type=uuid.UUID, help="the workspace tenant id")
+    tenant_or_deal.add_argument("--deal", type=uuid.UUID, help="the workspace's Deal id (the tenant is found by it)")
     seed = commands.add_parser("seed-portfolio", help="seed the analyst demo firm and its companies")
     seed.add_argument("--skip-cedar", action="store_true")
     seed.add_argument("--analyst-key", default=None)
@@ -63,6 +120,9 @@ def main():
         parser.error(f"unrecognized arguments: {' '.join(loader_args)}")
     if args.command == "migrate":
         migrate()
+        return
+    if args.command == "link-workspace":
+        link_workspace_command(parser, args)
         return
     if args.command in ("seed-portfolio", "load-synthetic"):
         # scripts/ ships in the image; run it in-process so manage.sh, which can

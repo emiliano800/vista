@@ -116,7 +116,7 @@ uv run pytest && npm test
 ```
 
 Provisioning is operator-only: `uv run python -m vista.manage --help` lists
-`create-workspace`, `add-user`, `rotate-key`, `seed-portfolio`, `load-synthetic`, and `migrate`
+`create-workspace`, `add-user`, `rotate-key`, `link-workspace`, `seed-portfolio`, `load-synthetic`, and `migrate`
 (public `POST /tenants` stays disabled unless a provisioning key is configured).
 In AWS, run the same commands via `deploy/aws/manage.sh`.
 

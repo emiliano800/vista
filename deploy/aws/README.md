@@ -10,8 +10,8 @@
 
 Everything is one CloudFormation stack (`deploy/aws/template.yaml`) plus two scripts:
 `deploy.sh` builds and pushes the image and creates/updates the stack; `manage.sh` runs
-operator commands (`create-workspace`, `add-user`, `rotate-key`, `seed-portfolio`,
-`load-synthetic`, `migrate`) inside AWS.
+operator commands (`create-workspace`, `add-user`, `rotate-key`, `link-workspace`,
+`seed-portfolio`, `load-synthetic`, `migrate`) inside AWS.
 
 ## Product platforms and application access
 
@@ -115,6 +115,7 @@ the submission stays "awaiting analysis" until one runs.
 | Stack outputs | `deploy/aws/deploy.sh --outputs` |
 | Add a user | `deploy/aws/manage.sh add-user --tenant TENANT_UUID --company COMPANY_UUID --email employee@example.com --role member` |
 | Rotate a key | `deploy/aws/manage.sh rotate-key --user USER_UUID` |
+| Link a company workspace to its analyst company | `deploy/aws/manage.sh link-workspace --company meridian --deal DEAL_UUID` (the Deal ids of the demo workspaces are in `DEMO_ACCESS.md`; run once per company, then `load-synthetic` again) |
 | Load the six synthetic companies into the analyst workspace | `deploy/aws/manage.sh load-synthetic --analyst-key ANALYST_KEY --replace-firm northstar` (the key is the existing analyst's; `--replace-firm` removes the HVAC demo firm; add `--no-analyze` to skip the interpretation agents) |
 | Run agent jobs and recording AI review in AWS | set `WORKER_DESIRED_COUNT=1` (and `OPENAI_API_KEY`) in `deploy/aws/.env`, redeploy |
 | Enable Jev (recorder workflow candidates, Computer Use Agent) | set `TYPESAFE_API_KEY` in `deploy/aws/.env`, redeploy; stored as `vista/typesafe-api-key`, injected as `VISTA_TYPESAFE_API_KEY` into both tasks |

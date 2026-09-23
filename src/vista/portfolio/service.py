@@ -88,6 +88,37 @@ def ensure_company_deal(platform: Session, fc: FirmCompany, schema: str, created
     return deal_id
 
 
+def link_workspace(platform: Session, fc: FirmCompany, tenant: Tenant, deal_id: uuid.UUID | None = None) -> uuid.UUID:
+    """Point a firm company at an existing company workspace tenant (one provisioned with
+    `create-workspace` before the company was added to the portfolio), so the employees'
+    workspace and the analyst's company are the same tenant. The tenant must not already
+    belong to another company. Returns the Deal id both views now use; canonical rows in a
+    previously linked tenant are not moved — reload them with `load-synthetic`."""
+    other = platform.scalar(select(FirmCompany).where(FirmCompany.tenant_id == tenant.id, FirmCompany.id != fc.id))
+    if other is not None:
+        raise HTTPException(409, f"Tenant {tenant.id} is already linked to company {other.slug}")
+    migrate_tenant_schema(tenant.schema_name)
+    if deal_id is not None:
+        with tenant_session(tenant.schema_name) as ts:
+            if ts.get(Deal, deal_id) is None:
+                raise HTTPException(404, f"Deal {deal_id} does not exist in tenant {tenant.id}")
+    fc.tenant_id, fc.deal_id = tenant.id, deal_id
+    platform.flush()
+    resolved = ensure_company_deal(platform, fc, tenant.schema_name, _firm_owner(platform, fc.firm_id))
+    log_activity(platform, fc.firm_id, fc.id, f"{fc.name} linked to its company workspace (tenant {tenant.id}).", "import")
+    platform.commit()
+    return resolved
+
+
+def _firm_owner(platform: Session, firm_id: uuid.UUID) -> uuid.UUID:
+    from vista.models.platform import FirmMembership
+
+    user_id = platform.scalar(select(FirmMembership.user_id).where(FirmMembership.firm_id == firm_id).order_by(FirmMembership.created_at))
+    if user_id is None:
+        raise HTTPException(409, "The firm has no members to own the company's Deal")
+    return user_id
+
+
 def create_company(session: Session, ctx: FirmContext, profile: dict, synthetic_demo: bool | None = None) -> FirmCompany:
     """Creates the company's tenant (own schema, migrated), its Deal, and links both to
     the firm. Status starts as `onboarding` until an import is approved."""

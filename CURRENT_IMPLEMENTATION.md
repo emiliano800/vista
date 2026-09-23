@@ -59,7 +59,7 @@ synthetic_data/       6 synthetic companies (2 sectors, 3 data-quality tiers),
   expiring HttpOnly cookies bound to the key hash; key rotation kills sessions.
   Custom header + origin allow-list on cookie writes (CSRF). Public tenant
   provisioning is disabled; operators use `python -m vista.manage`
-  (`create-workspace`, `add-user`, `rotate-key`, `seed-portfolio`,
+  (`create-workspace`, `add-user`, `rotate-key`, `link-workspace`, `seed-portfolio`,
   `load-synthetic`, `migrate`) — in AWS via `deploy/aws/manage.sh`.
 - **Roles:** platform admin/member plus per-deal owner/member/viewer; firm
   memberships (analyst/operator/admin/viewer) gate the portfolio side. Run-starting
@@ -72,7 +72,12 @@ same tenant tables; nothing is mirrored per surface.
 
 - `platform.firm_companies.deal_id` names the Deal inside each company tenant that
   the company workspace and the recorder scope by. Creating a company creates its
-  Deal; the platform migration backfilled existing companies by name.
+  Deal; the platform migration backfilled existing companies by name. A workspace
+  provisioned with `create-workspace` before its company existed lives in a
+  different tenant than the analyst's company: `manage link-workspace --company
+  <slug> --deal <workspace deal>` re-points the company at that tenant (the
+  workspace otherwise answers 409 "not linked to a portfolio company"), and
+  `load-synthetic` then reloads canonical rows into the linked tenant.
 - `findings` / `agent_runs` / `agent_run_events` / `usage_events` /
   `company_summaries` are the only agent ledger. `findings` carries the analyst's
   display ref (`F-012`), the firm company id and a demo flag; the former

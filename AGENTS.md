@@ -288,8 +288,12 @@ wired only in tests/eval. Any new automatic hop must follow the contract above.
   opt-in via `pytest -m live`) · `npm test` · lint: `uv run ruff check . && uv run
   ruff format --check .` (repo-wide; CI enforces) · `npx wrangler deploy --dry-run`
 - Provisioning (operator-only): `python -m vista.manage migrate|create-workspace|
-  add-user|rotate-key|seed-portfolio|load-synthetic`; in AWS via `deploy/aws/manage.sh`
-  (prefer `--output-file PATH` so keys skip CloudWatch).
+  add-user|rotate-key|link-workspace|seed-portfolio|load-synthetic`; in AWS via
+  `deploy/aws/manage.sh` (prefer `--output-file PATH` so keys skip CloudWatch).
+  `link-workspace --firm <firm slug> --company <slug> --deal <workspace deal id>` points a portfolio
+  company at a workspace tenant provisioned earlier with `create-workspace`; the six
+  live demo workspaces need this once, then `load-synthetic` reloads canonical rows
+  into the linked tenants (it keeps an existing link).
 - E2E recipe: `.agents/skills/vista-api-e2e-testing` skill.
 
 ## Architecture decisions (locked in)

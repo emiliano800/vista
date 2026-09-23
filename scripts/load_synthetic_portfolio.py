@@ -195,8 +195,15 @@ def company_dirs(manifest: dict) -> list[tuple[str, dict, Path]]:
 
 
 def seed_company(session: Session, firm: Firm, sector: str, c: dict, root: Path) -> FirmCompany:
+    """Upsert the firm company. A company that already exists keeps the tenant it is linked
+    to (`link-workspace` may have pointed it at the employees' workspace); only a new company
+    gets the loader's own deterministic tenant."""
     profile = json.loads((root / "00_company" / "company_profile.json").read_text())
-    tenant = upsert(session, Tenant, sid(f"tenant:{c['slug']}"), name=c["name"], schema_name=schema_for(c["slug"]))
+    existing = session.get(FirmCompany, sid(f"company:{c['slug']}"))
+    if existing is not None and existing.tenant_id is not None:
+        tenant = session.get(Tenant, existing.tenant_id)
+    else:
+        tenant = upsert(session, Tenant, sid(f"tenant:{c['slug']}"), name=c["name"], schema_name=schema_for(c["slug"]))
     session.flush()
     industry = profile.get("industry") or sector.replace("_", " ").title()
     short = c["slug"].split("_")[0]
@@ -346,13 +353,15 @@ def main() -> int:
         principal = Principal(user_id=user.id, tenant_id=home.id, tenant_schema=home.schema_name, email=user.email, role="member")
 
     migrate_tenant_schema(schema_for("firm"))
-    for _sector, c, _root in companies:
-        migrate_tenant_schema(schema_for(c["slug"]))
     with platform_session() as platform:
-        # Every company tenant carries one Deal the employee-facing surfaces scope by.
+        # Migrate whichever tenant each company is linked to (the loader's own, or a
+        # workspace linked with `link-workspace`) and make sure it carries the one Deal
+        # the employee-facing surfaces scope by.
         for _sector, c, _root in companies:
             fc = platform.get(FirmCompany, sid(f"company:{c['slug']}"))
-            ensure_company_deal(platform, fc, schema_for(c["slug"]), user.id)
+            schema = platform.get(Tenant, fc.tenant_id).schema_name
+            migrate_tenant_schema(schema)
+            ensure_company_deal(platform, fc, schema, user.id)
         platform.commit()
 
     processor = get_processor(args.processor)

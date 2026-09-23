@@ -131,3 +131,41 @@ def test_company_import_permissions_and_scope(client, source_store, tenant_facto
     solo = client.post("/api/deals", headers=plain, json={"name": "Solo"}).json()["id"]
     assert client.get(f"/api/deals/{solo}/imports", headers=plain).status_code == 409
     assert client.get("/api/deals", headers=plain).status_code == 200, "the rest of the workspace still works"
+
+
+def test_link_workspace_points_the_company_at_an_existing_employee_tenant(client, source_store, tenant_factory):  # noqa: F811
+    """The live demo provisioned each company's workspace with create-workspace before the
+    analyst's company existed, so the two lived in different tenants. link-workspace makes
+    them one tenant: the employees' Deal becomes the company's deal_id and imports work."""
+    from sqlalchemy import select
+
+    from vista.models.platform import FirmCompany, Tenant
+    from vista.portfolio.service import link_workspace
+
+    analyst, _ = make_firm()
+    cid = client.post("/api/portfolio/companies", headers=analyst, json={"name": "Meridian Risk Partners, LLC"}).json()["id"]
+    plain, tenant_id, _user_id = tenant_factory()
+    deal = client.post("/api/deals", headers=plain, json={"name": "Meridian Risk Partners, LLC"}).json()["id"]
+    assert client.get(f"/api/deals/{deal}/imports", headers=plain).status_code == 409, "not linked yet"
+
+    with platform_session() as session:
+        fc = session.get(FirmCompany, uuid.UUID(cid))
+        tenant = session.get(Tenant, uuid.UUID(tenant_id))
+        assert str(link_workspace(session, fc, tenant, uuid.UUID(deal))) == deal
+        assert fc.tenant_id == tenant.id
+        # A tenant belongs to one company; linking it to a second one is refused.
+        other = session.scalar(select(FirmCompany).where(FirmCompany.id != fc.id, FirmCompany.firm_id == fc.firm_id))
+    listing = client.get(f"/api/deals/{deal}/imports", headers=plain)
+    assert listing.status_code == 200 and listing.json()["company"]["id"] == cid
+    job = client.post(f"/api/deals/{deal}/imports", headers=plain, json={"name": "customers.csv", "content": b64("customers.csv")})
+    assert job.status_code == 201, job.text
+    assert [j["filename"] for j in client.get(f"/api/companies/{cid}/imports", headers=analyst).json()] == ["customers.csv"]
+    assert other is None
+    second = client.post("/api/portfolio/companies", headers=analyst, json={"name": "Harbor Heating"}).json()["id"]
+    with platform_session() as session:
+        import pytest
+        from fastapi import HTTPException
+
+        with pytest.raises(HTTPException) as refused:
+            link_workspace(session, session.get(FirmCompany, uuid.UUID(second)), session.get(Tenant, uuid.UUID(tenant_id)))
+        assert refused.value.status_code == 409
