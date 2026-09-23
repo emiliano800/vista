@@ -12,7 +12,9 @@ import { capabilitiesOf, defaultHarnesses } from '../src/computer-use/harnesses.
 const ax = (id, role, name, extra = {}) => ({ backendDOMNodeId: id, role: { value: role }, name: { value: name }, ...extra });
 
 // A fake CDP page: a fixed AX tree, a box per node, and a log of every command.
-function fakePage({ title = 'Sandbox form', url = 'https://sandbox.example.test/form', nodes, screen = null } = {}) {
+// `screen`: the page can place elements on screen (offset +100,+50); `pointerSeen`: whether the
+// page then reports the computer's pointer arriving on (and pressing) the target.
+function fakePage({ title = 'Sandbox form', url = 'https://sandbox.example.test/form', nodes, screen = null, pointerSeen = true } = {}) {
   const calls = [];
   const values = { 12: '' };
   return {
@@ -47,6 +49,7 @@ function fakePage({ title = 'Sandbox form', url = 'https://sandbox.example.test/
           values[12] = (values[12] ?? '') + params.text;
           return {};
         case 'Runtime.evaluate':
+          if (/__vista(Pointer|Pressed)$/.test(params.expression)) return { result: { value: pointerSeen ? { x: 60, y: 40, at: 1 } : null } };
           return { result: { value: params.expression.includes('querySelectorAll') ? { columns: [], rows: [], count: 0 } : 'Invoice INV-1 total 10' } };
         case 'Page.captureScreenshot':
           return { data: 'iVBORw0KGgo=' };
@@ -228,6 +231,19 @@ test('browser: a real pointer is used when the page can place the element on scr
   assert.ok(page.calls.some(([m, p]) => m === 'Page.addScriptToEvaluateOnNewDocument' && p.source === HALO_SCRIPT));
   assert.ok(page.calls.some(([m, p]) => m === 'Runtime.evaluate' && p.expression === HALO_SCRIPT));
   assert.ok(HALO_SCRIPT.includes('aria-hidden') && HALO_SCRIPT.includes('pointer-events:none'));
+});
+
+test('browser: the real pointer is not pressed unless the page saw it arrive; the click is dispatched in-page instead', async () => {
+  const page = fakePage({ nodes: NODES, screen: true, pointerSeen: false });
+  const moves = [];
+  const pointer = { moveTo: async (x, y) => moves.push(['move', x, y]), click: async () => moves.push(['click']) };
+  const h = new BrowserHarness({ open: async () => page, pointer, sleep: async () => {} });
+  const obs = await h.perform({ action: 'observe' });
+  const clicked = await h.perform({ action: 'click', target_id: '20', observation_id: obs.observation.observation_id });
+  assert.equal(clicked.ok, true);
+  assert.deepEqual(moves, [['move', 160, 90]]); // travelled, but never pressed: another window may be under the pointer
+  const dispatched = page.calls.filter(([m]) => m === 'Input.dispatchMouseEvent').map(([, p]) => p.type);
+  assert.deepEqual(dispatched, ['mouseMoved', 'mousePressed', 'mouseReleased']);
 });
 
 test('browser: navigate, press, extract, screenshot, wait', async () => {

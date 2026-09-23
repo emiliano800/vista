@@ -28,6 +28,7 @@ export const MAX_ROWS = 200;
 export const MAX_COLUMNS = 40;
 export const SETTLE_MS = 600;
 export const HOVER_MS = 60; // just long enough for the page to see the pointer land before it presses
+export const POINTER_TOLERANCE_PX = 4; // how far the pointer the page saw may sit from the target's centre
 
 // Drawn into the sandbox page on every document: a ring that follows the pointer and
 // flashes on press, so the person watching sees where the agent is and when it clicks.
@@ -43,10 +44,11 @@ export const HALO_SCRIPT = `(() => {
     'left:-100px;top:-100px;transition:transform .12s ease-out,background .12s;';
   const mount = () => (document.body || document.documentElement).appendChild(halo);
   if (document.body) mount(); else document.addEventListener('DOMContentLoaded', mount, { once: true });
-  const at = (e) => { halo.style.left = e.clientX + 'px'; halo.style.top = e.clientY + 'px'; };
+  const at = (e) => { halo.style.left = e.clientX + 'px'; halo.style.top = e.clientY + 'px'; window.__vistaPointer = { x: e.clientX, y: e.clientY, at: Date.now() }; };
   window.addEventListener('mousemove', at, true);
   window.addEventListener('mousedown', (e) => {
     at(e);
+    window.__vistaPressed = { x: e.clientX, y: e.clientY, at: Date.now() };
     halo.style.transform = 'scale(.6)';
     halo.style.background = 'rgba(194,65,12,.6)';
     setTimeout(() => { halo.style.transform = ''; halo.style.background = 'rgba(194,65,12,.18)'; }, 220);
@@ -278,6 +280,11 @@ export class BrowserHarness {
 
   // ---- acting ----
 
+  async _pointerSeen(page, expression, x, y) {
+    const seen = await page.send('Runtime.evaluate', { expression, returnByValue: true }).then((r) => r.result?.value).catch(() => null);
+    return !!seen && Math.abs(seen.x - x) <= POINTER_TOLERANCE_PX && Math.abs(seen.y - y) <= POINTER_TOLERANCE_PX;
+  }
+
   async _center(page, backendNodeId) {
     await this._guard(page);
     await page.send('DOM.scrollIntoViewIfNeeded', { backendNodeId }).catch(() => {});
@@ -286,14 +293,23 @@ export class BrowserHarness {
     return { x: (q[0] + q[4]) / 2, y: (q[1] + q[5]) / 2 };
   }
 
+  // The computer's own pointer presses whatever window is on top at that screen point, so
+  // it is pressed only after the page itself reports the pointer arriving on the target
+  // (the halo script records every OS mousemove). Otherwise — window covered, app not
+  // active, off-screen — the click is dispatched inside the page and nothing else on the
+  // computer can receive it. Symmetrically, a press the page never saw is redone in-page.
   async _click(page, { x, y }) {
     await page.send('Runtime.evaluate', { expression: HALO_SCRIPT }).catch(() => {});
     const screen = this.pointer && page.screenPoint ? await page.screenPoint(x, y) : null;
     if (screen) {
+      await page.send('Runtime.evaluate', { expression: 'window.__vistaPointer = null; window.__vistaPressed = null;' }).catch(() => {});
       await this.pointer.moveTo(screen.x, screen.y);
       await this.sleep(HOVER_MS);
-      await this.pointer.click();
-      return;
+      if (await this._pointerSeen(page, 'window.__vistaPointer', x, y)) {
+        await this.pointer.click();
+        await this.sleep(HOVER_MS);
+        if (await this._pointerSeen(page, 'window.__vistaPressed', x, y)) return;
+      }
     }
     await page.send('Input.dispatchMouseEvent', { type: 'mouseMoved', x, y });
     await page.send('Input.dispatchMouseEvent', { type: 'mousePressed', x, y, button: 'left', clickCount: 1 });
