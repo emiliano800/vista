@@ -108,8 +108,8 @@ test('browser: observe, then a targeted click and type only against the cited ob
   assert.equal(click.ok, true);
   assert.equal(click.description, 'Click button: Save');
   const mouse = page.calls.filter(([m]) => m === 'Input.dispatchMouseEvent').map(([, p]) => p.type);
-  assert.deepEqual(mouse, ['mouseMoved', 'mousePressed', 'mouseReleased']);
-  assert.deepEqual(page.calls.find(([m]) => m === 'DOM.getBoxModel')[1], { backendNodeId: 20 });
+  assert.deepEqual(mouse, ['mouseMoved', 'mousePressed', 'mouseReleased', 'mouseMoved', 'mousePressed', 'mouseReleased']); // type clicks the field first
+  assert.deepEqual(page.calls.filter(([m]) => m === 'DOM.getBoxModel').map(([, p]) => p.backendNodeId), [12, 20]);
   assert.equal(click.result.url_after, 'https://sandbox.example.test/form');
 
   const unknownTarget = await h.perform({ action: 'click', target_id: '999', observation_id: click.observation.observation_id });
@@ -122,8 +122,10 @@ test('browser: a real pointer is used when the page can place the element on scr
   const pointer = { moveTo: async (x, y) => moves.push(['move', x, y]), click: async () => moves.push(['click']) };
   const h = new BrowserHarness({ open: async () => page, pointer, sleep: async () => {} });
   const obs = await h.perform({ action: 'observe' });
-  await h.perform({ action: 'click', target_id: '20', observation_id: obs.observation.observation_id });
+  const clicked = await h.perform({ action: 'click', target_id: '20', observation_id: obs.observation.observation_id });
   assert.deepEqual(moves, [['move', 160, 90], ['click']]); // center (60,40) + screen offset (100,50)
+  await h.perform({ action: 'type', target_id: '12', observation_id: clicked.observation.observation_id, value: 'x' });
+  assert.equal(moves.length, 4); // typing travels to the field and clicks it before inserting text
   assert.equal(page.calls.some(([m]) => m === 'Input.dispatchMouseEvent'), false);
 });
 

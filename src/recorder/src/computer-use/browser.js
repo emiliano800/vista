@@ -27,6 +27,7 @@ export const MAX_TEXT = 4000;
 export const MAX_ROWS = 200;
 export const MAX_COLUMNS = 40;
 export const SETTLE_MS = 600;
+export const HOVER_MS = 350; // real pointer rests on the control before pressing, so a watcher can follow
 
 // AX role → candidate kind. Anything not listed is not a target.
 const ROLE_KIND = {
@@ -130,6 +131,7 @@ export class BrowserHarness {
         }
         case 'type': {
           const node = this._node(step);
+          await this._click(page, await this._center(page, node));
           const previous = await this._fill(page, node, step.value, step.replace !== false);
           const observation = await this._observe(page);
           return this._ok(step, step.description || 'Typed the value into the field', {
@@ -222,6 +224,7 @@ export class BrowserHarness {
     const screen = this.pointer && page.screenPoint ? await page.screenPoint(x, y) : null;
     if (screen) {
       await this.pointer.moveTo(screen.x, screen.y);
+      await this.sleep(HOVER_MS);
       await this.pointer.click();
       return;
     }
