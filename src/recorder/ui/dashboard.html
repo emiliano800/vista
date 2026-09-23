@@ -536,7 +536,7 @@
               <li>Every step is checked on this computer against the session's limits before it runs, and written to a local log first.</li>
               <li>Anything irreversible pauses the run until your workspace owner approves it. Sign-in, payment and private windows are refused.</li>
               <li>Press <b>Stop</b>, or <span class="mono">⌘⇧Esc</span>, at any time. Quitting the recorder stops the session.</li>
-              <li>This recorder build does not include the browser or desktop drivers yet: it will report such steps as unsupported so the run pauses for a person.</li>
+              <li>Browser steps run in a separate Vista window with its own storage — none of your logins, cookies or history. Desktop steps (macOS only) act on the front window through its accessibility tree and need Accessibility permission. Anything this computer cannot perform is reported back so the run pauses for a person.</li>
             </ul>
           </section>
         </div>
