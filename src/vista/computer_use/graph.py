@@ -33,6 +33,7 @@ from vista.computer_use.planner import (
     Pause,
     PlannerState,
     Stop,
+    _candidate_view,
     _preview,
     step_id_for,
     value_candidates,
@@ -162,11 +163,12 @@ def graph_state(
             "moves_so_far": [
                 {"seq": t["seq"], "move": edge_label(graph.edges[t["edge"]])} for t in state.trajectory[-8:] if t["edge"] in graph.edges
             ],
+            "holding_so_far": sorted(held(state, graph)),
         },
         "observation": {
             "harness": observation.harness,
             "facts": observation.facts,
-            "candidates": [{"id": c.id, "label": c.label, "kind": c.kind} for c in observation.candidates],
+            "candidates": [_candidate_view(c) for c in observation.candidates],
         },
         "facts_gathered": {k: v for k, v in list(state.facts.items())[-4:]},
         "limits_left": limits_left,

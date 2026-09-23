@@ -163,6 +163,16 @@ def _preview(name: str, binding: dict) -> dict:
 # ---- the step judgment ------------------------------------------------------------------------
 
 
+# Control state flags the harness computed in code (booleans only — never a value).
+CANDIDATE_FLAGS = ("has_value", "disabled", "checked")
+
+
+def _candidate_view(c: Candidate) -> dict:
+    view = {"id": c.id, "label": c.label, "kind": c.kind}
+    flags = {k: bool(c.attrs[k]) for k in CANDIDATE_FLAGS if k in c.attrs}
+    return {**view, **flags} if flags else view
+
+
 def step_state(
     definition: dict, inputs: dict[str, dict], state: PlannerState, observation: Observation, primitives: set[str], limits_left: dict
 ) -> dict:
@@ -176,7 +186,7 @@ def step_state(
         "observation": {
             "harness": observation.harness,
             "facts": observation.facts,
-            "candidates": [{"id": c.id, "label": c.label, "kind": c.kind} for c in observation.candidates],
+            "candidates": [_candidate_view(c) for c in observation.candidates],
         },
         "facts_gathered": {k: v for k, v in list(state.facts.items())[-4:]},
         "limits_left": limits_left,
