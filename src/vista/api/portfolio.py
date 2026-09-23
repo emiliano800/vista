@@ -13,12 +13,11 @@ from pydantic import BaseModel, Field
 from sqlalchemy import select
 
 from vista.db import platform_session
-from vista.models.tenant import ImportException, ImportJob, RecorderReport, SourceFile
+from vista.models.tenant import RecorderReport
 from vista.portfolio import imports as import_service
 from vista.portfolio import interpret, service
 from vista.portfolio import serializers as ser
 from vista.portfolio.access import FirmContext, company_session, firm_context, writer_context
-from vista.portfolio.imports import job_mappings
 from vista.portfolio.processors import DATASETS
 from vista.portfolio.state import company_imports, company_records, firm_layer, load_company, snapshot
 from vista.recorder_analysis import public_report
@@ -236,19 +235,7 @@ def resolve_company_exception(
 # ---- Imports ----------------------------------------------------------------------------
 
 
-def _job_view(ref, job_id: uuid.UUID) -> dict:
-    with company_session(ref) as ts:
-        job = ts.get(ImportJob, job_id)
-        if job is None:
-            raise HTTPException(404, "Import job not found")
-        file = ts.get(SourceFile, job.source_file_id)
-        out = ser.import_job(job, file, job_mappings(ts, job))
-        out["exceptions"] = [
-            ser.import_exception(x)
-            for x in ts.scalars(select(ImportException).where(ImportException.import_job_id == job.id).order_by(ImportException.ref))
-        ]
-        out["sample"] = import_service._raw_rows(job, ts)[:5]
-    return out
+_job_view = import_service.job_view
 
 
 @router.get("/import-datasets")

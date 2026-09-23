@@ -7,11 +7,11 @@ from fastapi.staticfiles import StaticFiles
 
 from vista.api import (
     analytics,
+    company_imports,
     deals,
     employees,
     evals,
     findings,
-    imports,
     portfolio,
     recorder,
     recordings,
@@ -69,7 +69,7 @@ for router in (
     sessions.router,
     recordings.router,
     recorder.router,
-    imports.router,
+    company_imports.router,
     portfolio.router,
     synthetic.router,
     evals.router,

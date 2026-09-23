@@ -123,7 +123,7 @@ def create_company(session: Session, ctx: FirmContext, profile: dict, synthetic_
 
 
 def create_task(platform: Session, ctx: FirmContext, company: CompanyRef, body: dict) -> Task:
-    actor = ctx.membership.display_name or ctx.principal.email
+    actor = ctx.actor
     ref = next_ref(platform, ctx.firm.id, "task", "T")
     task = Task(
         company_id=company.id,
@@ -165,7 +165,7 @@ def create_task(platform: Session, ctx: FirmContext, company: CompanyRef, body: 
 
 
 def update_task(platform: Session, ctx: FirmContext, ref: str, patch: dict) -> Task:
-    actor = ctx.membership.display_name or ctx.principal.email
+    actor = ctx.actor
     for company in ctx.companies:
         with company_session(company) as ts:
             t = ts.scalar(select(Task).where(Task.ref == ref))

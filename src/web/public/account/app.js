@@ -48,9 +48,11 @@ const icon = (name) =>
 for (const el of document.querySelectorAll("[data-icon]"))
   el.innerHTML = icon(el.dataset.icon);
 let companies = [],
-  batches = [],
-  active = null,
-  preview = null,
+  jobs = [],
+  openExceptions = [],
+  records = null,
+  datasets = {},
+  wizard = null,
   files = [],
   role = "viewer",
   view = ["overview", "sources", "findings", "agents", "runs", "recordings"].includes(
@@ -59,13 +61,24 @@ let companies = [],
     ? new URLSearchParams(location.search).get("view")
     : "overview",
   recordingFocus = new URLSearchParams(location.search).get("recording"),
-  filter = "open",
   busy = false,
   generation = 0,
   agents = null,
   synthetic = [],
   reports = [],
   agentFilter = { kind: "all", status: "open", agent: "all" };
+// Canonical datasets as GET /deals/{id}/records returns them.
+const RECORD_SETS = {
+  customers: "Customers",
+  invoices: "Invoices / AR",
+  vendors: "Vendors",
+  purchases: "Vendor purchases",
+  subscriptions: "Software subscriptions",
+  policies: "Policies",
+  purchaseOrders: "Purchase orders",
+  purchaseOrderLines: "Purchase-order lines",
+  inventory: "Inventory balances",
+};
 const AGENTS = [
   {
     key: "recording_reviewer",
@@ -80,8 +93,8 @@ const AGENTS = [
     name: "File Reviewer",
     layer: "Ingestion",
     detail:
-      "Reads a division's synthetic exports and records observed facts and inefficiencies.",
-    trigger: "Run discovery on a division.",
+      "Reads this company's imported canonical records (or a synthetic division) and records evidence-linked observations.",
+    trigger: "Review imported records.",
   },
   {
     key: "report_generator",
@@ -166,27 +179,42 @@ function action(fn) {
   };
 }
 const statusTag = (status) =>
-  `<span class="tag ${status === "reviewed" || status === "completed" || status === "actioned" ? "success" : status === "open" ? "warning" : ""}">${esc({ open: "Needs review", reviewed: "Reviewed", actioned: "Actioned", dismissed: "Dismissed", completed: "Imported", preview: "Mapping needed" }[status] ?? status)}</span>`;
-const category = (value) =>
-  ({
-    commission: "Commission discrepancy",
-    receivable: "Receivable exposure",
-    data_quality: "Data quality",
-  })[value] ?? value;
-function batchPicker() {
-  const completed = batches.filter((b) => b.status === "completed");
-  if (completed.length < 2) return "";
-  return `<label class="small">Import snapshot <select id="batch-select" class="batch-select">${completed.map((b) => `<option value="${esc(b.id)}" ${b.id === active?.id ? "selected" : ""}>${day(b.as_of)} · ${number(b.record_count)} records · ${new Date(b.created_at).toLocaleString()}</option>`).join("")}</select></label>`;
-}
+  `<span class="tag ${["reviewed", "completed", "actioned", "resolved"].includes(status) ? "success" : ["open", "mapping_review", "validating", "ready_to_import"].includes(status) ? "warning" : status === "failed" ? "danger" : ""}">${esc(
+    {
+      open: "Needs review",
+      reviewed: "Reviewed",
+      actioned: "Actioned",
+      dismissed: "Dismissed",
+      resolved: "Decided",
+      completed: "Imported",
+      mapping_review: "Mapping needed",
+      validating: "Exceptions to decide",
+      ready_to_import: "Ready to approve",
+      importing: "Importing",
+      failed: "Failed",
+      uploaded: "Uploaded",
+    }[status] ?? status,
+  )}</span>`;
+const completedJobs = () => jobs.filter((j) => j.status === "completed");
+const pendingJobs = () =>
+  jobs.filter((j) => ["mapping_review", "validating", "ready_to_import"].includes(j.status));
+const recordSets = () =>
+  Object.entries(RECORD_SETS)
+    .map(([key, label]) => ({ key, label, rows: records?.[key] ?? [] }))
+    .filter((r) => r.rows.length);
+const recordCount = () => recordSets().reduce((n, r) => n + r.rows.length, 0);
 function render() {
   const count =
-    (active?.analysis.findings.filter((f) => f.status === "open").length ?? 0) +
+    openExceptions.length +
     agentFindings().filter((f) => f.status === "open").length;
-  $("source-count").textContent = active?.files.length ?? 0;
+  $("source-count").textContent = completedJobs().length;
   $("finding-count").textContent = count;
   $("run-count").textContent = agentRuns().length;
   $("report-count").textContent = companyReports().length;
-  $("as-of").textContent = active ? `Data as of ${day(active.as_of)}` : "";
+  const latest = completedJobs().at(-1);
+  $("as-of").textContent = latest
+    ? `Last import ${stamp(latest.completedAt ?? latest.createdAt)}`
+    : "";
   $("view-name").textContent = {
     overview: "Overview",
     sources: "Data sources",
@@ -217,9 +245,9 @@ function render() {
             ? runsView()
             : view === "recordings"
               ? recordingsView()
-              : active
-              ? overviewView()
-              : welcomeView();
+              : recordCount()
+                ? overviewView()
+                : welcomeView();
   bindContent();
 }
 const runTag = (status) =>
@@ -280,9 +308,11 @@ function agentsView() {
     const spend = agents?.usage.groups.find((g) => g.key.agent_key === a.key);
     let control = "";
     if (a.key === "file_reviewer")
-      control = sc
-        ? `<label class="small">Division <select data-division="${a.key}">${sc.divisions.map((d) => `<option value="${esc(d)}">${esc(d)}</option>`).join("")}</select></label><button class="primary" data-start="${a.key}" ${canEdit() ? "" : "disabled"}>${icon("play")}Run discovery</button>`
-        : '<span class="small muted">No synthetic dataset matches this company.</span>';
+      control = recordCount()
+        ? `<button class="primary" data-review ${canEdit() ? "" : "disabled"}>${icon("play")}Review imported records</button>${sc ? `<label class="small">Synthetic division <select data-division="${a.key}">${sc.divisions.map((d) => `<option value="${esc(d)}">${esc(d)}</option>`).join("")}</select></label><button data-start="${a.key}" ${canEdit() ? "" : "disabled"}>Run discovery</button>` : ""}`
+        : sc
+          ? `<label class="small">Division <select data-division="${a.key}">${sc.divisions.map((d) => `<option value="${esc(d)}">${esc(d)}</option>`).join("")}</select></label><button class="primary" data-start="${a.key}" ${canEdit() ? "" : "disabled"}>${icon("play")}Run discovery</button>`
+          : '<span class="small muted">Import company records first; the File Reviewer reads canonical rows.</span>';
     else if (a.key === "report_generator")
       control = `<button class="primary" data-start="${a.key}" ${canEdit() ? "" : "disabled"}>${icon("play")}Generate summary</button>`;
     else if (a.key === "sector_merger")
@@ -502,6 +532,21 @@ async function showAgentFinding(id) {
       })),
   );
 }
+async function startReview() {
+  const queued = await api(`/deals/${company().id}/review`, { method: "POST", body: "{}" });
+  if (agents)
+    agents.runs.unshift({
+      id: queued.run_id,
+      run_type: "canonical_review",
+      agent_key: "file_reviewer",
+      status: "queued",
+      deal_id: company().id,
+      created_at: new Date().toISOString(),
+    });
+  view = "runs";
+  render();
+  message("File Reviewer queued over the imported records. Findings appear under Findings when the run completes.");
+}
 async function startRun(key) {
   const sc = syntheticCompany();
   let run;
@@ -528,11 +573,11 @@ async function startRun(key) {
   );
 }
 function welcomeView() {
-  const pending = batches.find((b) => b.status === "preview");
-  return `<div class="intro"><div><span class="eyebrow">${esc(company().name)}</span><h1>A clearer picture.<br>From the data<br>you already <i>have.</i></h1><p class="lede">Turn scattered exports into a shared view of the business. Bring in your records, confirm how they fit, and review the opportunities inside.</p><div class="actions"><button class="primary" data-import ${!canEdit() ? "disabled" : ""}>${icon("upload")}Import company data</button>${isMeridian() && canEdit() ? '<button class="text-button" data-sample>Try Meridian sample data</button>' : ""}</div><p class="spacing-1 small">CSV, TSV and Excel workbooks · Up to 5 MiB per import</p></div><div class="source-stack"><header><span class="eyebrow">Your first import</span><span class="tag">${isMeridian() ? "Synthetic demo available" : "Files you already use"}</span></header>${[
-    ["Policy book", "Policies, rates and client references"],
-    ["Commission statements", "Carrier payments and premium basis"],
-    ["Billing & receivables", "Invoices, due dates and balances"],
+  const pending = pendingJobs();
+  return `<div class="intro"><div><span class="eyebrow">${esc(company().name)}</span><h1>A clearer picture.<br>From the data<br>you already <i>have.</i></h1><p class="lede">Turn scattered exports into a shared view of the business. Bring in your records, confirm how they fit, and let the File Reviewer show what deserves attention.</p><div class="actions"><button class="primary" data-import ${!canEdit() ? "disabled" : ""}>${icon("upload")}Import company data</button>${isMeridian() && canEdit() ? '<button class="text-button" data-sample>Try Meridian sample data</button>' : ""}</div><p class="spacing-1 small">CSV and Excel workbooks · Up to 25 MB per file</p></div><div class="source-stack"><header><span class="eyebrow">Your first import</span><span class="tag">${isMeridian() ? "Synthetic demo available" : "Files you already use"}</span></header>${[
+    ["Customers", "Client or account lists"],
+    ["Invoices & receivables", "Invoices, due dates and balances"],
+    ["Vendors, purchases & software", "Purchase lines and subscriptions"],
   ]
     .map(
       ([name, desc]) =>
@@ -540,60 +585,68 @@ function welcomeView() {
     )
     .join(
       "",
-    )}<div class="stack-footer">${icon("shield")}Source records stay attached to every finding.</div></div></div>${pending ? `<div class="quiet-note">${icon("clock")}<div><strong>An import is waiting for mapping review.</strong><br>${pending.files.length} files · ${number(pending.record_count)} records</div><button data-resume="${esc(pending.id)}" ${!canEdit() ? "disabled" : ""}>Resume import</button></div>` : ""}<div class="explain-grid"><article><span class="number">01 / INGEST</span><h3>Start with your exports.</h3><p>Upload the records from your agency system and spreadsheets. Originals are retained with the import.</p></article><article><span class="number">02 / CONFIRM</span><h3>Make the connections clear.</h3><p>Review detected record types and field mappings before they enter your company snapshot.</p></article><article><span class="number">03 / REVIEW</span><h3>See what needs attention.</h3><p>Trace discrepancies to source rows, inspect the calculation, and record your review.</p></article></div><div class="quiet-note">${icon("scan")}<div><strong>Built for a defensible first look.</strong><br>Checks compare imported records. Findings are review candidates; recovered revenue and realized savings require confirmation.</div></div>`;
+    )}<div class="stack-footer">${icon("shield")}Every record keeps its source file, row and original values.</div></div></div>${pending.length ? `<div class="quiet-note">${icon("clock")}<div><strong>${pending.length === 1 ? "An import is waiting" : `${pending.length} imports are waiting`} for your review.</strong><br>${pending.map((j) => esc(j.filename)).join(", ")}</div><button data-resume="${esc(pending[0].id)}" ${!canEdit() ? "disabled" : ""}>Resume import</button></div>` : ""}<div class="explain-grid"><article><span class="number">01 / INGEST</span><h3>Start with your exports.</h3><p>Upload the records from your systems and spreadsheets. Originals are retained with the import.</p></article><article><span class="number">02 / CONFIRM</span><h3>Make the connections clear.</h3><p>Confirm detected record types and field mappings before anything becomes a company record.</p></article><article><span class="number">03 / REVIEW</span><h3>See what needs attention.</h3><p>The File Reviewer reads the imported records and cites the rows behind every observation.</p></article></div><div class="quiet-note">${icon("scan")}<div><strong>Built for a defensible first look.</strong><br>Findings are review candidates with evidence; recovered revenue and realized savings require confirmation.</div></div>`;
 }
 function metrics() {
-  const s = active.analysis.summary;
+  const open = agentFindings().filter((f) => f.status === "open").length;
   return `<div class="metrics">${[
-    [
-      "Records imported",
-      number(s.records),
-      `${active.files.length} source files`,
-    ],
-    [
-      "Policies in this snapshot",
-      number(s.policies),
-      `${number(s.clients)} client records`,
-    ],
-    [
-      "Findings to review",
-      number(
-        active.analysis.findings.filter((f) => f.status === "open").length,
-      ),
-      "Source-linked exceptions",
-    ],
-    [
-      "Commission discrepancy",
-      money(s.commission_variance),
-      "Potential recovery · not realized",
-    ],
+    ["Records imported", number(recordCount()), `${completedJobs().length} source files`],
+    ["Datasets", number(recordSets().length), recordSets().map((r) => r.label).slice(0, 3).join(" · ") || "—"],
+    ["Import exceptions", number(openExceptions.length), "Records awaiting a decision"],
+    ["Findings to review", number(open), "Evidence-linked observations"],
   ]
     .map(
       ([label, value, note], i) =>
-        `<div class="metric ${i === 3 ? "emphasis" : ""}"><span class="eyebrow">${label}</span><b>${value}</b><small>${note}</small></div>`,
+        `<div class="metric ${i === 3 ? "emphasis" : ""}"><span class="eyebrow">${label}</span><b>${value}</b><small>${esc(note)}</small></div>`,
     )
     .join("")}</div>`;
 }
-function findingRows(rows) {
-  if (!rows.length)
-    return '<div class="empty"><h3>No findings in this view.</h3><p>Review check coverage to see which records were assessed.</p></div>';
-  return rows
+function datasetRows() {
+  return `<div class="table-wrap"><table><thead><tr><th>Dataset</th><th class="num">Records</th><th>Source files</th><th></th></tr></thead><tbody>${recordSets()
+    .map((r) => {
+      const sources = [...new Set(r.rows.map((x) => x.provenance?.file).filter(Boolean))];
+      return `<tr><td>${icon("file")} ${esc(r.label)}</td><td class="num">${number(r.rows.length)}</td><td>${esc(sources.join(", ") || "—")}</td><td><button data-source="${esc(r.key)}">Browse records</button></td></tr>`;
+    })
+    .join("")}</tbody></table></div>`;
+}
+function overviewView() {
+  const open = agentFindings().filter((f) => f.status === "open");
+  const latest = completedJobs().at(-1);
+  return `<div class="page-heading"><div><span class="eyebrow">${esc(company().name)}</span><h1>Your business, <i>in view.</i></h1><p>${number(recordCount())} imported records across ${number(recordSets().length)} datasets. ${open.length ? `${number(open.length)} observations worth a closer look.` : "No open observations yet — run the File Reviewer over the imported records."} Every conclusion starts with a source.</p></div><span class="tag success">${icon("check")}Import complete</span></div>${metrics()}<div class="overview-grid"><section class="panel"><div class="panel-heading"><h2>Where to focus</h2><button data-go="findings" class="text-button">All findings ${icon("arrow")}</button></div>${open.length ? agentFindingRows(open.slice(0, 3)) : `<div class="empty"><h3>No open findings.</h3><p>The File Reviewer reads the imported records and cites the rows behind each observation.</p>${canEdit() ? `<button class="primary" data-review>${icon("play")}Review imported records</button>` : ""}</div>`}</section><section class="panel"><div class="panel-heading"><h2>What was imported</h2><button data-go="sources" class="text-button">Data sources ${icon("arrow")}</button></div>${datasetRows()}<p class="spacing-3 small">Records were normalised deterministically at import; original values stay on every row. No automatic changes are made to your source systems.</p></section></div><div class="import-note"><span>Last import ${esc(stamp(latest?.completedAt ?? latest?.createdAt))} · ${completedJobs().length} files · ${openExceptions.length ? `${number(openExceptions.length)} exceptions still open.` : "No open exceptions."}</span>${canEdit() ? `<button data-review class="text-button">Run the File Reviewer ${icon("arrow")}</button>` : ""}</div>${agentOverviewPanel()}`;
+}
+function sourcesView() {
+  return `<div class="page-heading"><div><span class="eyebrow">The evidence library</span><h1>Data with a <i>paper trail.</i></h1><p>Canonical records with the source file, row and original values behind each one, and every import that produced them.</p></div></div>${
+    recordCount()
+      ? `<section class="panel"><div class="panel-heading"><h2>Company records</h2><span class="small">${number(recordCount())} records</span></div>${datasetRows()}</section>`
+      : '<div class="empty"><h2>Your source library starts here.</h2><p>Import your company exports to create canonical records.</p><button data-import>Import data</button></div>'
+  }<section class="panel section-gap"><div class="panel-heading"><h2>Import history</h2><span class="small">${number(jobs.length)} files</span></div>${
+    jobs.length
+      ? `<div class="table-wrap"><table><thead><tr><th>File</th><th>Dataset</th><th class="num">Rows</th><th class="num">Imported</th><th>Status</th><th class="num">Open exceptions</th><th></th></tr></thead><tbody>${[...jobs]
+          .reverse()
+          .map(
+            (j) =>
+              `<tr><td>${icon("file")} ${esc(j.filename)}${j.sheet ? `<small>${esc(j.sheet)}</small>` : ""}<small>${esc(stamp(j.createdAt))}</small></td><td>${esc(datasets[j.dataset]?.label ?? j.dataset)}</td><td class="num">${number(j.recordsDetected ?? 0)}</td><td class="num">${number(j.recordsImported ?? 0)}</td><td>${statusTag(j.status)}${j.error ? `<small class="muted">${esc(j.error)}</small>` : ""}</td><td class="num">${number((j.exceptions ?? []).filter((x) => x.open).length)}</td><td>${["mapping_review", "validating", "ready_to_import"].includes(j.status) && canEdit() ? `<button data-resume="${esc(j.id)}">Resume</button>` : ""}</td></tr>`,
+          )
+          .join("")}</tbody></table></div>`
+      : '<p class="muted">No files imported yet.</p>'
+  }</section>`;
+}
+function exceptionRows(list) {
+  if (!list.length)
+    return '<p class="muted spacing-3">No import exceptions need a decision.</p>';
+  return list
     .map(
-      (f) =>
-        `<article class="finding-row"><div><span class="eyebrow">${esc(category(f.category))}</span><h3>${esc(f.title)}</h3><p>${esc(f.detail)}</p><p class="spacing-2">${f.evidence.length} source ${f.evidence.length === 1 ? "record" : "records"} · ${esc(f.kind === "observed_fact" ? "Observed fact" : f.kind)}</p></div><section>${statusTag(f.status)}${f.amount !== null ? `<span class="finding-value">${money(f.amount)}</span>` : ""}<button data-finding="${esc(f.id)}">Review evidence ${icon("arrow")}</button></section></article>`,
+      (x) =>
+        `<article class="finding-row"><div><span class="eyebrow">${esc(x.type)} · ${esc(datasets[x.dataset]?.label ?? x.dataset ?? "")}</span><h3>${esc(x.left)}${x.right ? ` <span class="muted">vs</span> ${esc(x.right)}` : ""}</h3><p>${esc(x.description)}</p><p class="spacing-2">${x.leftRow ? `Source row ${esc(x.leftRow)}` : "This import"}${x.rightRow ? ` · compared with row ${esc(x.rightRow)}` : ""}${x.confidence != null ? ` · ${Math.round(x.confidence * 100)}% similar` : ""}</p></div><section>${x.open ? statusTag("open") : `${statusTag("resolved")}<span class="small">${esc(x.decision)}</span>`}${
+          x.open && canEdit()
+            ? x.actions.map((a) => `<button data-exception="${esc(x.importJobId)}:${esc(x.id)}" data-decide="${esc(a)}">${esc(a)}</button>`).join("")
+            : ""
+        }</section></article>`,
     )
     .join("");
 }
-function overviewView() {
-  const s = active.analysis.summary;
-  return `<div class="page-heading"><div><span class="eyebrow">${esc(company().name)}</span><h1>Your business, <i>in view.</i></h1><p>${number(s.records)} imported records. ${s.findings ? `${number(s.findings)} exceptions worth a closer look.` : "No exceptions found by the available checks."} Every conclusion starts with a source.</p></div><span class="tag success">${icon("check")}Import complete</span></div>${batchPicker()}${metrics()}<div class="overview-grid"><section class="panel"><div class="panel-heading"><h2>Where to focus</h2><button data-go="findings" class="text-button">All findings ${icon("arrow")}</button></div>${findingRows([...active.analysis.findings].sort((a, b) => (a.category === "commission" ? -1 : 0) - (b.category === "commission" ? -1 : 0)).slice(0, 3))}</section><section class="panel"><div class="panel-heading"><h2>What was checked</h2></div>${active.analysis.checks.map((c) => `<div class="check-row">${icon(c.status === "completed" ? "check" : "clock")}<div><strong>${esc(c.name)}</strong><p>${esc(c.detail)}</p>${c.status !== "completed" ? '<span class="tag warning">Needs more data</span>' : ""}</div></div>`).join("")}<p class="spacing-3 small">Rule-based checks calculate amounts and join records. No automatic changes are made to your source systems.</p></section></div><div class="import-note"><span>Snapshot as of ${day(active.as_of)} · ${active.files.length} files · Each import is analyzed independently.</span><a href="/api/imports/${active.id}/export">Download analysis & evidence</a></div>${agentOverviewPanel()}`;
-}
-function sourcesView() {
-  return `<div class="page-heading"><div><span class="eyebrow">The evidence library</span><h1>Data with a <i>paper trail.</i></h1><p>Original columns, source rows and confirmed mappings. Everything behind your company snapshot.</p></div>${active ? `<a class="small" href="/api/imports/${active.id}/export">Download snapshot</a>` : ""}</div>${batchPicker()}${active ? `<section class="panel"><div class="panel-heading"><h2>Current snapshot</h2><span class="small">As of ${day(active.as_of)}</span></div><div class="table-wrap"><table><thead><tr><th>Source file</th><th>Record type</th><th class="num">Records</th><th>Status</th><th></th></tr></thead><tbody>${active.tables.map((t) => `<tr><td>${icon("file")} ${esc(t.filename)}${t.sheet ? `<small>${esc(t.sheet)}</small>` : ""}</td><td>${esc(active.schemas[t.kind].label)}</td><td class="num">${number(t.records.length)}</td><td>${statusTag("completed")}</td><td><button data-source="${esc(t.id)}">Browse records</button></td></tr>`).join("")}</tbody></table></div></section>` : '<div class="empty"><h2>Your source library starts here.</h2><p>Import your company exports to create a snapshot.</p><button data-import>Import data</button></div>'}<section class="panel section-gap"><div class="panel-heading"><h2>Import history</h2><span class="small">Latest 100 imports</span></div>${batches.length ? `<div class="table-wrap"><table><thead><tr><th>Imported</th><th>Files</th><th>Records</th><th>Status</th><th></th></tr></thead><tbody>${batches.map((b) => `<tr><td>${esc(new Date(b.created_at).toLocaleString())}<small>Data as of ${day(b.as_of)}</small></td><td>${b.files.length}</td><td>${number(b.record_count)}</td><td>${statusTag(b.status)}</td><td><button ${b.status === "preview" ? "data-resume" : "data-batch"}="${esc(b.id)}" ${b.status === "preview" && !canEdit() ? "disabled" : ""}>${b.status === "preview" ? "Review mapping" : "Open snapshot"}</button></td></tr>`).join("")}</tbody></table></div>` : '<p class="muted">No files imported yet.</p>'}</section>`;
-}
 function findingsView() {
-  const findings = active?.analysis.findings ?? [];
-  return `<div class="page-heading"><div><span class="eyebrow">From records to recommendations</span><h1>Attention, with <i>evidence.</i></h1><p>Inspect what was observed, decide what comes next, and keep a record of your review.</p></div>${batchPicker()}</div><div class="filterbar" role="group" aria-label="Finding status">${["open", "reviewed", "dismissed", "all"].map((f) => `<button data-filter="${f}" aria-pressed="${filter === f}" class="${filter === f ? "selected" : ""}">${{ open: "Needs review", reviewed: "Reviewed", dismissed: "Dismissed", all: "All findings" }[f]} · ${findings.filter((r) => f === "all" || r.status === f).length}</button>`).join("")}</div><section class="panel">${findingRows(findings.filter((f) => filter === "all" || f.status === filter))}</section><p class="spacing-4 small">Marking a finding reviewed records your assessment. It does not resolve the discrepancy or count it as realized savings.</p>${agentFindingsBlock()}`;
+  return `<div class="page-heading"><div><span class="eyebrow">From records to recommendations</span><h1>Attention, with <i>evidence.</i></h1><p>Decide the records Vista was unsure about, then review what the agents observed. Every finding cites the rows behind it.</p></div></div><section class="panel"><div class="panel-heading"><h2>Import exceptions</h2><span class="small">${number(openExceptions.length)} open</span></div>${exceptionRows(openExceptions)}</section><p class="spacing-4 small">Marking a finding reviewed records your assessment. It does not resolve the discrepancy or count it as realized savings.</p>${agentFindingsBlock()}`;
 }
 function bindContent() {
   document
@@ -614,8 +667,22 @@ function bindContent() {
       }),
   );
   document
-    .querySelectorAll("[data-finding]")
-    .forEach((b) => (b.onclick = () => showFinding(b.dataset.finding)));
+    .querySelectorAll("[data-review]")
+    .forEach((b) => (b.onclick = action(startReview)));
+  document.querySelectorAll("[data-exception]").forEach(
+    (b) =>
+      (b.onclick = action(async () => {
+        const [jobId, ref] = b.dataset.exception.split(":");
+        replaceJob(
+          await api(`/deals/${company().id}/imports/${jobId}/exceptions/${ref}`, {
+            method: "POST",
+            body: JSON.stringify({ decision: b.dataset.decide }),
+          }),
+        );
+        await refreshImports();
+        render();
+      })),
+  );
   document
     .querySelectorAll("[data-agent-finding]")
     .forEach(
@@ -641,29 +708,19 @@ function bindContent() {
   document
     .querySelectorAll("[data-source]")
     .forEach((b) => (b.onclick = () => showSource(b.dataset.source)));
-  document.querySelectorAll("[data-filter]").forEach(
-    (b) =>
-      (b.onclick = () => {
-        filter = b.dataset.filter;
-        render();
-      }),
-  );
-  document
-    .querySelectorAll("[data-batch]")
-    .forEach((b) => (b.onclick = action(() => selectBatch(b.dataset.batch))));
   document.querySelectorAll("[data-resume]").forEach(
     (b) =>
       (b.onclick = action(async () => {
         const current = generation;
-        const loaded = await api(`/imports/${b.dataset.resume}`);
+        const loaded = await api(`/deals/${company().id}/imports/${b.dataset.resume}`);
         if (current !== generation) return;
-        preview = loaded;
+        wizard = { jobs: [loaded] };
+        importError();
         openDialog($("import-dialog"));
-        renderMapping();
+        if (loaded.status === "mapping_review") renderMapping();
+        else renderApprove();
       })),
   );
-  if ($("batch-select"))
-    $("batch-select").onchange = action((e) => selectBatch(e.target.value));
 }
 function openDialog(dialog) {
   if (!dialog.open) dialog.showModal();
@@ -676,13 +733,13 @@ function setStep(stage) {
 }
 function openImport() {
   if (!canEdit()) return;
-  preview = null;
+  wizard = { jobs: [] };
   files = [];
   importError();
   setStep(0);
   openDialog($("import-dialog"));
   $("import-body").innerHTML =
-    `<div id="dropzone" class="dropzone">${icon("upload")}<h3>A few files. A useful first look.</h3><p>Drop CSV, TSV or XLSX exports here, or choose files below.<br>Import related files together so Vista can reconcile them.</p><input id="file-input" type="file" multiple accept=".csv,.tsv,.xlsx" aria-label="Choose company export files"/></div><div id="selected-files" class="selected-files"></div><div class="upload-meta"><label for="snapshot-date">Data as of<input id="snapshot-date" type="date" value="${new Date().toISOString().slice(0, 10)}" required/></label><p class="small">Choose the date of your export. Receivables are assessed against this date, so historical snapshots stay meaningful.</p></div>${isMeridian() ? '<div class="spacing-5 quiet-note"><div><strong>Presenting Meridian?</strong><br>Load five synthetic exports from the demo company.</div><button id="sample-files">Use sample files</button></div>' : ""}<div class="dialog-actions"><span class="small">Up to 12 files, 1,999 rows per table and 5 MiB total.<br>Files are saved to this company when you continue.</span><button class="primary" id="upload-files" disabled>Review field mapping ${icon("arrow")}</button></div>`;
+    `<div id="dropzone" class="dropzone">${icon("upload")}<h3>A few files. A useful first look.</h3><p>Drop CSV or XLSX exports here, or choose files below.<br>Customers, invoices, vendors and purchases, software, policies, purchase orders, inventory.</p><input id="file-input" type="file" multiple accept=".csv,.xlsx" aria-label="Choose company export files"/></div><div id="selected-files" class="selected-files"></div>${isMeridian() ? '<div class="spacing-5 quiet-note"><div><strong>Presenting Meridian?</strong><br>Load three synthetic exports from the demo company.</div><button id="sample-files">Use sample files</button></div>' : ""}<div class="dialog-actions"><span class="small">Up to 12 files, 25 MB each. Files are saved to this company when you continue; nothing becomes a record until you approve.</span><button class="primary" id="upload-files" disabled>Detect and map fields ${icon("arrow")}</button></div>`;
   $("file-input").onchange = () => selectFiles([...$("file-input").files]);
   const drop = $("dropzone");
   drop.ondragover = (e) => {
@@ -699,15 +756,11 @@ function openImport() {
   $("upload-files").onclick = uploadFiles;
 }
 function selectFiles(selected) {
-  files = selected;
+  files = selected.filter((f) => /\.(csv|xlsx)$/i.test(f.name));
   importError();
-  if (
-    !files.length ||
-    files.length > 12 ||
-    files.reduce((n, f) => n + f.size, 0) > 5 * 1024 * 1024
-  ) {
+  if (!files.length || files.length > 12 || files.some((f) => f.size > 25 * 1024 * 1024)) {
     files = [];
-    importError("Choose 1–12 files totaling at most 5 MiB.");
+    importError("Choose 1–12 CSV or XLSX files of at most 25 MB each.");
   }
   $("selected-files").innerHTML = files
     .map(
@@ -734,7 +787,6 @@ async function loadSample() {
     );
     if (!$("import-dialog").open || $("file-input") !== input) return;
     selectFiles(loaded);
-    $("snapshot-date").value = manifest.as_of;
   } catch (e) {
     if ($("file-input") === input) importError(e.message);
   } finally {
@@ -748,6 +800,7 @@ function encoded(file) {
       resolve({
         name: file.name,
         content: String(reader.result).split(",")[1],
+        mime_type: file.type || "",
       });
     reader.onerror = () => reject(new Error(`Could not read ${file.name}.`));
     reader.readAsDataURL(file);
@@ -758,263 +811,258 @@ function setBusy(value) {
   $("close-import").disabled = value;
   $("company").disabled = value;
 }
+function replaceJob(job) {
+  jobs = jobs.some((j) => j.id === job.id) ? jobs.map((j) => (j.id === job.id ? job : j)) : [...jobs, job];
+  if (wizard) wizard.jobs = wizard.jobs.map((j) => (j.id === job.id ? job : j));
+}
 async function uploadFiles() {
   if (busy) return;
-  if (!$("snapshot-date").value) {
-    importError("Choose the date of this export.");
-    return;
-  }
   setBusy(true);
   importError();
   const button = $("upload-files");
   button.disabled = true;
   button.textContent = "Reading and saving files…";
   try {
-    const data = await Promise.all(files.map(encoded));
-    preview = await api(`/deals/${company().id}/imports`, {
-      method: "POST",
-      body: JSON.stringify({ files: data, as_of: $("snapshot-date").value }),
-    });
-    if (preview.status === "completed") {
-      active = preview;
-      await refreshBatches();
-      $("import-dialog").close();
-      view = "overview";
-      render();
-      message("These files were already imported. Opened the saved snapshot.");
-    } else {
-      await refreshBatches();
-      renderMapping();
+    for (const file of files) {
+      const body = await encoded(file);
+      const job = await api(`/deals/${company().id}/imports`, { method: "POST", body: JSON.stringify(body) });
+      wizard.jobs = [...wizard.jobs.filter((j) => j.id !== job.id), job];
+      replaceJob(job);
     }
+    renderMapping();
   } catch (e) {
     importError(e.message);
     button.disabled = false;
-    button.innerHTML = `Review field mapping ${icon("arrow")}`;
+    button.innerHTML = `Detect and map fields ${icon("arrow")}`;
   } finally {
     setBusy(false);
   }
 }
+const fieldsOf = (dataset) => Object.entries(datasets[dataset]?.fields ?? {});
 function renderMapping() {
   setStep(1);
   importError();
   $("import-body").innerHTML =
-    `<h3>Confirm how these records fit.</h3><p class="small">${preview.files.length} files · ${number(preview.record_count)} records · As of ${day(preview.as_of)}. Types and fields are suggested from column headers. Review them before confirming.</p>${preview.tables
+    `<h3>Confirm how these records fit.</h3><p class="small">${wizard.jobs.length} file${wizard.jobs.length === 1 ? "" : "s"}. Vista detected each file's record type from its headers and proposed a Vista field per column; anything under 90% confidence is marked <strong>Review</strong>. Required fields must be mapped.</p>${wizard.jobs
       .map(
-        (t) =>
-          `<section class="mapping-card"><div class="mapping-head"><div><strong>${esc(t.filename)}</strong><small>${t.sheet ? `${esc(t.sheet)} · ` : ""}${number(t.records.length)} records</small></div><label class="small">Record type<select data-type="${t.id}" aria-label="Record type for ${esc(t.filename)}"><option value="unclassified">Choose record type</option>${Object.entries(
-            preview.schemas,
+        (j) =>
+          `<section class="mapping-card"><div class="mapping-head"><div><strong>${esc(j.filename)}</strong><small>${j.sheet ? `${esc(j.sheet)} · ` : ""}${number(j.recordsDetected ?? 0)} rows · detected ${esc(datasets[j.detection?.dataset ?? j.dataset]?.label ?? j.dataset)} (${Math.round((j.detection?.confidence ?? 0) * 100)}%)</small></div><label class="small">Record type<select data-type="${esc(j.id)}" aria-label="Record type for ${esc(j.filename)}">${Object.entries(
+            datasets,
           )
-            .map(
-              ([k, s]) =>
-                `<option value="${k}" ${t.kind === k ? "selected" : ""}>${esc(s.label)}</option>`,
-            )
-            .join(
-              "",
-            )}</select></label></div><div class="mapping-fields" id="fields-${t.id}">${mappingFields(t)}</div><details><summary>Preview original columns and records</summary><div class="table-wrap">${tableMarkup(t, t.records.slice(0, 3))}</div></details></section>`,
+            .map(([k, d]) => `<option value="${k}" ${j.dataset === k ? "selected" : ""}>${esc(d.label)}</option>`)
+            .join("")}</select></label></div><div class="table-wrap">${mappingTable(j)}</div><details><summary>Preview original columns and records</summary><div class="table-wrap">${sampleMarkup(j)}</div></details></section>`,
       )
       .join(
         "",
-      )}<div class="dialog-actions"><span class="small">Confirming saves the mappings and runs checks on this import. Originals remain unchanged.</span><button id="confirm-import" class="primary">Confirm & analyze ${icon("arrow")}</button></div>`;
+      )}<div class="dialog-actions"><span class="small">Confirming saves the mappings, normalises every row and lists the records Vista is unsure about. Originals remain unchanged.</span><button id="confirm-mapping" class="primary">Confirm mappings ${icon("arrow")}</button></div>`;
   document.querySelectorAll("[data-type]").forEach(
     (el) =>
-      (el.onchange = () => {
-        const t = preview.tables.find((t) => t.id === el.dataset.type);
-        t.kind = el.value;
-        t.mapping = {};
-        if (preview.schemas[t.kind]) {
-          for (const field of [
-            ...preview.schemas[t.kind].required,
-            ...preview.schemas[t.kind].optional,
-          ]) {
-            const matches = t.columns.filter(
-              (c) =>
-                c
-                  .trim()
-                  .toLowerCase()
-                  .replace(/[\s-]+/g, "_") === field,
-            );
-            if (matches.length === 1) t.mapping[field] = matches[0];
-          }
-        }
-        $(`fields-${t.id}`).innerHTML = mappingFields(t);
-        bindMapping();
-      }),
+      (el.onchange = action(async () => {
+        replaceJob(
+          await api(`/deals/${company().id}/imports/${el.dataset.type}/dataset`, {
+            method: "POST",
+            body: JSON.stringify({ dataset: el.value }),
+          }),
+        );
+        renderMapping();
+      })),
   );
-  bindMapping();
-  $("confirm-import").onclick = confirmImport;
-}
-function mappingFields(t) {
-  const schema = preview.schemas[t.kind];
-  if (!schema)
-    return '<p class="small">Select a record type to map its fields.</p>';
-  return [...schema.required, ...schema.optional]
-    .map(
-      (f) =>
-        `<label>${esc(f.replaceAll("_", " "))}${schema.required.includes(f) ? " *" : " (optional)"}<select data-map-table="${t.id}" data-field="${f}" aria-label="${esc(t.filename)}: ${esc(f)}"><option value="">${schema.required.includes(f) ? "Choose source column" : "Not mapped"}</option>${t.columns.map((c) => `<option value="${esc(c)}" ${t.mapping[f] === c ? "selected" : ""}>${esc(c)}</option>`).join("")}</select></label>`,
-    )
-    .join("");
-}
-function bindMapping() {
-  document.querySelectorAll("[data-map-table]").forEach(
+  document.querySelectorAll("[data-map]").forEach(
     (el) =>
       (el.onchange = () => {
-        const t = preview.tables.find((t) => t.id === el.dataset.mapTable);
-        if (el.value) t.mapping[el.dataset.field] = el.value;
-        else delete t.mapping[el.dataset.field];
+        const m = findMapping(el.dataset.map);
+        m.target = el.value || null;
+        m.status = el.value ? "Confirmed" : "Ready";
+        m.confidence = el.value ? 1 : 0;
+        m.decided = true;
+        renderMapping();
       }),
   );
+  document.querySelectorAll("[data-confirm]").forEach(
+    (el) =>
+      (el.onclick = () => {
+        const m = findMapping(el.dataset.confirm);
+        m.status = "Confirmed";
+        m.confidence = 1;
+        m.decided = true;
+        renderMapping();
+      }),
+  );
+  $("confirm-mapping").onclick = action(confirmMappings);
 }
-async function confirmImport() {
+function findMapping(key) {
+  const [jobId, source] = key.split(/:(.*)/s);
+  return wizard.jobs.find((j) => j.id === jobId).mappings.find((m) => m.source === source);
+}
+function mappingTable(j) {
+  if (!fieldsOf(j.dataset).length)
+    return '<p class="small muted">This record type has no canonical fields; the file is kept as a source document only.</p>';
+  return `<table><thead><tr><th>Source column</th><th>Example</th><th>Vista field</th><th class="num">Confidence</th><th>Status</th></tr></thead><tbody>${j.mappings
+    .map(
+      (m) =>
+        `<tr><td><strong>${esc(m.source)}</strong></td><td><code class="small">${esc(m.example ?? "")}</code></td><td><select data-map="${esc(j.id)}:${esc(m.source)}" aria-label="${esc(j.filename)}: ${esc(m.source)}"><option value="">— ignore —</option>${fieldsOf(j.dataset)
+          .map(([k, d]) => `<option value="${k}" ${k === m.target ? "selected" : ""}>${esc(d.label)}${d.required ? " *" : ""}</option>`)
+          .join("")}</select></td><td class="num">${m.confidence ? `${Math.round(m.confidence * 100)}%` : "—"}</td><td>${
+          m.status === "Confirmed"
+            ? '<span class="tag success">Confirmed</span>'
+            : m.status === "Review"
+              ? `<span class="tag warning">Review</span> <button data-confirm="${esc(j.id)}:${esc(m.source)}" class="text-button">Confirm</button>`
+              : '<span class="tag">Ready</span>'
+        }</td></tr>`,
+    )
+    .join("")}</tbody></table>`;
+}
+function sampleMarkup(j) {
+  const columns = j.columns ?? [];
+  const rows = j.sample ?? [];
+  return `<table><thead><tr>${columns.map((c) => `<th>${esc(c)}</th>`).join("")}</tr></thead><tbody>${rows
+    .map((r) => `<tr>${columns.map((c) => `<td>${esc(r[c] ?? "")}</td>`).join("")}</tr>`)
+    .join("")}</tbody></table>`;
+}
+async function confirmMappings() {
   if (busy) return;
-  for (const t of preview.tables) {
-    const schema = preview.schemas[t.kind];
-    if (!schema || schema.required.some((f) => !t.mapping[f])) {
-      importError(`Map the required fields for ${t.filename}.`);
+  for (const j of wizard.jobs) {
+    for (const [key, d] of fieldsOf(j.dataset)) {
+      if (d.required && !j.mappings.some((m) => m.target === key)) {
+        importError(`${j.filename}: required field “${d.label}” is not mapped.`);
+        return;
+      }
+    }
+    if (j.mappings.some((m) => m.status === "Review")) {
+      importError(`${j.filename}: confirm or change the mappings marked Review.`);
       return;
     }
   }
   setBusy(true);
-  setStep(2);
   importError();
-  $("import-body").innerHTML =
-    `<div class="busy">${icon("scan")}<h2>Following the records.</h2><p>Validating mappings, matching policies and calculating discrepancies.</p><span class="small">Each result will include its source rows.</span></div>`;
   try {
-    active = await api(`/imports/${preview.id}/commit`, {
-      method: "POST",
-      body: JSON.stringify({
-        tables: preview.tables.map(({ id, kind, mapping }) => ({
-          id,
-          kind,
-          mapping,
-        })),
-      }),
-    });
-    await refreshBatches();
-    $("import-dialog").close();
-    view = "overview";
-    filter = "open";
-    render();
-    message(
-      `Import complete. ${number(active.analysis.summary.records)} records checked; ${active.analysis.findings.length} findings ready for review.`,
-    );
+    for (const j of wizard.jobs.filter((j) => fieldsOf(j.dataset).length)) {
+      replaceJob(
+        await api(`/deals/${company().id}/imports/${j.id}/mappings/approve`, {
+          method: "POST",
+          body: JSON.stringify({
+            mappings: j.mappings.map((m) => ({ source: m.source, target: m.target, confirmed: Boolean(m.decided) || m.status === "Confirmed" })),
+          }),
+        }),
+      );
+    }
+    renderApprove();
   } catch (e) {
-    renderMapping();
     importError(e.message);
   } finally {
     setBusy(false);
   }
 }
-function tableMarkup(table, records) {
-  return `<table><thead><tr><th>Source row</th>${table.columns.map((c) => `<th>${esc(c)}</th>`).join("")}</tr></thead><tbody>${records.map((r) => `<tr><td>${r.row}</td>${table.columns.map((c) => `<td>${esc(r.values[c])}</td>`).join("")}</tr>`).join("")}</tbody></table>`;
-}
-function showSource(id, page = 0) {
-  const t = active.tables.find((t) => t.id === id);
-  $("source-title").textContent = t.filename + (t.sheet ? ` · ${t.sheet}` : "");
-  $("source-body").innerHTML =
-    `<p class="small">${number(t.records.length)} records · Original headers and values retained. Row numbers include the header row.</p><div class="table-wrap">${tableMarkup(t, t.records.slice(page * 25, page * 25 + 25))}</div><div class="pager"><button id="source-prev" ${page === 0 ? "disabled" : ""}>Previous</button><span>${page * 25 + 1}–${Math.min(t.records.length, (page + 1) * 25)} of ${number(t.records.length)}</span><button id="source-next" ${(page + 1) * 25 >= t.records.length ? "disabled" : ""}>Next</button></div><details class="section-gap"><summary>Confirmed field mapping</summary><dl>${Object.entries(
-      t.mapping,
-    )
-      .map(([f, c]) => `<dt>${esc(c)}</dt><dd>${esc(f)}</dd>`)
-      .join("")}</dl></details>`;
-  $("source-prev").onclick = () => showSource(id, page - 1);
-  $("source-next").onclick = () => showSource(id, page + 1);
-  openDialog($("source-dialog"));
-}
-function showFinding(id) {
-  const f = active.analysis.findings.find((f) => f.id === id),
-    c = f.calculation;
-  const keyFields = new Set([
-    "policy_number",
-    "statement_id",
-    "insured_name",
-    "client_name",
-    "premium_basis",
-    "commission_paid",
-    "commission_pct",
-    "expected_commission",
-    "invoice_id",
-    "due_date",
-    "balance",
-    "payment_plan",
-    "carrier_code",
-  ]);
-  $("evidence-body").innerHTML =
-    `<span class="tag">Observed fact</span> ${statusTag(f.status)}<h2 id="evidence-title">${esc(f.title)}</h2><p class="evidence-detail">${esc(f.detail)}</p>${c ? `<div class="calculation"><span class="eyebrow">Recalculated from source records</span><div class="calc-line"><span>Statement premium × policy rate</span><strong>${money(c.premium)} × ${esc(c.rate)}%</strong></div><div class="calc-line"><span>Expected commission</span><strong>${money(c.expected)}</strong></div><div class="calc-line"><span>Commission paid</span><strong>${money(c.paid)}</strong></div><div class="calc-line total"><span>Discrepancy to investigate</span><strong>${money(c.difference)}</strong></div><p class="spacing-6 small">Potential recovery only. Confirm policy terms and carrier adjustments.</p></div>` : f.amount !== null ? `<div class="calculation"><div class="calc-line"><span>Outstanding balance</span><strong>${money(f.amount)}</strong></div><span class="small">Receivable exposure as of ${day(active.as_of)}. Not realized savings.</span></div>` : ""}<div class="recommendation"><span class="eyebrow">Recommended next step</span><p>${esc(f.recommendation)}</p></div><h3>Follow the evidence</h3>${f.evidence
-      .map((e) => {
-        const fields = Object.entries(e.values);
-        const shown = fields.filter(
-          ([k]) =>
-            keyFields.has(k) ||
-            keyFields.has(k.toLowerCase().replace(/[\s-]+/g, "_")),
-        );
-        return `<section class="evidence-source"><header><strong>${icon("file")} ${esc(e.filename)}${e.sheet ? ` · ${esc(e.sheet)}` : ""}</strong><span class="tag">Row ${e.row}</span></header><dl>${(shown.length ? shown : fields.slice(0, 6)).map(([k, v]) => `<dt>${esc(k)}</dt><dd>${esc(v) || "—"}</dd>`).join("")}</dl><details><summary>All original fields</summary><dl>${fields.map(([k, v]) => `<dt>${esc(k)}</dt><dd>${esc(v) || "—"}</dd>`).join("")}</dl></details></section>`;
-      })
-      .join(
-        "",
-      )}<details class="section-gap"><summary class="small">Review history</summary><ul class="small">${active.events
-      .filter(
-        (e) => e.finding_id === id || e.action === "confirmed_and_analyzed",
-      )
-      .map(
-        (e) =>
-          `<li>${esc(new Date(e.at).toLocaleString())} · ${esc(e.status ?? "Calculated after mapping confirmation")} · User ${esc(e.by)}</li>`,
-      )
-      .join(
-        "",
-      )}</ul></details><div id="decision-error" class="notice" role="alert" hidden></div><div class="evidence-actions">${canEdit() ? `<button class="primary" data-decision="reviewed" ${f.status === "reviewed" ? "disabled" : ""}>${icon("check")}Mark reviewed</button><button data-decision="dismissed" ${f.status === "dismissed" ? "disabled" : ""}>Dismiss</button>${f.status !== "open" ? '<button data-decision="open">Reopen</button>' : ""}` : '<span class="small">You have read-only access to this company.</span>'}<a class="small" href="/api/imports/${active.id}/export">Download evidence</a></div>`;
-  document.querySelectorAll("[data-decision]").forEach(
+function renderApprove() {
+  setStep(2);
+  importError();
+  const importable = wizard.jobs.filter((j) => fieldsOf(j.dataset).length);
+  const xs = importable.flatMap((j) => (j.exceptions ?? []).map((x) => ({ ...x, importJobId: j.id })));
+  const pending = xs.filter((x) => x.open).length;
+  const total = importable.reduce((n, j) => n + (j.recordsDetected ?? 0), 0);
+  const reviewed = importable.reduce((n, j) => n + (j.recordsNeedingReview ?? 0), 0);
+  $("import-body").innerHTML =
+    `<h3>Approve the import.</h3><div class="metrics">${[
+      ["Records to import", number(total), `${importable.length} file${importable.length === 1 ? "" : "s"}`],
+      ["Auto-accepted", number(total - reviewed), "Mapped at 90% or above"],
+      ["Under review", number(reviewed), "Mapped below 90%"],
+      ["Exceptions", `${number(xs.length - pending)} / ${number(xs.length)}`, "Decided"],
+    ]
+      .map(([label, value, note]) => `<div class="metric"><span class="eyebrow">${label}</span><b>${value}</b><small>${esc(note)}</small></div>`)
+      .join("")}</div><p class="small">${pending ? `<strong>${pending}</strong> record${pending === 1 ? "" : "s"} still need a decision. You can approve now and decide them later from Findings.` : "Every ambiguous record has a decision."}</p>${exceptionRows(xs)}<div class="dialog-actions"><span class="small">Approving writes canonical records with the source file, row and original values on each one.</span><button id="approve-import" class="primary">Approve import ${icon("arrow")}</button></div>`;
+  document.querySelectorAll("[data-exception]").forEach(
     (b) =>
-      (b.onclick = async () => {
-        document
-          .querySelectorAll("[data-decision]")
-          .forEach((x) => (x.disabled = true));
-        try {
-          active = await api(`/imports/${active.id}/findings/${id}`, {
+      (b.onclick = action(async () => {
+        const [jobId, ref] = b.dataset.exception.split(":");
+        replaceJob(
+          await api(`/deals/${company().id}/imports/${jobId}/exceptions/${ref}`, {
             method: "POST",
-            body: JSON.stringify({ status: b.dataset.decision }),
-          });
-          render();
-          showFinding(id);
-        } catch (e) {
-          showFinding(id);
-          $("decision-error").hidden = false;
-          $("decision-error").textContent = e.message;
-        }
+            body: JSON.stringify({ decision: b.dataset.decide }),
+          }),
+        );
+        renderApprove();
+      })),
+  );
+  $("approve-import").onclick = action(approveImport);
+}
+async function approveImport() {
+  if (busy) return;
+  setBusy(true);
+  importError();
+  $("import-body").innerHTML =
+    `<div class="busy">${icon("scan")}<h2>Writing the records.</h2><p>Each row keeps its source file, row number and original values.</p></div>`;
+  try {
+    for (const j of wizard.jobs.filter((j) => fieldsOf(j.dataset).length))
+      replaceJob(await api(`/deals/${company().id}/imports/${j.id}/approve`, { method: "POST", body: "{}" }));
+    await refreshImports();
+    $("import-dialog").close();
+    view = "overview";
+    render();
+    message(
+      `Import complete. ${number(recordCount())} canonical records on file. ${canEdit() ? "Run the File Reviewer from the overview to see what deserves attention." : ""}`,
+    );
+  } catch (e) {
+    renderApprove();
+    importError(e.message);
+  } finally {
+    setBusy(false);
+  }
+}
+const PAGE = 25;
+function showSource(key, page = 0) {
+  const set = recordSets().find((r) => r.key === key);
+  if (!set) return;
+  const rows = set.rows;
+  const hidden = new Set(["id", "companyId", "provenance", "dataSourceType", "syntheticDemo", "customerId", "vendorId", "purchaseOrderId"]);
+  const columns = Object.keys(rows[0] ?? {}).filter((c) => !hidden.has(c)).slice(0, 8);
+  const slice = rows.slice(page * PAGE, page * PAGE + PAGE);
+  $("source-title").textContent = set.label;
+  $("source-body").innerHTML =
+    `<p class="small">${number(rows.length)} canonical records. Each row shows its source file and row; open a row for the original values as exported.</p><div class="table-wrap"><table><thead><tr>${columns.map((c) => `<th>${esc(c)}</th>`).join("")}<th>Source</th></tr></thead><tbody>${slice
+      .map(
+        (r, i) =>
+          `<tr>${columns.map((c) => `<td>${esc(r[c] ?? "")}</td>`).join("")}<td>${r.provenance ? `<button data-row="${page * PAGE + i}" class="text-button">${esc(r.provenance.file)} · row ${esc(r.provenance.row)}</button>` : "—"}</td></tr>`,
+      )
+      .join("")}</tbody></table></div><div class="pager"><button id="source-prev" ${page === 0 ? "disabled" : ""}>Previous</button><span>${page * PAGE + 1}–${Math.min(rows.length, (page + 1) * PAGE)} of ${number(rows.length)}</span><button id="source-next" ${(page + 1) * PAGE >= rows.length ? "disabled" : ""}>Next</button></div><div id="source-row"></div>`;
+  $("source-prev").onclick = () => showSource(key, page - 1);
+  $("source-next").onclick = () => showSource(key, page + 1);
+  document.querySelectorAll("#source-body [data-row]").forEach(
+    (b) =>
+      (b.onclick = () => {
+        const r = rows[Number(b.dataset.row)];
+        const p = r.provenance ?? {};
+        $("source-row").innerHTML =
+          `<section class="evidence-source"><header><strong>${icon("file")} ${esc(p.file ?? "")}${p.sheet ? ` · ${esc(p.sheet)}` : ""}</strong><span class="tag">Row ${esc(p.row ?? "")}</span></header><p class="small">${esc(p.review ?? "")} · confidence ${Math.round((p.confidence ?? 0) * 100)}%</p><dl>${Object.entries(
+            p.original ?? {},
+          )
+            .map(([k, v]) => `<dt>${esc(k)}</dt><dd>${esc(v) || "—"}</dd>`)
+            .join("")}</dl></section>`;
       }),
   );
-  openDialog($("evidence-dialog"));
+  openDialog($("source-dialog"));
 }
-async function refreshBatches() {
+async function refreshImports() {
   const result = await api(`/deals/${company().id}/imports`);
-  batches = result.imports;
+  jobs = result.imports;
+  openExceptions = result.openExceptions ?? [];
   role = result.role;
-}
-async function selectBatch(id) {
-  const current = generation;
-  const loaded = await api(`/imports/${id}`);
-  if (current !== generation) return;
-  active = loaded;
-  render();
+  records = jobs.some((j) => j.status === "completed") ? await api(`/deals/${company().id}/records`) : null;
 }
 async function enterCompany() {
   const current = ++generation;
-  active = null;
-  batches = [];
+  jobs = [];
+  openExceptions = [];
+  records = null;
   agents = null;
   role = "viewer";
   render();
   message();
   try {
-    const result = await api(`/deals/${company().id}/imports`);
+    await refreshImports();
     if (current !== generation) return;
-    batches = result.imports;
-    role = result.role;
-    const latest = batches.find((b) => b.status === "completed");
-    if (latest) {
-      const loaded = await api(`/imports/${latest.id}`);
-      if (current !== generation) return;
-      active = loaded;
-    }
+    if (!Object.keys(datasets).length)
+      datasets = await api(`/deals/${company().id}/import-datasets`);
+    if (current !== generation) return;
     render();
     await Promise.all([loadAgents(current), loadReports(current)]);
     if (current === generation) render();

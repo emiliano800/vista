@@ -60,23 +60,6 @@ class Document(TenantBase):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
 
-class ImportBatch(TenantBase):
-    __tablename__ = "import_batches"
-    __table_args__ = (UniqueConstraint("deal_id", "content_hash"),)
-
-    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    deal_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("deals.id"), index=True)
-    uploaded_by: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True))
-    content_hash: Mapped[str] = mapped_column(String(64))
-    s3_key: Mapped[str] = mapped_column(String(1024))
-    status: Mapped[str] = mapped_column(String(16), default="preview")
-    as_of: Mapped[str] = mapped_column(String(10))
-    tables: Mapped[list] = mapped_column(JSONB)
-    analysis: Mapped[dict] = mapped_column(JSONB, default=dict)
-    events: Mapped[list] = mapped_column(JSONB, default=list)
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
-
-
 class Employee(TenantBase):
     __tablename__ = "employees"
 

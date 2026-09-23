@@ -54,7 +54,9 @@ The split is a product boundary, not a mandate for separate backend deployments.
 
 Implementation status: `src/web/public/portfolio/` and `company/` provide the analyst
 foundation; `company/` calls the analyst shell and receives the firm-wide snapshot.
-`account/` is the existing company operations/evidence workspace. Dedicated CFO/FDE
+`account/` is the existing company operations/evidence workspace; it imports through
+the same canonical contract and reads the same findings, runs and recorder reports
+as the analyst (see "One ledger" under Architecture decisions). Dedicated CFO/FDE
 roles and views are not implemented. Current firm roles are
 `analyst/operator/admin/viewer`; never relabel `operator` as an FDE role without
 implementing its scope. Enforce company/workflow restrictions server-side before
@@ -188,6 +190,8 @@ not a source for the six-company workspace.
 
 Status today: apart from the review → merge barrier above, no handler enqueues another — every run is started by an
 API route (`api/runs.py`, `api/synthetic.py`, `api/summaries.py`, `api/employees.py`,
+`api/company_imports.py`, which queues a single-company `canonical_review` from the
+company workspace (no merge waits on it),
 `api/recordings.py`, which queues `extract_recording_files` on upload and
 `explain_recording` on submit, and `api/recorder.py`, which queues `analyze_submission`
 automatically when a v2 upload is accepted — `recorder_uploads.queue_analysis` creates
@@ -216,7 +220,15 @@ wired only in tests/eval. Any new automatic hop must follow the contract above.
 
 - **Schema-per-tenant** isolation; shared `platform` schema holds tenants, users,
   browser sessions, jobs, and the firm layer (`firms`, `firm_memberships`,
-  `firm_companies`, firm-scoped `opportunities`, portfolio activity).
+  `firm_companies` (with `deal_id`, the Deal inside the company tenant that
+  deal-scoped surfaces use), firm-scoped `opportunities`, portfolio activity).
+- **One ledger under every view.** `findings` / `agent_runs` / `agent_run_events` /
+  `usage_events` / `company_summaries` are the only agent ledger; the analyst
+  workspace derives its agents, runs and findings from them (`portfolio/ledger.py`)
+  and never keeps a mirror. Imports go through the canonical contract
+  (`portfolio/imports.py`) from the analyst (`api/portfolio.py`, firm scope) and
+  from the company workspace (`api/company_imports.py`, deal scope) alike. Never
+  add a per-surface copy of findings, runs or imported records.
 - **Postgres-backed durable job queue** (`SKIP LOCKED`, retries/backoff, idempotency
   keys); handlers in `src/vista/jobs/handlers.py`; agent phases in `src/vista/agents/`.
 - Canonical business records (customers/invoices/vendors/purchases/subscriptions/

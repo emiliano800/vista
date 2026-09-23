@@ -113,7 +113,8 @@ function mount({ role = "owner" } = {}) {
         { id: company, name: "Ridgeway Fasteners & Supply" },
       ]);
     if (path === `/api/deals/${company}/imports`)
-      return Response.json({ role, imports: [] });
+      return Response.json({ role, company: { id: "c-1", name: "Ridgeway", slug: "ridgeway" }, imports: [], openExceptions: [] });
+    if (path === `/api/deals/${company}/import-datasets`) return Response.json({});
     if (path === "/api/runs?limit=100") return Response.json(state.runs);
     if (path === "/api/findings?limit=200") return Response.json(findings);
     if (path.startsWith("/api/usage?deal_id="))

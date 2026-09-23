@@ -119,29 +119,24 @@ test("proxy forwards sessions, preserves cookies, never caches data, rejects cro
   }
 });
 
-test("ingestion proxy allows only scoped import operations", async () => {
+test("company import proxy exposes the canonical import contract by deal only", async () => {
   const status = async (path, method) =>
-    (
-      await worker.fetch(
-        new Request(`https://vista.test/api${path}`, { method }),
-        {},
-      )
-    ).status;
-  const id = "00000000-0000-0000-0000-000000000001";
-  assert.equal(await status(`/deals/${id}/imports`, "GET"), 503);
-  assert.equal(await status(`/deals/${id}/imports`, "POST"), 503);
-  assert.equal(await status(`/imports/${id}`, "GET"), 503);
-  assert.equal(await status(`/imports/${id}/commit`, "POST"), 503);
-  assert.equal(
-    await status(`/imports/${id}/findings/123456789abcdef0`, "POST"),
-    503,
-  );
-  assert.equal(await status(`/imports/${id}/export`, "GET"), 503);
-  assert.equal(await status(`/imports/${id}/export`, "POST"), 405);
-  assert.equal(await status(`/imports/${id}`, "DELETE"), 405);
-  assert.equal(await status(`/imports/${id}/commit`, "PUT"), 405);
+    (await worker.fetch(new Request(`https://vista.test/api${path}`, { method }), {})).status;
+  const deal = "00000000-0000-0000-0000-000000000001";
+  const job = "00000000-0000-0000-0000-000000000002";
+  for (const path of [`/deals/${deal}/imports`, `/deals/${deal}/import-datasets`, `/deals/${deal}/records`, `/deals/${deal}/imports/${job}`, `/deals/${deal}/imports/${job}/preview`])
+    assert.equal(await status(path, "GET"), 503, path);
+  for (const path of [`/deals/${deal}/imports`, `/deals/${deal}/imports/${job}/dataset`, `/deals/${deal}/imports/${job}/mappings/approve`, `/deals/${deal}/imports/${job}/approve`, `/deals/${deal}/imports/${job}/exceptions/X-001`, `/deals/${deal}/review`])
+    assert.equal(await status(path, "POST"), 503, path);
+  assert.equal(await status(`/deals/${deal}/records`, "POST"), 405);
+  assert.equal(await status(`/deals/${deal}/imports/${job}`, "DELETE"), 405);
+  assert.equal(await status(`/deals/${deal}/imports/${job}/approve`, "PUT"), 405);
+  // The retired JSON batch routes are gone.
+  assert.equal(await status(`/imports/${job}`, "GET"), 404);
+  assert.equal(await status(`/imports/${job}/commit`, "POST"), 404);
+  assert.equal(await status(`/imports/${job}/export`, "GET"), 404);
+  assert.equal(await status(`/deals/${deal}/imports/${job}/exceptions/nope`, "POST"), 404);
 });
-
 test("agent proxy allows run traces, usage and starting agent runs only", async () => {
   const status = async (path, method) =>
     (

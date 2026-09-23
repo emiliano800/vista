@@ -38,7 +38,7 @@ from vista.agents.synthetic import Company, Table
 from vista.auth import Principal
 from vista.db import platform_session, tenant_session
 from vista.jobs.queue import enqueue
-from vista.models.platform import FirmCompany, Job, Opportunity, Tenant, User
+from vista.models.platform import Firm, FirmCompany, Job, Opportunity, Tenant, User
 from vista.models.tenant import (
     AgentRun,
     AgentRunEvent,
@@ -58,7 +58,7 @@ from vista.models.tenant import (
     Vendor,
     VendorPurchase,
 )
-from vista.portfolio.access import CompanyRef, FirmContext, company_session, load_firm_context, reporting_period, today
+from vista.portfolio.access import CompanyRef, FirmContext, company_session, firm_scope, load_firm_context, reporting_period, today
 from vista.portfolio.service import log_activity, money2, next_ref
 
 RUN_REVIEW = "canonical_review"
@@ -1362,12 +1362,67 @@ def _ctx(platform: Session, firm_id: str, user_id: str) -> FirmContext:
     if user is None:
         raise RuntimeError("requesting user not found")
     tenant = platform.get(Tenant, user.tenant_id)
-    ctx = load_firm_context(
-        platform, Principal(user_id=user.id, tenant_id=tenant.id, tenant_schema=tenant.schema_name, email=user.email, role=user.role)
-    )
+    principal = Principal(user_id=user.id, tenant_id=tenant.id, tenant_schema=tenant.schema_name, email=user.email, role=user.role)
+    try:
+        ctx = load_firm_context(platform, principal)
+    except HTTPException:
+        # Not a firm member: an employee who started a review from their company workspace.
+        # The job still runs under the firm's scope, and their tenant must be one of its companies.
+        firm = platform.get(Firm, uuid.UUID(firm_id))
+        if firm is None:
+            raise RuntimeError("job firm not found") from None
+        ctx = firm_scope(platform, firm, principal)
+        if not any(c.tenant_id == tenant.id for c in ctx.companies):
+            raise RuntimeError("requesting user's workspace is not a company of the job's firm") from None
+        return ctx
     if str(ctx.firm.id) != firm_id:
         raise RuntimeError("job firm does not match the requesting user's firm")
     return ctx
+
+
+def queue_company_review(platform: Session, ctx: FirmContext, company: CompanyRef) -> dict:
+    """One File Reviewer run over a single company's canonical rows, started from that
+    company's own workspace. Same durable job and handler as the analyst's portfolio
+    request, but no sector merge waits on it (`merge_run_id` is None)."""
+    request_id = uuid.uuid4()
+    c = company_for(company)
+    with company_session(company) as ts:
+        run = AgentRun(
+            job_id=uuid.uuid4(),
+            run_type=RUN_REVIEW,
+            deal_id=company.deal_id,
+            requested_by=ctx.principal.user_id,
+            agent_key=agent_key_for(RUN_REVIEW),
+            company=c.short,
+            sector=c.sector,
+        )
+        ts.add(run)
+        ts.commit()
+        run_id = run.id
+    job = enqueue(
+        platform,
+        company.tenant_id,
+        RUN_REVIEW,
+        {
+            "run_id": str(run_id),
+            "parent_run_id": None,
+            "request_id": str(request_id),
+            "firm_id": str(ctx.firm.id),
+            "company_id": str(company.id),
+            "sector": c.sector,
+            "merge_run_id": None,
+            "requested_by": str(ctx.principal.user_id),
+        },
+        idempotency_key=f"{RUN_REVIEW}:{request_id}:{company.id}",
+    )
+    with company_session(company) as ts:
+        ts.execute(update(AgentRun).where(AgentRun.id == run_id).values(job_id=job.id))
+        ts.commit()
+    log_activity(
+        platform, ctx.firm.id, company.id, f"{ctx.actor} started a File Reviewer run on {company.name} from the company workspace.", "agent"
+    )
+    platform.commit()
+    return {"run_id": str(run_id), "job_id": str(job.id), "request_id": str(request_id)}
 
 
 def handle_canonical_review(job: Job, tenant_schema: str) -> None:
@@ -1650,6 +1705,7 @@ def run_portfolio_interpretation(platform: Session, ctx: FirmContext, request_id
             run = AgentRun(
                 job_id=uuid.uuid4(),
                 run_type=RUN_REVIEW,
+                deal_id=company.deal_id,
                 requested_by=ctx.principal.user_id,
                 agent_key=agent_key_for(RUN_REVIEW),
                 company=c.short,

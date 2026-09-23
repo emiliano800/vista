@@ -52,7 +52,12 @@ command: pulling Git alone does not update AWS tasks. Seed only the intended dem
 scope and update `DEMO_ACCESS.md` if identities change.
 
 Validate one company from source CSV/XLSX through mapping review, exceptions,
-canonical rows, financial metrics, and reviewer findings. Verify identical financial
+canonical rows, financial metrics, and reviewer findings — from the company
+workspace as well as from the analyst wizard, since both now run the same import
+contract and write the same ledger. Add commission statements and carrier
+agreements to the canonical import contract (with a `canonical_checks` entry for
+statement premium × policy rate vs commission paid) to restore the insurance
+reconciliation the retired JSON import path used to compute. Verify identical financial
 results for CFO and analyst at the same company/period scope. Then connect an FDE
 workflow investigation to an approved automation, operational baseline and measured
 outcome, and financial validation. That final automation-to-impact loop is still

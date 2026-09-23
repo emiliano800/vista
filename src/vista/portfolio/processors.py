@@ -19,7 +19,7 @@ from fastapi import HTTPException
 from vista.agents.llm import Prompt, chat, strip_fences
 from vista.config import settings
 
-# ---- Canonical dataset schema (mirrors src/web/public/lib/importer.js) ------------
+# ---- Canonical dataset schema (the import contract every surface uses) ------------
 
 DATASETS: dict[str, dict] = {
     "customers": {

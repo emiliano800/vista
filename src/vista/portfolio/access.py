@@ -60,14 +60,23 @@ class CompanyRef:
 
 @dataclass
 class FirmContext:
+    """Who is acting, for which firm, over which companies. `membership` is the firm
+    membership behind an analyst request; it is None when the scope was resolved from a
+    company tenant instead (an employee acting inside their own company), in which case
+    deal roles, not firm roles, decide what they may write."""
+
     principal: Principal
     firm: Firm
-    membership: FirmMembership
+    membership: FirmMembership | None
     companies: list[CompanyRef]
 
     @property
     def can_write(self) -> bool:
-        return self.membership.role in WRITE_ROLES
+        return self.membership is not None and self.membership.role in WRITE_ROLES
+
+    @property
+    def actor(self) -> str:
+        return (self.membership.display_name if self.membership else None) or self.principal.email
 
     def company(self, key: str | uuid.UUID) -> CompanyRef:
         text = str(key)
@@ -87,16 +96,41 @@ def load_firm_context(session: Session, principal: Principal) -> FirmContext:
     if row is None:
         raise HTTPException(403, "This account is not a member of a PE firm")
     membership, firm = row
-    companies = [
+    return FirmContext(principal, firm, membership, _company_refs(session, firm.id))
+
+
+def _company_refs(session: Session, firm_id: uuid.UUID) -> list[CompanyRef]:
+    return [
         CompanyRef(fc.id, fc.slug, fc.name, fc.tenant_id, schema, fc)
         for fc, schema in session.execute(
             select(FirmCompany, Tenant.schema_name)
             .join(Tenant, Tenant.id == FirmCompany.tenant_id)
-            .where(FirmCompany.firm_id == firm.id)
+            .where(FirmCompany.firm_id == firm_id)
             .order_by(FirmCompany.acquisition_date.nulls_last(), FirmCompany.created_at)
         ).all()
     ]
-    return FirmContext(principal, firm, membership, companies)
+
+
+def firm_scope(session: Session, firm: Firm, principal: Principal) -> FirmContext:
+    """The firm's full company scope without a membership: for work the platform does on
+    the firm's behalf (a queued review) or for an employee acting inside one company."""
+    return FirmContext(principal, firm, None, _company_refs(session, firm.id))
+
+
+def company_context(session: Session, principal: Principal, deal_id: uuid.UUID) -> FirmContext:
+    """Scope for a company workspace user: their own tenant must be a portfolio company
+    (platform.firm_companies) and `deal_id` must be that company's Deal. The context
+    carries exactly one company; the caller still checks the user's deal role."""
+    row = session.execute(
+        select(FirmCompany, Firm, Tenant.schema_name)
+        .join(Firm, Firm.id == FirmCompany.firm_id)
+        .join(Tenant, Tenant.id == FirmCompany.tenant_id)
+        .where(FirmCompany.tenant_id == principal.tenant_id)
+    ).first()
+    if row is None or row[0].deal_id != deal_id:
+        raise HTTPException(409, "This workspace is not linked to a portfolio company yet; ask your Vista contact to finish onboarding.")
+    fc, firm, schema = row
+    return FirmContext(principal, firm, None, [CompanyRef(fc.id, fc.slug, fc.name, fc.tenant_id, schema, fc)])
 
 
 def firm_context(principal: Principal = Depends(current_principal)) -> FirmContext:

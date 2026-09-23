@@ -4,10 +4,11 @@ const reviewSections = /^\/api\/recordings\/[0-9a-f-]+\/review\/sections$/i;
 const reviewDecision =
   /^\/api\/recordings\/[0-9a-f-]+\/review\/(?!sections$)[a-z0-9_-]{1,64}$/i;
 const mediaUpload = /^\/api\/recordings\/[0-9a-f-]+\/media(?:\/complete)?$/i;
+// Company workspace imports run on the canonical import contract, scoped by Deal.
 const importRead =
-  /^\/api\/(?:deals\/[0-9a-f-]+\/imports|imports\/[0-9a-f-]+(?:\/export)?)$/i;
+  /^\/api\/deals\/[0-9a-f-]{36}\/(?:import-datasets|records|imports(?:\/[0-9a-f-]{36}(?:\/preview)?)?)$/i;
 const importWrite =
-  /^\/api\/(?:deals\/[0-9a-f-]+\/imports|imports\/[0-9a-f-]+\/(?:commit|findings\/[a-f0-9]{16}))$/i;
+  /^\/api\/deals\/[0-9a-f-]{36}\/(?:review|imports(?:\/[0-9a-f-]{36}\/(?:dataset|mappings\/approve|approve|exceptions\/X-\d{1,6}))?)$/i;
 const portfolioRead =
   /^\/api\/(?:portfolio(?:\/(?:me|companies|attention|activity|interpretation\/[0-9a-f-]{36}))?|companies\/[a-z0-9-]{1,64}(?:\/(?:customers|invoices|vendors|purchases|subscriptions|policies|purchase-orders|inventory|tasks|imports|reports(?:\/[0-9a-f-]{36})?))?|import-datasets|import-jobs\/[0-9a-f-]{36}(?:\/(?:mappings|preview|exceptions))?|opportunities|tasks)$/i;
 const portfolioWrite =

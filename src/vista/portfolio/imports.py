@@ -34,6 +34,7 @@ from vista.models.tenant import (
     Vendor,
     VendorPurchase,
 )
+from vista.portfolio import serializers as ser
 from vista.portfolio.access import CompanyRef, FirmContext, company_session, today
 from vista.portfolio.processors import DATASETS, ImportProcessor, ProposedMapping, get_processor
 from vista.portfolio.service import log_activity
@@ -173,6 +174,23 @@ def set_dataset(
         _write_mappings(ts, job, proc.propose_mappings(dataset, job.columns, _raw_rows(job, ts)))
         ts.commit()
     return job
+
+
+def job_view(company: CompanyRef, job_id: uuid.UUID) -> dict:
+    """The import job as the analyst wizard and the company workspace render it:
+    file, detection, mappings, exceptions and the first raw rows."""
+    with company_session(company) as ts:
+        job = ts.get(ImportJob, job_id)
+        if job is None:
+            raise HTTPException(404, "Import job not found")
+        file = ts.get(SourceFile, job.source_file_id)
+        out = ser.import_job(job, file, job_mappings(ts, job))
+        out["exceptions"] = [
+            ser.import_exception(x)
+            for x in ts.scalars(select(ImportException).where(ImportException.import_job_id == job.id).order_by(ImportException.ref))
+        ]
+        out["sample"] = _raw_rows(job, ts)[:5]
+    return out
 
 
 def _job(ts: Session, job_id: uuid.UUID) -> ImportJob:

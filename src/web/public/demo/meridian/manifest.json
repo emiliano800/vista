@@ -5,8 +5,6 @@
   "files": [
     "clients.csv",
     "policies.csv",
-    "commission_statements.csv",
-    "carriers.csv",
     "invoices.csv"
   ]
 }

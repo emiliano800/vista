@@ -17,7 +17,7 @@ results, linked to financial impact with evidence and explicit assumptions.
 | --- | --- | --- |
 | PE analyst | Firm-scoped portfolio, company finance drill-downs, canonical records, opportunities and evidence | Center navigation and results on financial analysis; broader forecasting/modeling is not implemented |
 | Portco CFO | Company isolation and reusable financial metrics | CFO role, company-scoped financial API responses and UI; `/company/` currently requires analyst access and receives the firm-wide snapshot |
-| FDE | Company evidence workspace, findings, tasks, agents, run traces, and recorder/task-mining output | Assigned-workflow access, dedicated automation configuration/testing/approval and results experience; source-system automation execution is not a shipped platform |
+| FDE | Company evidence workspace: canonical imports (same contract as the analyst), findings, tasks, agents, run traces, and recorder/task-mining output | Assigned-workflow access, dedicated automation configuration/testing/approval and results experience; source-system automation execution is not a shipped platform |
 
 Current firm memberships use `analyst/operator/admin/viewer`, not dedicated `cfo`
 or `fde` roles. Financial visibility and mutation rights need separate decisions.
@@ -62,6 +62,34 @@ synthetic_data/       6 synthetic companies (2 sectors, 3 data-quality tiers),
 - **Roles:** platform admin/member plus per-deal owner/member/viewer; firm
   memberships (analyst/operator/admin/viewer) gate the portfolio side. Run-starting
   requires owner on a deal (or admin).
+
+## One ledger under every view (2026-09-23)
+
+The analyst workspace, the company workspace and the recorder read and write the
+same tenant tables; nothing is mirrored per surface.
+
+- `platform.firm_companies.deal_id` names the Deal inside each company tenant that
+  the company workspace and the recorder scope by. Creating a company creates its
+  Deal; the platform migration backfilled existing companies by name.
+- `findings` / `agent_runs` / `agent_run_events` / `usage_events` /
+  `company_summaries` are the only agent ledger. `findings` carries the analyst's
+  display ref (`F-012`), the firm company id and a demo flag; the former
+  `workspace_findings` / `workspace_agents` / `workspace_agent_runs` mirror is gone.
+  `vista.portfolio.ledger` derives the analyst's agents, runs and findings from the
+  ledger (an "agent" is one tenant's runs grouped by `agent_key`; a run's narrative
+  is its event stream; its cost is the sum of its metered calls). Sector Merger
+  runs live in the firm's home tenant and appear firm-level, without a company.
+- Finding triage is one write: `POST /api/findings/{ref|uuid}/status` (analyst) and
+  `PATCH /api/findings/{id}` (company workspace) change the same row; dismissed
+  findings are invisible to downstream agents either way.
+- Company workspace imports run the canonical import contract by Deal
+  (`/api/deals/{deal}/imports…`, `/records`, `/import-datasets`) and
+  `POST /api/deals/{deal}/review` queues the same `canonical_review` job the
+  analyst's portfolio analysis runs per company. The former JSON `import_batches`
+  path and its rule engine (`vista.ingestion`) are removed.
+- Published recorder reports reach the analyst's company page read-only
+  (`GET /api/companies/{id}/reports`), and `/api/agents/analytics` aggregates
+  across a firm member's company tenants.
 
 ## Canonical business data + imports
 
@@ -113,10 +141,13 @@ See `src/recorder/README.md` for the capture and upload contract.
 ## Web surfaces
 
 Static pages on the Field Notes system: landing `/`, sign-in `/signin/`, analyst
-sign-in `/signin/analyst/`, company workspace `/account/` (Overview / Data sources /
-Findings / Agents / Runs / Recordings, run-trace dialog, and a report dialog for
-published recording reports), and the analyst portfolio UI. A Cloudflare Worker serves
-assets and proxies an explicit `/api` allow-list to the backend.
+sign-in `/signin/analyst/`, company workspace `/account/` (Overview / Data sources
+(canonical records with provenance + import history) / Findings (import exceptions +
+agent findings) / Agents / Runs / Recordings, a three-step import dialog over the
+canonical contract, run-trace dialog, and a report dialog for published recording
+reports), and the analyst portfolio UI, whose company page also lists published
+recordings. A Cloudflare Worker serves assets and proxies an explicit `/api`
+allow-list to the backend.
 
 ## Live deployment (AWS, account 630396228214, us-east-1)
 
@@ -148,6 +179,10 @@ service container, and a wrangler dry-run on pushes to this repository's main br
   level; the model's interpretation is a labelled hypothesis, not an observed fact.
 - Findings on real (non-synthetic) company data depend on the import pipeline;
   the agent import processor is stubbed behind a flag.
+- The retired JSON import path carried an insurance commission-statement
+  reconciliation (statement premium × policy rate vs commission paid). Commission
+  statements and carrier agreements are not canonical datasets yet, so that check
+  has no home until they are added to the import contract and `canonical_checks`.
 - Public auth still lacks rate limiting; workforce SSO pending. Demo keys are
   deliberately public (synthetic data only); the OpenAI key and demo keys should
   be rotated before any real-customer use.

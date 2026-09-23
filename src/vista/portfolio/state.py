@@ -366,9 +366,9 @@ def snapshot(session: Session, ctx: FirmContext, include_records: bool = True) -
         "syntheticData": settings.use_synthetic_data,
         "firm": {"id": str(ctx.firm.id), "name": ctx.firm.name, "slug": ctx.firm.slug},
         "analyst": {
-            "name": ctx.membership.display_name or ctx.principal.email,
+            "name": ctx.actor,
             "email": ctx.principal.email,
-            "role": ctx.membership.role,
+            "role": ctx.membership.role if ctx.membership else "company",
             "firm": ctx.firm.name,
         },
         "companies": companies,

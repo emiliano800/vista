@@ -1,9 +1,0 @@
-carrier_code,carrier_name,am_best_rating,lines_appointed,commission_pct,surplus_lines,appointment_date,download_enabled,agency_code,payment_terms
-TRV,Travelers Indemnity Company,A++,"GL,PROP,AUTO,WC,UMB",15.0,N,2013-09-23,Y,412279,Monthly account current
-HIG,The Hartford Fire Insurance Company,A+,"GL,PROP,WC,BOP",14.0,N,2004-10-24,Y,128247,Net 30 from statement
-LIB,Liberty Mutual Insurance,A,"GL,AUTO,WC,UMB,PROP",12.0,N,2004-11-17,Y,915562,Net 45
-CNA,CNA Insurance,A,"GL,PROP,PL,CYB",15.0,N,2001-12-20,Y,149020,Monthly account current
-CHB,Chubb (Federal Insurance Company),A++,"PROP,GL,UMB,CYB,DO",15.0,N,2020-10-06,Y,254538,Monthly account current
-AMT,AmTrust Financial,A-,"WC,BOP",10.0,N,2021-07-15,Y,239808,Monthly account current
-MKL,Markel Specialty (Evanston Insurance Co.),A,"GL,PL,UMB",12.0,Y,2017-12-13,Y,123827,Net 45
-BEZ,Beazley (Lloyd's Syndicate 2623),A,"CYB,PL",15.0,Y,2017-01-21,Y,464147,Net 30 from statement

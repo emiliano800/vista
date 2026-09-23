@@ -10,13 +10,6 @@ import {
   api,
   ApiError,
 } from "../public/lib/auth.js";
-import {
-  parseCsv,
-  cedarSampleFiles,
-  normalizeDate,
-  normalizeMoney,
-  normalizePhone,
-} from "../public/lib/importer.js";
 import * as store from "../public/lib/store.js";
 
 // Use the analyst key from DEMO_ACCESS.md when that file is present (it is not
@@ -472,39 +465,6 @@ test("store surfaces API errors to the caller and keeps the last good snapshot",
 });
 
 // ---- fixture generator (feeds scripts/export_portfolio_fixture.mjs) ----
-test("csv parsing handles quotes, commas and blank lines", () => {
-  const { columns, rows } = parseCsv(
-    'Name,Amount\n"Smith, Bob",  "1,250.50"\n\nJane,7\n',
-  );
-  assert.deepEqual(columns, ["Name", "Amount"]);
-  assert.equal(rows.length, 2);
-  assert.equal(rows[0].Name, "Smith, Bob");
-  assert.equal(normalizeMoney(rows[0].Amount), 1250.5);
-});
-
-test("normalisers are deterministic", () => {
-  assert.equal(normalizeDate("3/7/2026"), "2026-03-07");
-  assert.equal(normalizeDate("2026-03-07"), "2026-03-07");
-  assert.equal(normalizeMoney("$1,234.50"), 1234.5);
-  assert.equal(normalizeMoney("(120)"), -120);
-  assert.equal(normalizePhone("(503) 555-0142"), "(503) 555-0142");
-  assert.equal(normalizePhone("503.555.0142"), "(503) 555-0142");
-});
-
-test("cedar sample files match the checked-in demo CSVs the wizard uploads", () => {
-  for (const f of cedarSampleFiles()) {
-    const checkedIn = fs.readFileSync(
-      new URL(`../public/demo/cedar/${f.name}`, import.meta.url),
-      "utf8",
-    );
-    assert.equal(
-      checkedIn.trim(),
-      f.text.trim(),
-      `${f.name} drifted from public/demo/cedar; re-run scripts/export_portfolio_fixture.mjs`,
-    );
-  }
-});
-
 test("the workspace clock follows the server snapshot, not the browser", async () => {
   const { TODAY, PERIOD, trailingTwelveMonths } =
     await import("../public/lib/format.js");
