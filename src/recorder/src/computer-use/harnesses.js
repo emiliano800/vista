@@ -1,17 +1,20 @@
 // Harness registry for computer-use sessions. Every harness has the same small shape so the
 // client and the tests never care which one they hold:
 //
-//   kind        'browser' | 'desktop'
-//   supported   whether this build can perform steps of this kind on this computer
-//   perform()   step request → { ok, description, observation, result, evidence, error }
-//   close()     release anything the harness holds
+//   kind           'browser' | 'desktop'
+//   supported      whether this build can perform steps of this kind on this computer
+//   capabilities() the recorder actions it performs
+//   perform()      step request → { ok, description, observation, result, evidence, error }
+//   close()        release anything the harness holds
 //
-// This build ships *placeholder* harnesses: they advertise no capability, so the server never
-// offers a browser/desktop run to this device, and if a step arrives anyway they refuse it with
-// `harness_unsupported` — the same code the server already treats as "leave this step for a
-// person". The protocol, consent, limits, logging and kill switch are exercised end to end
-// against these; the drivers that actually operate a page or the desktop are a separate
-// change (see README "Computer use sessions").
+// Drivers: `browser.js` (a page in the recorder's own partition, over CDP; `browser-electron.js`
+// supplies the window) and `desktop.js` (the front window's accessibility tree plus the real
+// pointer/keyboard; `desktop-macos.js` supplies the backend). A kind without a driver here
+// gets an `UnsupportedHarness`: it advertises no capability, so the server never offers a
+// run of that kind to this device, and a step that arrives anyway is refused with
+// `harness_unsupported` — the code the server treats as "leave this step for a person".
+import { BrowserHarness } from './browser.js';
+import { DesktopHarness } from './desktop.js';
 
 export const HARNESS_KINDS = ['browser', 'desktop'];
 
@@ -44,11 +47,18 @@ export class UnsupportedHarness {
   async close() {}
 }
 
-export function defaultHarnesses({ demo = false } = {}) {
+// `openPage` (browser) and `desktopBackend` (desktop) are the platform pieces main.js
+// resolved for this computer; either may be null, in which case that kind is unsupported.
+export function defaultHarnesses({ demo = false, openPage = null, pointer = null, desktopBackend = null, settings } = {}) {
   const note = demo ? ' (demo mode: the step is reported back as unsupported so the run pauses for a person)' : '';
+  const opts = settings ? { settings } : {};
   return {
-    browser: new UnsupportedHarness('browser', `The sandboxed browser harness is not included in this recorder build${note}.`, { demo }),
-    desktop: new UnsupportedHarness('desktop', `The desktop harness is not included in this recorder build${note}.`, { demo }),
+    browser: openPage
+      ? new BrowserHarness({ open: openPage, pointer, ...opts })
+      : new UnsupportedHarness('browser', `The sandboxed browser harness is not available in this recorder build${note}.`, { demo }),
+    desktop: desktopBackend
+      ? new DesktopHarness({ backend: desktopBackend, ...opts })
+      : new UnsupportedHarness('desktop', `The desktop harness is not available on this computer${note}.`, { demo }),
   };
 }
 
