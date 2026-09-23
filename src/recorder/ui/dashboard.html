@@ -18,6 +18,7 @@
       .shell.setup { grid-template-columns: 1fr; }
       .shell.setup nav { display: none; }
       .shell.setup main { max-width: 640px; margin: 0 auto; }
+      #rv-detail { display: none !important; }
       /* ---- sidebar ---- */
       nav { border-right: 1px solid var(--line); padding: var(--space-5) var(--space-3); background: var(--surface); display: flex; flex-direction: column; gap: 2px; }
       .brand { display: flex; align-items: center; gap: var(--space-2); font-family: var(--font-display); font-weight: 500; font-size: 22px; letter-spacing: -0.01em; padding: 0 var(--space-3); margin-bottom: var(--space-5); }
@@ -395,16 +396,24 @@
             <span class="badge agent">Agent</span>
             <div><b id="rv-banner-t">Analyzing your session…</b><div id="rv-banner-s" style="font-size:12px;line-height:16px"></div><div class="rv-ws hidden" id="rv-ws"></div></div>
             <div class="sp"></div>
-            <button class="btn sm" id="rv-note">Add a general summary</button>
             <button class="btn sm" id="rv-done">Done</button>
             <button class="btn sm primary" id="rv-submit" title="Send the whole recording to your workspace and remove it from this computer"><svg class="ic" viewBox="0 0 24 24"><path d="M12 13v8"/><path d="M4 14.899A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.242"/><path d="m8 17 4-4 4 4"/></svg>Submit</button>
           </div>
 
+          <!-- The one thing the employee sees about a session: what it was. -->
+          <section class="card" id="rv-story" style="margin:0 0 14px">
+            <p id="rv-story-text" style="font-size:16px;line-height:24px;margin:0"></p>
+          </section>
+
           <section class="card hidden" id="rv-cloud" style="margin:0 0 14px">
-            <h2 style="display:flex;justify-content:space-between;align-items:baseline"><span>Cloud analysis</span><span class="muted" style="text-transform:none;letter-spacing:0;font-weight:500" id="rv-cloud-sub"></span></h2>
+            <h2 style="display:flex;justify-content:space-between;align-items:baseline"><span>Your workspace</span><span class="muted" style="text-transform:none;letter-spacing:0;font-weight:500" id="rv-cloud-sub"></span></h2>
             <div id="rv-cloud-body"></div>
           </section>
 
+          <!-- Local analysis detail. It still runs after Stop (sections, flags, insights,
+               workflows) and feeds annotations, but the employee never sees it here. -->
+          <div id="rv-detail" class="hidden" aria-hidden="true">
+          <button class="btn sm" id="rv-note">Add a general summary</button>
           <section class="card" style="margin:0 0 14px">
             <h2 style="display:flex;justify-content:space-between;align-items:baseline"><span>Session, by task</span><span class="muted" style="text-transform:none;letter-spacing:0;font-weight:500" id="vs-sub">Split where you switched windows</span></h2>
             <div class="rv-sum" id="rv-sum"></div>
@@ -483,6 +492,7 @@
               <div class="stages" id="rv-stages"></div>
             </details>
           </div>
+          </div>
         </div>
 
         <!-- ============ RECORDINGS ============ -->
@@ -530,6 +540,16 @@
       <p id="upload-error" role="status"></p>
       <button id="upload-confirm" class="btn primary" disabled>Queue upload</button>
       <button id="upload-cancel" class="btn">Cancel</button>
+    </dialog>
+
+    <dialog id="publish-dialog" class="card wide" aria-labelledby="publish-title">
+      <h2 id="publish-title">Share this session with your company</h2>
+      <p id="publish-story"></p>
+      <div id="publish-questions"></div>
+      <div class="set"><label><div>Share the report with my company workspace<span>Your company sees what the session was about, the app-level facts, your answers and the document summaries. Your recording, screenshots and typed text stay on this computer.</span></div><input id="publish-consent" type="checkbox" /></label></div>
+      <p id="publish-error" role="status"></p>
+      <button id="publish-confirm" class="btn primary" disabled>Publish</button>
+      <button id="publish-cancel" class="btn">Not now</button>
     </dialog>
 
     <!-- annotation modal -->
@@ -680,6 +700,7 @@
         const up = uploadState(r);
         const intake = cloud?.protocol === 2 || r.upload?.protocol === 2 || p === 'awaiting_upload';
         $('rv-title').textContent = r.name ?? (done ? 'Session analyzed' : 'Session saved');
+        $('rv-story-text').textContent = storyFor(r);
         $('rv-lede').textContent = `${when} · ${hm(r.active_seconds ?? 0)} · ${(r.counts?.total ?? 0).toLocaleString()} interactions · ${up.label}${up.key === 'submitted' ? ' — files are in your workspace' : ''}`;
         $('rv-banner-t').textContent = up.key === 'submitted' ? 'Submitted' : up.key === 'uploading' ? up.label : up.key === 'failed' ? 'Submit failed' : done ? 'Ready to review' : p === 'failed' ? 'Analysis could not finish' : p === 'skipped' ? 'Analysis skipped' : 'Analyzing…';
         $('rv-banner-s').textContent = up.key === 'submitted' ? `Sent ${up.sub}. Nothing from this session is left on this computer.` : up.key === 'failed' ? `${up.sub} Press Submit to retry.` : up.key === 'uploading' ? 'Sending the video, screenshots and notes to your workspace…' : done ? analystSummary() : p === 'failed' || p === 'skipped' ? (r.processing_note ?? '') : '';
@@ -843,8 +864,23 @@
         return parts.join(' ');
       }
 
-      // Cloud analysis card: observed facts stay separate from the agent's reading;
-      // the employee answers focused questions and publishes explicitly.
+      // One sentence about the whole session. The workspace's reading wins once it
+      // exists; before that, a plain local summary from where the time went.
+      function storyFor(r) {
+        const summary = r.upload?.analysis?.report?.interpretation?.summary;
+        if (summary) return summary;
+        const secs = new Map();
+        for (const a of r.apps ?? []) {
+          const d = (Date.parse(a.end) - Date.parse(a.start)) / 1000;
+          if (Number.isFinite(d) && d > 0) secs.set(a.app, (secs.get(a.app) ?? 0) + d);
+        }
+        const top = [...secs.entries()].sort((x, y) => y[1] - x[1]).slice(0, 2).map(([app]) => app);
+        const length = r.active_seconds ? ` for ${hm(r.active_seconds)}` : '';
+        if (!top.length) return `You worked${length}. Upload the session and your workspace will describe what it was about.`;
+        return `You worked${length}, mostly in ${top.join(' and ')}. Upload the session and your workspace will describe what it was about.`;
+      }
+
+      // Workspace status for an uploaded session: one line and at most one action.
       function renderCloudAnalysis(r, show) {
         const card = $('rv-cloud');
         card.classList.toggle('hidden', !show);
@@ -856,59 +892,64 @@
           try { await work(); recordings = await window.vista.recordings(); renderRecordings(); renderToday(); renderReview(); }
           catch (e) { alert(e.message); }
         };
+        const line = (text) => `<p class="muted" style="font-size:13px;line-height:18px;margin:0 0 10px">${esc(text)}</p>`;
+        if (a.status === 'failed') {
+          $('rv-cloud-sub').textContent = 'Needs attention';
+          body.innerHTML = line(a.error ?? 'Your workspace could not finish reading this session.') + `<div class="act" style="display:flex;gap:6px"><button class="btn sm primary" id="rv-cloud-retry">Try again</button></div>`;
+          $('rv-cloud-retry').onclick = () => refresh(() => window.vista.reanalyze(r.recording_id));
+          return;
+        }
         if (a.status !== 'succeeded' || !rep) {
-          $('rv-cloud-sub').textContent = a.status === 'failed' ? 'Failed' : a.status === 'not_started' ? 'Waiting for the workspace' : 'Running';
-          body.innerHTML = a.status === 'failed'
-            ? `<p class="muted" style="font-size:13px;line-height:18px">${esc(a.error ?? 'The Recording Reviewer could not finish.')}</p><div class="act" style="display:flex;gap:6px"><button class="btn sm" id="rv-cloud-retry">Retry analysis</button><button class="btn sm" id="rv-cloud-refresh">Refresh</button></div>`
-            : `<p class="muted" style="font-size:13px;line-height:18px">The Recording Reviewer in your workspace is reading the activity metadata${rep === null ? '' : ''} — app names, timing and copy/paste patterns only. This page updates automatically.</p><div class="act"><button class="btn sm" id="rv-cloud-refresh">Refresh</button></div>`;
-          const retry = $('rv-cloud-retry'); if (retry) retry.onclick = () => refresh(() => window.vista.reanalyze(r.recording_id));
+          $('rv-cloud-sub').textContent = 'Working';
+          body.innerHTML = line('Your workspace is working out what this session was about. This updates on its own.') + `<div class="act"><button class="btn sm" id="rv-cloud-refresh">Check now</button></div>`;
           $('rv-cloud-refresh').onclick = () => refresh(() => window.vista.analysis(r.recording_id));
           return;
         }
-        const published = a.publication === 'published';
-        const questions = rep.questions ?? [];
-        const open = questions.filter((q) => !q.answer).length;
-        $('rv-cloud-sub').textContent = published ? `Published ${rep.published_at ? new Date(rep.published_at).toLocaleString() : ''}` : open ? `${open} question${open === 1 ? '' : 's'} to answer` : 'Draft — ready to publish';
-        const apps = (rep.observed?.apps ?? []).slice(0, 6);
-        const transfers = (rep.observed?.transfers ?? []).slice(0, 5);
-        const inter = rep.interpretation ?? {};
-        body.innerHTML = `
-          <p class="muted" style="font-size:12px;line-height:16px;margin:0 0 10px">${esc(rep.coverage?.note ?? '')}</p>
-          <div class="grid cols-2" style="margin:0 0 12px">
-            <div><h3 class="muted" style="font-size:12px;margin:0 0 6px">Observed (from metadata)</h3>
-              <div class="rank">${apps.length ? apps.map((x) => `<div class="row" style="grid-template-columns:1fr auto"><span>${esc(x.app)}</span><span class="muted">${Math.round(x.share * 100)}% · ${esc(String(x.events))} events</span><div class="bar" style="grid-column:1/-1"><i style="width:${Math.round(x.share * 100)}%"></i></div></div>`).join('') : '<div class="empty">No activity</div>'}</div>
-              <p class="muted" style="font-size:12px;margin:8px 0 0">${esc(String(rep.observed?.switches ?? 0))} app switches${transfers.length ? ` · copied between apps: ${transfers.map((t) => `${esc(t.from)} → ${esc(t.to)} ×${t.count}`).join(', ')}` : ''}</p>
-            </div>
-            <div><h3 class="muted" style="font-size:12px;margin:0 0 6px">Agent's reading (hypotheses)</h3>
-              ${inter.summary ? `<p style="font-size:13px;line-height:18px;margin:0 0 8px">${esc(inter.summary)}</p>` : '<p class="muted" style="font-size:13px;line-height:18px;margin:0 0 8px">No model interpretation was produced for this session.</p>'}
-              ${(inter.workflows ?? []).length ? `<ul style="margin:0 0 8px 16px;padding:0;font-size:13px;line-height:18px">${inter.workflows.map((w) => `<li><b>${esc(w.name)}</b> <span class="muted">${esc(w.apps.join(' · '))}${w.confidence != null ? ` · ${Math.round(w.confidence * 100)}%` : ''}</span></li>`).join('')}</ul>` : ''}
-              ${(inter.automation_candidates ?? []).length ? `<p class="muted" style="font-size:12px;margin:0 0 4px">Automation candidates</p><ul style="margin:0 0 8px 16px;padding:0;font-size:13px;line-height:18px">${inter.automation_candidates.map((c) => `<li><b>${esc(c.title)}</b>${c.rationale ? ` — ${esc(c.rationale)}` : ''}</li>`).join('')}</ul>` : ''}
-            </div>
-          </div>
-          <h3 class="muted" style="font-size:12px;margin:0 0 6px">Questions only you can answer</h3>
-          ${questions.length ? questions.map((q) => `<label style="display:block;margin:0 0 10px;font-size:13px;line-height:18px">${esc(q.question)}<textarea data-q="${esc(q.id)}" rows="2" style="width:100%;margin-top:4px" ${published ? 'disabled' : ''} placeholder="Your answer (optional)">${esc(q.answer ?? '')}</textarea></label>`).join('') : '<p class="muted" style="font-size:13px">No questions.</p>'}
-          ${published
-            ? '<p class="muted" style="font-size:13px;line-height:18px">Published. Your company workspace can now read this report; answers are frozen.</p>'
-            : `<div class="act" style="display:flex;gap:6px;align-items:center;flex-wrap:wrap"><button class="btn sm" id="rv-cloud-save" ${questions.length ? '' : 'disabled'}>Save answers</button><label style="display:flex;gap:6px;align-items:center;font-size:12px"><input type="checkbox" id="rv-cloud-consent" /> Share this report with my company workspace</label><button class="btn sm primary" id="rv-cloud-publish" disabled>Publish</button><button class="btn sm" id="rv-cloud-refresh">Refresh</button></div><p class="muted" style="font-size:12px;line-height:16px;margin:8px 0 0">Publishing shares the observed facts, the agent's reading, your answers and the document summaries above — not your recording, screenshots or typed text.</p>`}
-        `;
-        $('rv-cloud-refresh')?.addEventListener('click', () => refresh(() => window.vista.analysis(r.recording_id)));
-        const save = $('rv-cloud-save');
-        if (save) save.onclick = () => refresh(() => {
-          const answers = {};
-          body.querySelectorAll('textarea[data-q]').forEach((t) => { answers[t.dataset.q] = t.value; });
-          return window.vista.answerQuestions(r.recording_id, answers);
-        });
-        const consent = $('rv-cloud-consent'), publish = $('rv-cloud-publish');
-        if (consent && publish) {
-          consent.onchange = () => { publish.disabled = !consent.checked; };
-          publish.onclick = () => refresh(async () => {
-            const answers = {};
-            body.querySelectorAll('textarea[data-q]').forEach((t) => { if (t.value.trim()) answers[t.dataset.q] = t.value; });
-            if (Object.keys(answers).length) await window.vista.answerQuestions(r.recording_id, answers);
-            await window.vista.publishReport(r.recording_id, { consent: true });
-          });
+        if (a.publication === 'published') {
+          $('rv-cloud-sub').textContent = 'Shared';
+          body.innerHTML = line(`Shared with your company${rep.published_at ? ` on ${new Date(rep.published_at).toLocaleDateString()}` : ''}. Nothing else to do.`);
+          return;
         }
+        const open = (rep.questions ?? []).filter((q) => !q.answer).length;
+        $('rv-cloud-sub').textContent = 'Ready to share';
+        body.innerHTML = line(open ? `Your workspace has ${open} quick question${open === 1 ? '' : 's'} for you before this is shared. Nothing is shared until you say so.` : 'Nothing is shared until you say so.') + `<div class="act"><button class="btn sm primary" id="rv-cloud-publish">Share with my company</button></div>`;
+        $('rv-cloud-publish').onclick = () => openPublish(r, rep);
       }
+
+      // Publishing: the only place the workspace's questions appear. Answers are optional
+      // and are saved together with the second, explicit consent.
+      let pendingPublish = null;
+      function openPublish(r, rep) {
+        pendingPublish = { id: r.recording_id };
+        $('publish-story').textContent = storyFor(r);
+        const questions = rep.questions ?? [];
+        $('publish-questions').innerHTML = questions.length
+          ? `<h3 style="font-size:12px;margin:0 0 6px" class="muted">Quick questions (optional)</h3>` + questions.map((q) => `<label style="display:block;margin:0 0 10px;font-size:13px;line-height:18px">${esc(q.question)}<textarea data-q="${esc(q.id)}" rows="2" style="width:100%;margin-top:4px" placeholder="Your answer">${esc(q.answer ?? '')}</textarea></label>`).join('')
+          : '';
+        $('publish-consent').checked = false;
+        $('publish-confirm').disabled = true;
+        $('publish-error').textContent = '';
+        $('publish-dialog').showModal();
+      }
+      $('publish-consent').onchange = () => { $('publish-confirm').disabled = !$('publish-consent').checked; };
+      $('publish-cancel').onclick = () => { pendingPublish = null; $('publish-dialog').close(); };
+      $('publish-confirm').onclick = async () => {
+        if (!pendingPublish || !$('publish-consent').checked) return;
+        $('publish-confirm').disabled = true;
+        try {
+          const answers = {};
+          $('publish-questions').querySelectorAll('textarea[data-q]').forEach((t) => { if (t.value.trim()) answers[t.dataset.q] = t.value.trim(); });
+          if (Object.keys(answers).length) await window.vista.answerQuestions(pendingPublish.id, answers);
+          await window.vista.publishReport(pendingPublish.id, { consent: true });
+          pendingPublish = null;
+          $('publish-dialog').close();
+          recordings = await window.vista.recordings();
+          renderRecordings(); renderToday(); renderReview();
+        } catch (e) {
+          $('publish-error').textContent = e.message;
+          $('publish-confirm').disabled = false;
+        }
+      };
 
       function renderReviewSummary() {
         const rv = vs?.review, s = rv?.summary;

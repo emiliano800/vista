@@ -201,8 +201,9 @@ test('receipt confirmation is shown as awaiting analysis, not a completed or pub
     assert.match(ui.$('rv-banner-s').textContent, /no report has been published/);
     assert.equal(ui.$('rv-submit').classList.contains('hidden'), true);
     assert.equal(ui.$('rv-cloud').classList.contains('hidden'), false);
-    assert.match(ui.$('rv-cloud-body').textContent, /Recording Reviewer/);
+    assert.match(ui.$('rv-cloud-body').textContent, /working out what this session was about/);
     assert.equal(ui.$('rv-cloud-publish'), null);
+    assert.match(ui.$('rv-story-text').textContent, /You worked for 10m/);
     ui.$('rv-cloud-refresh').click();
     await settle(() => ui.state.refresh === 1);
     assert.deepEqual(ui.errors, []);
@@ -223,36 +224,62 @@ test('a failed analysis can be retried from the review view', async () => {
   } finally { ui.dom.window.close(); }
 });
 
-test('a finished analysis shows observed facts apart from hypotheses, takes answers, and publishes only with consent', async () => {
+test('the last-session screen is one sentence and one action; questions appear only when sharing', async () => {
   const report = JSON.parse(JSON.stringify(REPORT));
+  report.interpretation.summary = 'You matched vendor invoices in <img src=x>Excel against the supplier portal.';
   const ui = page({ connected: true, accepted: true, analysis: { status: 'succeeded', error: null, publication: 'draft', report } });
   try {
     await settle(() => ui.state.onReview);
     await ui.state.onReview('session-1');
     assert.match(ui.$('rv-banner-t').textContent, /Report ready/);
-    const body = ui.$('rv-cloud-body');
-    assert.equal(body.querySelectorAll('img').length, 0);
-    assert.match(body.textContent, /Observed \(from metadata\)/);
-    assert.match(body.textContent, /Agent's reading \(hypotheses\)/);
-    assert.match(body.textContent, /No model interpretation/);
-    assert.match(body.textContent, /9 app switches/);
-    assert.equal(body.querySelectorAll('textarea[data-q]').length, 2);
-    assert.equal(ui.$('rv-cloud-publish').disabled, true);
-    body.querySelector('textarea[data-q="q1"]').value = ' Vendor statements ';
-    ui.$('rv-cloud-save').click();
-    await settle(() => ui.state.answers.length === 1);
-    assert.equal(JSON.stringify(ui.state.answers[0]), JSON.stringify({ recordId: 'session-1', answers: { q1: ' Vendor statements ', q2: '' } }));
-    await settle(() => /1 question to answer/.test(ui.$('rv-cloud-sub').textContent));
-    assert.equal(ui.state.publish.length, 0);
-    ui.$('rv-cloud-consent').checked = true;
-    ui.$('rv-cloud-consent').dispatchEvent(new ui.dom.window.Event('change'));
-    assert.equal(ui.$('rv-cloud-publish').disabled, false);
+    // The one thing: the workspace's sentence, escaped. No facts, tables or hypotheses on screen.
+    assert.equal(ui.$('rv-story-text').textContent, report.interpretation.summary);
+    assert.equal(ui.$('rv-story').querySelectorAll('img').length, 0);
+    const visible = (id) => !ui.$(id).classList.contains('hidden') && !ui.$('rv-detail').contains(ui.$(id));
+    assert.equal(visible('rv-cloud'), true);
+    for (const id of ['rv-acts', 'rv-path', 'rv-flows', 'rv-auto', 'wf-card', 'flags-card', 'input-card', 'rv-details', 'rv-sum', 'rv-note']) assert.equal(visible(id), false, id);
+    assert.equal(ui.$('rv-cloud-body').querySelectorAll('textarea').length, 0);
+    assert.match(ui.$('rv-cloud-body').textContent, /2 quick questions/);
+    // Sharing opens the dialog with the questions; consent gates the button.
     ui.$('rv-cloud-publish').click();
-    await settle(() => ui.state.publish.length === 1 && /Published/.test(ui.$('rv-banner-t').textContent));
+    await settle(() => ui.$('publish-dialog').open);
+    assert.equal(ui.$('publish-questions').querySelectorAll('textarea[data-q]').length, 2);
+    assert.equal(ui.$('publish-questions').querySelectorAll('img').length, 0);
+    assert.equal(ui.$('publish-confirm').disabled, true);
+    ui.$('publish-questions').querySelector('textarea[data-q="q1"]').value = ' Vendor statements ';
+    ui.$('publish-consent').checked = true;
+    ui.$('publish-consent').dispatchEvent(new ui.dom.window.Event('change'));
+    assert.equal(ui.$('publish-confirm').disabled, false);
+    ui.$('publish-confirm').click();
+    await settle(() => ui.state.publish.length === 1 && !ui.$('publish-dialog').open);
+    assert.equal(JSON.stringify(ui.state.answers), JSON.stringify([{ recordId: 'session-1', answers: { q1: 'Vendor statements' } }]));
     assert.equal(JSON.stringify(ui.state.publish[0]), JSON.stringify({ recordId: 'session-1', options: { consent: true } }));
+    await settle(() => /Published/.test(ui.$('rv-banner-t').textContent));
+    assert.match(ui.$('rv-cloud-body').textContent, /Shared with your company/);
     assert.equal(ui.$('rv-cloud-publish'), null);
-    assert.ok([...ui.$('rv-cloud-body').querySelectorAll('textarea')].every((t) => t.disabled));
     assert.match(ui.$('rec-rows').textContent, /Published to workspace/);
+    assert.deepEqual(ui.errors, []);
+  } finally { ui.dom.window.close(); }
+});
+
+test('publishing with no answers skips the answers call, and cancelling shares nothing', async () => {
+  const report = JSON.parse(JSON.stringify(REPORT));
+  const ui = page({ connected: true, accepted: true, analysis: { status: 'succeeded', error: null, publication: 'draft', report } });
+  try {
+    await settle(() => ui.state.onReview);
+    await ui.state.onReview('session-1');
+    ui.$('rv-cloud-publish').click();
+    await settle(() => ui.$('publish-dialog').open);
+    ui.$('publish-cancel').click();
+    assert.equal(ui.$('publish-dialog').open, false);
+    assert.equal(ui.state.publish.length, 0);
+    ui.$('rv-cloud-publish').click();
+    await settle(() => ui.$('publish-dialog').open);
+    ui.$('publish-consent').checked = true;
+    ui.$('publish-consent').dispatchEvent(new ui.dom.window.Event('change'));
+    ui.$('publish-confirm').click();
+    await settle(() => ui.state.publish.length === 1);
+    assert.equal(ui.state.answers.length, 0);
     assert.deepEqual(ui.errors, []);
   } finally { ui.dom.window.close(); }
 });

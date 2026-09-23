@@ -424,9 +424,10 @@ queue (A2A contract: envelope first, idempotency key
    re-run keeps answers the employee already gave to identical questions and never
    replaces a published report.
 
-The employee sees the draft in the recorder (the app polls the submission every 30 s
-while analysis is in flight), answers the questions, and publishes with a second,
-explicit consent. Publication makes the report readable by the workspace it was
+The employee sees one sentence about the session in the recorder (the app polls the
+submission every 30 s while analysis is in flight) and shares it through a dialog
+that carries the workspace's optional questions and a second, explicit consent; the
+report's facts and hypotheses are shown in the workspace, not in the app. Publication makes the report readable by the workspace it was
 uploaded to: for a canonical company, members and admins of that company's tenant;
 for a legacy deal destination, users with a role on that deal. Drafts are visible to
 the uploader only, even to admins of the same workspace. The company workspace's

@@ -143,14 +143,18 @@ checksum-bound signed URL, and completes it; the server verifies sizes and
 hashes and returns an idempotent receipt.
 
 Acceptance queues the Recording Reviewer in the workspace. The app polls
-`GET /api/recorder/submissions/{id}` every 30 s while the analysis runs and
-shows the draft report in the review view: **observed facts** (time per app,
-switches, copy→paste between apps), the **agent's reading** labelled as
-hypotheses, and **questions only the employee can answer**. `Save answers`
-posts them (`…/answers`); **Publish** needs a second explicit consent
-(`…/publish`) and is the only way the report becomes visible to the company
-workspace. A failed analysis can be retried (`…/analyze`). The local queue
-caches the server's answers under `analysis`; the server is the source of truth.
+`GET /api/recorder/submissions/{id}` every 30 s while the analysis runs. The
+**Last session** screen is deliberately high level: one sentence about what
+the session was (the workspace's summary once it exists, a plain local line
+before that) and one action. The report's facts, hypotheses and tables are not
+shown to the employee; they live in the workspace report. **Share with my
+company** opens a dialog with the workspace's few optional questions and the
+second, explicit consent; confirming posts any answers (`…/answers`) and then
+publishes (`…/publish`), the only way the report becomes visible to the
+company workspace. A failed analysis can be retried (`…/analyze`). The local
+queue caches the server's answers under `analysis`; the server is the source
+of truth. The local analysis (sections, flags, insights, workflows) still runs
+after Stop and feeds annotations, but its cards are no longer rendered.
 
 **Releases and macOS signing.** Pushing a `recorder-v*` tag runs
 `.github/workflows/release-recorder.yml`, which builds the DMGs and the Windows
