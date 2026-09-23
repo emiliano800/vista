@@ -4,6 +4,7 @@ import path from 'node:path';
 
 import { cloudRequest, workspaceURL } from './cloud.js';
 import { readFiles } from './files.js';
+import { applyPlanEdits, compilePlan, PLAN_EDITS_FILE, planSummary } from './plan.js';
 import { redactText } from './redact.js';
 import { buildSections, parseEvents } from './sections.js';
 
@@ -19,6 +20,7 @@ export const DOCUMENT_TYPES = {
   '.pptx': 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
 };
 const MAX_ACTIVITY = 4 * 1024 * 1024;
+const MAX_PLAN = 1024 * 1024;
 const MAX_FILE = 20 * 1024 * 1024;
 const MAX_TOTAL = 50 * 1024 * 1024;
 const EVENT_TYPES = new Set(['focus', 'click', 'key', 'scroll', 'copy', 'paste', 'shortcut']);
@@ -95,6 +97,27 @@ export function documentOptions(root, id) {
     .map((f) => ({ id: f.id, name: String(f.name), size_bytes: f.size_bytes ?? 0 }));
 }
 
+// The plan graph as it would be uploaded: compiled from the same raw events, minus the
+// struck-out sections and the moves the employee removed in review. States and moves
+// carry roles, action classes, control labels and slot names — no values.
+export function reviewedPlan(dir, id, raw, manifest, excluded, { ownApps = [] } = {}) {
+  const own = new Set(ownApps.map((a) => String(a).toLowerCase()));
+  const events = parseEvents(raw).filter((e) => !own.has(String(e.app ?? '').toLowerCase()));
+  const edits = fs.existsSync(path.join(dir, PLAN_EDITS_FILE)) ? JSON.parse(readInside(dir, PLAN_EDITS_FILE, MAX_ACTIVITY).toString('utf8')) : {};
+  const { graph } = compilePlan({ recordingId: id, events, files: readFiles(dir), excluded, manifest });
+  return applyPlanEdits(graph, edits);
+}
+
+export function planPreview(root, id, opts = {}) {
+  const dir = recordingDir(root, id);
+  const m = JSON.parse(readInside(dir, 'manifest.json', MAX_ACTIVITY).toString('utf8'));
+  if (!m.ended_at) return null;
+  const raw = readInside(dir, 'events.jsonl', 128 * 1024 * 1024).toString('utf8');
+  const edits = fs.existsSync(path.join(dir, 'sections.json')) ? JSON.parse(readInside(dir, 'sections.json', MAX_ACTIVITY).toString('utf8')) : {};
+  const excluded = buildSections(parseEvents(raw), m).filter((section) => edits[section.id]?.excluded);
+  return planSummary(reviewedPlan(dir, id, raw, m, excluded, opts));
+}
+
 export function metadataEvents(raw, manifest, excluded = []) {
   const events = [];
   const start = Date.parse(manifest.started_at), end = Date.parse(manifest.ended_at);
@@ -118,7 +141,7 @@ export function metadataEvents(raw, manifest, excluded = []) {
   return { schema_version: 1, events };
 }
 
-export function buildSubmissionPackage(root, id, config, { selectedFileIds = [], consent = false } = {}) {
+export function buildSubmissionPackage(root, id, config, { selectedFileIds = [], consent = false, sharePlan = false, ownApps = [] } = {}) {
   if (consent !== true) throw new Error('Confirm the sharing package before uploading.');
   const binding = uploadBinding(config);
   if (!UUID.test(config.deviceId)) throw new Error('Missing recorder device identifier.');
@@ -139,11 +162,16 @@ export function buildSubmissionPackage(root, id, config, { selectedFileIds = [],
   const data = new Map();
   const artifacts = [];
   const add = (artifactId, kind, filename, contentType, bytes) => {
-    if (!bytes.length || bytes.length > (kind === 'activity' ? MAX_ACTIVITY : MAX_FILE)) throw new Error('Upload artifact exceeds its size limit.');
+    const limit = kind === 'activity' ? MAX_ACTIVITY : kind === 'plan' ? MAX_PLAN : MAX_FILE;
+    if (!bytes.length || bytes.length > limit) throw new Error('Upload artifact exceeds its size limit.');
     data.set(artifactId, bytes);
     artifacts.push({ id: artifactId, kind, filename, content_type: contentType, size_bytes: bytes.length, sha256: hash(bytes) });
   };
   add('activity', 'activity', 'activity.json', 'application/json', Buffer.from(JSON.stringify(events)));
+  if (sharePlan === true) {
+    const plan = reviewedPlan(dir, id, raw, m, excluded, { ownApps });
+    if (plan.nodes.length && plan.edges.length) add('plan', 'plan', 'plan.json', 'application/json', Buffer.from(JSON.stringify(plan)));
+  }
   const files = readFiles(dir);
   for (const fileId of selectedFileIds) {
     const file = files.find((f) => f.id === fileId && f.include !== false && f.snapshot);

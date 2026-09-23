@@ -36,10 +36,12 @@ from typing import Any
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
 from sqlalchemy import select
 
+from taskmining.state import app_role
 from vista import documents
 from vista.agents.jev import NONE, Judgment, choice, judge, noul, score
 from vista.agents.llm import Prompt, chat, strip_fences
 from vista.agents.runtime import run_phase
+from vista.automation.schemas import PlanGraph
 from vista.config import settings
 from vista.db import tenant_session
 from vista.models.platform import Job
@@ -518,7 +520,19 @@ TOOLS = {
 DRAFT_LIMITS = {"max_steps": 10, "max_runtime_seconds": 300, "max_cost_usd": "1.00"}
 
 
-def draft_definition(kind: str, c: dict, docs: list[dict]) -> dict:
+def graph_for(plan: dict | None, apps: list[str]) -> dict | None:
+    """The recording's plan graph, if it visits every app this candidate is about. The graph is
+    attached whole: a candidate is a *pattern* the reviewer noticed, the graph is the *path* the
+    employee took, and the FDE prunes edges in the workspace before approving anything."""
+    if not plan or not plan.get("nodes"):
+        return None
+    roles = {n["app_role"] for n in plan["nodes"]}
+    if all(app_role(app) in roles for app in apps):
+        return plan
+    return None
+
+
+def draft_definition(kind: str, c: dict, docs: list[dict], plan: dict | None = None) -> dict:
     """A `WorkflowDefinition` (automation/schemas.py) prefilled from the kind and the apps."""
     a, b, n = c["apps"][0], c["apps"][1], c["count"]
     goal = {
@@ -562,15 +576,28 @@ def draft_definition(kind: str, c: dict, docs: list[dict]) -> dict:
             "Anything the rules do not cover is routed to a person with the reason",
         ],
     }[kind]
-    inputs = [f"{a} export or sample", f"{b} field list"] + [f"shared document: {d['filename']}" for d in docs[:5]]
-    return {
+    inputs = [f"{a} export or sample", f"{b} field list"]
+    graph = graph_for(plan, c["apps"])
+    if graph is not None:
+        # every value the employee typed is a declared input the FDE binds before a run
+        produced = {name for e in graph["edges"] for name in e.get("produces", [])}
+        slots = sorted({e["slot"] for e in graph["edges"] if e.get("slot") and e["slot"] not in produced})
+        if len(inputs) + len(slots) > 30:
+            graph = None
+        else:
+            inputs += slots
+    inputs += [f"shared document: {d['filename']}" for d in docs[:5]]
+    definition = {
         "goal": goal,
-        "required_inputs": list(dict.fromkeys(i[:255] for i in inputs)),
+        "required_inputs": list(dict.fromkeys(i[:255] for i in inputs))[:30],
         "allowed_tools": TOOLS[kind],
         "success_criteria": criteria,
         "environment": "sandbox",
         "limits": dict(DRAFT_LIMITS),
     }
+    if graph is not None:
+        definition["graph"] = graph
+    return definition
 
 
 def instructions_for(kind: str, c: dict, docs: list[dict], question: str | None, automation: bool) -> list[str]:
@@ -635,7 +662,13 @@ def instructions_for(kind: str, c: dict, docs: list[dict], question: str | None,
 
 
 def apply_judgment(
-    judgment: Judgment, candidates: list[dict], *, model: str, source: str, docs: list[dict] | None = None
+    judgment: Judgment,
+    candidates: list[dict],
+    *,
+    model: str,
+    source: str,
+    docs: list[dict] | None = None,
+    plan: dict | None = None,
 ) -> tuple[dict, list[dict]]:
     """Turn typed answers into the report's interpretation. Nothing here is generated:
     names, rationales, questions and next steps are templates over the candidate and
@@ -655,7 +688,7 @@ def apply_judgment(
         asked = _question_for(kind, c) if p_ask >= QUESTION_THRESHOLD else None
         actions = {
             "instructions": instructions_for(kind, c, list(docs or []), asked, automate),
-            "draft_definition": draft_definition(kind, c, list(docs or [])) if automate else None,
+            "draft_definition": draft_definition(kind, c, list(docs or []), plan) if automate else None,
             "question": asked,
         }
         item = {
@@ -702,6 +735,13 @@ def apply_judgment(
         "rejected": declined,
         "judged": len(candidates),
     }
+    if plan:
+        interpretation["plan"] = {
+            "states": len(plan["nodes"]),
+            "moves": len(plan["edges"]),
+            "trajectories": plan["trajectories"],
+            "roles": sorted({n["app_role"] for n in plan["nodes"]}),
+        }
     return interpretation, questions[:3]
 
 
@@ -716,16 +756,18 @@ class Interpretation:
     event: dict  # interpreter-specific detail for the `model_call` event
 
 
-def interpret_with_jev(observed: dict, docs: list[dict], judge_fn=judge) -> Interpretation:
+def interpret_with_jev(observed: dict, docs: list[dict], judge_fn=judge, plan: dict | None = None) -> Interpretation:
     candidates = workflow_candidates(observed)
     if not candidates:
-        interpretation, questions = apply_judgment(Judgment(model="none", source="code"), [], model="none", source="code")
+        interpretation, questions = apply_judgment(Judgment(model="none", source="code"), [], model="none", source="code", plan=plan)
         return Interpretation(
             interpretation, questions, "none", "code", 0, 0, {"interpreter": "jev", "candidates": 0, "questions": 0, "rejected": 0}
         )
     state, questions = judge_request(observed, candidates, docs)
     judgment = judge_fn(state, questions)
-    interpretation, model_questions = apply_judgment(judgment, candidates, model=judgment.model, source=judgment.source, docs=docs)
+    interpretation, model_questions = apply_judgment(
+        judgment, candidates, model=judgment.model, source=judgment.source, docs=docs, plan=plan
+    )
     event = {"interpreter": "jev", "candidates": len(candidates), "questions": len(questions), "rejected": interpretation["rejected"]}
     return Interpretation(
         interpretation, model_questions, judgment.model, judgment.source, judgment.input_tokens, judgment.output_tokens, event
@@ -740,9 +782,9 @@ def interpret_with_chat(observed: dict, docs: list[dict], llm=chat) -> Interpret
     return Interpretation(interpretation, model_questions, r.model, r.source, r.input_tokens, r.output_tokens, event)
 
 
-def interpret(observed: dict, docs: list[dict]) -> Interpretation:
+def interpret(observed: dict, docs: list[dict], plan: dict | None = None) -> Interpretation:
     if settings.recorder_interpreter == "jev":
-        return interpret_with_jev(observed, docs)
+        return interpret_with_jev(observed, docs, plan=plan)
     return interpret_with_chat(observed, docs)
 
 
@@ -848,12 +890,15 @@ def _analyze(tenant_schema: str, submission_id: uuid.UUID, run_id: uuid.UUID, se
         run = session.get(AgentRun, run_id)
         verified = {v["id"]: v for v in row.verified_artifacts}
         activity = None
+        plan = None
         docs: list[dict] = []
         for artifact in row.manifest["artifacts"]:
             data = read_artifact(tenant_schema, row, artifact, expected=verified.get(artifact["id"]))
             seq = _emit(session, run_id, seq, "tool_call", {"tool": "read_artifact", "artifact": artifact["id"], "bytes": len(data)})
             if artifact["kind"] == "activity":
                 activity = json.loads(data)
+            elif artifact["kind"] == "plan":
+                plan = PlanGraph.model_validate_json(data).model_dump(mode="json", exclude_none=True)
             else:
                 docs.append(document_context(artifact["filename"], data))
         if activity is None:
@@ -872,7 +917,7 @@ def _analyze(tenant_schema: str, submission_id: uuid.UUID, run_id: uuid.UUID, se
                 "stretches": len(observed["stretches"]),
             },
         )
-        result = interpret(observed, docs)
+        result = interpret(observed, docs, plan)
         interpretation, model_questions = result.interpretation, result.questions
         seq = _emit(
             session,

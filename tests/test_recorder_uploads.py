@@ -4,6 +4,7 @@ import hashlib
 import io
 import json
 import uuid
+from pathlib import Path
 
 import pytest
 from botocore.exceptions import ClientError, EndpointConnectionError
@@ -254,6 +255,52 @@ def test_activity_content_must_be_metadata_only(client, workspace, store):
     assert response.status_code == 422
     assert "typed content" not in response.text
     assert client.get(f"{ROOT}/{submission['id']}", headers=headers).json()["receipt"] is None
+
+
+PLAN = (Path(__file__).parent / "fixtures" / "plan_invoice.json").read_bytes()
+
+
+def plan_body(workspace_id, plan=PLAN):
+    manifest = body(workspace_id)
+    manifest["artifacts"] = [artifact("activity", ACTIVITY), artifact("plan", plan, "plan", "plan.json", "application/json")]
+    return manifest
+
+
+def upload_plan(client, headers, submission, store, plan):
+    for upload in client.post(f"{ROOT}/{submission['id']}/upload-urls", headers=headers).json()["uploads"]:
+        key = upload["url"].split("storage.example.test/", 1)[1]
+        store.objects[key] = plan if upload["artifact_id"] == "plan" else ACTIVITY
+
+
+def test_plan_graph_is_an_optional_artifact_that_must_be_a_valid_graph(client, workspace, store):
+    headers, _, _, wid = workspace
+    for change in ({"id": "plan-2"}, {"filename": "plan.js"}, {"content_type": "text/plain"}, {"kind": "document"}):
+        manifest = plan_body(wid)
+        manifest["artifacts"][1].update(change)
+        assert client.post(ROOT, headers=headers, json=manifest).status_code == 422, change
+    manifest = plan_body(wid)
+    manifest["artifacts"].append(artifact("plan", PLAN, "plan", "plan.json", "application/json"))
+    assert client.post(ROOT, headers=headers, json=manifest).status_code == 422
+
+    leaky = json.loads(PLAN)
+    leaky["nodes"][0]["signature"].append("title:INV-1042 ACME.pdf")
+    leaky_bytes = json.dumps(leaky).encode()
+    submission = create(client, headers, plan_body(wid, leaky_bytes))
+    upload_plan(client, headers, submission, store, leaky_bytes)
+    response = client.post(f"{ROOT}/{submission['id']}/complete", headers=headers)
+    assert response.status_code == 422 and "INV-1042" not in response.text
+    assert client.get(f"{ROOT}/{submission['id']}", headers=headers).json()["receipt"] is None
+
+    submission = create(client, headers, plan_body(wid))
+    upload_plan(client, headers, submission, store, PLAN)
+    accepted = client.post(f"{ROOT}/{submission['id']}/complete", headers=headers).json()
+    assert accepted["receipt"]["artifact_count"] == 2
+    while process_one():
+        pass
+    report = client.get(f"{ROOT}/{submission['id']}", headers=headers).json()["report"]
+    assert report["interpretation"]["plan"] == {"states": 5, "moves": 7, "trajectories": 1, "roles": ["accounting", "pdf"]}
+    for secret in ("INV-1042", "ACME", "1,250", "qbo.example", "Preview", "QuickBooks"):
+        assert secret not in json.dumps(report)
 
 
 def test_storage_outage_leaves_submission_retryable(client, workspace, store):
