@@ -13,32 +13,62 @@ plan, which nobody can audit and which cannot be composed across recordings.
 
 ## 2. Idea (left panel)
 
-Compress each recording into a short trajectory of **typed states**, `t ≪ T`:
+Compress each recording into a short trajectory of **key frames**, `t ≪ T`:
 
 ```
-state_t ──action_t (Jev)──▶ state_{t+1} ──▶ … ──▶ reward state
+key frame_t ──action_t (Jev)──▶ key frame_{t+1} ──▶ … ──▶ reward frame
 ```
 
-- **State** = `(app_role, activity, data_signature)`. The signature is what the
-  employee *holds* at that moment: `doc:<name>`, `rec:<name>`, `field:<name>`,
-  `fact:<name>`, `dialog:<name>`, `msg:open`. Computed in code
-  (`src/taskmining/state.py`, `src/recorder/src/plan.js`) — deterministic, labels
-  only, no values/titles/URLs/coordinates.
-- **Action** = closed primitive vocabulary (`click`, `type_value`, `press`, `read`,
-  `extract`, `submit`, `navigate`, …) × control label × slot.
+- **State (one key frame)** = *frame explanation* + *data signature*.
+  - Frame explanation: what is on screen, in words, from the frame-explainer
+    model (GPT-sol/astra) — app kind, screen/module, what the user appears to be
+    doing. Interpretive; it is context for Jev, never a key the graph is indexed by.
+  - Data signature: computed in code from the recorder's events — what the
+    employee *holds* at that moment: `doc:<name>`, `rec:<name>`, `field:<name>`,
+    `fact:<name>`, `dialog:<name>`, `msg:open`
+    (`src/taskmining/state.py`, `src/recorder/src/plan.js`). Deterministic,
+    labels only, no values/titles/URLs/coordinates. This is the part that makes
+    two frames "the same state" across recordings and employees.
+- **Action (the move between two key frames)** = primitive × control label × slot,
+  the closed vocabulary (`click`, `type_value`, `press`, `read`, `extract`,
+  `submit`, `navigate`, …).
+  - *Control label* — **where** the action lands: accessibility role + name of the
+    control (`button "Save"`, `textbox "Client name"`, `row "MER-C0010 · Valley
+    Electric"`). A label, not a selector or coordinate; re-found at run time by
+    matching the live accessibility tree. Coordinates/URLs stay in `anchors.json`.
+  - *Slot* — **what** goes in or comes out, by *name*, never by value:
+    `input:<name>` (declared workflow input), `fact:<name>` (read earlier in the
+    same task), `doc:<name>` / `rec:<name>` for read/extract. Code resolves the
+    name to the value at run time.
+  - A "skill" is therefore one edge, e.g. `type_value · textbox "Search" ·
+    input:CLIENT_NAME`.
 - **Transition** = an observed edge with support counts and provenance
   (recording id, event ids).
-- **Reward state** = the terminal state the recording ended in; at run time the
+- **Reward frame** = the key frame the recordings ended in; at run time the
   independent `verify()` decides whether the goal and success criteria hold.
-- **Policy** = Jev, choosing among the observed outgoing edges of the located
-  state. Nothing is trained; the graph *is* the experience.
+- **Jev** predicts/designs the action *between* key frames: given the current key
+  frame it picks the edge (and confirms the expected effect landed). It does not
+  explain frames and does not invent labels or slots. Nothing is trained; the
+  graph *is* the experience.
 
-## 3. One task, one graph (bottom panel)
+## 3. Workflow ⊃ tasks ⊃ key frames (bottom panel)
 
-A recording is sliced into moves; the employee may cross moves out. The kept
-moves become a `PlanGraph` for **that task only**. More recordings of the same
-task merge into the same graph (variants = branches, optional steps = low-support
-edges). Graphs never merge across tasks.
+```
+workflow = [ task, task, …, task ] + non-essential frames
+task     = [ key frame ─edge─▶ key frame ─edge─▶ … ─edge─▶ reward frame ]
+```
+
+- A recording is sliced into frames; most are **non-essential** (scrolling,
+  hesitation, unrelated windows) and are dropped or crossed out by the employee.
+- The frames where the data signature changes are **key frames**; a run of key
+  frames toward one reward frame is a **task**.
+- Each task compiles to its own `PlanGraph`. More recordings of the same task
+  merge into the same graph (variants = branches, optional steps = low-support
+  edges). Graphs never merge across tasks; a workflow is an ordered list of tasks.
+- Division of labour: frame explanation → GPT-sol/astra (per frame, offline, at
+  compile/review time); transition between key frames within a task → Jev (at
+  run time, one typed judgment per step); slicing, signatures, labels, slots,
+  limits → code.
 
 ## 4. Pipeline (right panel)
 
@@ -57,13 +87,18 @@ recorder ──▶ device recordings ──▶ plan.js ──▶ checkpoint #2: 
 ## 5. Run loop (dashed box)
 
 ```
-state (screen → code-enumerated candidates) ─▶ Jev decides next edge ─▶ harness acts ─▶ next state
+key frame (screen → code-enumerated candidates + signature so far) ─▶ Jev picks next edge ─▶ harness acts ─▶ next key frame
 ```
 
 - Candidates are enumerated by the harness (browser AX tree / desktop AX tree),
   capped at 40, never by the model.
-- Jev answers typed questions only: `node` (where am I), `edge` (which observed
-  move), `target`, `value` (declared inputs resolve in code), `effect_seen`.
+- Jev answers typed questions only: `node` (which key frame am I on), `edge`
+  (which observed move), `target` (which live control realises the control
+  label), `value` (which slot; code resolves it), `effect_seen` (did the next key
+  frame's signature appear).
+- Off-graph is defined, not judged: no observed edge from the located key frame
+  → `off_plan` pause; a pick from another key frame is re-asked over the located
+  one's own edges; `done` only at a reward frame.
 - Fail-closed: stale observation, changed window, sensitive window, no fitting
   edge → pause for a person. `confirm`/`always_ask` edges and irreversible
   primitives pause too.
@@ -75,19 +110,26 @@ state (screen → code-enumerated candidates) ─▶ Jev decides next edge ─�
 
 ## 6. "Should we train?" — decision
 
-Question on the board: should Jev be trained to recognise states and
-transitions directly from the recording (computer-use analysis), instead of code
-computing them from hooked events?
+Question on the board: should Jev be trained to analyse key frames and the
+transitions between them from the recording itself (computer-use analysis),
+instead of code computing signatures from hooked events and Jev only choosing
+among observed edges?
 
-**Decision for now: no.** Keep states code-computed.
+**Decision for now: no training.** Frame explanation comes from GPT-sol/astra as
+context; the data signature, key-frame slicing and edge set stay code-computed;
+Jev selects.
 
-- For: code states only see what the recorder hooks (clicks, keys, copy/paste,
-  window switches); a trained recogniser could see states in apps the hooks miss.
-- Against: model-authored states are not auditable or deterministic, edge
-  provenance blurs, and the FDE can no longer approve a traceable graph.
-- Path that keeps the door open: store `(observation, code_state)` pairs from
-  recordings and runs as a labelled dataset; evaluate any future recogniser
-  offline against code states before it is allowed to influence the graph.
+- For training: hooked events (clicks, keys, copy/paste, window switches) miss
+  state in some apps; a Jev trained on frame pairs could propose transitions the
+  recorder never saw as discrete events.
+- Against: model-authored key frames and edges are not auditable or
+  deterministic, provenance to `(recording, event ids)` blurs, and the FDE can no
+  longer approve a traceable graph.
+- Door left open: every recording and run already yields
+  `(frame, frame explanation, code signature, chosen edge, effect_seen, verified)`
+  tuples. Store them as a labelled dataset; evaluate a trained transition model
+  offline against the code graph before it may propose edges — and even then
+  only into a *draft*, behind the same two checkpoints.
 
 ## 7. Non-goals
 
