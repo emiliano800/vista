@@ -167,6 +167,24 @@ def edge_label(e: dict) -> str:
     return f"{what}{control}{slot} → {', '.join(e.get('effect', [])) or 'no new data'}"
 
 
+# Signature entries are `kind:name` labels; spelled out for Jev so "field:CLIENT_NAME" reads as
+# the visible thing it stands for (the graph itself keeps the labels).
+EFFECT_WORDS = {
+    "field": "the field for “{name}” now holds a value (a candidate with has_value, or the filtered/updated data it drives)",
+    "rec": "a “{name}” record is open or located on screen",
+    "dialog": "the “{name}” screen, module or dialog is open",
+    "doc": "the document “{name}” is open",
+    "fact": "“{name}” has been read off the screen",
+    "msg": "the message “{name}” is open",
+}
+
+
+def effect_words(label: str) -> str:
+    kind, _, name = label.partition(":")
+    template = EFFECT_WORDS.get(kind)
+    return template.format(name=name) if template and name else label
+
+
 # ---- questions ----------------------------------------------------------------------------------
 
 
@@ -208,7 +226,9 @@ def graph_questions(
     questions: dict[str, dict] = {}
     if last_effect:
         questions["effect_seen"] = noul(
-            f"Does the current `observation` show the effect the previous move was recorded to have: {', '.join(last_effect)}?",
+            "Does the current `observation` show the effect the previous move was recorded to have: "
+            + "; ".join(effect_words(x) for x in last_effect)
+            + "?",
             {"true": "Yes, the data or field named is now visibly there.", "false": "No, or the screen does not show it."},
         )
     questions["node"] = pick(
@@ -312,6 +332,26 @@ def plan_graph_step(
     edge_choice, p_edge = judgment.choice("edge")
     matching = [e for e in offered if edge_label(e) == edge_choice] if edge_choice not in (NONE, DONE) else []
     edge = next((e for e in matching if node and e["frm"] == node["key"]), matching[0] if matching else None)
+    rejudged = False
+    if node and edge and edge["frm"] != node["key"] and edges_by_node[node["key"]]:
+        # Jev located the run on one state but chose a move recorded from another (typically a
+        # later one whose control happens to be on screen). Ask again with only the moves
+        # recorded from the located state — the graph decides what is offered, Jev only ranks.
+        rejudged = True
+        offered = edges_by_node[node["key"]]
+        second = judge_fn(
+            graph_state(definition, inputs, state, observation, graph, [node], offered, limits_left),
+            graph_questions([node], offered, observation, values, []),
+        )
+        judgment = Judgment(
+            second.model,
+            {**{k: v for k, v in judgment.answers.items() if k == "effect_seen"}, **second.answers},
+            judgment.input_tokens + second.input_tokens,
+            judgment.output_tokens + second.output_tokens,
+            second.source,
+        )
+        edge_choice, p_edge = judgment.choice("edge")
+        edge = next((e for e in offered if edge_label(e) == edge_choice), None) if edge_choice not in (NONE, DONE) else None
     p_irreversible = judgment.noul("irreversible")
     target, p_target = target_for(edge, judgment, observation.candidates)
     judged_value = None
@@ -326,6 +366,7 @@ def plan_graph_step(
         "seq": seq,
         "phase": "plan",
         "planner": "graph",
+        "rejudged": rejudged,
         "node": node["key"] if node else None,
         "p_node": round(p_node, 3),
         "edge": edge["id"] if edge else None,
