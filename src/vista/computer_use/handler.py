@@ -238,6 +238,11 @@ def _execute(session, tenant_schema: str, job: Job, run: WorkflowRun, owner: str
         agent_run.status = "succeeded" if status == "succeeded" else status
         agent_run.finished_at = run.finished_at
         agent_run.error = error
+        delta = (
+            {}
+            if outcome is not None and "finding_id" in outcome
+            else {"graph_delta": merge_run(definition, PlannerState.from_checkpoint(run.checkpoint), str(run.id), None)}
+        )
         ledger.emit(
             "result",
             {
@@ -247,6 +252,7 @@ def _execute(session, tenant_schema: str, job: Job, run: WorkflowRun, owner: str
                 "error": error,
                 **(outcome or {}),
                 **(extra or {}),
+                **delta,
             },
         )
         session.commit()
