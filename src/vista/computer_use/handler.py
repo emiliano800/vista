@@ -671,6 +671,7 @@ def conclude(
         },
     )
     ledger.usage(verification.judgment)
+    run.cost_usd = run_cost(session, run.agent_run_id)
     passed = verification.passed
     status = "succeeded" if passed else "failed"
     outcome = {
