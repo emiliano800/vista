@@ -124,7 +124,7 @@ def test_first_step_is_located_on_a_start_state_and_offered_only_that_states_mov
     assert offered_moves[0] == edge_label(read)
     assert offered_moves == [edge_label(e) for e in GRAPH["edges"] if e["frm"] in pdf_nodes]  # moves out of pdf states only
     edge_criteria = judge.questions[0]["edge"]["criteria"]
-    assert DONE in edge_criteria and NONE in edge_criteria
+    assert NONE in edge_criteria and DONE not in edge_criteria  # no offered state is one the recordings ended in
     assert "effect_seen" not in judge.questions[0]
     assert detail["planner"] == "graph" and detail["edge"] == read["id"] and detail["policy"] == "auto"
     assert state.node == read["to"]
@@ -319,3 +319,24 @@ def test_a_move_from_another_state_is_re_asked_over_the_located_states_own_moves
     judge = ScriptedJudge({"node": node_label(NODES[at]), "edge": edge_label(later), "target": "textbox: Supplier"}, {"edge": NONE})
     decision, _, detail = step(judge, obs, state=PlannerState(n=1, node=at))
     assert isinstance(decision, Act) and decision.action.primitive == "wait" and detail["rejudged"] is True
+
+
+def test_done_is_only_offered_at_a_terminal_state_and_re_asked_elsewhere():
+    at = edge("click")["frm"]  # terminal in the fixture
+    obs = books(("button", "New bill"), ("textbox", "Amount"))
+    judge = ScriptedJudge({"node": node_label(NODES[at]), "edge": DONE})
+    decision, _, _ = step(judge, obs, state=PlannerState(n=1, node=at))
+    assert isinstance(decision, Finish) and decision.reason == "done"
+    # From a state the recordings never ended in, `done` is not among the moves; if it was offered
+    # (a terminal state was also a possibility) and chosen, the planner asks again over the located state's moves.
+    typing = edge("type_value", "f1")
+    mid = typing["to"]
+    assert not NODES[mid].get("terminal")
+    judge = ScriptedJudge(
+        {"node": node_label(NODES[mid]), "edge": DONE},
+        {"edge": edge_label(edge("type_value", "input_1")), "target": "textbox: Amount"},
+    )
+    obs = books(("textbox", "Amount"))
+    decision, _, detail = step(judge, obs, state=PlannerState(n=2, node=mid))
+    assert detail["rejudged"] is True and detail["next_action"] == "type_value"
+    assert DONE not in judge.questions[1]["edge"]["criteria"]
