@@ -138,7 +138,7 @@ CUA loops (observe → decide → act → verify) but deliberately bounded; the 
    asking, a fact slot only from the step whose edge produced it, and an edge's
    `policy` (`confirm`/`always_ask`) gates like the risk gate. If Jev locates the run on
    one state but picks a move recorded from another, it is asked once more over the
-   located state's own moves (`rejudged`); no edge fits → `off_plan` pause. Each run returns a `graph_delta` (executed/verified_ok/approved/denied/
+   located state's own moves (`rejudged`); `done` is offered only at a state the recordings ended in; no edge fits → `off_plan` pause. Each run returns a `graph_delta` (executed/verified_ok/approved/denied/
    effect_missing, provenance `run:<id>`) for a *draft*; the approved graph is immutable.
 
 Stub Jev (no `VISTA_TYPESAFE_API_KEY`) answers `none` → the agent executes nothing and

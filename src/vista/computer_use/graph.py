@@ -239,7 +239,7 @@ def graph_questions(
     questions["edge"] = pick(
         "Given `goal`, `facts_gathered` and the current `observation`, which of `plan.moves_recorded_from_here` is the right next move? "
         "Choose the `done` option only when the goal is already met by what was done.",
-        [edge_label(e) for e in edges] + [DONE],
+        [edge_label(e) for e in edges] + ([DONE] if any(n.get("terminal") for n in nodes) else []),
         "None of these moves fits what is on screen; a person should look.",
     )
     questions["irreversible"] = noul(
@@ -333,10 +333,12 @@ def plan_graph_step(
     matching = [e for e in offered if edge_label(e) == edge_choice] if edge_choice not in (NONE, DONE) else []
     edge = next((e for e in matching if node and e["frm"] == node["key"]), matching[0] if matching else None)
     rejudged = False
-    if node and edge and edge["frm"] != node["key"] and edges_by_node[node["key"]]:
+    strayed = (edge is not None and edge["frm"] != node["key"]) or (edge_choice == DONE and not node.get("terminal")) if node else False
+    if strayed and edges_by_node[node["key"]]:
         # Jev located the run on one state but chose a move recorded from another (typically a
-        # later one whose control happens to be on screen). Ask again with only the moves
-        # recorded from the located state — the graph decides what is offered, Jev only ranks.
+        # later one whose control happens to be on screen), or `done` where the recordings never
+        # ended. Ask again with only the moves recorded from the located state — the graph
+        # decides what is offered, Jev only ranks.
         rejudged = True
         offered = edges_by_node[node["key"]]
         second = judge_fn(
