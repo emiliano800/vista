@@ -514,6 +514,9 @@ export class Recorder extends EventEmitter {
       settings: { redact: !!this.settings.redact, keyContent: this.settings.keyContent, clipboard: this.settings.clipboard, screenshots: this.settings.screenshots, video: this.settings.video },
       files: { events: 'events.jsonl', shots: 'shots/', video: this.settings.video ? 'screen.webm' : null, documents: this.settings.files ? FILES_FILE : null },
       processing: final ? 'pending' : null,
+      // Runtime notes (helper failures, pauses) so a session whose events lack app
+      // names or documents can be diagnosed from disk, not only from the live status.
+      notes: this._log.filter((e) => e.type === 'note').slice(-20).map((e) => ({ t: e.t, note: e.label })),
       ...(this.intent ? { summary_text: this.intent } : {}),
     };
     if (this.dir) fs.writeFileSync(path.join(this.dir, 'manifest.json'), JSON.stringify(manifest, null, 2));

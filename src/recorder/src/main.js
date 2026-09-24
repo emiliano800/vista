@@ -99,6 +99,12 @@ async function buildRecorder() {
       activeWindow = withPermissionFallback((await import('get-windows')).activeWindow, { warn: (m) => console.warn(m) });
     } catch (err) {
       console.error('get-windows unavailable, foreground app will not be recorded:', err.message);
+      // A probe that fails loudly: the recorder notes it on every poll, so the reason
+      // reaches the session manifest instead of only this console.
+      const reason = String(err?.message ?? err).slice(0, 200);
+      activeWindow = async () => {
+        throw new Error(`get-windows unavailable: ${reason}`);
+      };
     }
   }
   const rec = new Recorder({
