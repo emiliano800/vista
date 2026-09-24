@@ -136,9 +136,13 @@ upgraded. Capture options are not configurable — every capture setting in
 because what leaves the computer is decided at upload time, not at capture. After Stop, **Upload session** previews the
 destination and the document snapshots, and the employee approves the sharing
 package. The package is metadata only — `activity.json` with timestamps, app
-names, interaction types and counts — plus the selected documents in full. No
+names, interaction types and counts — plus the selected documents in full and,
+when ticked under consent `computer-use-v2`, the normalised plan graph. No
 window titles, URLs, typed text, clipboard, screenshots or video leave the
-computer, and local originals are retained. A disk-backed queue
+computer, and local originals are retained. Before anything is queued the
+package is checked against the recording's own values and titles
+(`packageLeakage`); a failure blocks the upload and names the field, never the
+value. The server repeats the token/vocabulary half of that check. A disk-backed queue
 (`~/Vista/upload-queue/`) registers the submission, uploads each artifact with a
 checksum-bound signed URL, and completes it; the server verifies sizes and
 hashes and returns an idempotent receipt.

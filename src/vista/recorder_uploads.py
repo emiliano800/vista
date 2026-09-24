@@ -12,6 +12,8 @@ from pydantic import AwareDatetime, BaseModel, ConfigDict, Field, StringConstrai
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from taskmining import leakage
+from taskmining.normalise import Vocabulary
 from vista.agents.keys import agent_key_for
 from vista.auth import Principal
 from vista.automation.schemas import PlanGraph
@@ -30,6 +32,11 @@ MAX_ACTIVITY_BYTES = 4 * 1024 * 1024
 MAX_PLAN_BYTES = 1024 * 1024
 MAX_FILE_BYTES = 20 * 1024 * 1024
 MAX_TOTAL_BYTES = 50 * 1024 * 1024
+# Consent versions the server accepts. A plan graph (the task's structure) is only accepted under
+# `computer-use-v2`, whose consent card states that the full recording stays on the device and
+# that the cloud receives the normalised graph plus activity metadata.
+CONSENT_VERSIONS = ("activity-metadata-v1", "computer-use-v2")
+PLAN_CONSENT_VERSION = "computer-use-v2"
 DOCUMENT_TYPES = {
     ".csv": "text/csv",
     ".tsv": "text/tab-separated-values",
@@ -81,6 +88,7 @@ class SubmissionCreate(StrictModel):
     format_version: Literal[2]
     sharing_policy: Literal["activity-metadata-v1"]
     consent: Literal[True]
+    consent_version: Literal["activity-metadata-v1", "computer-use-v2"] = "activity-metadata-v1"
     device_id: uuid.UUID
     source_id: str = Field(pattern=r"^[A-Za-z0-9_-]{1,128}$")
     workspace: WorkspaceChoice
@@ -97,6 +105,8 @@ class SubmissionCreate(StrictModel):
             raise ValueError("Exactly one activity artifact and unique artifact IDs are required")
         if sum(a.kind == "plan" for a in self.artifacts) > 1:
             raise ValueError("At most one plan artifact is allowed")
+        if any(a.kind == "plan" for a in self.artifacts) and self.consent_version != PLAN_CONSENT_VERSION:
+            raise ValueError(f"Sharing a plan graph requires consent version {PLAN_CONSENT_VERSION}")
         if sum(a.size_bytes for a in self.artifacts) > MAX_TOTAL_BYTES:
             raise ValueError("Upload package exceeds the limit")
         return self
@@ -299,11 +309,22 @@ def verify_objects(principal: Principal, row: RecorderSubmission) -> list[dict]:
                 raise HTTPException(422, "Activity artifact is not valid metadata-only session data") from exc
         elif artifact["kind"] == "plan":
             try:
-                PlanGraph.model_validate_json(data)
+                graph = PlanGraph.model_validate_json(data)
             except ValidationError as exc:
                 raise HTTPException(422, "Plan artifact is not a valid state graph") from exc
+            report = plan_leakage(graph)
+            if not report.ok:
+                raise HTTPException(422, f"Plan artifact failed the privacy check: {report.summary()}")
         verified.append({"id": artifact["id"], "sha256": digest.hexdigest(), "size_bytes": size, "version_id": obj.get("VersionId")})
     return verified
+
+
+def plan_leakage(graph: PlanGraph) -> leakage.Report:
+    """The cloud's half of the leakage test: it never sees recorded values or titles, so it
+    checks what it can — every token is one the normaliser produces and every name is made of
+    the graph's own vocabulary. The device ran the full check against the recording before upload."""
+    vocab = Vocabulary.from_json(graph.vocabulary.model_dump()) if graph.vocabulary else Vocabulary()
+    return leakage.check(graph.model_dump(mode="json", exclude={"vocabulary"}), leakage.RecordingContext.build(vocab=vocab))
 
 
 def _workspace_label(session: Session, row: RecorderSubmission) -> str | None:

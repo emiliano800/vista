@@ -22,7 +22,7 @@ import re
 from collections.abc import Iterable, Iterator
 from dataclasses import dataclass, field
 
-from taskmining.normalise import KNOWN_LIMITS, TOKENS, Vocabulary, words
+from taskmining.normalise import KNOWN_LIMITS, TOKENS, Vocabulary, key_name, words
 from taskmining.state import APP_ROLES
 
 MIN_VALUE_LEN = 3
@@ -57,6 +57,12 @@ class Report:
             "failures": [f.to_json() for f in self.failures],
             "known_limits": list(self.known_limits),
         }
+
+    def summary(self, limit: int = 5) -> str:
+        """Failures as paths and reasons only — never the offending value."""
+        shown = ", ".join(f"{f.path} ({f.reason})" for f in self.failures[:limit])
+        more = len(self.failures) - limit
+        return shown + (f" and {more} more" if more > 0 else "")
 
 
 @dataclass(frozen=True)
@@ -93,7 +99,7 @@ def _strings(payload: object, path: str = "$") -> Iterator[tuple[str, str, str]]
 
 
 def _exempt(value: str) -> bool:
-    return bool(_HASH.match(value) or _SLOT_PREFIX.match(value) or value in APP_ROLES)
+    return bool(_HASH.match(value) or _SLOT_PREFIX.match(value) or value in APP_ROLES or key_name(value) == value)
 
 
 def check(payload: object, ctx: RecordingContext) -> Report:

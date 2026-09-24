@@ -1,0 +1,254 @@
+{
+  "screens": [
+    [
+      "Amount",
+      "Vendor",
+      "Save",
+      "Bill date",
+      "Total 1,250.00"
+    ],
+    [
+      "Amount",
+      "Vendor",
+      "Save",
+      "Due date",
+      "Total 98.10",
+      "ACME Corp"
+    ],
+    [
+      "Customers",
+      "Search",
+      "ACME Corp",
+      "New customer"
+    ]
+  ],
+  "extra": [
+    "Bill number"
+  ],
+  "vocabulary": {
+    "method": "recurring-ax-names/1",
+    "min_screens": 2,
+    "screens": 3,
+    "size": 9,
+    "words": [
+      "acme",
+      "amount",
+      "corp",
+      "date",
+      "save",
+      "total",
+      "vendor"
+    ],
+    "extra": [
+      "bill",
+      "number"
+    ]
+  },
+  "cases": [
+    {
+      "text": "",
+      "classify": "",
+      "normalise": "",
+      "normalise_vocab": ""
+    },
+    {
+      "text": "Amount",
+      "classify": "Amount",
+      "normalise": "{text}",
+      "normalise_vocab": "amount"
+    },
+    {
+      "text": "Save",
+      "classify": "Save",
+      "normalise": "{text}",
+      "normalise_vocab": "save"
+    },
+    {
+      "text": "Total 1,250.00",
+      "classify": "Total {amount}",
+      "normalise": "{text} {amount}",
+      "normalise_vocab": "total {amount}"
+    },
+    {
+      "text": "INV-1042 ACME.pdf",
+      "classify": "{id} ACME.pdf",
+      "normalise": "{id} {text}",
+      "normalise_vocab": "{id} acme {text}"
+    },
+    {
+      "text": "Bills - ACME Corp",
+      "classify": "Bills - ACME Corp",
+      "normalise": "{text}",
+      "normalise_vocab": "{text} acme corp"
+    },
+    {
+      "text": "john.doe@example.com",
+      "classify": "{email}",
+      "normalise": "{email}",
+      "normalise_vocab": "{email}"
+    },
+    {
+      "text": "DE89 3704 0044 0532 0132 00",
+      "classify": "{iban}",
+      "normalise": "{iban}",
+      "normalise_vocab": "{iban}"
+    },
+    {
+      "text": "4111 1111 1111 1111",
+      "classify": "{card}",
+      "normalise": "{card}",
+      "normalise_vocab": "{card}"
+    },
+    {
+      "text": "2026-09-24T10:15",
+      "classify": "{date}",
+      "normalise": "{date}",
+      "normalise_vocab": "{date}"
+    },
+    {
+      "text": "24/09/2026",
+      "classify": "{date}",
+      "normalise": "{date}",
+      "normalise_vocab": "{date}"
+    },
+    {
+      "text": "Sep 24, 2026",
+      "classify": "{date}",
+      "normalise": "{date}",
+      "normalise_vocab": "{date}"
+    },
+    {
+      "text": "+44 20 7946 0958",
+      "classify": "{phone}",
+      "normalise": "{phone}",
+      "normalise_vocab": "{phone}"
+    },
+    {
+      "text": "$1,250.00",
+      "classify": "{amount}",
+      "normalise": "{amount}",
+      "normalise_vocab": "{amount}"
+    },
+    {
+      "text": "1250 EUR",
+      "classify": "{amount}",
+      "normalise": "{amount}",
+      "normalise_vocab": "{amount}"
+    },
+    {
+      "text": "Order #A1042 shipped",
+      "classify": "Order #{id} shipped",
+      "normalise": "{text} {id} {text}",
+      "normalise_vocab": "{text} {id} {text}"
+    },
+    {
+      "text": "Vendor: Müller & Söhne GmbH",
+      "classify": "Vendor: Müller & Söhne GmbH",
+      "normalise": "{text}",
+      "normalise_vocab": "vendor {text}"
+    },
+    {
+      "text": "Zahlung 12 Rechnungen",
+      "classify": "Zahlung {number} Rechnungen",
+      "normalise": "{text} {number} {text}",
+      "normalise_vocab": "{text} {number} {text}"
+    },
+    {
+      "text": "Save and new",
+      "classify": "Save and new",
+      "normalise": "{text}",
+      "normalise_vocab": "save {text}"
+    },
+    {
+      "text": "  Multiple   spaces\there ",
+      "classify": "  Multiple   spaces\there ",
+      "normalise": "{text}",
+      "normalise_vocab": "{text}"
+    },
+    {
+      "text": "row 3",
+      "classify": "row {number}",
+      "normalise": "{text} {number}",
+      "normalise_vocab": "{text} {number}"
+    },
+    {
+      "text": "customer's name",
+      "classify": "customer's name",
+      "normalise": "{text}",
+      "normalise_vocab": "{text}"
+    },
+    {
+      "text": "日本語のテキスト 123",
+      "classify": "日本語のテキスト {number}",
+      "normalise": "{text} {number}",
+      "normalise_vocab": "{text} {number}"
+    },
+    {
+      "text": "Cmd+S",
+      "classify": "Cmd+S",
+      "normalise": "{text}",
+      "normalise_vocab": "{text}"
+    },
+    {
+      "text": "Enter",
+      "classify": "Enter",
+      "normalise": "{text}",
+      "normalise_vocab": "{text}"
+    }
+  ],
+  "keys": [
+    {
+      "text": "Cmd+S",
+      "key_name": "cmd+s"
+    },
+    {
+      "text": "ctrl + shift + p",
+      "key_name": "ctrl+shift+p"
+    },
+    {
+      "text": "Enter",
+      "key_name": "enter"
+    },
+    {
+      "text": "F5",
+      "key_name": "f5"
+    },
+    {
+      "text": "a",
+      "key_name": "a"
+    },
+    {
+      "text": "Save",
+      "key_name": null
+    },
+    {
+      "text": "cmd+",
+      "key_name": null
+    },
+    {
+      "text": "shift+customer",
+      "key_name": null
+    },
+    {
+      "text": "",
+      "key_name": null
+    }
+  ],
+  "rows": [
+    {
+      "headers": [
+        "Vendor",
+        "Amount",
+        "Total 1,250.00",
+        "Notes"
+      ],
+      "position": 3,
+      "row_name": "row 3 of (vendor, amount, total {amount})"
+    },
+    {
+      "headers": [],
+      "position": 1,
+      "row_name": "row 1 of (table)"
+    }
+  ]
+}

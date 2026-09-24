@@ -1,0 +1,338 @@
+{
+  "start": [
+    "e70bb61a6df0da3c"
+  ],
+  "nodes": [
+    {
+      "key": "09331852857f4232",
+      "app_role": "accounting",
+      "activity": "accounting",
+      "signature": [
+        "fact:f1",
+        "field:amount"
+      ],
+      "terminal": false
+    },
+    {
+      "key": "0b4cbacb4c6e16d0",
+      "app_role": "accounting",
+      "activity": "accounting",
+      "signature": [
+        "fact:f1",
+        "field:amount",
+        "field:c2"
+      ],
+      "terminal": true
+    },
+    {
+      "key": "15f528cd2066977e",
+      "app_role": "accounting",
+      "activity": "accounting",
+      "signature": [
+        "fact:f1",
+        "field:amount",
+        "field:input_1"
+      ],
+      "terminal": false
+    },
+    {
+      "key": "8c7910891d037c71",
+      "app_role": "pdf",
+      "activity": "pdf",
+      "signature": [
+        "doc:d1",
+        "fact:f1"
+      ],
+      "terminal": false
+    },
+    {
+      "key": "e70bb61a6df0da3c",
+      "app_role": "pdf",
+      "activity": "pdf",
+      "signature": [
+        "doc:d1"
+      ],
+      "terminal": false
+    },
+    {
+      "key": "e8aae01d0a4260b9",
+      "app_role": "accounting",
+      "activity": "accounting",
+      "signature": [
+        "fact:f1"
+      ],
+      "terminal": false
+    }
+  ],
+  "edges": [
+    {
+      "id": "2810bf9603134c60",
+      "frm": "8c7910891d037c71",
+      "to": "e8aae01d0a4260b9",
+      "action_class": "navigate",
+      "control": null,
+      "slot": null,
+      "produces": [],
+      "effect": [],
+      "stats": {
+        "support": 1,
+        "recorded": 1,
+        "executed": 0,
+        "verified_ok": 0,
+        "approved": 0,
+        "denied": 0,
+        "effect_missing": 0
+      },
+      "provenance": [
+        {
+          "source": "recording",
+          "id": "rec-1",
+          "event_ids": [
+            "e2"
+          ]
+        }
+      ],
+      "policy": "auto",
+      "anchor_ref": "rec-1:2810bf9603134c60"
+    },
+    {
+      "id": "68262310df64d1fe",
+      "frm": "e70bb61a6df0da3c",
+      "to": "8c7910891d037c71",
+      "action_class": "read",
+      "control": null,
+      "slot": null,
+      "produces": [
+        "f1"
+      ],
+      "effect": [
+        "fact:f1"
+      ],
+      "stats": {
+        "support": 1,
+        "recorded": 1,
+        "executed": 0,
+        "verified_ok": 0,
+        "approved": 0,
+        "denied": 0,
+        "effect_missing": 0
+      },
+      "provenance": [
+        {
+          "source": "recording",
+          "id": "rec-1",
+          "event_ids": [
+            "e1"
+          ]
+        }
+      ],
+      "policy": "auto",
+      "anchor_ref": "rec-1:68262310df64d1fe"
+    },
+    {
+      "id": "730cfdd9c8cbb1a2",
+      "frm": "15f528cd2066977e",
+      "to": "e8aae01d0a4260b9",
+      "action_class": "submit",
+      "control": "cmd+s",
+      "slot": null,
+      "produces": [],
+      "effect": [
+        "field:amount",
+        "field:input_1"
+      ],
+      "stats": {
+        "support": 1,
+        "recorded": 1,
+        "executed": 0,
+        "verified_ok": 0,
+        "approved": 0,
+        "denied": 0,
+        "effect_missing": 0
+      },
+      "provenance": [
+        {
+          "source": "recording",
+          "id": "rec-1",
+          "event_ids": [
+            "e9"
+          ]
+        }
+      ],
+      "policy": "always_ask",
+      "anchor_ref": "rec-1:730cfdd9c8cbb1a2"
+    },
+    {
+      "id": "74192e6f33565e6f",
+      "frm": "e8aae01d0a4260b9",
+      "to": "09331852857f4232",
+      "action_class": "type_value",
+      "control": "amount",
+      "slot": "f1",
+      "produces": [],
+      "effect": [
+        "field:amount"
+      ],
+      "stats": {
+        "support": 1,
+        "recorded": 1,
+        "executed": 0,
+        "verified_ok": 0,
+        "approved": 0,
+        "denied": 0,
+        "effect_missing": 0
+      },
+      "provenance": [
+        {
+          "source": "recording",
+          "id": "rec-1",
+          "event_ids": [
+            "e4",
+            "e11"
+          ]
+        }
+      ],
+      "policy": "confirm",
+      "anchor_ref": "rec-1:74192e6f33565e6f"
+    },
+    {
+      "id": "83b1d557ad38521d",
+      "frm": "09331852857f4232",
+      "to": "0b4cbacb4c6e16d0",
+      "action_class": "type_value",
+      "control": null,
+      "slot": "f1",
+      "produces": [],
+      "effect": [
+        "field:c2"
+      ],
+      "stats": {
+        "support": 1,
+        "recorded": 1,
+        "executed": 0,
+        "verified_ok": 0,
+        "approved": 0,
+        "denied": 0,
+        "effect_missing": 0
+      },
+      "provenance": [
+        {
+          "source": "recording",
+          "id": "rec-1",
+          "event_ids": [
+            "e12"
+          ]
+        }
+      ],
+      "policy": "confirm",
+      "anchor_ref": "rec-1:83b1d557ad38521d"
+    },
+    {
+      "id": "9d45e1fb1030c403",
+      "frm": "e8aae01d0a4260b9",
+      "to": "e8aae01d0a4260b9",
+      "action_class": "click",
+      "control": null,
+      "slot": null,
+      "produces": [],
+      "effect": [],
+      "stats": {
+        "support": 1,
+        "recorded": 1,
+        "executed": 0,
+        "verified_ok": 0,
+        "approved": 0,
+        "denied": 0,
+        "effect_missing": 0
+      },
+      "provenance": [
+        {
+          "source": "recording",
+          "id": "rec-1",
+          "event_ids": [
+            "e3"
+          ]
+        }
+      ],
+      "policy": "confirm",
+      "anchor_ref": "rec-1:9d45e1fb1030c403"
+    },
+    {
+      "id": "bdf40b82a6bc6645",
+      "frm": "15f528cd2066977e",
+      "to": "15f528cd2066977e",
+      "action_class": "press",
+      "control": "enter",
+      "slot": null,
+      "produces": [],
+      "effect": [],
+      "stats": {
+        "support": 1,
+        "recorded": 1,
+        "executed": 0,
+        "verified_ok": 0,
+        "approved": 0,
+        "denied": 0,
+        "effect_missing": 0
+      },
+      "provenance": [
+        {
+          "source": "recording",
+          "id": "rec-1",
+          "event_ids": [
+            "e8"
+          ]
+        }
+      ],
+      "policy": "auto",
+      "anchor_ref": "rec-1:bdf40b82a6bc6645"
+    },
+    {
+      "id": "f0b26e0def00605a",
+      "frm": "09331852857f4232",
+      "to": "15f528cd2066977e",
+      "action_class": "type_value",
+      "control": null,
+      "slot": "input_1",
+      "produces": [],
+      "effect": [
+        "field:input_1"
+      ],
+      "stats": {
+        "support": 1,
+        "recorded": 1,
+        "executed": 0,
+        "verified_ok": 0,
+        "approved": 0,
+        "denied": 0,
+        "effect_missing": 0
+      },
+      "provenance": [
+        {
+          "source": "recording",
+          "id": "rec-1",
+          "event_ids": [
+            "e5",
+            "e6",
+            "e7"
+          ]
+        }
+      ],
+      "policy": "confirm",
+      "anchor_ref": "rec-1:f0b26e0def00605a"
+    }
+  ],
+  "trajectories": 1,
+  "truncated": false,
+  "compiled_by": "recorder-plan/2",
+  "vocabulary": {
+    "method": "recurring-ax-names/1",
+    "min_screens": 2,
+    "screens": 3,
+    "size": 1,
+    "words": [
+      "amount"
+    ],
+    "extra": []
+  }
+}

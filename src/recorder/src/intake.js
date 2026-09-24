@@ -4,11 +4,17 @@ import path from 'node:path';
 
 import { cloudRequest, workspaceURL } from './cloud.js';
 import { readFiles } from './files.js';
-import { applyPlanEdits, compilePlan, PLAN_EDITS_FILE, planSummary } from './plan.js';
+import { checkLeakage, describeFailures, recordingContext } from './normalise.js';
+import { applyPlanEdits, compilePlan, PLAN_EDITS_FILE, planSummary, recordingValues, recordingVocabulary } from './plan.js';
 import { redactText } from './redact.js';
 import { buildSections, parseEvents } from './sections.js';
 
 export const SHARING_POLICY = 'activity-metadata-v1';
+// The consent card shown at connect time. `computer-use-v2` states both halves — the full
+// recording stays on the device; the cloud gets activity metadata and, when shared, the task's
+// structure — and is the only version under which a plan may leave the device.
+export const CONSENT_VERSION = 'computer-use-v2';
+export const CONSENT_VERSIONS = new Set(['activity-metadata-v1', CONSENT_VERSION]);
 export const DOCUMENT_TYPES = {
   '.csv': 'text/csv',
   '.tsv': 'text/tab-separated-values',
@@ -141,8 +147,22 @@ export function metadataEvents(raw, manifest, excluded = []) {
   return { schema_version: 1, events };
 }
 
+// The device's half of the leakage test, run on the whole cloud-bound package: nothing the
+// recording typed, copied, opened or showed in a title may survive into it. Documents the
+// employee selected are uploaded in full by choice and are not part of the check.
+export function packageLeakage(payload, raw, manifest, files = [], { ownApps = [] } = {}) {
+  const own = new Set(ownApps.map((a) => String(a).toLowerCase()));
+  const events = parseEvents(raw).filter((e) => !own.has(String(e.app ?? '').toLowerCase()));
+  const { values, titles } = recordingValues(events, files, manifest);
+  return checkLeakage(payload, recordingContext({ values, titles, vocab: recordingVocabulary(events) }));
+}
+
 export function buildSubmissionPackage(root, id, config, { selectedFileIds = [], consent = false, sharePlan = false, ownApps = [] } = {}) {
   if (consent !== true) throw new Error('Confirm the sharing package before uploading.');
+  const consentVersion = config.consentVersion ?? 'activity-metadata-v1';
+  if (!CONSENT_VERSIONS.has(consentVersion)) throw new Error('Reconnect your workspace to accept the current recording and sharing notice.');
+  if (sharePlan === true && consentVersion !== CONSENT_VERSION)
+    throw new Error('Sharing a plan needs the current recording and sharing notice. Reconnect your workspace to accept it.');
   const binding = uploadBinding(config);
   if (!UUID.test(config.deviceId)) throw new Error('Missing recorder device identifier.');
   if (!Array.isArray(selectedFileIds) || new Set(selectedFileIds).size !== selectedFileIds.length || selectedFileIds.length > 10)
@@ -167,12 +187,17 @@ export function buildSubmissionPackage(root, id, config, { selectedFileIds = [],
     data.set(artifactId, bytes);
     artifacts.push({ id: artifactId, kind, filename, content_type: contentType, size_bytes: bytes.length, sha256: hash(bytes) });
   };
-  add('activity', 'activity', 'activity.json', 'application/json', Buffer.from(JSON.stringify(events)));
+  const files = readFiles(dir);
+  // Timestamps and event types cannot carry a recorded value; the app names and the plan can.
+  const cloudBound = { apps: [...new Set(events.events.map((e) => e.app))] };
   if (sharePlan === true) {
     const plan = reviewedPlan(dir, id, raw, m, excluded, { ownApps });
-    if (plan.nodes.length && plan.edges.length) add('plan', 'plan', 'plan.json', 'application/json', Buffer.from(JSON.stringify(plan)));
+    if (plan.nodes.length && plan.edges.length) cloudBound.plan = plan;
   }
-  const files = readFiles(dir);
+  const leak = packageLeakage(cloudBound, raw, m, files, { ownApps });
+  if (!leak.ok) throw new Error(`This package did not pass the privacy check and was not queued: ${describeFailures(leak)}`);
+  add('activity', 'activity', 'activity.json', 'application/json', Buffer.from(JSON.stringify(events)));
+  if (cloudBound.plan) add('plan', 'plan', 'plan.json', 'application/json', Buffer.from(JSON.stringify(cloudBound.plan)));
   for (const fileId of selectedFileIds) {
     const file = files.find((f) => f.id === fileId && f.include !== false && f.snapshot);
     if (!file || !/^[a-f0-9]{12}$/.test(fileId) || !DOCUMENT_TYPES[file.ext?.toLowerCase()] ||
@@ -187,7 +212,7 @@ export function buildSubmissionPackage(root, id, config, { selectedFileIds = [],
   return {
     binding,
     manifest: {
-      format_version: 2, sharing_policy: SHARING_POLICY, consent: true,
+      format_version: 2, sharing_policy: SHARING_POLICY, consent: true, consent_version: consentVersion,
       device_id: config.deviceId, source_id: id, workspace: binding.workspace,
       started_at: new Date(m.started_at).toISOString(), ended_at: new Date(m.ended_at).toISOString(),
       active_seconds: Math.max(0, Math.min(elapsed, Math.floor(Number(m.active_seconds) || 0))), artifacts,
