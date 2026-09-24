@@ -1,0 +1,10 @@
+# The device sidecar's own environment (it cannot share the backend's: browser-use pins an
+# older `openai` than the backend needs). On the device:
+#
+#   python3 -m venv ~/.vista/device
+#   ~/.vista/device/bin/pip install -r src/vista_device/requirements-device.txt -e .
+#   VISTA_DEVICE_PYTHON=~/.vista/device/bin/python   # what the recorder spawns
+#
+# macOS only (macOS-use is not on PyPI under a maintained name; pinned to a commit):
+#   ~/.vista/device/bin/pip install "mlx-use @ git+https://github.com/browser-use/macOS-use@7bb5003f4a60a24cda9cf55daf63e5b14d15ee3b"
+browser-use==0.13.10

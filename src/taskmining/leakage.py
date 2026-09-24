@@ -31,6 +31,23 @@ NAME_KEYS: frozenset[str] = frozenset({"name", "control", "activity", "label", "
 _TOKEN = re.compile(r"\{[a-z_]+\}")
 _HASH = re.compile(r"^[0-9a-f]{8,64}$")
 _SLOT_PREFIX = re.compile(r"^(?:doc|rec|field|fact|dialog|have|read|open|in|ctx):")
+# Landmark roles are a closed enumeration (ARIA / AX role names), never an app's words.
+LANDMARK_ROLES: frozenset[str] = frozenset(
+    {
+        "banner",
+        "navigation",
+        "main",
+        "complementary",
+        "contentinfo",
+        "search",
+        "form",
+        "region",
+        "dialog",
+        "alertdialog",
+        "toolbar",
+        "tablist",
+    }
+)
 
 
 @dataclass(frozen=True)
@@ -99,7 +116,9 @@ def _strings(payload: object, path: str = "$") -> Iterator[tuple[str, str, str]]
 
 
 def _exempt(value: str) -> bool:
-    return bool(_HASH.match(value) or _SLOT_PREFIX.match(value) or value in APP_ROLES or key_name(value) == value)
+    return bool(
+        _HASH.match(value) or _SLOT_PREFIX.match(value) or value in APP_ROLES or value in LANDMARK_ROLES or key_name(value) == value
+    )
 
 
 def check(payload: object, ctx: RecordingContext) -> Report:

@@ -7,7 +7,10 @@
 //   perform()      step request → { ok, description, observation, result, evidence, error }
 //   close()        release anything the harness holds
 //
-// Drivers: `browser.js` (a page in the recorder's own partition, over CDP; `browser-electron.js`
+// Drivers, in order of preference: the Python device sidecar (`sidecar.js` → `vista_device`,
+// browser-use / macOS-use observe+act, the same `observe()` the recorder stores frames with)
+// when it passed its self-test on this computer; otherwise the in-process JS drivers —
+// `browser.js` (a page in the recorder's own partition, over CDP; `browser-electron.js`
 // supplies the window) and `desktop.js` (the front window's accessibility tree plus the real
 // pointer/keyboard; `desktop-macos.js` supplies the backend). A kind without a driver here
 // gets an `UnsupportedHarness`: it advertises no capability, so the server never offers a
@@ -49,16 +52,23 @@ export class UnsupportedHarness {
 
 // `openPage` (browser) and `desktopBackend` (desktop) are the platform pieces main.js
 // resolved for this computer; either may be null, in which case that kind is unsupported.
-export function defaultHarnesses({ demo = false, openPage = null, pointer = null, desktopBackend = null, settings } = {}) {
+// `sidecar` is `{ browser?, desktop? }` of `SidecarHarness`es that already ran `probe()`;
+// one that is `supported` takes the kind.
+export function defaultHarnesses({ demo = false, openPage = null, pointer = null, desktopBackend = null, settings, sidecar = {} } = {}) {
   const note = demo ? ' (demo mode: the step is reported back as unsupported so the run pauses for a person)' : '';
   const opts = settings ? { settings } : {};
+  const pick = (kind, fallback) => (sidecar[kind]?.supported ? sidecar[kind] : fallback());
   return {
-    browser: openPage
-      ? new BrowserHarness({ open: openPage, pointer, ...opts })
-      : new UnsupportedHarness('browser', `The sandboxed browser harness is not available in this recorder build${note}.`, { demo }),
-    desktop: desktopBackend
-      ? new DesktopHarness({ backend: desktopBackend, ...opts })
-      : new UnsupportedHarness('desktop', `The desktop harness is not available on this computer${note}.`, { demo }),
+    browser: pick('browser', () =>
+      openPage
+        ? new BrowserHarness({ open: openPage, pointer, ...opts })
+        : new UnsupportedHarness('browser', `The sandboxed browser harness is not available in this recorder build${note}.`, { demo }),
+    ),
+    desktop: pick('desktop', () =>
+      desktopBackend
+        ? new DesktopHarness({ backend: desktopBackend, ...opts })
+        : new UnsupportedHarness('desktop', `The desktop harness is not available on this computer${note}.`, { demo }),
+    ),
   };
 }
 

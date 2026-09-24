@@ -245,3 +245,37 @@ test('mouse path and app lifecycle stay off when their settings are off; private
   assert.equal(ev.filter((e) => e.event_type === 'path' || e.event_type === 'drag').length, 0);
   assert.deepEqual(ev.filter((e) => e.event_type === 'app_start').map((e) => e.app), ['(private)']);
 });
+
+test('state frames: one sidecar observation beside focus/click/done, never in private windows, never uploaded', async () => {
+  const calls = [];
+  const t = makeRecorder({
+    thumbProvider: null,
+    stateProvider: async (reason, ctx) => {
+      calls.push({ reason, ctx });
+      return { l0: ['in:abc123'], l1: { landmarks: ['main'], modal: false }, screen_class: 'abc123', settled: true, candidates: [{ id: '1', role: 'button', name: 'Save', kind: 'interactive', attrs: {} }], fields_with_value: [] };
+    },
+  });
+  t.rec.start();
+  await sleep(10);
+  t.rec._onMouse({ button: 1, x: 10, y: 20, clicks: 1 });
+  await sleep(20);
+  t.setWindow('1Password', 'Vault');
+  await t.rec._pollWindow();
+  t.rec._onMouse({ button: 1, x: 10, y: 20, clicks: 1 });
+  await sleep(20);
+  t.setWindow('QuickBooks', 'Enter Bills');
+  await t.rec._pollWindow();
+  await sleep(20);
+  t.rec.markDone('sent');
+  await sleep(20);
+  await t.rec.stop();
+
+  const states = t.events().filter((e) => e.event_type === 'state');
+  assert.deepEqual(states.map((e) => e.payload.reason), ['focus', 'click', 'focus', 'done']);
+  assert.equal(states[0].app, 'Adobe Acrobat');
+  assert.equal(states[2].app, 'QuickBooks');
+  assert.deepEqual(states[1].payload.l0, ['in:abc123']);
+  assert.equal(states[1].payload.candidates[0].name, 'Save');
+  assert.ok(calls.every((c) => c.ctx.app !== '1Password'));
+  assert.equal(calls.find((c) => c.reason === 'click').ctx.pointer.x, 10);
+});
