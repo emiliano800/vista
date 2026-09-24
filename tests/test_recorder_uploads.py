@@ -532,3 +532,27 @@ def test_failed_analysis_is_recorded_and_can_be_retried(client, workspace, store
     with tenant_session(schema) as session:
         first = session.get(AgentRun, uuid.UUID(accepted["analysis_run_id"]))
         assert first.status == "failed" and first.error
+
+
+def test_recorder_enrolled_before_the_link_keeps_uploading_by_deal_id(client):
+    """Linking a workspace tenant to its analyst company turns its only workspace into
+    kind `company`; a recorder bound earlier still sends `{kind: deal, id: <deal>}`."""
+    analyst, _ = make_firm()
+    company = client.post("/api/portfolio/companies", headers=analyst, json={"name": "Linked Company"}).json()
+    with platform_session() as session:
+        row = session.get(FirmCompany, uuid.UUID(company["id"]))
+        deal_id = str(row.deal_id)
+        key = uuid.uuid4().hex + uuid.uuid4().hex
+        session.add(User(tenant_id=row.tenant_id, email="employee@linked.example.com", api_token=key, role="member"))
+        session.commit()
+    assert deal_id != "None", "creating a company creates its Deal"
+    headers = {"Authorization": f"Bearer {key}"}
+
+    legacy = create(client, headers, body(deal_id, "deal"))
+    assert legacy["workspace"] == {"id": deal_id, "kind": "deal"}, "the immutable manifest keeps what the recorder sent"
+    assert legacy["canonical_company_id"] == company["id"], "but it lands in the company workspace"
+    assert legacy["id"] in {s["id"] for s in client.get(ROOT, headers=headers).json()}
+    assert client.get(f"{ROOT}/{legacy['id']}", headers=headers).status_code == 200
+
+    # Only that deal is an alias; any other deal id is still nobody's workspace.
+    assert client.post(ROOT, headers=headers, json=body(str(uuid.uuid4()), "deal")).status_code == 404

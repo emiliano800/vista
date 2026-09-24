@@ -114,13 +114,23 @@ class ActivityPayload(StrictModel):
     events: list[ActivityEvent] = Field(max_length=50000)
 
 
-def workspaces_for(principal: Principal) -> list[dict]:
+def _workspaces(principal: Principal) -> tuple[list[dict], dict[tuple[str, str], dict]]:
+    """The workspaces this user may upload to, and every (kind, id) key that names one.
+
+    A tenant linked to an analyst company has exactly one workspace, the company. Its
+    Deal keeps naming that same workspace: a recorder enrolled before the link stores
+    `{kind: "deal", id: <deal>}` and must keep uploading after it, so the deal key is an
+    alias of the company workspace rather than a workspace of its own."""
     with platform_session() as session:
         company = session.scalar(select(FirmCompany).where(FirmCompany.tenant_id == principal.tenant_id))
         if company is not None:
             if principal.role not in ("admin", "member") or company.status == "exited":
-                return []
-            return [{"id": str(company.id), "kind": "company", "name": company.name, "canonical_company_id": str(company.id)}]
+                return [], {}
+            workspace = {"id": str(company.id), "kind": "company", "name": company.name, "canonical_company_id": str(company.id)}
+            keys = {("company", workspace["id"]): workspace}
+            if company.deal_id:
+                keys[("deal", str(company.deal_id))] = workspace
+            return [workspace], keys
     with tenant_session(principal.tenant_schema) as session:
         deals = session.scalars(
             select(Deal)
@@ -128,14 +138,24 @@ def workspaces_for(principal: Principal) -> list[dict]:
             .where(DealMembership.user_id == principal.user_id, DealMembership.role.in_(("owner", "member")))
             .order_by(Deal.name, Deal.id)
         ).all()
-        return [{"id": str(d.id), "kind": "deal", "name": d.name, "canonical_company_id": None} for d in deals]
+        workspaces = [{"id": str(d.id), "kind": "deal", "name": d.name, "canonical_company_id": None} for d in deals]
+        return workspaces, {(w["kind"], w["id"]): w for w in workspaces}
+
+
+def workspaces_for(principal: Principal) -> list[dict]:
+    return _workspaces(principal)[0]
+
+
+def workspace_keys(principal: Principal) -> set[tuple[str, str]]:
+    """Every (kind, id) a stored submission may carry and still belong to this user's workspaces."""
+    return set(_workspaces(principal)[1])
 
 
 def resolve_workspace(principal: Principal, choice: WorkspaceChoice) -> dict:
-    for workspace in workspaces_for(principal):
-        if workspace["id"] == str(choice.id) and workspace["kind"] == choice.kind:
-            return workspace
-    raise HTTPException(404, "Upload workspace not found or access has been removed")
+    workspace = _workspaces(principal)[1].get((choice.kind, str(choice.id)))
+    if workspace is None:
+        raise HTTPException(404, "Upload workspace not found or access has been removed")
+    return workspace
 
 
 def manifest_hash(manifest: dict) -> str:
