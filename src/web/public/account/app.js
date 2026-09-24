@@ -903,6 +903,108 @@ function exceptionRows(list) {
 }
 const versionTag = (status) =>
   `<span class="tag ${status === "approved" ? "success" : status === "rejected" ? "danger" : "warning"}">${esc(status)}</span>`;
+// ---- Task graph per version: what the recordings compiled, what runs added, what an admin may promote ----
+// Loaded on demand from GET /workflows/{w}/versions/{v}/graph. The approved structure is immutable;
+// runs only add statistics, code proposes promotions from those statistics, and only a person turns
+// them into the next draft version (POST …/graph/draft), which then needs approval like any other.
+let graphReviews = {};
+const nodeLabel = (n) => `${n.app_role} · ${n.activity}${n.signature?.length ? ` · ${n.signature.join(" ")}` : ""}`;
+const edgeLabel = (e) => `${e.action_class}${e.control ? ` ${e.control}` : ""}${e.slot ? ` ← ${e.slot}` : ""}`;
+const policyTag = (p) => `<span class="tag ${p === "auto" ? "success" : p === "always_ask" ? "danger" : ""}">${esc(p)}</span>`;
+const statsText = (s) =>
+  `${number(s.support)} seen · ${number(s.executed)} run · ${number(s.verified_ok)} verified · ${number(s.approved)} approved · ${number(s.denied)} denied · ${number(s.effect_missing)} effect missing`;
+const provenanceText = (p) => p.map((x) => `${x.source} ${x.id}${x.event_ids?.length ? ` (${number(x.event_ids.length)} events)` : ""}`).join(", ");
+function graphReviewHtml(workflowId, review) {
+  const g = review.graph;
+  if (!g) return '<p class="small muted">This version has no task graph; it was written by hand rather than compiled from recordings.</p>';
+  const nodes = Object.fromEntries(g.nodes.map((n) => [n.key, n]));
+  const edges = Object.fromEntries(g.edges.map((e) => [e.id, e]));
+  const name = (key) => esc(nodeLabel(nodes[key] ?? { app_role: "?", activity: key }));
+  const start = new Set(g.start);
+  const nodeRows = g.nodes
+    .map((n) => `<tr><td>${esc(nodeLabel(n))}</td><td>${start.has(n.key) ? '<span class="tag">start</span>' : ""}${n.terminal ? '<span class="tag success">goal</span>' : ""}</td><td class="num">${number(g.edges.filter((e) => e.frm === n.key).length)}</td><td class="mono small">${esc(n.key)}</td></tr>`)
+    .join("");
+  const edgeRows = g.edges
+    .map(
+      (e) =>
+        `<tr><td>${name(e.frm)}<br><span class="muted">→ ${name(e.to)}</span></td><td><b>${esc(edgeLabel(e))}</b>${e.produces?.length ? `<br><span class="small muted">produces ${esc(e.produces.join(", "))}</span>` : ""}</td><td>${policyTag(e.policy)}</td><td class="small">${esc(statsText(e.stats))}</td><td class="small muted">${esc(provenanceText(e.provenance))}</td></tr>`,
+    )
+    .join("");
+  const runs = review.runs.length
+    ? `<h4>Runs of this version (${number(review.runs.length)})</h4><ul class="run-list small">${review.runs
+        .map(
+          (r) =>
+            `<li>${runTag(r.status)} ${r.verified === true ? '<span class="tag success">verified</span>' : r.verified === false ? '<span class="tag danger">not verified</span>' : ""} ${esc(r.mode)}${r.finished_at ? ` · ${esc(stamp(r.finished_at))}` : ""} <button class="text-button" data-workflow-run="${esc(r.run_id)}">Open ${icon("arrow")}</button><ol class="step-list">${r.steps
+              .map((s) => `<li>${esc(edges[s.edge] ? edgeLabel(edges[s.edge]) : s.edge)} <span class="muted">from ${edges[s.edge] ? name(edges[s.edge].frm) : "?"}</span> · ${s.executed ? "executed" : "proposed"}${s.effect_seen === false ? " · <b>effect not seen</b>" : ""}${s.decision ? ` · ${esc(s.decision)}d by a person` : ""}</li>`)
+              .join("")}</ol></li>`,
+        )
+        .join("")}</ul>`
+    : '<p class="small muted">No finished run of this version yet.</p>';
+  const changeRows = review.changes
+    .map((c) =>
+      c.kind === "policy"
+        ? `<li>${esc(edges[c.edge_id] ? edgeLabel(edges[c.edge_id]) : c.edge_id)}: ${policyTag(c.before)} → ${policyTag(c.after)} <span class="muted">automatic — ${esc(c.reason)}</span></li>`
+        : `<li>${esc(edges[c.edge_id] ? edgeLabel(edges[c.edge_id]) : c.edge_id)}: <span class="muted">${esc(statsText(c.before))}</span><br>→ ${esc(statsText(c.after))}</li>`,
+    )
+    .join("");
+  const proposals = review.proposals
+    .map(
+      (p) =>
+        `<li><label><input type="checkbox" data-promote="${esc(p.edge_id)}" ${role === "owner" && review.can_draft ? "" : "disabled"}> ${esc(edges[p.edge_id] ? edgeLabel(edges[p.edge_id]) : p.edge_id)}: ${policyTag(p.from_policy)} → ${policyTag(p.to_policy)} <span class="muted">${esc(p.reason)}</span></label></li>`,
+    )
+    .join("");
+  const previous = review.against_previous.length
+    ? `<h4>What approving v${review.version_number} changes against v${review.previous_version_number}</h4><ul class="small">${review.against_previous
+        .map((c) => `<li>${esc(edges[c.edge_id] ? edgeLabel(edges[c.edge_id]) : c.edge_id)}: ${c.before ? policyTag(c.before) : '<span class="tag">new</span>'} → ${policyTag(c.after)}${c.reason ? ` <span class="muted">${esc(c.reason)}</span>` : ""}</li>`)
+        .join("")}</ul>`
+    : review.status === "draft" && review.previous_version_number
+      ? `<p class="small muted">No policy differs from v${review.previous_version_number}; this draft carries statistics only.</p>`
+      : "";
+  const draft =
+    review.changes.length || review.proposals.length
+      ? `<h4>Since approval</h4>${changeRows ? `<ul class="small">${changeRows}</ul>` : ""}${proposals ? `<p class="small">Code proposes these promotions from the statistics; nothing changes until a person drafts and approves them.</p><ul class="small">${proposals}</ul>` : ""}${
+          role === "owner" && review.can_draft
+            ? `<div class="actions"><button class="primary" data-draft-runs="${esc(workflowId)}" data-version="${esc(review.version_id)}" data-expected="${esc(review.version_number)}">${icon("workflow")}Create draft v${review.version_number + 1} from these runs</button><span class="small muted">then approve it under Workflows</span></div>`
+            : review.can_draft
+              ? '<p class="small muted">Only the workspace owner can draft the next version.</p>'
+              : ""
+        }`
+      : "";
+  return `<p class="small">${number(g.nodes.length)} states · ${number(g.edges.length)} moves · compiled from ${number(g.trajectories)} recorded pass${g.trajectories === 1 ? "" : "es"}${g.truncated ? " · truncated" : ""} · <span class="mono">${esc(g.compiled_by)}</span></p>${previous}<h4>States</h4><div class="table-wrap"><table><thead><tr><th>State</th><th></th><th class="num">Moves out</th><th>Key</th></tr></thead><tbody>${nodeRows}</tbody></table></div><h4>Moves</h4><div class="table-wrap"><table><thead><tr><th>From → to</th><th>Move</th><th>Policy</th><th>Statistics</th><th>Provenance</th></tr></thead><tbody>${edgeRows}</tbody></table></div>${runs}${draft}<p class="small muted">Names only: a state says which fields hold a value and which facts are known, never the values. Statistics accumulate on every run; the structure and the policies change only through an approved version.</p>`;
+}
+async function loadGraphReview(workflowId, versionId, body) {
+  body.innerHTML = '<p class="small muted">Loading task graph…</p>';
+  try {
+    const review = await api(`/workflows/${workflowId}/versions/${versionId}/graph`);
+    graphReviews = { ...graphReviews, [versionId]: review };
+    body.innerHTML = graphReviewHtml(workflowId, review);
+    bindGraphReview(body, workflowId, versionId);
+  } catch (e) {
+    body.innerHTML = `<p class="small muted">${esc(e.message)}</p>`;
+  }
+}
+function bindGraphReview(body, workflowId, versionId) {
+  body.querySelectorAll("[data-workflow-run]").forEach((b) => (b.onclick = () => showWorkflowRun(b.dataset.workflowRun)));
+  body.querySelectorAll("[data-draft-runs]").forEach(
+    (b) =>
+      (b.onclick = action(async () => {
+        const promote = [...body.querySelectorAll("[data-promote]:checked")].map((c) => c.dataset.promote);
+        const created = await api(`/workflows/${workflowId}/versions/${versionId}/graph/draft`, {
+          method: "POST",
+          body: JSON.stringify({ expected_version: Number(b.dataset.expected), promote }),
+        });
+        workflows = workflows.map((w) => (w.id === workflowId ? { ...w, latest_version: created } : w));
+        graphReviews = {};
+        render();
+      })),
+  );
+}
+function graphPanelHtml(w) {
+  const v = w.latest_version;
+  const g = v.definition?.graph;
+  if (!g) return "";
+  return `<details data-graph="${esc(w.id)}" data-version="${esc(v.id)}"><summary class="small">Task graph · ${number(g.nodes.length)} states · ${number(g.edges.length)} moves${v.status === "draft" && v.number > 1 ? " · draft changes" : ""}</summary><div class="graph-body"></div></details>`;
+}
 function workflowsView() {
   const heading = `<div class="page-heading"><div><span class="eyebrow">${esc(company().name)}</span><h1>Workflows, <i>version by version.</i></h1><p>Drafts come from recorder findings (Findings → Proposed automation → Draft workflow) or from the firm's analysts. Every version is approved or rejected exactly as written; a new version starts unapproved again. An approved sandbox version can be run by the Computer Use Agent, one bounded step at a time.</p></div></div>`;
   if (!workflows.length)
@@ -918,7 +1020,7 @@ function workflowsView() {
           : role === "owner"
             ? ""
             : '<span class="small muted">Only the workspace owner can approve or reject.</span>';
-      return `<article class="finding-row"><div><span class="eyebrow">v${v.number} · ${esc(v.status)}</span><h3>${esc(w.name)}</h3><p>${esc(d.goal ?? "")}</p><details><summary class="small">Definition</summary><dl class="small"><dt>Inputs</dt><dd>${esc((d.required_inputs ?? []).join(", "))}</dd><dt>Tools</dt><dd>${esc((d.allowed_tools ?? []).join(", "))}</dd><dt>Success</dt><dd>${(d.success_criteria ?? []).map((c) => `<div>${esc(c)}</div>`).join("")}</dd><dt>Limits</dt><dd>${esc(`${d.limits?.max_steps ?? "?"} steps · ${d.limits?.max_runtime_seconds ?? "?"} s · $${d.limits?.max_cost_usd ?? "?"} per run · ${d.environment ?? "sandbox"}`)}</dd></dl></details><p class="spacing-2 small">${esc(decision)} · created ${esc(stamp(v.created_at))}</p>${workflowRunsHtml(w)}</div><section>${versionTag(v.status)}<div class="actions">${buttons}${workflowRunControls(w)}</div></section></article>`;
+      return `<article class="finding-row"><div><span class="eyebrow">v${v.number} · ${esc(v.status)}</span><h3>${esc(w.name)}</h3><p>${esc(d.goal ?? "")}</p><details><summary class="small">Definition</summary><dl class="small"><dt>Inputs</dt><dd>${esc((d.required_inputs ?? []).join(", "))}</dd><dt>Tools</dt><dd>${esc((d.allowed_tools ?? []).join(", "))}</dd><dt>Success</dt><dd>${(d.success_criteria ?? []).map((c) => `<div>${esc(c)}</div>`).join("")}</dd><dt>Limits</dt><dd>${esc(`${d.limits?.max_steps ?? "?"} steps · ${d.limits?.max_runtime_seconds ?? "?"} s · $${d.limits?.max_cost_usd ?? "?"} per run · ${d.environment ?? "sandbox"}`)}</dd></dl></details>${graphPanelHtml(w)}<p class="spacing-2 small">${esc(decision)} · created ${esc(stamp(v.created_at))}</p>${workflowRunsHtml(w)}</div><section>${versionTag(v.status)}<div class="actions">${buttons}${workflowRunControls(w)}</div></section></article>`;
     })
     .join("");
   return `${heading}<section class="panel">${rows}</section>`;
@@ -1010,6 +1112,15 @@ function bindContent() {
         render();
       })),
   );
+  document.querySelectorAll("[data-graph]").forEach((d) => {
+    const body = d.querySelector(".graph-body");
+    const cached = graphReviews[d.dataset.version];
+    if (cached) {
+      body.innerHTML = graphReviewHtml(d.dataset.graph, cached);
+      bindGraphReview(body, d.dataset.graph, d.dataset.version);
+      d.open = true;
+    } else d.ontoggle = () => d.open && !body.dataset.loaded && ((body.dataset.loaded = "1"), loadGraphReview(d.dataset.graph, d.dataset.version, body));
+  });
   document.querySelectorAll("[data-run-workflow]").forEach(
     (b) =>
       (b.onclick = () => {
