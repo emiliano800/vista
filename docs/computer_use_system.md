@@ -189,3 +189,33 @@ Total ≈ 12–14 sessions of engineering, of which ≈ 3 are done; external wai
 1. Land `devin/1790133120-harness-drivers` on `main` first, then move it toward v3.
 2. Python device sidecar: yes — browser-use / macOS-use are used as libraries (observe/act only); Jev remains the sole policy.
 
+3. The recorder captures state through the same sidecar `observe()` the run loop uses (§2b gap 1); step 4 therefore precedes step 3.
+4. The public data statement (§7) is the enforced upload contract; the design never sends anything the statement does not name.
+
+## 7. The public statement is the contract
+
+The recorder consent card (`recorder/ui/dashboard.html`) and the website currently say:
+
+> Activity metadata includes app names, interaction types/counts and timestamps. It excludes typed text, clipboard contents, URLs, window titles, screenshots, video and raw event logs.
+
+That sentence is the `computer-use-v1` upload contract, and every "Leaves device" cell in §2b already conforms to it. It is enforced, not described: the step-2 leakage check (`taskmining.leakage.check`) fails any cloud-bound payload containing an exact recorded value, a non-vocabulary AX name or a window title, and step 2b runs it on every producer in CI with seeded fixtures.
+
+v3 adds exactly one category to what leaves the device — the compiled task graph — and nothing else. Under `computer-use-v2` the statement gains one sentence and loses none:
+
+> When you share a recording's plan, it also includes the task's structure: which screens were visited, which kinds of controls were used and in what order, and the names of the fields involved — never their contents.
+
+Precisely, the additions are: L0 sets (`have:/read:/open:/in:/ctx:` — slot *names*, screen-class *hashes*), L1 shape (landmark roles, modal flag, primary-button descriptor role + normalised name, control-class presence), at most 40 control descriptors `(role, normalised name, landmark, position class)` whose names pass the control-vocabulary rule, and redacted declared-output slot values. Still excluded, by the same check: typed text, clipboard text or hashes, URLs (only the path *shape* hash), window titles (only the title *shape* hash on desktop), screenshots, video, raw event logs, coordinates, selectors, file paths and page text. Known limits of the normaliser (single lower-case surnames, non-Latin scripts, letters-only identifiers) are printed in the compile report and on the consent card, not hidden.
+
+Ship rule: the website and consent-card text, the `consent_version` the recorder writes into `manifest.json`, and the leakage-check fixtures change in the same PR (step 2b), and a recording made under an older consent version never uploads plan data.
+
+## 8. End state
+
+When the breakdown in §3 is complete:
+
+- An employee records a task once, reviews a storyboard of screens and moves (never hashes), fixes slot names, marks the goal frame, and shares it under `computer-use-v2`.
+- The device sidecar has already compiled it into `task = nodes + edges + goal + criteria` using the same `observe()` the agent will run with; the compile report shows provenance, slot alignment evidence, the leakage result and coverage. Nothing in the report or the graph contains a value, title, URL, path, coordinate or text.
+- An FDE approves one task (≤ 25 edges) from that report and the shadow report; it becomes an approved, immutable version visible on the admin dashboard (#11) with every edge's policy, tier, statistics and provenance.
+- Runs locate by L0 equality, resolve targets in code, ask Jev only among the located node's own edges, pause on every committing move, recover without ever clicking an affirmative, and verify writes by read-back. Every run folds its statistics into a draft; structure and permissions change only through an approved version.
+- Promotion `shadow → ask → confirm → unattended` is per edge, proposed by code from measured thresholds (M1 numbers, not the provisional ones in §2), clicked by an FDE after cooling; demotion is automatic. A committing edge without covering read-back never reaches `unattended`.
+- Browser (browser-use) and macOS (macOS-use) harnesses are advertised only after a recorded self-test on the device class; Linux desktop and Windows are stated unsupported until they pass one.
+- Milestone 2 numbers (frozen dev/test sets, recording-compiled graphs only, ≥ 1 write task per app, per-commit) are the only performance claims made anywhere.
