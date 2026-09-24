@@ -27,10 +27,18 @@ requires_db = pytest.mark.skipif(not _db_available(), reason="Postgres not reach
 
 
 @pytest.fixture(scope="session")
-def client():
+def _platform_migrated() -> bool:
+    """Migrate the platform schema once per session; False when Postgres is down."""
+    if not _db_available():
+        return False
     from vista.tenancy import migrate_platform
 
     migrate_platform()
+    return True
+
+
+@pytest.fixture(scope="session")
+def client(_platform_migrated):
     return TestClient(app)
 
 
@@ -53,12 +61,12 @@ def _drop_tenant(conn, tenant_id, schema: str) -> None:
 
 
 @pytest.fixture(autouse=True)
-def _drop_tenants_created_by_test():
+def _drop_tenants_created_by_test(_platform_migrated):
     """Every tenant a test provisions — through `tenant_factory`, `provision_tenant`
     or the app itself — is dropped when the test ends, so the local database does
     not accumulate schemas at old revisions and the shared job queue stays empty.
     (Leaked tenants broke the scheduler test and starved `_drain()` on 2026-09-24.)"""
-    if not _db_available():
+    if not _platform_migrated:
         yield
         return
     with db.engine.begin() as conn:
