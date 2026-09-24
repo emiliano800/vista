@@ -1,6 +1,6 @@
 // An invoice re-keyed from a PDF into QuickBooks, then saved, then a second bill.
 // Shared by the compiler tests and `scripts/plan-fixture.mjs`, which writes the compiled
-// graph to tests/fixtures/plan_invoice_v2.json for the backend and web tests.
+// graph to tests/fixtures/plan_invoice_v3.json for the backend and web tests.
 
 export const T0 = Date.parse('2026-09-19T09:00:00Z');
 export const at = (ms) => new Date(T0 + ms).toISOString();
@@ -28,4 +28,5 @@ export function invoiceEvents() {
 export const invoiceFiles = [{ id: 'abcdef123456', name: 'INV-1042 ACME.pdf', ext: '.pdf', intervals: [{ start: T0, end: T0 + 1500, app: 'Preview' }] }];
 
 // Strings from the recording that must never appear in a compiled graph.
-export const SECRETS = ['INV-1042', 'ACME', '1,250', 'qbo.example', '412', '233', 'h-total', 'Total', 'Memo', 'Beta', 'Bills', 'invoice 77'];
+// Coordinates are checked structurally (no x/y/points keys): a 16-hex key may contain any digit run.
+export const SECRETS = ['INV-1042', 'ACME', '1,250', 'qbo.example', 'h-total', 'Total', 'Memo', 'Beta', 'Bills', 'invoice 77'];

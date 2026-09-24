@@ -14,7 +14,17 @@ from pydantic import (
     model_validator,
 )
 
-from taskmining.state import ACTION_CLASSES, APP_ROLES, POLICIES, SIGNATURE_TOKEN, edge_id, state_key
+from taskmining.state import (
+    ACTION_CLASSES,
+    APP_ROLES,
+    CRITERIA_TYPES,
+    IRREVERSIBILITY,
+    POLICIES,
+    SIGNATURE_TOKEN,
+    SLOT_METHODS,
+    edge_id,
+    node_key,
+)
 
 Name = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=255)]
 Text = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=2000)]
@@ -24,7 +34,11 @@ SignatureToken = Annotated[str, StringConstraints(pattern=SIGNATURE_TOKEN.patter
 AppRole = Literal["accounting", "crm", "spreadsheet", "pdf", "email", "browser", "documents", "chat", "workspace", "other"]
 ActionClass = Literal["navigate", "click", "type_value", "press", "read", "extract", "submit", "wait", "http_get", "create_task"]
 EdgePolicy = Literal["auto", "confirm", "always_ask"]
+Irreversibility = Literal["navigational", "mutating", "committing"]
+SlotMethod = Literal["transfer", "declared", "descriptor", "storyboard"]
+CriterionType = Literal["read_back", "present", "graded"]
 assert set(AppRole.__args__) == set(APP_ROLES) and set(ActionClass.__args__) == ACTION_CLASSES and EdgePolicy.__args__ == POLICIES
+assert Irreversibility.__args__ == IRREVERSIBILITY and SlotMethod.__args__ == SLOT_METHODS and CriterionType.__args__ == CRITERIA_TYPES
 
 
 class InputModel(BaseModel):
@@ -43,20 +57,74 @@ class WorkflowLimits(InputModel):
 # *which* field holds a value or *which* fact is known, never what it is.
 
 
+class NodeContext(InputModel):
+    """L1: structure around the frame — context for tie-breaks and `effect_seen`, never identity."""
+
+    landmarks: list[Name] = Field(default_factory=list, max_length=20)
+    modal: bool = False
+    primary: dict | None = None
+    controls: list[Name] = Field(default_factory=list, max_length=40)
+
+
 class GraphNode(InputModel):
     key: Key
     app_role: AppRole
     activity: Name
     signature: list[SignatureToken] = Field(default_factory=list, max_length=40)
+    # v3: the L0 set is the identity; `signature` mirrors it for consumers of older graphs.
+    l0: list[SignatureToken] | None = Field(default=None, max_length=40)
+    l1: NodeContext | None = None
     terminal: bool = False
+
+    @model_serializer(mode="wrap")
+    def _without_absent_v3_fields(self, handler: SerializerFunctionWrapHandler):
+        data = handler(self)
+        for k in ("l0", "l1"):
+            if data.get(k) is None:
+                data.pop(k, None)
+        return data
 
     @model_validator(mode="after")
     def keyed(self):
-        if self.key != state_key(self.app_role, self.activity, self.signature):
+        if self.key != node_key(self.model_dump(exclude_none=True)):
             raise ValueError("Node key does not match its state")
         if len(set(self.signature)) != len(self.signature):
             raise ValueError("Duplicate signature tokens")
+        if self.l0 is not None and sorted(set(self.l0)) != sorted(self.signature):
+            raise ValueError("A v3 node's signature must mirror its L0 set")
         return self
+
+
+class ControlDescriptor(InputModel):
+    """(role, normalised name, landmark, position class) — never a raw string, selector or coordinate."""
+
+    role: Name
+    name: Name | None = None
+    landmark: Name | None = None
+    position: Name | None = None
+    aliases: list[Name] = Field(default_factory=list, max_length=10)
+
+
+class SlotAlignment(InputModel):
+    slot: Name
+    method: SlotMethod
+    controls: list[Name] = Field(default_factory=list, max_length=20)
+    single_recording: bool = False
+
+
+class Criterion(InputModel):
+    type: CriterionType
+    slot: Name
+    source: Literal["draft", "employee", "fde"] = "draft"
+    read_back_via: Key | None = None
+    read_back_delay: int | None = Field(default=None, ge=0, le=600)
+    threshold: float | None = Field(default=None, ge=0, le=1)
+
+
+class GoalFrame(InputModel):
+    node: Key
+    l0: list[SignatureToken] = Field(default_factory=list, max_length=40)
+    criteria: list[Criterion] = Field(default_factory=list, max_length=20)
 
 
 class EdgeStats(InputModel):
@@ -88,6 +156,17 @@ class GraphEdge(InputModel):
     provenance: list[Provenance] = Field(min_length=1, max_length=50)
     policy: EdgePolicy = "confirm"
     anchor_ref: Annotated[str, StringConstraints(pattern=r"^[A-Za-z0-9_:-]{1,160}$")] | None = None
+    descriptor: ControlDescriptor | None = None
+    irreversibility: Irreversibility | None = None
+    commit: Name | None = None
+
+    @model_serializer(mode="wrap")
+    def _without_absent_v3_fields(self, handler: SerializerFunctionWrapHandler):
+        data = handler(self)
+        for k in ("descriptor", "irreversibility", "commit"):
+            if data.get(k) is None:
+                data.pop(k, None)
+        return data
 
     @model_validator(mode="after")
     def keyed(self):
@@ -95,6 +174,10 @@ class GraphEdge(InputModel):
             raise ValueError("Edge id does not match its endpoints and action")
         if self.action_class == "submit" and self.policy != "always_ask":
             raise ValueError("A submit edge always asks a person")
+        if self.action_class == "submit" and self.irreversibility not in (None, "committing"):
+            raise ValueError("A submit edge is committing")
+        if self.irreversibility == "committing" and self.policy != "always_ask":
+            raise ValueError("A committing edge always asks a person")
         return self
 
 
@@ -119,14 +202,17 @@ class PlanGraph(InputModel):
     edges: list[GraphEdge] = Field(max_length=600)
     trajectories: int = Field(strict=True, ge=1)
     truncated: bool = False
-    compiled_by: Literal["recorder-plan/1", "recorder-plan/2"] = "recorder-plan/1"
+    compiled_by: Literal["recorder-plan/1", "recorder-plan/2", "recorder-plan/3"] = "recorder-plan/1"
     vocabulary: GraphVocabulary | None = None
+    slot_table: list[SlotAlignment] | None = Field(default=None, max_length=100)
+    goal: GoalFrame | None = None
 
     @model_serializer(mode="wrap")
-    def _without_absent_vocabulary(self, handler: SerializerFunctionWrapHandler):
+    def _without_absent_optional(self, handler: SerializerFunctionWrapHandler):
         data = handler(self)
-        if self.vocabulary is None:
-            data.pop("vocabulary", None)
+        for k in ("vocabulary", "slot_table", "goal"):
+            if data.get(k) is None:
+                data.pop(k, None)
         return data
 
     @model_validator(mode="after")
@@ -136,6 +222,10 @@ class PlanGraph(InputModel):
             raise ValueError("Duplicate node keys")
         if len({e.id for e in self.edges}) != len(self.edges):
             raise ValueError("Duplicate edge ids")
+        if self.compiled_by == "recorder-plan/3" and any(n.l0 is None for n in self.nodes):
+            raise ValueError("A v3 graph's nodes carry L0 sets")
+        if self.goal is not None and self.goal.node not in keys:
+            raise ValueError("The goal frame must be a node of this graph")
         if not set(self.start) <= keys or any(e.frm not in keys or e.to not in keys for e in self.edges):
             raise ValueError("Edges and start states must reference nodes of this graph")
         return self

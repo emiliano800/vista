@@ -1,0 +1,449 @@
+{
+  "start": [
+    "2d3ef664b1bea10d"
+  ],
+  "nodes": [
+    {
+      "key": "042e7f9b310726e8",
+      "app_role": "pdf",
+      "activity": "pdf",
+      "signature": [
+        "in:fee208d94242f0d7",
+        "open:doc:d1",
+        "read:fact:f1"
+      ],
+      "l0": [
+        "in:fee208d94242f0d7",
+        "open:doc:d1",
+        "read:fact:f1"
+      ],
+      "l1": {},
+      "terminal": false
+    },
+    {
+      "key": "2d3ef664b1bea10d",
+      "app_role": "pdf",
+      "activity": "pdf",
+      "signature": [
+        "in:fee208d94242f0d7",
+        "open:doc:d1"
+      ],
+      "l0": [
+        "in:fee208d94242f0d7",
+        "open:doc:d1"
+      ],
+      "l1": {},
+      "terminal": false
+    },
+    {
+      "key": "42ea684e8600b36b",
+      "app_role": "accounting",
+      "activity": "accounting",
+      "signature": [
+        "have:field:amount",
+        "have:field:input_1",
+        "in:d9689a98516bc009",
+        "read:fact:f1"
+      ],
+      "l0": [
+        "have:field:amount",
+        "have:field:input_1",
+        "in:d9689a98516bc009",
+        "read:fact:f1"
+      ],
+      "l1": {},
+      "terminal": false
+    },
+    {
+      "key": "94124b368008c0a0",
+      "app_role": "accounting",
+      "activity": "accounting",
+      "signature": [
+        "have:field:amount",
+        "have:field:c2",
+        "in:d9689a98516bc009",
+        "read:fact:f1"
+      ],
+      "l0": [
+        "have:field:amount",
+        "have:field:c2",
+        "in:d9689a98516bc009",
+        "read:fact:f1"
+      ],
+      "l1": {},
+      "terminal": true
+    },
+    {
+      "key": "a361655f7d47b32f",
+      "app_role": "accounting",
+      "activity": "accounting",
+      "signature": [
+        "in:d9689a98516bc009",
+        "read:fact:f1"
+      ],
+      "l0": [
+        "in:d9689a98516bc009",
+        "read:fact:f1"
+      ],
+      "l1": {},
+      "terminal": false
+    },
+    {
+      "key": "e70b58739b8277f8",
+      "app_role": "accounting",
+      "activity": "accounting",
+      "signature": [
+        "have:field:amount",
+        "in:d9689a98516bc009",
+        "read:fact:f1"
+      ],
+      "l0": [
+        "have:field:amount",
+        "in:d9689a98516bc009",
+        "read:fact:f1"
+      ],
+      "l1": {},
+      "terminal": false
+    }
+  ],
+  "edges": [
+    {
+      "id": "919ff397ad537804",
+      "frm": "a361655f7d47b32f",
+      "to": "a361655f7d47b32f",
+      "action_class": "click",
+      "control": null,
+      "slot": null,
+      "descriptor": {
+        "role": "unknown",
+        "name": null,
+        "landmark": null,
+        "position": null
+      },
+      "irreversibility": "navigational",
+      "commit": null,
+      "produces": [],
+      "effect": [],
+      "stats": {
+        "support": 1,
+        "recorded": 1,
+        "executed": 0,
+        "verified_ok": 0,
+        "approved": 0,
+        "denied": 0,
+        "effect_missing": 0
+      },
+      "provenance": [
+        {
+          "source": "recording",
+          "id": "rec-1",
+          "event_ids": [
+            "e3"
+          ]
+        }
+      ],
+      "policy": "auto",
+      "anchor_ref": "rec-1:919ff397ad537804"
+    },
+    {
+      "id": "97ca0fc75eec4dce",
+      "frm": "e70b58739b8277f8",
+      "to": "42ea684e8600b36b",
+      "action_class": "type_value",
+      "control": null,
+      "slot": "input_1",
+      "descriptor": {
+        "role": "unknown",
+        "name": null,
+        "landmark": null,
+        "position": null
+      },
+      "irreversibility": "mutating",
+      "commit": "enter",
+      "produces": [],
+      "effect": [
+        "have:field:input_1"
+      ],
+      "stats": {
+        "support": 1,
+        "recorded": 1,
+        "executed": 0,
+        "verified_ok": 0,
+        "approved": 0,
+        "denied": 0,
+        "effect_missing": 0
+      },
+      "provenance": [
+        {
+          "source": "recording",
+          "id": "rec-1",
+          "event_ids": [
+            "e5",
+            "e6",
+            "e7",
+            "e8"
+          ]
+        }
+      ],
+      "policy": "confirm",
+      "anchor_ref": "rec-1:97ca0fc75eec4dce"
+    },
+    {
+      "id": "99d31f2d7fe34553",
+      "frm": "42ea684e8600b36b",
+      "to": "a361655f7d47b32f",
+      "action_class": "submit",
+      "control": "cmd+s",
+      "slot": null,
+      "descriptor": {
+        "role": "key",
+        "name": "cmd+s",
+        "landmark": null,
+        "position": null
+      },
+      "irreversibility": "committing",
+      "commit": null,
+      "produces": [],
+      "effect": [
+        "have:field:amount",
+        "have:field:input_1"
+      ],
+      "stats": {
+        "support": 1,
+        "recorded": 1,
+        "executed": 0,
+        "verified_ok": 0,
+        "approved": 0,
+        "denied": 0,
+        "effect_missing": 0
+      },
+      "provenance": [
+        {
+          "source": "recording",
+          "id": "rec-1",
+          "event_ids": [
+            "e9"
+          ]
+        }
+      ],
+      "policy": "always_ask",
+      "anchor_ref": "rec-1:99d31f2d7fe34553"
+    },
+    {
+      "id": "ba5ffb9bf36bbcd9",
+      "frm": "042e7f9b310726e8",
+      "to": "a361655f7d47b32f",
+      "action_class": "navigate",
+      "control": null,
+      "slot": null,
+      "descriptor": {
+        "role": "screen",
+        "name": null,
+        "landmark": null,
+        "position": null
+      },
+      "irreversibility": "navigational",
+      "commit": null,
+      "produces": [],
+      "effect": [],
+      "stats": {
+        "support": 1,
+        "recorded": 1,
+        "executed": 0,
+        "verified_ok": 0,
+        "approved": 0,
+        "denied": 0,
+        "effect_missing": 0
+      },
+      "provenance": [
+        {
+          "source": "recording",
+          "id": "rec-1",
+          "event_ids": [
+            "e2"
+          ]
+        }
+      ],
+      "policy": "auto",
+      "anchor_ref": "rec-1:ba5ffb9bf36bbcd9"
+    },
+    {
+      "id": "dfe80140d45c226d",
+      "frm": "2d3ef664b1bea10d",
+      "to": "042e7f9b310726e8",
+      "action_class": "read",
+      "control": null,
+      "slot": "fact:f1",
+      "descriptor": {
+        "role": "unknown",
+        "name": null,
+        "landmark": null,
+        "position": null
+      },
+      "irreversibility": "navigational",
+      "commit": null,
+      "produces": [
+        "fact:f1"
+      ],
+      "effect": [
+        "read:fact:f1"
+      ],
+      "stats": {
+        "support": 1,
+        "recorded": 1,
+        "executed": 0,
+        "verified_ok": 0,
+        "approved": 0,
+        "denied": 0,
+        "effect_missing": 0
+      },
+      "provenance": [
+        {
+          "source": "recording",
+          "id": "rec-1",
+          "event_ids": [
+            "e1"
+          ]
+        }
+      ],
+      "policy": "auto",
+      "anchor_ref": "rec-1:dfe80140d45c226d"
+    },
+    {
+      "id": "eb5407533f483c2c",
+      "frm": "a361655f7d47b32f",
+      "to": "e70b58739b8277f8",
+      "action_class": "type_value",
+      "control": "amount",
+      "slot": "fact:f1",
+      "descriptor": {
+        "role": "textbox",
+        "name": "amount",
+        "landmark": null,
+        "position": null
+      },
+      "irreversibility": "mutating",
+      "commit": "paste",
+      "produces": [],
+      "effect": [
+        "have:field:amount"
+      ],
+      "stats": {
+        "support": 1,
+        "recorded": 1,
+        "executed": 0,
+        "verified_ok": 0,
+        "approved": 0,
+        "denied": 0,
+        "effect_missing": 0
+      },
+      "provenance": [
+        {
+          "source": "recording",
+          "id": "rec-1",
+          "event_ids": [
+            "e4",
+            "e11"
+          ]
+        }
+      ],
+      "policy": "confirm",
+      "anchor_ref": "rec-1:eb5407533f483c2c"
+    },
+    {
+      "id": "f6ab7e06ee20b49f",
+      "frm": "e70b58739b8277f8",
+      "to": "94124b368008c0a0",
+      "action_class": "type_value",
+      "control": null,
+      "slot": "fact:f1",
+      "descriptor": {
+        "role": "unknown",
+        "name": null,
+        "landmark": null,
+        "position": null
+      },
+      "irreversibility": "mutating",
+      "commit": "paste",
+      "produces": [],
+      "effect": [
+        "have:field:c2"
+      ],
+      "stats": {
+        "support": 1,
+        "recorded": 1,
+        "executed": 0,
+        "verified_ok": 0,
+        "approved": 0,
+        "denied": 0,
+        "effect_missing": 0
+      },
+      "provenance": [
+        {
+          "source": "recording",
+          "id": "rec-1",
+          "event_ids": [
+            "e12"
+          ]
+        }
+      ],
+      "policy": "confirm",
+      "anchor_ref": "rec-1:f6ab7e06ee20b49f"
+    }
+  ],
+  "trajectories": 1,
+  "truncated": false,
+  "compiled_by": "recorder-plan/3",
+  "vocabulary": {
+    "method": "recurring-ax-names/1",
+    "min_screens": 2,
+    "screens": 3,
+    "size": 1,
+    "words": [
+      "amount"
+    ],
+    "extra": []
+  },
+  "slot_table": [
+    {
+      "slot": "fact:f1",
+      "method": "transfer",
+      "controls": [
+        "amount"
+      ],
+      "single_recording": false
+    },
+    {
+      "slot": "input_1",
+      "method": "declared",
+      "controls": [],
+      "single_recording": true
+    }
+  ],
+  "goal": {
+    "node": "94124b368008c0a0",
+    "l0": [
+      "have:field:amount",
+      "have:field:c2",
+      "in:d9689a98516bc009",
+      "read:fact:f1"
+    ],
+    "criteria": [
+      {
+        "type": "present",
+        "slot": "field:amount",
+        "source": "draft"
+      },
+      {
+        "type": "present",
+        "slot": "field:c2",
+        "source": "draft"
+      },
+      {
+        "type": "present",
+        "slot": "fact:f1",
+        "source": "draft"
+      }
+    ]
+  }
+}

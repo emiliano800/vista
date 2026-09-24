@@ -1,9 +1,13 @@
 """Workflow state abstraction and plan-graph algebra, shared by every producer and consumer
 of a `PlanGraph`.
 
-A recorded workflow is not a script but a graph over *states*: the app's role, an activity
-label, and a `data_signature` — which typed things are held right now (a document open, a
-field filled, a fact gathered), by *name* only. Recordings and runs are trajectories through
+A recorded workflow is not a script but a graph over *frames* (v3, design of record
+`docs/computer_use_system.md` §3): a node is its L0 progress set — `have:<slot>`,
+`read:<slot>`, `open:<slot>`, `in:<screen-class>`, `ctx:<dialog-class>` — by *name* only;
+two frames are one node iff their L0 sets are equal. L1 (landmarks, modal, primary button,
+control classes) is context on the node, never identity. Graphs compiled before v3 keyed
+nodes by `(app_role, activity, data_signature)`; both key functions are kept so either kind
+validates. Recordings and runs are trajectories through
 that graph; each traversal adds counts and provenance to an edge, never a value. The recorder
 (`src/recorder/src/plan.js`) compiles trajectories with the exact same key functions below, so
 a node the device produced and a node the worker observes at run time compare by key alone.
@@ -40,7 +44,36 @@ _ROLE_PATTERNS: tuple[tuple[str, re.Pattern[str]], ...] = (
     ("documents", re.compile(r"word|docs|pages|notepad|textedit", re.I)),
 )
 
-SIGNATURE_TOKEN = re.compile(r"^(?:(?:doc|rec|field|fact|dialog):[A-Za-z0-9_.-]{1,120}|msg:open)$")
+SIGNATURE_TOKEN = re.compile(
+    r"^(?:(?:doc|rec|field|fact|dialog):[A-Za-z0-9_.-]{1,120}|msg:open"
+    r"|(?:have|read|open):[A-Za-z0-9_.:-]{1,120}|in:[0-9a-f]{16}|ctx:[A-Za-z0-9_.-]{1,64})$"
+)
+L0_PREFIXES: tuple[str, ...] = ("have", "read", "open", "in", "ctx")
+# Irreversibility classes, least to most. Code assigns them; Jev's `p_irreversible` may raise, never lower.
+IRREVERSIBILITY: tuple[str, ...] = ("navigational", "mutating", "committing")
+COMMIT_VOCAB: frozenset[str] = frozenset(
+    {
+        "save",
+        "submit",
+        "send",
+        "post",
+        "delete",
+        "approve",
+        "confirm",
+        "pay",
+        "ok",
+        "yes",
+        "continue",
+        "apply",
+        "done",
+        "finish",
+        "complete",
+    }
+)
+_NAV_CLICK_ROLES: frozenset[str] = frozenset({"tab", "link", "row", "menuitem", "cell", "treeitem", "option"})
+_NAV_ACTIONS: frozenset[str] = frozenset({"navigate", "read", "extract", "wait", "http_get"})
+SLOT_METHODS: tuple[str, ...] = ("transfer", "declared", "descriptor", "storyboard")
+CRITERIA_TYPES: tuple[str, ...] = ("read_back", "present", "graded")
 ACTION_CLASSES: frozenset[str] = frozenset(
     {"navigate", "click", "type_value", "press", "read", "extract", "submit", "wait", "http_get", "create_task"}
 )
@@ -79,7 +112,50 @@ def _h(parts: Iterable[str]) -> str:
 
 
 def state_key(role: str, activity: str, signature: Iterable[str]) -> str:
+    """v1/v2 node key, kept for graphs compiled before v3."""
     return _h((role, activity, ",".join(sorted(set(signature)))))
+
+
+def frame_key(l0: Iterable[str]) -> str:
+    """v3 node key: the L0 set alone (`recorder/src/plan.js` frameKey)."""
+    return _h(("v3", ",".join(sorted(set(l0)))))
+
+
+def node_key(node: dict) -> str:
+    """The key a node must carry, whichever version compiled it."""
+    if node.get("l0") is not None:
+        return frame_key(node["l0"])
+    return state_key(node["app_role"], node["activity"], node.get("signature", ()))
+
+
+def screen_class(role: str, shape: str) -> str:
+    return _h(("screen", role, shape))
+
+
+def irreversibility_of(action_class: str, descriptor: dict | None = None, ctx: str | None = None) -> str:
+    """Twin of plan.js irreversibilityOf: from the primitive, the control descriptor and an open dialog class."""
+    if action_class == "submit":
+        return "committing"
+    if action_class in _NAV_ACTIONS:
+        return "navigational"
+    name = str((descriptor or {}).get("name") or "")
+    role = (descriptor or {}).get("role")
+    if action_class in ("click", "press"):
+        if any(w in COMMIT_VOCAB for w in name.split(" ")):
+            return "committing"
+        if ctx == "confirm" and action_class == "press" and re.search(r"enter|return", name):
+            return "committing"
+        if action_class == "click" and (role in _NAV_CLICK_ROLES or not role or role == "unknown"):
+            return "navigational"
+        return "mutating"
+    return "mutating"
+
+
+def raise_irreversibility(assigned: str, proposed: str | None) -> str:
+    """Jev may only raise the class code assigned."""
+    if proposed not in IRREVERSIBILITY:
+        return assigned
+    return IRREVERSIBILITY[max(IRREVERSIBILITY.index(assigned), IRREVERSIBILITY.index(proposed))]
 
 
 def edge_id(frm: str, to: str, action_class: str, control: str | None, slot: str | None) -> str:
@@ -93,14 +169,26 @@ def jaccard(a: Iterable[str], b: Iterable[str]) -> float:
     return len(sa & sb) / len(sa | sb)
 
 
+def _identity(node: dict) -> Iterable[str]:
+    l0 = node.get("l0")
+    return l0 if l0 is not None else node.get("signature", ())
+
+
+def same_frame(node: dict, other: dict) -> bool:
+    """v3 locate: two frames are one node iff their L0 sets are equal."""
+    return set(_identity(node)) == set(_identity(other))
+
+
 def near(node: dict, other: dict) -> bool:
-    """Same role and most of the signature in common: the candidates `on_plan` judges among."""
-    return node["app_role"] == other["app_role"] and jaccard(node.get("signature", ()), other.get("signature", ())) >= NEAR_JACCARD
+    """Same role and most of the identity set in common: the tie-break candidates when no frame matches exactly."""
+    return node["app_role"] == other["app_role"] and jaccard(_identity(node), _identity(other)) >= NEAR_JACCARD
 
 
-def default_policy(action_class: str) -> str:
-    if action_class == "submit":
+def default_policy(action_class: str, irreversibility: str | None = None) -> str:
+    if action_class == "submit" or irreversibility == "committing":
         return "always_ask"
+    if irreversibility == "navigational":
+        return "auto"
     return "confirm" if action_class in WRITE_CLASSES else "auto"
 
 
@@ -134,16 +222,32 @@ def merge_graphs(graphs: list[dict]) -> dict:
     nodes: dict[str, dict] = {}
     edges: dict[str, dict] = {}
     start: set[str] = set()
+    slots: dict[str, dict] = {}
+    goal: dict | None = None
     trajectories = 0
     truncated = False
     for g in graphs:
         trajectories += int(g.get("trajectories", 0))
         truncated = truncated or bool(g.get("truncated"))
         start.update(g.get("start", []))
+        for s in g.get("slot_table", []):
+            cur = slots.get(s["slot"])
+            if cur is None:
+                slots[s["slot"]] = {**s, "controls": sorted(s.get("controls", []))}
+            else:
+                cur["controls"] = sorted(set(cur["controls"]) | set(s.get("controls", [])))
+                cur["single_recording"] = False
+        if g.get("goal") and (goal is None or g["goal"]["node"] < goal["node"]):
+            goal = g["goal"]
         for n in g.get("nodes", []):
             cur = nodes.get(n["key"])
             if cur is None:
-                nodes[n["key"]] = {**n, "signature": sorted(n.get("signature", [])), "terminal": bool(n.get("terminal"))}
+                nodes[n["key"]] = {
+                    **n,
+                    "signature": sorted(n.get("signature", [])),
+                    **({"l0": sorted(n["l0"])} if n.get("l0") is not None else {}),
+                    "terminal": bool(n.get("terminal")),
+                }
             else:
                 cur["terminal"] = cur["terminal"] or bool(n.get("terminal"))
         for e in g.get("edges", []):
@@ -155,7 +259,7 @@ def merge_graphs(graphs: list[dict]) -> dict:
                     "effect": sorted(e.get("effect", [])),
                     "stats": {**empty_stats(), **e.get("stats", {})},
                     "provenance": sorted(e.get("provenance", []), key=_prov_key)[:MAX_PROVENANCE],
-                    "policy": e.get("policy") or default_policy(e["action_class"]),
+                    "policy": e.get("policy") or default_policy(e["action_class"], e.get("irreversibility")),
                 }
                 continue
             for k in cur["stats"]:
@@ -164,10 +268,12 @@ def merge_graphs(graphs: list[dict]) -> dict:
             ref = e.get("anchor_ref")
             if ref and (not cur.get("anchor_ref") or ref < cur["anchor_ref"]):
                 cur["anchor_ref"] = ref
-            cur["policy"] = stricter(cur["policy"], e.get("policy") or default_policy(e["action_class"]))
+            cur["policy"] = stricter(cur["policy"], e.get("policy") or default_policy(e["action_class"], e.get("irreversibility")))
+            if cur.get("irreversibility") or e.get("irreversibility"):
+                cur["irreversibility"] = raise_irreversibility(cur.get("irreversibility") or "navigational", e.get("irreversibility"))
             cur["produces"] = sorted(set(cur["produces"]) | set(e.get("produces", [])))
             cur["effect"] = sorted(set(cur["effect"]) | set(e.get("effect", [])))
-    return {
+    out = {
         "start": sorted(start),
         "nodes": [nodes[k] for k in sorted(nodes)],
         "edges": [edges[k] for k in sorted(edges)],
@@ -175,3 +281,8 @@ def merge_graphs(graphs: list[dict]) -> dict:
         "truncated": truncated,
         "compiled_by": next((g.get("compiled_by") for g in graphs if g.get("compiled_by")), "recorder-plan/1"),
     }
+    if slots:
+        out["slot_table"] = [slots[k] for k in sorted(slots)]
+    if goal is not None:
+        out["goal"] = goal
+    return out

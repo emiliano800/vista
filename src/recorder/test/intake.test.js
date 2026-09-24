@@ -156,7 +156,7 @@ test('the plan graph is uploaded only when ticked, after the employee\'s edits, 
     const text = pack.data.get('plan').toString();
     for (const s of ['PRIVATE', 'private.example', '500', '301', 'h1', 'Excel', 'QuickBooks']) assert.ok(!text.includes(s), `plan leaks ${s}`);
     const plan = JSON.parse(text);
-    assert.equal(plan.compiled_by, 'recorder-plan/2');
+    assert.equal(plan.compiled_by, 'recorder-plan/3');
     assert.equal(pack.manifest.consent_version, CONSENT_VERSION);
     assert.deepEqual([...new Set(plan.nodes.map((n) => n.app_role))].sort(), ['accounting', 'spreadsheet']);
     const submit = plan.edges.find((e) => e.action_class === 'submit');
