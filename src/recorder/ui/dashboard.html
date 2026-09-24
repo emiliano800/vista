@@ -550,7 +550,7 @@
             <div style="margin-top:14px"><button class="btn primary" id="cloud-discover">Find my company</button></div>
             <div id="cloud-confirmation" class="hidden" style="margin-top:14px">
               <label for="cloud-company">Your company</label><select id="cloud-company"></select>
-              <div class="set"><label><div>Confirm recording and sharing<span>Capture stays on this computer until I choose Upload session. An upload shares app names, interaction types and counts, timestamps, and only the document snapshots I select. Screenshots, video, typed text, clipboard contents, window titles and raw logs are never included. The workspace analyses the upload into a draft only I can see; nothing is published until I choose to.</span></div><input id="cloud-consent" type="checkbox" /></label></div>
+              <div class="set"><label><div>Confirm recording and sharing<span>On this device, the recording captures everything I do in the apps I am recording: keys and text typed, clipboard, URLs and window titles, screenshots and screen video, files opened, created and modified, mouse and app activity. It stays on this device for my review; sign-in and private windows are never recorded, and I can exclude any app or moment. What is sent to Vista when I choose Upload session is activity metadata — app names, interaction types and counts, timestamps — the document snapshots I select and, when I share a plan, the task's structure. It excludes typed text, clipboard contents, URLs, window titles, screenshots, video and raw event logs. The workspace analyses the upload into a draft only I can see; nothing is published until I choose to.</span></div><input id="cloud-consent" type="checkbox" /></label></div>
               <button class="btn primary" id="cloud-connect" disabled>Connect this company</button>
             </div>
             <p class="muted" id="cloud-state" role="status"></p>
@@ -562,7 +562,7 @@
     <dialog id="upload-dialog" class="card wide" aria-labelledby="upload-title">
       <h2 id="upload-title">Review your sharing package</h2>
       <p id="upload-destination"></p>
-      <p>Activity metadata includes app names, interaction types/counts and timestamps. It excludes typed text, clipboard contents, URLs, window titles, screenshots, video and raw event logs.</p>
+      <p>The full recording stays on this device. What is sent is activity metadata — app names, interaction types/counts and timestamps — and, when you share a plan, the task's structure. It excludes typed text, clipboard contents, URLs, window titles, screenshots, video and raw event logs; the package is checked against this recording's values and titles before it leaves.</p>
       <h3>Optional document snapshots</h3>
       <p class="muted">Nothing is selected by default. Selected documents are uploaded in full; check their contents before sharing.</p>
       <div id="upload-documents" class="set"></div>
@@ -832,8 +832,10 @@
             ? preview.documents.map((f) => `<label><div>${esc(f.name)}<span>${Number(f.size_bytes).toLocaleString()} bytes · full snapshot</span></div><input type="checkbox" data-upload-file="${esc(f.id)}" /></label>`).join('')
             : '<p class="muted">No supported snapshots are available. Activity metadata can still be uploaded.</p>';
           const plan = preview.plan;
-          $('upload-plan').innerHTML = plan
-            ? `<label><div>Share the plan of this session<span>${plan.states} states · ${plan.moves} moves · ${plan.roles.map(esc).join(', ')}${plan.submits ? ` · ${plan.submits} submit${plan.submits === 1 ? '' : 's'} (always ask)` : ''}${plan.truncated ? ' · cut short' : ''}. Kinds of app, action classes, control labels and input names only — no values, titles, URLs or positions.</span></div><input type="checkbox" id="upload-share-plan" /></label>`
+          $('upload-plan').innerHTML = plan && preview.planAllowed === false
+            ? '<p class="muted">A plan was compiled from this session. To share it, disconnect and reconnect your company to accept the current recording and sharing notice.</p>'
+            : plan
+            ? `<label><div>Share the plan of this session<span>${plan.states} states · ${plan.moves} moves · ${plan.roles.map(esc).join(', ')}${plan.submits ? ` · ${plan.submits} submit${plan.submits === 1 ? '' : 's'} (always ask)` : ''}${plan.truncated ? ' · cut short' : ''}. Kinds of app, action classes, recurring control names and input names only — no values, titles, URLs or positions. Names seen on a single screen are replaced by placeholders.</span></div><input type="checkbox" id="upload-share-plan" /></label>`
             : '<p class="muted">No plan was compiled from this session.</p>';
           $('upload-consent').checked = false;
           $('upload-confirm').disabled = true;
