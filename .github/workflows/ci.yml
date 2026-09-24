@@ -53,3 +53,6 @@ jobs:
           python-version: "3.12"
       - run: uv sync --group dev
       - run: uv run pytest -q
+      # The image installs with --no-dev: anything src/ imports must be a runtime dependency.
+      - name: App imports without the dev group (mirrors the production image)
+        run: uv run --no-dev --isolated python -c "import vista.main, vista.jobs.worker"

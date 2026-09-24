@@ -371,6 +371,11 @@ wired only in tests/eval. Any new automatic hop must follow the contract above.
 - Tenant Alembic env (`migrations/tenant/env.py`): no statements after
   `connection.commit()` before `context.configure` — silent rollback otherwise.
 - `ruff format --check` is repo-wide in CI: format new files before pushing.
+- The image installs `uv sync --no-dev`: every package `src/` imports must sit in
+  `[project] dependencies`, never only in the `dev` group. A dev-only `httpx` import
+  crashed every new API task on 2026-09-23 after the migrations had already run,
+  which left the rolled-back image unable to start ("Can't locate revision 0022").
+  CI now imports the app without the dev group to catch this.
 - The scheduler test iterates ALL tenant schemas — stale local schemas at old
   revisions break it; fix with `migrate_all_tenants()`, not code changes.
 - OpenAI key + demo keys have passed through chats/public repo: rotate all of them
