@@ -22,7 +22,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import select
 
 from vista.auth import Principal, current_principal
-from vista.automation import service
+from vista.automation import graph_review, service
 from vista.automation.schemas import DecisionCreate, EligibilityOut, VersionCreate, VersionOut, WorkflowCreate, WorkflowOut
 from vista.db import platform_session, tenant_session
 from vista.models.platform import FirmCompany
@@ -115,6 +115,30 @@ def decide_version(
         workflow = service.get_workflow(session, company_id, workflow_id, lock=True)
         version = service.get_version(session, workflow, version_id)
         return service.record_decision(session, workflow, version, principal.user_id, body)
+
+
+@router.get("/{workflow_id}/versions/{version_id}/graph", response_model=graph_review.GraphReviewOut)
+def version_graph(
+    workflow_id: uuid.UUID, version_id: uuid.UUID, principal: Principal = Depends(current_principal)
+) -> graph_review.GraphReviewOut:
+    """The version's task graph as approved, every terminal run's path over it, and the draft the
+    runs' statistics would make — derived, never stored until an admin asks for it below."""
+    company_id = _company_id(principal)
+    with tenant_session(principal.tenant_schema) as session:
+        workflow = service.get_workflow(session, company_id, workflow_id)
+        version = service.get_version(session, workflow, version_id)
+        return graph_review.review(session, workflow, version)
+
+
+@router.post("/{workflow_id}/versions/{version_id}/graph/draft", response_model=VersionOut, status_code=201)
+def draft_from_runs(
+    workflow_id: uuid.UUID, version_id: uuid.UUID, body: graph_review.GraphDraftCreate, principal: Principal = Depends(_decider)
+) -> VersionOut:
+    company_id = _company_id(principal)
+    with tenant_session(principal.tenant_schema) as session:
+        workflow = service.get_workflow(session, company_id, workflow_id, lock=True)
+        version = service.get_version(session, workflow, version_id)
+        return graph_review.create_draft(session, workflow, version, principal.user_id, body)
 
 
 @router.get("/{workflow_id}/versions/{version_id}/eligibility", response_model=EligibilityOut)
