@@ -97,7 +97,15 @@ params = {
     "WorkerDesiredCount": os.environ.get("WORKER_DESIRED_COUNT", "0"),
     "DBDeletionProtection": os.environ.get("DB_DELETION_PROTECTION", "true"),
 }
-for key, env in (("AllowedOrigins", "ALLOWED_ORIGINS"), ("OpenAIApiKey", "OPENAI_API_KEY"), ("TypeSafeApiKey", "TYPESAFE_API_KEY"), ("ProvisioningKey", "PROVISIONING_KEY")):
+for key, env in (
+    ("AllowedOrigins", "ALLOWED_ORIGINS"),
+    ("OpenAIApiKey", "OPENAI_API_KEY"),
+    ("OpenAIModel", "OPENAI_MODEL"),
+    ("TypeSafeApiKey", "TYPESAFE_API_KEY"),
+    ("TypeSafeModel", "TYPESAFE_MODEL"),
+    ("TypeSafeBaseUrl", "TYPESAFE_BASE_URL"),
+    ("ProvisioningKey", "PROVISIONING_KEY"),
+):
     if os.environ.get(env):
         params[key] = os.environ[env]
 json.dump([{"ParameterKey": k, "ParameterValue": v} for k, v in params.items()], open(sys.argv[1], "w"))

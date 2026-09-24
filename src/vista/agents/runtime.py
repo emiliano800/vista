@@ -21,8 +21,11 @@ DEFAULT_PRICING = (Decimal("0.000003"), Decimal("0.000015"))
 
 
 def pricing(model: str) -> tuple[Decimal, Decimal]:
+    # Routers prefix the id with the provider ("typesafe/jev-1.13", "~typesafe/jev-latest",
+    # "openai/gpt-6-astra"); the price is the model's, so match on the last segment.
+    bare = model.rsplit("/", 1)[-1].lstrip("~")
     for prefix, prices in sorted(MODEL_PRICING.items(), key=lambda kv: -len(kv[0])):
-        if model.startswith(prefix):
+        if model.startswith(prefix) or bare.startswith(prefix):
             return prices
     return DEFAULT_PRICING
 

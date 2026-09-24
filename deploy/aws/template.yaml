@@ -64,6 +64,15 @@ Parameters:
   TypeSafeModel:
     Type: String
     Default: jev-latest
+    Description: >-
+      Jev model id as the endpoint names it: jev-latest / jev-1.13 at api.typesafe.ai,
+      ~typesafe/jev-latest / typesafe/jev-1.13 through OpenRouter.
+  TypeSafeBaseUrl:
+    Type: String
+    Default: https://api.typesafe.ai/v1
+    Description: >-
+      Base URL whose /systemone endpoint answers Jev judgments. OpenRouter serves the same
+      API at https://openrouter.ai/api/v1 with an OpenRouter key as TypeSafeApiKey.
   ProvisioningKey:
     Type: String
     Default: ""
@@ -380,6 +389,7 @@ Resources:
           - {Name: VISTA_ALLOWED_ORIGINS, Value: !Ref AllowedOrigins}
           - {Name: VISTA_OPENAI_MODEL, Value: !Ref OpenAIModel}
           - {Name: VISTA_TYPESAFE_MODEL, Value: !Ref TypeSafeModel}
+          - {Name: VISTA_TYPESAFE_BASE_URL, Value: !Ref TypeSafeBaseUrl}
         Secrets:
           - Name: VISTA_DB_USER
             ValueFrom: !Sub "${Database.MasterUserSecret.SecretArn}:username::"
@@ -442,6 +452,7 @@ Resources:
             - {Name: VISTA_ALLOWED_ORIGINS, Value: !Ref AllowedOrigins}
             - {Name: VISTA_OPENAI_MODEL, Value: !Ref OpenAIModel}
             - {Name: VISTA_TYPESAFE_MODEL, Value: !Ref TypeSafeModel}
+            - {Name: VISTA_TYPESAFE_BASE_URL, Value: !Ref TypeSafeBaseUrl}
           Secrets:
             - Name: VISTA_DB_USER
               ValueFrom: !Sub "${Database.MasterUserSecret.SecretArn}:username::"

@@ -49,6 +49,9 @@ def test_pricing_is_input_only_for_jev():
     in_price, out_price = pricing("jev-1.13.0")
     assert out_price == 0 and in_price > 0
     assert cost_usd(Judgment(model="jev-1.13.0", input_tokens=1_000_000, output_tokens=5000)) == in_price * 1_000_000
+    # OpenRouter echoes provider-prefixed ids; the price is still Jev's, not the default.
+    assert pricing("typesafe/jev-1.13") == pricing("~typesafe/jev-latest") == (in_price, out_price)
+    assert pricing("openai/gpt-6-astra") == pricing("gpt-6-astra")
 
 
 def test_request_key_is_stable_and_content_sensitive():
@@ -144,6 +147,6 @@ def test_live_jev_selects_among_candidates():
         {"command": "copy the invoice total from the workbook into the portal", "candidates": ["Excel", "Browser", "Mail"]},
         {"target": pick("Which candidate is the destination of the paste?", ["Excel", "Browser", "Mail"])},
     )
-    assert j.source == "live" and j.model.startswith("jev")
+    assert j.source == "live" and "jev" in j.model  # "jev-1.13" direct, "typesafe/jev-1.13" via OpenRouter
     assert j.choice("target")[0] == "Browser" and j.choice("target")[1] > 0.5
     assert j.input_tokens > 0 and cost_usd(j) > 0
