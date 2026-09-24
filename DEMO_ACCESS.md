@@ -52,8 +52,8 @@ and published recording reports. A company member can import records from
 `/account/` through the same canonical contract the wizard uses and run the File
 Reviewer over them.
 
-**Linking the six demo workspaces (one-time, after deploying the 2026-09-23
-code).** The company workspaces below were provisioned with `create-workspace`
+**Linking the six demo workspaces (one-time; that code has been live since
+2026-09-24 and the six live workspaces are linked).** The company workspaces below were provisioned with `create-workspace`
 before `load-synthetic` created the analyst's companies, so each company exists
 in two tenants and `/account/` answers "This workspace is not linked to a
 portfolio company yet". Point each company at its workspace tenant by the Deal id

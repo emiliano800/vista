@@ -109,7 +109,7 @@ if the stack is stuck, `aws cloudformation continue-update-rollback` (admin).
 | Tier | Can | Cannot | Who |
 | --- | --- | --- | --- |
 | Operator | describe stack, tail logs, run `manage.sh` tasks (provision/rotate/seed/migrate) | deploy, touch IAM, read secrets directly | `emiliano-vista-operator` (Keychain-stored key), one per teammate |
-| Deployer | everything operator + ECR push, CloudFormation update, pass task roles | — | admin identity, 1–2 people |
+| Deployer | everything operator + ECR push, CloudFormation update, pass task roles | — | role `vista-deployer`, assumed from the operator key by the `vista-deploy` CLI profile (`AWS_PROFILE=vista-deploy deploy/aws/deploy.sh`; needs Docker Desktop running), 1–2 people |
 
 Issued workspace keys are delivered with `manage.sh --output-file PATH …` so they
 never land in CloudWatch. Demo keys in `DEMO_ACCESS.md` are public **only because

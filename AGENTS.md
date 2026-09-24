@@ -73,11 +73,12 @@ is not proof of a deployed workflow automation.
 ## Agent catalog
 
 Keys and run-type mapping live in `src/vista/agents/keys.py`; handlers in
-`src/vista/jobs/handlers.py`; phase logic in `src/vista/agents/`.
+`src/vista/jobs/handlers.py`; phase logic in `src/vista/agents/`, except the Computer
+Use Agent, which is its own package at `src/vista/computer_use/`.
 
 | Agent (`agent_key`) | Run types (`agent_runs.run_type`) | Phase code | Reads | Writes |
 | --- | --- | --- | --- | --- |
-| **File Reviewer** (`file_reviewer`) | `deal_analysis`, `employee_discovery`, `synthetic_discovery`, `canonical_review` | `discover.py`; `portfolio/interpret.py` for `canonical_review` | one division's tables (csv/xlsx) + deterministic profile; `canonical_review` reads only the tenant's canonical rows (customers, invoices, vendors, policies, purchase orders, inventory…) | `findings` kind `observed_fact` (file/column/row refs, confidence); `canonical_review` also `tasks`, `company_summaries`, and cites canonical record ids |
+| **File Reviewer** (`file_reviewer`) | `deal_analysis`, `employee_discovery`, `synthetic_discovery`, `canonical_review` | `discover.py` for the discovery run types; `portfolio/interpret.py` for `canonical_review`; `deal_analysis` (the default run type of `POST /api/runs`) is still the stub `handle_agent_run` — one `_call_model` over the document, no phase | one division's tables (csv/xlsx) + deterministic profile; `canonical_review` reads only the tenant's canonical rows (customers, invoices, vendors, policies, purchase orders, inventory…) | `findings` kind `observed_fact` (file/column/row refs, confidence); `canonical_review` also `tasks`, `company_summaries`, and cites canonical record ids |
 | **Sector Merger** (`sector_merger`) | `synthetic_analyze`, `portfolio_merge` | `analyze.py`; `portfolio/interpret.py` for `portfolio_merge` | approved facts + one opportunity kind across sister companies in a sector (only `firm_companies` scope); `portfolio_merge` reads canonical rows plus structured findings of the successful `canonical_review` runs in its `successful_run_ids` | `platform.opportunities` (with `lineage`: `from_findings`/`from_runs`) → `findings` kind `proposed_automation`; rejected look-alikes logged as `step` events |
 | **Pipeline & Report Generator** (`report_generator`) | `company_summary` | handler only | open `findings` for a company | `company_summaries` (verified facts kept separate from hypotheses) |
 | **Recording Reviewer** (`recording_reviewer`) | `recording_review` (+ `extract_recording_files`), `submission_analysis` (job `analyze_submission`) | handler only; `recorder_analysis.py` for `submission_analysis` | v1: recorder report bundle (cleaned, on-device redacted); v2: the accepted `recorder_submissions` package read back from S3 (metadata-only activity + shared documents) | v1: explanations awaiting employee approve/fix/explain; v2: one `recorder_reports` draft (observed facts computed in code; workflow candidates derived from the transfers/loops/stretches in those facts and judged by Jev — `VISTA_RECORDER_INTERPRETER=jev`, the default — or interpreted by the chat model with `=chat`; employee questions) that only the employee can publish. On publish, each judged workflow becomes a `findings` row — kind `proposed_automation` when Jev scored it mechanical enough, else `inefficiency` — citing `report:<id>`, `candidate:<cN>`, `run:<id>`, and carrying the employee's answer plus `actions`: a numbered FDE checklist and, for automation candidates, a prefilled `WorkflowDefinition` (`recorder_uploads.record_findings`, deduped per run) |
@@ -278,7 +279,10 @@ wired only in tests/eval. Any new automatic hop must follow the contract above.
   (`VISTA_TYPESAFE_API_KEY`; stub answers without it — recorder workflow candidates and
   every Computer Use Agent judgment; `VISTA_COMPUTER_USE_*` thresholds/timeouts in
   `config.py`) beside the OpenAI-compatible model; Electron
-  recorder; Cloudflare Worker + static web; Node 22 for JS tests (installed under
+  recorder (`src/recorder`, version 0.4.1; every change bumps `package.json` and pushes
+  a `recorder-vX.Y.Z` tag, which builds and publishes the installers; `overrides` pins
+  `tar` ≥ 7.5.21 because `get-windows` → `node-pre-gyp` pulled a vulnerable `tar`);
+  Cloudflare Worker + static web; Node 22 for JS tests (installed under
   `~/.local/bin`).
 - Start infra: `docker compose up -d` (MinIO image is `quay.io/minio/minio`).
 - Migrate everything + bucket: `uv run python -m vista.manage migrate`
@@ -336,22 +340,31 @@ wired only in tests/eval. Any new automatic hop must follow the contract above.
   Preserve unrelated user edits and never force-push.
 - Never commit secrets, `.env`, `deploy/aws/.env`, or credential-output files.
 
-## Live deployment (2026-09-20)
+## Live deployment (2026-09-24)
 
 - AWS account 630396228214, us-east-1, CloudFormation stack `vista`: ECS cluster
   `vista` with `vista-api` and `vista-worker` (WorkerDesiredCount=1), model
   **gpt-6-astra** (key in Secrets Manager `vista/openai-api-key`; TypeSafe key, when
   supplied, in `vista/typesafe-api-key` as `VISTA_TYPESAFE_API_KEY` — without it Jev is
-  stub and the Computer Use Agent executes nothing), RDS
+  stub and the Computer Use Agent executes nothing; as of 2026-09-24 that secret does
+  NOT exist and the task definitions reference no such secret, so production Jev is the
+  stub), RDS
   `vista-postgres`, S3 `vista-reports-630396228214`, endpoint
   `https://vi-6526b1efec4446e48c627173e9e805ce.ecs.us-east-1.on.aws`.
 - Cloudflare Worker `vista` serves bumpsolutions.org and auto-builds on push
   (`npx wrangler deploy`); it proxies an explicit `/api` allow-list — new API routes
-  must be added to `src/web/worker.mjs` or they 404 in production.
-- Deploys: `deploy/aws/deploy.sh` needs a deployment-capable identity. The local
-  AWS CLI default is the scoped `emiliano-vista-operator` (Keychain): it can run
-  manage tasks and read logs but CANNOT deploy (no UpdateStack/ECR push). The user
-  runs deploys with their admin credentials.
+  must be added to `src/web/worker.mjs` or they 404 in production. Backend routes
+  outside the allow-list today (`POST /api/runs`, `/api/employees`, deal documents,
+  `PATCH /api/agents/{id}`, `POST /api/evals`, recordings `files/…/text` and
+  `media/{name}`) are unreachable from the site; nothing in `src/web/public` calls
+  them. The allow-list is GET-only for `/api/health`, so a HEAD probe 404s.
+- Deploys: `deploy/aws/deploy.sh` needs a deployment-capable identity and Docker
+  Desktop running (the binary is `~/.docker/bin/docker`, not on PATH by default). The
+  local AWS CLI default is the scoped `emiliano-vista-operator` (Keychain): it can run
+  manage tasks and read logs but CANNOT deploy (no UpdateStack/ECR push). The
+  `vista-deploy` CLI profile assumes role `vista-deployer` from that key and CAN
+  deploy: `AWS_PROFILE=vista-deploy PATH=$HOME/.docker/bin:$PATH deploy/aws/deploy.sh`.
+  Deploy from a clean tree (untracked files count) or the image tag ends in `-dirty`.
 - Entry `docker-entrypoint.sh` migrates on start (advisory-locked). Never deploy an
   image whose migrations are OLDER than the DB head — startup crashes with
   "Can't locate revision" and wedges the stack in rollback (happened 2026-09-20).
@@ -362,9 +375,13 @@ wired only in tests/eval. Any new automatic hop must follow the contract above.
   ANALYST key, not Meridian — scripts must select keys by section, not position.
 - Old "Vista Solutions / Vista Demo" key was revoked 2026-09-19 (rotation,
   replacement destroyed unread).
-- Not yet deployed as of 2026-09-23: the ledger / company-import commits
-  (platform migration `0005`, tenant `0020`–`0021`, new `/api/deals/{deal}/imports…`
-  and `/api/companies/{id}/reports` routes). Deploy the image and the Worker together.
+- Deployed state 2026-09-24: image `b28094d` went live at 04:14 UTC with platform
+  migration `0005` and tenant `0020`–`0022`, the `/api/deals/{deal}/imports…` and
+  `/api/companies/{id}/reports` routes, and the six demo workspaces linked to their
+  analyst companies. Two deploys failed the evening before (dev-only `httpx` import,
+  then the `0022` rollback — see Gotchas). The firm-counter fix `18713e8` (duplicate
+  `OP-063` on the live portfolio merge) is the next backend change to ship; deploy the
+  image and the Worker together.
 
 ## Gotchas
 
@@ -376,7 +393,14 @@ wired only in tests/eval. Any new automatic hop must follow the contract above.
   crashed every new API task on 2026-09-23 after the migrations had already run,
   which left the rolled-back image unable to start ("Can't locate revision 0022").
   CI now imports the app without the dev group to catch this.
-- The scheduler test iterates ALL tenant schemas — stale local schemas at old
-  revisions break it; fix with `migrate_all_tenants()`, not code changes.
+- Tests drop every tenant they create (autouse fixture in `tests/conftest.py`, since
+  2026-09-24) and share one global `platform.jobs` queue. Before that the local DB had
+  accumulated ~2,900 test tenants at old revisions plus a job backlog, which broke the
+  scheduler test (it iterates ALL tenants) and starved `_drain()` in `test_jobs.py`.
+  If those symptoms return locally, run `python -m vista.manage migrate`, clear stale
+  `queued` jobs, and drop leftover `firm-*` / `Firm *` tenants — not code changes.
+- `next_ref` (firm display sequences `T-…`/`OP-…`) must re-read the firm row under
+  its lock (`populate_existing`); a cached `Firm` in the session handed out a ref
+  another transaction had committed (`OP-063`, 2026-09-24).
 - OpenAI key + demo keys have passed through chats/public repo: rotate all of them
   before any real-customer use.

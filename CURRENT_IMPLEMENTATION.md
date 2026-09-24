@@ -1,10 +1,12 @@
 # Vista — Current Implementation
 
-Implementation reference; checked against repository commit `8303656` on
-2026-09-23. Deployment notes are historical and must be rechecked against AWS before
-assuming a newly pulled change is live: the ledger/company-import commits of
-2026-09-23 (platform migration `0005`, tenant migrations `0020`–`0021`) are in
-`main` and not yet deployed.
+Implementation reference; checked against repository commit `6b5ad5f` on
+2026-09-24. Deployment notes are historical and must be rechecked against AWS before
+assuming a newly pulled change is live. The ledger/company-import commits of
+2026-09-23 (platform migration `0005`, tenant migrations `0020`–`0022`) went live on
+2026-09-24 as image `b28094d`; the firm-counter race fix (`18713e8`) and the test
+tenant teardown (`6b5ad5f`) follow it. Production Jev is still the stub: no TypeSafe
+key is stored, so the Computer Use Agent executes nothing there.
 (Roadmap: `NEXT_STEPS.md`. Business: `BUSINESS_COURSE_OF_ACTION.md`.)
 
 ## Product direction and current coverage

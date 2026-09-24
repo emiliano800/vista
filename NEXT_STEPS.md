@@ -97,6 +97,13 @@ sector deploy without new custom code.
 - CI deploys via OIDC from emiliano800 main (the only sanctioned deploy source);
   scheduler as a deployed service; private subnets/NAT; WAF.
 - Backend recomputation of uploaded report metrics rather than trusting bundles.
+- Operational follow-ups from the 2026-09-24 health check: store the TypeSafe key
+  (`vista/typesafe-api-key`) so production Jev stops being the stub; make the
+  import amount parser raise an import exception instead of returning a silent zero
+  (`portfolio/imports.py`); decide whether the backend routes the Worker does not
+  proxy (`POST /api/runs`, `/api/employees`, deal documents, recordings media by
+  name) are meant to be public and allow-list or remove them; add a manage command
+  that drops leaked test tenants from a local database.
 
 ## 6. Later
 
