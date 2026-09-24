@@ -41,8 +41,14 @@ def log_activity(
 
 
 def next_ref(session: Session, firm_id: uuid.UUID, kind: str, prefix: str, width: int = 0) -> str:
-    """Firm-wide display sequence (T-106, OP-017…) kept in Firm.counters under a row lock."""
-    firm = session.execute(select(Firm).where(Firm.id == firm_id).with_for_update()).scalar_one()
+    """Firm-wide display sequence (T-106, OP-017…) kept in Firm.counters under a row lock.
+
+    `populate_existing` matters: callers usually have this Firm in the session already
+    (`_ctx` loads it at the start of the transaction), and a plain locked select would
+    return that cached instance with its stale `counters`, handing out a ref another
+    transaction committed in the meantime (the OP-063 unique violation of 2026-09-24).
+    Re-reading the row under the lock makes the sequence safe across processes."""
+    firm = session.execute(select(Firm).where(Firm.id == firm_id).with_for_update().execution_options(populate_existing=True)).scalar_one()
     counters = dict(firm.counters or {})
     n = int(counters.get(kind, 1))
     counters[kind] = n + 1

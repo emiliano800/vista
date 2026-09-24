@@ -307,3 +307,22 @@ def test_published_recorder_reports_reach_the_analyst_company_page(client):
         assert client.get(f"/api/companies/{cid}/reports/{hidden}", headers=headers).status_code == 404
     assert client.get(f"/api/companies/{cid}/reports", headers=other).status_code == 404
     assert client.get(f"/api/companies/{cid}/reports/{by_deal}", headers=other).status_code == 404
+
+
+def test_next_ref_rereads_the_counter_under_the_lock():
+    """A firm already loaded in the session must not hand out a ref that another
+    transaction allocated meanwhile (the production OP-063 duplicate)."""
+    from vista.portfolio.service import next_ref
+
+    _headers, firm_id = make_firm()
+    fid = uuid.UUID(firm_id)
+    with platform_session() as mine:
+        firm = mine.get(Firm, fid)  # cached in the identity map, counters == {}
+        assert firm.counters in ({}, None)
+        with platform_session() as other:
+            first = next_ref(other, fid, "opportunity", "OP", 3)
+            other.commit()
+        second = next_ref(mine, fid, "opportunity", "OP", 3)
+        mine.commit()
+    assert first == "OP-001"
+    assert second == "OP-002"
