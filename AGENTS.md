@@ -302,7 +302,7 @@ wired only in tests/eval. Any new automatic hop must follow the contract above.
   (`VISTA_TYPESAFE_API_KEY`; stub answers without it — recorder workflow candidates and
   every Computer Use Agent judgment; `VISTA_COMPUTER_USE_*` thresholds/timeouts in
   `config.py`) beside the OpenAI-compatible model; Electron
-  recorder (`src/recorder`, version 0.4.3; every change bumps `package.json` and pushes
+  recorder (`src/recorder`, version 0.4.5; every change bumps `package.json` and pushes
   a `recorder-vX.Y.Z` tag, which builds and publishes the installers; `overrides` pins
   `tar` ≥ 7.5.21 because `get-windows` → `node-pre-gyp` pulled a vulnerable `tar`);
   Cloudflare Worker + static web; Node 22 for JS tests (installed under
@@ -409,9 +409,10 @@ wired only in tests/eval. Any new automatic hop must follow the contract above.
   ANALYST key, not Meridian — scripts must select keys by section, not position.
 - Old "Vista Solutions / Vista Demo" key was revoked 2026-09-19 (rotation,
   replacement destroyed unread).
-- Deployed state 2026-09-24: image `d16fb61` (task defs `vista-vista-api:26`,
-  `vista-worker:23`) went live at 22:02 UTC from a clean tree via the `vista-deploy`
-  profile, the fourth image of the day (`53968b1` 13:24, `e965454` 18:19). It carries
+- Deployed state 2026-09-24: image `9ca5ecb` (task defs `vista-vista-api:27`,
+  `vista-worker:24`) went live at 22:40 UTC from a clean tree via the `vista-deploy`
+  profile, the fifth image of the day (`53968b1` 13:24, `e965454` 18:19, `d16fb61`
+  22:02). It carries PRs #10–#12 (text normaliser + leakage test, graph dashboard),
   platform migration `0005`, tenant `0020`–`0022`, the `/api/deals/{deal}/imports…` and
   `/api/companies/{id}/reports` routes, the six demo workspaces linked to their analyst
   companies, the firm-counter fix `18713e8`, the unreadable-amount import exception
@@ -425,10 +426,13 @@ wired only in tests/eval. Any new automatic hop must follow the contract above.
   company turns its only upload workspace into kind `company`; the company's `deal_id`
   stays an accepted alias so recorders enrolled before the link (binding
   `{kind: deal, id: <deal>}` in `~/Vista/cloud.json`) keep uploading.
-- Recorder app names on macOS: the `get-windows` helper checks Screen Recording for
-  itself and macOS 26 does not credit it with the app's grant, so every event carried an
-  empty app until recorder 0.4.3 (`src/recorder/src/foreground.js` retries without the
-  check: app name kept, window title empty). A report whose apps are all "Unknown app"
+- Recorder app names on macOS: launched normally on macOS 26, the app's `get-windows`
+  helper answers with *no window* (no error, nothing to note), so every event carried an
+  empty app through recorder 0.4.4; launched from a terminal the same helper works, so it
+  is how macOS attributes the helper's window access. Since 0.4.5
+  `src/recorder/src/foreground.js` falls back to LaunchServices (`lsappinfo`, no
+  permission needed) for the frontmost app name — titles empty — and notes the reason
+  once into the session manifest (`notes`). A report whose apps are all "Unknown app"
   has no transfers or loops, so the analysis never calls Jev — that is the first thing
   to check when "Jev is not being called".
 
