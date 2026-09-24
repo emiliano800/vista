@@ -331,6 +331,8 @@ class NormalizedRecord:
     raw: dict
     normalized: dict
     confidence: float
+    # Cells that could not be read as the number their field requires: {field, column, value}.
+    problems: list[dict] = field(default_factory=list)
 
 
 @dataclass
@@ -347,6 +349,7 @@ class DetectedException:
     record_rows: list[int] = field(default_factory=list)
     match_vendor: str | None = None
     candidates: list[dict] = field(default_factory=list)
+    field_name: str | None = None  # the normalized field an "Unreadable amount" refers to
 
 
 @dataclass
@@ -505,16 +508,24 @@ def normalize_date(v) -> str:
     return s
 
 
-def normalize_money(v) -> float:
+_MONEY_RE = re.compile(
+    r"^\(?\s*[-+]?\s*(?:[$€£]|USD|EUR|GBP|CAD)?\s*[-+]?\s*(?:\d[\d,]*(?:\.\d*)?|\.\d+)\s*%?\s*(?:USD|EUR|GBP|CAD)?\s*\)?\s*-?$",
+    re.IGNORECASE,
+)
+
+
+def normalize_money(v) -> float | None:
+    """A number, 0.0 for an empty cell, or None when the cell holds text that is not a
+    number ("N/A", "TBD", "see note"). None is an import exception, never a silent zero."""
+    if isinstance(v, (int, float)) and not isinstance(v, bool):
+        return float(v)
     s = str(v or "").strip()
     if not s:
         return 0.0
-    negative = (s.startswith("(") and s.endswith(")")) or s.startswith("-")
-    cleaned = re.sub(r"[^0-9.]", "", s)
-    try:
-        n = float(cleaned) if cleaned else 0.0
-    except ValueError:
-        return 0.0
+    if not _MONEY_RE.match(s):
+        return None
+    negative = (s.startswith("(") and s.endswith(")")) or s.lstrip("($€£ ").startswith("-") or s.endswith("-")
+    n = float(re.sub(r"[^0-9.]", "", s))
     return -n if negative else n
 
 
@@ -562,6 +573,9 @@ DECIMAL_FIELDS = {
     "commission_pct", "experience_mod",
 }  # fmt: skip
 COUNT_FIELDS = {"seats", "line_number", "term_months"}
+# A numeric cell that holds text. The row is rejected at approval unless the analyst decides.
+UNREADABLE_AMOUNT = "Unreadable amount"
+UNREADABLE_AMOUNT_ACTIONS = ["Skip row", "Import as zero"]
 BOOL_FIELDS = {"surplus_lines"}
 NAME_FIELDS = {"customer_name", "vendor_name", "carrier_name"}
 UPPER_FIELDS = {"unit", "line_of_business", "carrier_code"}
@@ -694,10 +708,19 @@ class DeterministicDemoImportProcessor(ImportProcessor):
         for i, row in enumerate(rows):
             record: dict = {}
             raw: dict = {}
+            problems: list[dict] = []
             for m in active:
                 value = row.get(m.source, "")
                 raw[m.source] = value
                 t = m.target
+                if t in MONEY_FIELDS or t in DECIMAL_FIELDS or t in COUNT_FIELDS:
+                    n = normalize_money(value)
+                    if n is None:
+                        problems.append({"field": t, "column": m.source, "value": str(value)})
+                        record[t] = None
+                        continue
+                    record[t] = round(n) if t in COUNT_FIELDS else n
+                    continue
                 if t == "phone":
                     v = normalize_phone(value)
                 elif t == "state":
@@ -708,10 +731,6 @@ class DeterministicDemoImportProcessor(ImportProcessor):
                         record["state"] = st
                 elif t in DATE_FIELDS:
                     v = normalize_date(value)
-                elif t in MONEY_FIELDS or t in DECIMAL_FIELDS:
-                    v = normalize_money(value)
-                elif t in COUNT_FIELDS:
-                    v = round(normalize_money(value))
                 elif t in BOOL_FIELDS:
                     v = normalize_bool(value)
                 elif t == "status":
@@ -723,11 +742,29 @@ class DeterministicDemoImportProcessor(ImportProcessor):
                 else:
                     v = normalize_text(value)
                 record[t] = v
-            out.append(NormalizedRecord(i + 2, raw, record, confidence))
+            out.append(NormalizedRecord(i + 2, raw, record, min(confidence, 0.5) if problems else confidence, problems))
         return out
 
     def identify_exceptions(self, dataset: str, records: list[NormalizedRecord], existing_vendors: list[str]) -> list[DetectedException]:
         out: list[DetectedException] = []
+        for r in records:
+            for p in r.problems:
+                label = DATASETS.get(dataset, DATASETS["other"])["fields"].get(p["field"], {}).get("label", p["field"])
+                out.append(
+                    DetectedException(
+                        UNREADABLE_AMOUNT,
+                        f"Row {r.source_row}: {label} is '{p['value']}' (column '{p['column']}'), which is not a number. "
+                        "Importing it as zero would understate the figure.",
+                        p["value"],
+                        label,
+                        1.0,
+                        UNREADABLE_AMOUNT_ACTIONS,
+                        dataset,
+                        left_row=r.source_row,
+                        record_rows=[r.source_row],
+                        field_name=p["field"],
+                    )
+                )
         if dataset == "customers":
             names = [(r.source_row, r.normalized.get("customer_name", "")) for r in records]
             for i in range(len(names)):

@@ -8,7 +8,7 @@ import hashlib
 import uuid
 from dataclasses import dataclass, field
 from datetime import UTC, date, datetime
-from decimal import Decimal
+from decimal import Decimal, InvalidOperation
 
 from botocore.exceptions import BotoCoreError, ClientError
 from fastapi import HTTPException
@@ -36,7 +36,7 @@ from vista.models.tenant import (
 )
 from vista.portfolio import serializers as ser
 from vista.portfolio.access import CompanyRef, FirmContext, company_session, today
-from vista.portfolio.processors import DATASETS, ImportProcessor, ProposedMapping, get_processor
+from vista.portfolio.processors import DATASETS, UNREADABLE_AMOUNT, ImportProcessor, ProposedMapping, get_processor
 from vista.portfolio.service import log_activity
 from vista.storage import s3_client
 
@@ -237,7 +237,7 @@ def preview(
                     "field": m.target,
                     "label": DATASETS[job.dataset_type]["fields"].get(m.target, {}).get("label", m.target),
                     "source": raw[m.source],
-                    "normalized": str(value),
+                    "normalized": "unreadable" if value is None else str(value),
                 }
             )
             if len(out) >= limit:
@@ -335,6 +335,7 @@ def approve_mappings(
                         "matchVendor": x.match_vendor,
                         "actions": x.actions,
                         "recordRows": x.record_rows,
+                        "field": x.field_name,
                     },
                     confidence=x.confidence,
                 )
@@ -391,10 +392,14 @@ def resolve_exception(
 
 
 def _dec(v, places: str = "0.01") -> Decimal:
+    """Quantize a normalized number. Empty is zero; anything unreadable is an error,
+    never a silent zero — normalization already turned such cells into exceptions."""
+    if v in (None, ""):
+        return Decimal(0).quantize(Decimal(places))
     try:
-        return Decimal(str(v or 0)).quantize(Decimal(places))
-    except Exception:
-        return Decimal(0)
+        return Decimal(str(v)).quantize(Decimal(places))
+    except (InvalidOperation, ValueError, TypeError) as e:
+        raise ValueError(f"unreadable amount {v!r}") from e
 
 
 def _date(v) -> date | None:
@@ -420,9 +425,19 @@ def approve_import(platform: Session, ctx: FirmContext, company: CompanyRef, job
         exceptions = ts.scalars(select(ImportException).where(ImportException.import_job_id == job.id)).all()
         skip_rows: set[int] = set()
         swap_rows: set[int] = set()
+        undecided_rows: set[int] = set()  # unreadable amounts nobody decided: rejected, never zeroed
+        zeroed: set[tuple[int, str]] = set()  # (row, field) the analyst chose to import as zero
         vendor_alias: dict[str, str] = {}
         for x in exceptions:
             d = x.detail or {}
+            if x.exception_type == UNREADABLE_AMOUNT and d.get("leftRow"):
+                if x.resolution == "Skip row":
+                    skip_rows.add(d["leftRow"])
+                elif x.resolution == "Import as zero" and d.get("field"):
+                    zeroed.add((d["leftRow"], d["field"]))
+                else:
+                    undecided_rows.add(d["leftRow"])
+                continue
             if d.get("dataset") == "customers" and x.resolution == "Merge" and d.get("rightRow"):
                 skip_rows.add(d["rightRow"])
             if d.get("dataset") == "invoices" and x.resolution == "Skip duplicate" and d.get("rightRow"):
@@ -449,6 +464,11 @@ def approve_import(platform: Session, ctx: FirmContext, company: CompanyRef, job
                 rec.status = "merged"
                 rejected += 1
                 continue
+            if rec.source_row in undecided_rows:
+                rec.status = "rejected"
+                rec.exception_reason = UNREADABLE_AMOUNT
+                rejected += 1
+                continue
             normalized = dict(rec.normalized_record)
             if rec.source_row in swap_rows:
                 normalized["effective_date"], normalized["expiration_date"] = (
@@ -456,6 +476,9 @@ def approve_import(platform: Session, ctx: FirmContext, company: CompanyRef, job
                     normalized.get("effective_date"),
                 )
                 rec.normalized_record = normalized
+            explicit = [f for row_no, f in zeroed if row_no == rec.source_row]
+            if explicit:  # a working copy: the marker is for _write_canonical only, never stored
+                normalized = {**normalized, **{f: 0 for f in explicit}, EXPLICIT_ZERO: explicit}
             row = _write_canonical(ts, job.dataset_type, normalized, base, lookups)
             if row is None:
                 rec.status = "rejected"
@@ -571,7 +594,14 @@ class Lookups:
         return v
 
 
+EXPLICIT_ZERO = "_explicit_zero"  # fields the analyst resolved to zero; never derived, never persisted
+
+
 def _money_or(r: dict, key: str, fallback: Decimal) -> Decimal:
+    """The cell's value, or the derived fallback when the cell is empty or zero —
+    unless the analyst decided that zero (an "Unreadable amount" imported as zero)."""
+    if key in r.get(EXPLICIT_ZERO, ()):
+        return _dec(0)
     return _dec(r.get(key)) if r.get(key) not in (None, "", 0) else fallback
 
 

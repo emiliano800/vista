@@ -326,3 +326,54 @@ def test_next_ref_rereads_the_counter_under_the_lock():
         mine.commit()
     assert first == "OP-001"
     assert second == "OP-002"
+
+
+def test_unreadable_amount_is_an_exception_not_a_silent_zero(client, source_store, monkeypatch):
+    monkeypatch.setattr(settings, "demo_today", "2026-09-19")
+    headers, _ = make_firm()
+    cid = client.post("/api/portfolio/companies", headers=headers, json={"name": "Cedar Climate"}).json()["id"]
+    csv = (SIMPLE / "invoices.csv").read_text().replace("960.50", "N/A", 1)
+    assert "N/A" in csv
+
+    def run(decision: str | None):
+        job = upload(client, headers, cid, "invoices.csv", csv)
+        mappings = [{"source": m["source"], "target": m["target"], "confirmed": True} for m in job["mappings"]]
+        approved = client.post(f"/api/import-jobs/{job['id']}/mappings/approve", headers=headers, json={"mappings": mappings})
+        assert approved.status_code == 200, approved.text
+        assert approved.json()["status"] == "validating"
+        xs = [x for x in approved.json()["exceptions"] if x["type"] == "Unreadable amount"]
+        assert len(xs) == 1 and "N/A" in xs[0]["description"] and xs[0]["actions"] == ["Skip row", "Import as zero"]
+        preview = client.get(f"/api/import-jobs/{job['id']}/preview", headers=headers).json()
+        assert any(p["source"] == "N/A" and p["normalized"] == "unreadable" for p in preview)
+        if decision:
+            r = client.post(f"/api/companies/{cid}/exceptions/{xs[0]['uuid']}/resolve", headers=headers, json={"decision": decision})
+            assert r.status_code == 200, r.text
+        done = client.post(f"/api/import-jobs/{job['id']}/approve", headers=headers)
+        assert done.status_code == 200, done.text
+        return done.json()
+
+    # Undecided: the row is rejected and reported, and no zero reaches the ledger.
+    undecided = run(None)
+    assert (undecided["recordsImported"], undecided["recordsRejected"]) == (2, 1)
+    invoices = client.get(f"/api/companies/{cid}/invoices", headers=headers).json()
+    assert {i["number"] for i in invoices} == {"INV-1001", "INV-1002"}
+    assert all(i["outstanding"] != 0 or i["status"] == "paid" for i in invoices)
+
+    # Decided as zero: the row imports with the original text kept in provenance.
+    zeroed = run("Import as zero")
+    assert (zeroed["recordsImported"], zeroed["recordsRejected"]) == (3, 0)
+    inv = next(i for i in client.get(f"/api/companies/{cid}/invoices", headers=headers).json() if i["number"] == "INV-1003")
+    assert inv["amount"] == 0 and inv["provenance"]["original"]["Invoice Total"] == "N/A"
+
+
+def test_normalize_money_reads_numbers_and_refuses_text():
+    from vista.portfolio.processors import normalize_money
+
+    assert normalize_money("$1,850.50") == 1850.5
+    assert normalize_money("(120.00)") == -120.0
+    assert normalize_money("-45") == -45.0
+    assert normalize_money("12.5%") == 12.5
+    assert normalize_money("1,200 USD") == 1200.0
+    assert normalize_money(42) == 42.0
+    assert normalize_money("") == 0.0 and normalize_money(None) == 0.0
+    assert normalize_money("N/A") is None and normalize_money("TBD") is None and normalize_money("see note") is None
