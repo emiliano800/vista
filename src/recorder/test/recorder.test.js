@@ -166,3 +166,82 @@ test('typed characters are kept only when the setting is on and the window is no
   assert.deepEqual(keys.map((k) => k.text), ['a', '']);
   assert.equal(keys[1].payload.masked, true);
 });
+
+test('recording_format 2: paths, drags, clipboard history, app start/stop, done marker, raw local titles', async () => {
+  let running = ['Adobe Acrobat', 'Finder'];
+  const t = makeRecorder({ thumbProvider: null, runningApps: async () => running });
+  t.setWindow('Adobe Acrobat', 'INV-1.pdf — jane@acme.com');
+  t.rec.start();
+  await sleep(10);
+  await t.rec._pollWindow();
+  // cursor path, then a drag from mousedown to a far mouseup
+  t.rec._onMouseMove({ x: 10, y: 10 });
+  await sleep(60);
+  t.rec._onMouseMove({ x: 40, y: 20 });
+  t.rec._onMouse({ button: 1, x: 40, y: 20, clicks: 1 });
+  t.rec._onMouseUp({ x: 300, y: 220 });
+  t.rec._onMouse({ button: 1, x: 300, y: 220, clicks: 1 });
+  t.rec._onMouseUp({ x: 302, y: 221 });
+  // copy A, copy B, paste B, paste A — the older copy still links
+  t.setClip('A-value');
+  t.rec._clip('copy', 'Ctrl+C');
+  await sleep(80);
+  t.setClip('B-value');
+  t.rec._clip('copy', 'Ctrl+C');
+  await sleep(80);
+  t.rec._clip('paste', 'Ctrl+V');
+  await sleep(80);
+  t.setClip('A-value');
+  t.rec._clip('paste', 'Ctrl+V');
+  await sleep(80);
+  // app lifecycle: first observation seeds, later ones diff
+  await t.rec._pollApps();
+  running = ['Adobe Acrobat', 'Excel'];
+  await t.rec._pollApps();
+  t.rec.markDone('invoice booked');
+  await sleep(10);
+  await t.rec.stop();
+
+  const ev = t.events();
+  const types = (k) => ev.filter((e) => e.event_type === k);
+  assert.equal(types('path').length, 1);
+  assert.equal(types('path')[0].payload.points.length, 2);
+  assert.equal(types('drag').length, 1);
+  assert.deepEqual(types('drag')[0].payload.to, { x: 300, y: 220 });
+  const [pB, pA] = types('paste');
+  assert.equal(pB.text, 'B-value');
+  assert.equal(pB.payload.history_depth, 0);
+  assert.equal(pA.text, 'A-value');
+  assert.equal(pA.payload.history_depth, 1);
+  assert.equal(pA.payload.source_app, 'Adobe Acrobat');
+  assert.deepEqual(types('app_start').map((e) => e.app), ['Excel']);
+  assert.deepEqual(types('app_stop').map((e) => e.app), ['Finder']);
+  assert.equal(types('app_start')[0].payload.background, true);
+  assert.equal(types('done')[0].text, 'invoice booked');
+  assert.equal(types('focus')[0].window_title, 'INV-1.pdf — jane@acme.com');
+
+  const manifest = JSON.parse(fs.readFileSync(path.join(t.root, t.rec.recordingId, 'manifest.json'), 'utf8'));
+  assert.equal(manifest.recording_format, 2);
+  assert.equal(manifest.outcome.note, 'invoice booked');
+  assert.equal(manifest.apps_seen.Finder.stopped_at !== null, true);
+  assert.equal(manifest.apps_seen.Excel.started, true);
+  assert.equal(manifest.counts.drag, 1);
+});
+
+test('mouse path and app lifecycle stay off when their settings are off; private apps are named (private)', async () => {
+  let running = ['Adobe Acrobat'];
+  const t = makeRecorder({ thumbProvider: null, runningApps: async () => running });
+  t.rec.settings = { ...t.rec.settings, mousePath: false };
+  t.rec.start();
+  await sleep(10);
+  t.rec._onMouseMove({ x: 1, y: 1 });
+  t.rec._onMouse({ button: 1, x: 1, y: 1, clicks: 1 });
+  t.rec._onMouseUp({ x: 500, y: 500 });
+  await t.rec._pollApps();
+  running = ['Adobe Acrobat', '1Password'];
+  await t.rec._pollApps();
+  await t.rec.stop();
+  const ev = t.events();
+  assert.equal(ev.filter((e) => e.event_type === 'path' || e.event_type === 'drag').length, 0);
+  assert.deepEqual(ev.filter((e) => e.event_type === 'app_start').map((e) => e.app), ['(private)']);
+});

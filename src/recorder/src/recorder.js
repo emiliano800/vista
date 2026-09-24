@@ -10,8 +10,13 @@
 // on copy; a later paste with the same hash carries the source app/window, so
 // "re-keyed from Outlook into QuickBooks" is a fact in the log, not a guess.
 //
-// Every event is redacted before it touches disk and stamped with the current
-// foreground app/window so the pipeline can abstract it into a business step.
+// The local log is complete (`recording_format` 2): typed text, clipboard text and
+// its history, URLs and titles, mouse paths and drags, app start/stop, running apps,
+// a done marker and file created/modified flags. It stays on this device for review
+// and graph compilation; what leaves is decided at upload time (intake.js). Sign-in,
+// payment and private windows are still muted at capture. Every event is stamped
+// with the current foreground app/window so the pipeline can abstract it into a
+// business step.
 import { createHash } from 'node:crypto';
 import { EventEmitter } from 'node:events';
 import fs from 'node:fs';
@@ -29,16 +34,24 @@ const KEY_NAMES = {
   Home: 'Home', End: 'End', PageUp: 'PgUp', PageDown: 'PgDn', Insert: 'Ins', PrintScreen: 'PrtSc',
 };
 const IS_MAC = process.platform === 'darwin';
+export const RECORDING_FORMAT = 2;
+export const CLIP_HISTORY = 32;
+const PATH_SAMPLE_MS = 50;
+const PATH_FLUSH_MS = 2000;
+const DRAG_MIN_PX = 8;
+const APPS_POLL_MS = 5000;
 
 // Capture is not configurable in the app: every capture option is on. What
 // leaves the computer is decided at upload time (metadata only + chosen documents),
 // so the local log can be complete. `demoMode` stays a hidden developer switch.
-export const CAPTURE_SETTINGS = ['redact', 'keyContent', 'files', 'clipboard', 'screenshots', 'video', 'changeDetect', 'clarifyScreenshots'];
+export const CAPTURE_SETTINGS = ['redact', 'keyContent', 'files', 'clipboard', 'screenshots', 'video', 'changeDetect', 'clarifyScreenshots', 'mousePath', 'runningApps'];
 export const DEFAULT_SETTINGS = {
-  redact: true,               // mask emails/phones/cards/IBANs in titles and clipboard text before writing to disk
+  redact: false,              // the local log is kept in full; masking happens at upload, and sign-in/private windows are muted at capture
   keyContent: true,           // record typed characters (masked on sign-in, payment and private windows; never uploaded)
   files: true,                // track documents on screen (macOS) and snapshot their last version at Stop
-  clipboard: true,            // record clipboard text on copy/paste
+  clipboard: true,            // record clipboard text on copy/paste, with a history so out-of-order pastes still link
+  mousePath: true,            // sampled cursor path (`path` events) and drags (`drag` events); never uploaded
+  runningApps: true,          // app start/stop and the set of running apps, from the file probe or `runningApps`
   screenshots: true,          // JPEG frame on every focus change, on screen change + every `frameEverySec`
   video: true,                // low-fps webm of the screen alongside events
   frameEverySec: 15,
@@ -78,6 +91,7 @@ export class Recorder extends EventEmitter {
    * @param {Function|null} opts.thumbProvider  async () => { width, height, gray: Uint8Array } | null
    * @param {Function|null} opts.readClipboard  () => string
    * @param {Function|null} opts.fileProbe  async (win) => string[]  document paths shown by the frontmost app
+   * @param {Function|null} opts.runningApps  async () => string[]  names of every running app (background included)
    */
   constructor(opts) {
     super();
@@ -89,6 +103,7 @@ export class Recorder extends EventEmitter {
     this.thumbProvider = opts.thumbProvider ?? null;
     this.readClipboard = opts.readClipboard ?? (() => '');
     this.fileProbe = opts.fileProbe ?? null;
+    this.runningApps = opts.runningApps ?? null;
     this.files = null;
     this.keyNames = opts.keyNames ?? new Map(); // uiohook keycode -> UiohookKey name
     this.user = opts.user ?? os.userInfo().username;
@@ -112,11 +127,17 @@ export class Recorder extends EventEmitter {
     this._log = [];
     this._thumb = null;
     this._thumbBusy = false;
-    this._lastClip = null;
+    this._clips = [];
+    this._path = [];
+    this._pathAt = 0;
+    this._down = null;
+    this._running = null;
+    this._appsSeen = {};
+    this.outcome = null;
   }
 
   _zeroCounts() {
-    return { click: 0, key: 0, focus: 0, copy: 0, paste: 0, transfer: 0, scroll: 0, shortcut: 0, screen: 0, redactions: 0, total: 0 };
+    return { click: 0, key: 0, focus: 0, copy: 0, paste: 0, transfer: 0, scroll: 0, shortcut: 0, screen: 0, path: 0, drag: 0, app_start: 0, app_stop: 0, redactions: 0, total: 0 };
   }
 
   // ---- lifecycle -----------------------------------------------------------
@@ -138,7 +159,12 @@ export class Recorder extends EventEmitter {
     this.frameNo = 0;
     this._log = [];
     this._thumb = null;
-    this._lastClip = null;
+    this._clips = [];
+    this._path = [];
+    this._down = null;
+    this._running = null;
+    this._appsSeen = {};
+    this.outcome = null;
     this.files = this.settings.files ? new FileTracker() : null;
     this.state = 'recording';
     this._writeManifest();
@@ -147,6 +173,8 @@ export class Recorder extends EventEmitter {
     this._timers.push(setInterval(() => this._periodicFrame(), 1000));
     if (this.settings.changeDetect && this.thumbProvider) this._timers.push(setInterval(() => this._changeTick(), this.settings.changePollMs));
     if (this.files && this.fileProbe) this._timers.push(setInterval(() => this.state === 'recording' && this._probeFiles(this._lastWin, this.current.app, this.current.private), 5000));
+    if (this.settings.runningApps && this.runningApps) this._timers.push(setInterval(() => this._pollApps(), APPS_POLL_MS));
+    if (this.settings.mousePath) this._timers.push(setInterval(() => this._flushPath(), PATH_FLUSH_MS));
     this._pollWindow(true);
     this._emitStatus();
     return this.status();
@@ -188,6 +216,7 @@ export class Recorder extends EventEmitter {
     this._timers = [];
     this._tickApp();
     this.endedAt = new Date();
+    this._flushPath(true);
     this._writeFiles();
     await new Promise((res) => this.stream.end(res));
     this.stream = null;
@@ -215,6 +244,22 @@ export class Recorder extends EventEmitter {
     return this.status();
   }
 
+  // The employee marks the moment the task's goal was reached. The frame recorded
+  // here is the terminal *goal frame* the compiler ends the task on; the note is
+  // review-time context and never leaves the device.
+  markDone(note = '') {
+    if (this.state !== 'recording' && this.state !== 'paused') return this.status();
+    const at = new Date().toISOString();
+    this.outcome = { done_at: at, note: String(note ?? '').trim().slice(0, 2000), app: this.current.app, window_title: this.current.title };
+    if (this.state === 'recording') {
+      this._write('done', { text: this.outcome.note });
+      this._requestFrame('done');
+    }
+    this._note('task marked done');
+    this._writeManifest();
+    return this.status();
+  }
+
   status() {
     const elapsed = this.startedAt ? Date.now() - this.startedAt.getTime() - this.pausedMs - (this._pausedAt ? Date.now() - this._pausedAt : 0) : 0;
     return {
@@ -227,6 +272,7 @@ export class Recorder extends EventEmitter {
       counts: { ...this.counts },
       apps: this._appSummary(),
       log: this._log.slice(-8),
+      outcome: this.outcome,
       settings: this.settings,
     };
   }
@@ -237,6 +283,8 @@ export class Recorder extends EventEmitter {
     if (!this.hook) return;
     this._h = {
       mousedown: (e) => this._onMouse(e),
+      mouseup: (e) => this._onMouseUp(e),
+      mousemove: (e) => this._onMouseMove(e),
       wheel: (e) => this._onWheel(e),
       keydown: (e) => this._onKeyDown(e),
       keyup: (e) => this._onKeyUp(e),
@@ -261,7 +309,37 @@ export class Recorder extends EventEmitter {
   }
 
   _onMouse(e) {
+    this._flushPath();
+    this._down = { button: e.button, x: e.x, y: e.y, at: Date.now() };
     this._write('click', { payload: { button: e.button, x: e.x, y: e.y, clicks: e.clicks } });
+  }
+
+  _onMouseUp(e) {
+    const d = this._down;
+    this._down = null;
+    if (!d || !this.settings.mousePath) return;
+    if (Math.hypot(e.x - d.x, e.y - d.y) < DRAG_MIN_PX) return;
+    this._flushPath();
+    this._write('drag', { payload: { button: d.button, from: { x: d.x, y: d.y }, to: { x: e.x, y: e.y }, ms: Date.now() - d.at } });
+  }
+
+  // Cursor path, sampled every PATH_SAMPLE_MS and written as one `path` event per
+  // PATH_FLUSH_MS (points are [ms since the event's own timestamp, x, y]).
+  _onMouseMove(e) {
+    if (!this.settings.mousePath || this.state !== 'recording') return;
+    const now = Date.now();
+    if (this._path.length && now - this._pathAt < PATH_SAMPLE_MS) return;
+    if (!this._path.length) this._pathStart = now;
+    this._pathAt = now;
+    this._path.push([now - this._pathStart, e.x, e.y]);
+  }
+
+  _flushPath(force = false) {
+    if (!this._path.length) return;
+    if (!force && this._path.length < 2) return;
+    const points = this._path;
+    this._path = [];
+    this._write('path', { payload: { started_at: new Date(this._pathStart).toISOString(), points, dragging: !!this._down } });
   }
 
   _onWheel(e) {
@@ -309,21 +387,30 @@ export class Recorder extends EventEmitter {
       } catch {
         raw = '';
       }
-      const text = this.settings.clipboard ? this._redactText(raw).slice(0, 200) : '';
+      const text = this.settings.clipboard && !this.current.sensitive ? this._redactText(raw) : '';
       const hash = raw ? clipHash(raw, this.recordingId) : '';
       const payload = { combo, ...extra, clip_hash: hash, chars: raw.length };
       let crossApp = false;
       if (type === 'copy') {
-        this._lastClip = hash ? { hash, app: this.current.app, title: this.current.title, at: Date.now() } : null;
-      } else if (type === 'paste' && hash && this._lastClip?.hash === hash) {
-        const src = this._lastClip;
-        crossApp = src.app !== this.current.app;
-        Object.assign(payload, {
-          source_app: src.app,
-          source_title: src.title,
-          transfer_ms: Date.now() - src.at,
-          cross_app: crossApp,
-        });
+        if (hash) {
+          this._clips = this._clips.filter((c) => c.hash !== hash);
+          this._clips.push({ hash, app: this.current.app, title: this.current.title, at: Date.now() });
+          if (this._clips.length > CLIP_HISTORY) this._clips.shift();
+        }
+        payload.history = this._clips.length;
+      } else if (type === 'paste' && hash) {
+        const idx = this._clips.findIndex((c) => c.hash === hash);
+        if (idx >= 0) {
+          const src = this._clips[idx];
+          crossApp = src.app !== this.current.app;
+          Object.assign(payload, {
+            source_app: src.app,
+            source_title: src.title,
+            transfer_ms: Date.now() - src.at,
+            cross_app: crossApp,
+            history_depth: this._clips.length - 1 - idx,
+          });
+        }
       }
       if (this._write(type, { text, payload }) && crossApp) this.counts.transfer += 1;
     }, 60);
@@ -347,6 +434,7 @@ export class Recorder extends EventEmitter {
     const title = win.title ?? '';
     const url = win.url ?? '';
     if (!force && app === this.current.app && title === this.current.title && url === this.current.url) return;
+    this._flushPath();
     const priv = this._isPrivate(app, title);
     const own = this._isOwn(app);
     const shownTitle = priv ? '(private)' : this._redactText(title);
@@ -366,6 +454,7 @@ export class Recorder extends EventEmitter {
     try {
       const res = await this.fileProbe(win);
       const docs = Array.isArray(res) ? res : res?.docs;
+      if (!Array.isArray(res) && res?.running && !this.runningApps) this._observeRunning(res.running);
       if (docs && this.state === 'recording' && this.files) {
         const before = new Set([...this.files.files.values()].filter((f) => f.open).map((f) => f.path));
         this.files.observe(docs, Date.now(), { app, running: Array.isArray(res) ? null : res.running });
@@ -381,12 +470,65 @@ export class Recorder extends EventEmitter {
     }
   }
 
+  // App start/stop and the running set, from `runningApps` (any platform) or the
+  // macOS file probe's `running`. Written under the app that started or stopped,
+  // not the foreground one; private apps are named `(private)`.
+  async _pollApps() {
+    if (this.state !== 'recording' || this._appsBusy) return;
+    this._appsBusy = true;
+    try {
+      const res = await this.runningApps();
+      if (res) this._observeRunning(res);
+    } catch (err) {
+      this._note(`running apps unavailable: ${err.message}`);
+    } finally {
+      this._appsBusy = false;
+    }
+  }
+
+  _observeRunning(list) {
+    if (!this.settings.runningApps || this.state !== 'recording') return;
+    const now = new Date().toISOString();
+    const running = new Set([...list].map((a) => String(a)).filter(Boolean));
+    const shown = (a) => (this._isPrivate(a, '') ? '(private)' : a);
+    for (const a of running) {
+      const seen = this._appsSeen[shown(a)];
+      if (!seen) this._appsSeen[shown(a)] = { first_seen: now, started: !!this._running, stopped_at: null, background_seconds: 0 };
+      else if (seen.stopped_at) Object.assign(seen, { stopped_at: null, started: true });
+      if (this._running && !this._running.has(a)) this._write('app_start', { app: shown(a), payload: { background: a !== this.current.app } });
+    }
+    if (this._running) {
+      for (const a of this._running) {
+        if (running.has(a)) continue;
+        if (this._appsSeen[shown(a)]) this._appsSeen[shown(a)].stopped_at = now;
+        this._write('app_stop', { app: shown(a), payload: {} });
+      }
+    }
+    const dt = this._runningAt ? (Date.now() - this._runningAt) / 1000 : 0;
+    for (const a of running) if (a !== this.current.app && this._appsSeen[shown(a)]) this._appsSeen[shown(a)].background_seconds += dt;
+    this._running = running;
+    this._runningAt = Date.now();
+  }
+
   _writeFiles() {
     if (!this.files || !this.dir) return;
     const t1 = this.endedAt.getTime();
     this.files.closeAll(t1);
-    const files = this.files.finish({ t0: this.startedAt.getTime(), t1, pauses: this.pauses ?? [] });
-    fs.writeFileSync(path.join(this.dir, FILES_FILE), JSON.stringify({ version: 1, files }, null, 2));
+    const t0 = this.startedAt.getTime();
+    const files = this.files.finish({ t0, t1, pauses: this.pauses ?? [] });
+    for (const f of files) {
+      try {
+        const st = fs.statSync(f.path);
+        f.created = st.birthtimeMs >= t0 && st.birthtimeMs <= t1;
+        f.modified = st.mtimeMs >= t0;
+        f.modified_at = st.mtime.toISOString();
+        f.size_bytes = st.size;
+      } catch {
+        f.created = null;
+        f.modified = null;
+      }
+    }
+    fs.writeFileSync(path.join(this.dir, FILES_FILE), JSON.stringify({ version: 2, files }, null, 2));
     this.counts.file = files.length;
   }
 
@@ -460,15 +602,17 @@ export class Recorder extends EventEmitter {
 
   // ---- output --------------------------------------------------------------
 
-  _write(type, { text = '', payload = {}, element = '' } = {}) {
+  _write(type, { text = '', payload = {}, element = '', app = null } = {}) {
     if (this.state !== 'recording' || !this.stream) return false;
-    if (this.current.private && type !== 'focus') return false; // nothing leaves a private app
-    if (this.current.own) return false; // clicks in the recorder's own windows are not work
+    const lifecycle = type === 'app_start' || type === 'app_stop';
+    if (this.current.private && type !== 'focus' && !lifecycle) return false; // nothing leaves a private app
+    if (this.current.own && !lifecycle) return false; // clicks in the recorder's own windows are not work
+    if (lifecycle && this._isOwn(app ?? '')) return false;
     const raw = {
       timestamp: new Date().toISOString(),
       user: this.user,
       event_type: type,
-      app: this.current.app,
+      app: app ?? this.current.app,
       window_title: this.current.title,
       url: this.current.url,
       element,
@@ -480,8 +624,8 @@ export class Recorder extends EventEmitter {
     this.stream.write(JSON.stringify(ev) + '\n');
     this.counts[type] = (this.counts[type] ?? 0) + 1;
     this.counts.total += 1;
-    if (type !== 'key' && type !== 'scroll') this.emit('event', ev);
-    if (type === 'focus' || type === 'copy' || type === 'paste' || type === 'shortcut') this._pushLog(ev);
+    if (type !== 'key' && type !== 'scroll' && type !== 'path') this.emit('event', ev);
+    if (type === 'focus' || type === 'copy' || type === 'paste' || type === 'shortcut' || type === 'done') this._pushLog(ev);
     return true;
   }
 
@@ -502,6 +646,7 @@ export class Recorder extends EventEmitter {
 
   _writeManifest(final = false) {
     const manifest = {
+      recording_format: RECORDING_FORMAT,
       recording_id: this.recordingId,
       user: this.user,
       platform: process.platform,
@@ -510,8 +655,10 @@ export class Recorder extends EventEmitter {
       active_seconds: final ? Math.round((this.endedAt - this.startedAt - this.pausedMs) / 1000) : null,
       counts: this.counts,
       apps: this._appSummary(),
+      apps_seen: this._appsSeen,
       pauses: this.pauses ?? [],
-      settings: { redact: !!this.settings.redact, keyContent: this.settings.keyContent, clipboard: this.settings.clipboard, screenshots: this.settings.screenshots, video: this.settings.video },
+      outcome: this.outcome,
+      settings: { redact: !!this.settings.redact, keyContent: this.settings.keyContent, clipboard: this.settings.clipboard, screenshots: this.settings.screenshots, video: this.settings.video, mousePath: this.settings.mousePath, runningApps: this.settings.runningApps },
       files: { events: 'events.jsonl', shots: 'shots/', video: this.settings.video ? 'screen.webm' : null, documents: this.settings.files ? FILES_FILE : null },
       processing: final ? 'pending' : null,
       // Runtime notes (helper failures, pauses) so a session whose events lack app

@@ -17,6 +17,12 @@ class EventType(StrEnum):
     SCROLL = "scroll"
     SHORTCUT = "shortcut"  # modifier combination (Ctrl+S, Alt+Tab); text = canonical combo, never typed content
     SCREEN = "screen"  # screenshot taken on focus change / click; payload["image"] = relative file path
+    # recording_format 2, device-local only (never in the metadata upload)
+    PATH = "path"  # sampled cursor path; payload["points"] = [[ms, x, y], ...]
+    DRAG = "drag"  # mousedown→mouseup beyond a few px; payload from/to/ms
+    APP_START = "app_start"  # an app appeared in the running set (payload["background"] when not frontmost)
+    APP_STOP = "app_stop"  # an app left the running set
+    DONE = "done"  # the employee marked the task finished; text = their note
 
 
 @dataclass

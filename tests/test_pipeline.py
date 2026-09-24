@@ -136,6 +136,28 @@ def test_recorder_events_flow_through_preprocess():
     assert out[2].payload["n_keys"] == 2 and out[3].text == "Ctrl+S"
 
 
+def test_format2_telemetry_is_read_but_never_becomes_a_step():
+    # recording_format 2 adds device-local telemetry; the log must still parse and
+    # background app lifecycle must not create steps in apps the employee never touched
+    events = [
+        ev(0, EventType.FOCUS, app="Excel", title="AP tracker.xlsx"),
+        ev(0.2, EventType.PATH, app="Excel", title="AP tracker.xlsx", payload={"points": [[0, 1, 1], [50, 9, 9]]}),
+        ev(0.4, EventType.DRAG, app="Excel", title="AP tracker.xlsx", payload={"from": {"x": 1, "y": 1}, "to": {"x": 90, "y": 9}}),
+        ev(0.6, EventType.APP_START, app="Slack", title="AP tracker.xlsx", payload={"background": True}),
+        ev(1, EventType.CLICK, app="Excel", title="AP tracker.xlsx"),
+        ev(1.5, EventType.APP_STOP, app="Slack", title="AP tracker.xlsx"),
+        ev(2, EventType.DONE, app="Excel", title="AP tracker.xlsx", text="reconciled"),
+    ]
+    buf = io.StringIO()
+    write_jsonl(events, buf)
+    buf.seek(0)
+    assert list(JsonlSource(buf).events()) == events
+    buf.seek(0)
+    res = Pipeline().run(JsonlSource(buf))
+    assert {e.event_type for e in res.raw} == {EventType.FOCUS, EventType.CLICK, EventType.DONE}
+    assert {s.app for s in res.steps} == {"Excel"}
+
+
 def test_xes_escapes_attributes():
     rules = [abstraction.ActivityRule('Act "quoted" & <x>', app="X")]
     steps = abstraction.abstract([("s", ev(0, EventType.CLICK, app="X", title='a "b" & <c>'))], rules)

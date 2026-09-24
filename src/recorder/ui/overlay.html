@@ -201,6 +201,10 @@
             Pause
           </button>
           <button id="resume" class="primary hidden">Resume</button>
+          <button id="done" class="pause hidden" title="Mark the moment the task was finished">
+            <svg viewBox="0 0 16 16"><path d="M3 8.5l3 3 7-7" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            Done
+          </button>
           <button id="stop" class="stop hidden" title="Stop and save">
             <svg viewBox="0 0 16 16"><rect x="3" y="3" width="10" height="10" rx="2"/></svg>
             Stop
@@ -233,7 +237,7 @@
         </div>
         <div id="feed"></div>
         <div class="row">
-          <div id="privacy" class="privacy"><i></i><span id="privacy-text">Redacting emails, phones, cards on this device</span></div>
+          <div id="privacy" class="privacy"><i></i><span id="privacy-text">Full recording stays on this device</span></div>
         </div>
         <div class="links">
           <a id="open-dash">Open my dashboard</a>
@@ -306,6 +310,7 @@
         $('pause').classList.toggle('hidden', !rec);
         $('resume').classList.toggle('hidden', !paused);
         $('stop').classList.toggle('hidden', !(rec || paused));
+        $('done').classList.toggle('hidden', !(rec || paused) || !!st.outcome);
         if (st.state === 'idle') {
           $('title').textContent = 'Vista is off';
           $('sub').textContent = st.counts.total ? `Last session saved · ${st.counts.total.toLocaleString()} interactions` : 'Click Start when you begin working';
@@ -335,7 +340,9 @@
         priv.classList.toggle('on', !!st.current.private);
         $('privacy-text').textContent = st.current.private
           ? 'Private app open — no clicks, keys or screens saved'
-          : `Redacted on this device: ${st.counts.redactions} item${st.counts.redactions === 1 ? '' : 's'}`;
+          : st.outcome
+          ? 'Task marked done — full recording stays on this device'
+          : 'Full recording stays on this device; only normalised data can be shared';
       }
       const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 
@@ -379,6 +386,7 @@
       $('pause').onclick = () => window.vista.pause().then(render);
       $('resume').onclick = () => window.vista.resume().then(render);
       $('stop').onclick = () => window.vista.stop().then(render);
+      $('done').onclick = () => window.vista.markDone().then(render);
       $('expand').onclick = () => setExpanded(!expanded);
       $('collapse').onclick = () => setExpanded(false);
       $('open-dash').onclick = () => window.vista.openDashboard();

@@ -81,6 +81,7 @@ async function buildRecorder() {
   if (settings.demoMode) DEMO = true;
   let hook = null;
   let activeWindow = null;
+  let runningApps = null;
   let keyNames = new Map();
   if (DEMO) {
     hook = new DemoHook();
@@ -96,7 +97,10 @@ async function buildRecorder() {
       console.error('uiohook-napi unavailable, input will not be recorded:', err.message);
     }
     try {
-      activeWindow = withPermissionFallback((await import('get-windows')).activeWindow, { warn: (m) => console.warn(m) });
+      const gw = await import('get-windows');
+      activeWindow = withPermissionFallback(gw.activeWindow, { warn: (m) => console.warn(m) });
+      // Every app with a window, foreground or not: app start/stop and background apps.
+      if (typeof gw.openWindows === 'function') runningApps = async () => [...new Set((await gw.openWindows()).map((w) => w.owner?.name).filter(Boolean))];
     } catch (err) {
       console.error('get-windows unavailable, foreground app will not be recorded:', err.message);
       // A probe that fails loudly: the recorder notes it on every poll, so the reason
@@ -117,6 +121,7 @@ async function buildRecorder() {
     frameProvider: grabFrame,
     thumbProvider: grabThumb,
     fileProbe: DEMO ? null : probeDocuments,
+    runningApps,
   });
   rec.on('status', broadcastStatus);
   rec.on('finished', (m) => postProcess(m).catch((e) => console.error('post-processing failed:', e.message)));
@@ -1549,6 +1554,7 @@ ipcMain.handle('rec:pause', () => pauseRecording());
 ipcMain.handle('rec:resume', () => resumeRecording());
 ipcMain.handle('rec:stop', () => stopRecording());
 ipcMain.handle('rec:intent', (_e, text) => setIntent(text));
+ipcMain.handle('rec:done', (_e, note) => recorder.markDone(scrub(String(note ?? ''))));
 ipcMain.handle('rec:toggle', () => toggle());
 ipcMain.handle('rec:status', () => recorder.status());
 ipcMain.handle('recordings:list', () => listRecordings());

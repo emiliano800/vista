@@ -189,9 +189,14 @@ Without a workspace, AI explanations run locally and need `OPENAI_API_KEY`
 `VISTA_OPENAI_URL` (any OpenAI-compatible chat-completions endpoint) are
 optional. The key stays in the Electron main process.
 
-Redaction (emails, phones, IBAN/card/SSN) runs on the device before a line is
-written; typed characters are not stored by default (only key counts and
-shortcut combos); private apps/title keywords mute capture entirely.
+The local log is complete (`recording_format: 2` in the manifest): typed text,
+clipboard text with a 32-entry history (`history_depth` on linked pastes), URLs
+and window titles, sampled cursor paths (`path`) and drags (`drag`), app
+start/stop and background apps (`app_start`/`app_stop`, `apps_seen`), the
+employee's Done marker (`done` event, `outcome`) and `created`/`modified` flags
+per document. It never leaves the computer: uploads take only what
+`metadataEvents`/`packageLeakage` allow. Sign-in and payment windows mask typed
+and clipboard text; private apps/title keywords mute capture entirely.
 
 ```bash
 make demo                # simulated Outlook/Acrobat/QuickBooks/Excel activity, no hooks
