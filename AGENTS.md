@@ -358,9 +358,13 @@ wired only in tests/eval. Any new automatic hop must follow the contract above.
   obsolete. All project code and documentation belong in `emiliano800/vista`.
 - Do not recreate retired remotes or mirror branches, and do not bring those
   repositories up unprompted. Refer to this project and `origin` going forward.
-- Before pushing, verify `origin` points to `emiliano800/vista` and pull
-  `origin/main` without overwriting local work. Never fetch or push all remotes.
-  Preserve unrelated user edits and never force-push.
+- **Pull in recent changes first.** At the start of any work, before opening a
+  PR, and before every push: `git fetch origin` and merge `origin/main` into the
+  working branch (never rebase shared branches, never force-push). `main` moves
+  between sessions (recorder releases, deploy docs); a PR based on a stale
+  `main` is not ready. Re-run lint and the affected tests after the merge.
+- Verify `origin` points to `emiliano800/vista` before pushing. Never fetch or
+  push all remotes. Preserve unrelated user edits.
 - Never commit secrets, `.env`, `deploy/aws/.env`, or credential-output files.
 
 ## Live deployment (2026-09-24)

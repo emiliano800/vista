@@ -3,7 +3,7 @@ import uuid
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import select
 
-from vista.automation import service
+from vista.automation import graph_review, service
 from vista.automation.schemas import DecisionCreate, EligibilityOut, VersionCreate, VersionOut, WorkflowCreate, WorkflowOut
 from vista.models.tenant import Workflow, WorkflowApproval, WorkflowVersion
 from vista.portfolio.access import FirmContext, company_session, firm_context, writer_context
@@ -98,6 +98,34 @@ def decide_version(
         workflow = service.get_workflow(session, company.id, workflow_id, lock=True)
         version = service.get_version(session, workflow, version_id)
         return service.record_decision(session, workflow, version, ctx.principal.user_id, body)
+
+
+@router.get("/{workflow_id}/versions/{version_id}/graph", response_model=graph_review.GraphReviewOut)
+def version_graph(
+    company_id: str, workflow_id: uuid.UUID, version_id: uuid.UUID, ctx: FirmContext = Depends(firm_context)
+) -> graph_review.GraphReviewOut:
+    company = ctx.company(company_id)
+    with company_session(company) as session:
+        workflow = service.get_workflow(session, company.id, workflow_id)
+        version = service.get_version(session, workflow, version_id)
+        return graph_review.review(session, workflow, version)
+
+
+@router.post("/{workflow_id}/versions/{version_id}/graph/draft", response_model=VersionOut, status_code=201)
+def draft_from_runs(
+    company_id: str,
+    workflow_id: uuid.UUID,
+    version_id: uuid.UUID,
+    body: graph_review.GraphDraftCreate,
+    ctx: FirmContext = Depends(firm_context),
+) -> VersionOut:
+    company = ctx.company(company_id)
+    if ctx.membership.role != "admin":
+        raise HTTPException(403, "Firm admin role required to draft from runs")
+    with company_session(company) as session:
+        workflow = service.get_workflow(session, company.id, workflow_id, lock=True)
+        version = service.get_version(session, workflow, version_id)
+        return graph_review.create_draft(session, workflow, version, ctx.principal.user_id, body)
 
 
 @router.get("/{workflow_id}/versions/{version_id}/eligibility", response_model=EligibilityOut)
