@@ -4,9 +4,10 @@ Implementation reference; checked against repository commit `6b5ad5f` on
 2026-09-24. Deployment notes are historical and must be rechecked against AWS before
 assuming a newly pulled change is live. The ledger/company-import commits of
 2026-09-23 (platform migration `0005`, tenant migrations `0020`–`0022`) went live on
-2026-09-24 as image `b28094d`; the firm-counter race fix (`18713e8`) and the test
-tenant teardown (`6b5ad5f`) follow it. Production Jev is still the stub: no TypeSafe
-key is stored, so the Computer Use Agent executes nothing there.
+2026-09-24 as image `b28094d`; image `53968b1`, deployed the same day at 13:24 UTC,
+adds the firm-counter race fix (`18713e8`) and the test tenant teardown (`6b5ad5f`).
+Production Jev is still the stub: no TypeSafe key is stored, so the Computer Use
+Agent executes nothing there.
 (Roadmap: `NEXT_STEPS.md`. Business: `BUSINESS_COURSE_OF_ACTION.md`.)
 
 ## Product direction and current coverage

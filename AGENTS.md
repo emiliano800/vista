@@ -375,12 +375,13 @@ wired only in tests/eval. Any new automatic hop must follow the contract above.
   ANALYST key, not Meridian — scripts must select keys by section, not position.
 - Old "Vista Solutions / Vista Demo" key was revoked 2026-09-19 (rotation,
   replacement destroyed unread).
-- Deployed state 2026-09-24: image `b28094d` went live at 04:14 UTC with platform
-  migration `0005` and tenant `0020`–`0022`, the `/api/deals/{deal}/imports…` and
-  `/api/companies/{id}/reports` routes, and the six demo workspaces linked to their
-  analyst companies. Two deploys failed the evening before (dev-only `httpx` import,
-  then the `0022` rollback — see Gotchas). The firm-counter fix `18713e8` (duplicate
-  `OP-063` on the live portfolio merge) is the next backend change to ship; deploy the
+- Deployed state 2026-09-24: image `53968b1` (task defs `vista-vista-api:23`,
+  `vista-worker:20`) went live at 13:24 UTC from a clean tree via the `vista-deploy`
+  profile. It carries platform migration `0005`, tenant `0020`–`0022`, the
+  `/api/deals/{deal}/imports…` and `/api/companies/{id}/reports` routes, the six demo
+  workspaces linked to their analyst companies, and the firm-counter fix `18713e8`
+  (duplicate `OP-063` on the live portfolio merge). Two deploys failed the evening
+  before (dev-only `httpx` import, then the `0022` rollback — see Gotchas). Deploy the
   image and the Worker together.
 
 ## Gotchas
