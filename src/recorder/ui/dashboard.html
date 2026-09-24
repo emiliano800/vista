@@ -449,6 +449,12 @@
             <div id="wf-body"><div class="empty">Waiting for the analysis…</div></div>
           </section>
 
+          <section class="card" id="plan-card" style="margin:0 0 14px">
+            <h2 style="display:flex;justify-content:space-between;align-items:baseline"><span>Steps as a plan</span><span class="muted" style="text-transform:none;letter-spacing:0;font-weight:500" id="plan-sub"></span></h2>
+            <p class="muted" style="margin:-4px 0 10px;font-size:12px;line-height:16px">The session compiled on this computer into states and moves: which kind of app you were in, what you held (documents, copied facts, filled fields) and the move that changed it. Only these labels can be shared; the values, titles, URLs and positions stay here. Leave out a move to drop it from the plan; “always ask” makes an automated run stop for a person before that move.</p>
+            <div id="plan-body"><div class="empty">Waiting for the analysis…</div></div>
+          </section>
+
           <section class="card hidden" id="files-card" style="margin:0 0 14px">
             <h2 style="display:flex;justify-content:space-between;align-items:baseline"><span>Documents</span><span class="muted" style="text-transform:none;letter-spacing:0;font-weight:500" id="files-sub"></span></h2>
             <div class="files" id="files"></div>
@@ -530,7 +536,7 @@
               <li>Every step is checked on this computer against the session's limits before it runs, and written to a local log first.</li>
               <li>Anything irreversible pauses the run until your workspace owner approves it. Sign-in, payment and private windows are refused.</li>
               <li>Press <b>Stop</b>, or <span class="mono">⌘⇧Esc</span>, at any time. Quitting the recorder stops the session.</li>
-              <li>This recorder build does not include the browser or desktop drivers yet: it will report such steps as unsupported so the run pauses for a person.</li>
+              <li>Browser steps run in a separate Vista window with its own storage — none of your logins, cookies or history. Desktop steps (macOS only) act on the front window through its accessibility tree and need Accessibility permission. Anything this computer cannot perform is reported back so the run pauses for a person.</li>
             </ul>
           </section>
         </div>
@@ -560,6 +566,8 @@
       <h3>Optional document snapshots</h3>
       <p class="muted">Nothing is selected by default. Selected documents are uploaded in full; check their contents before sharing.</p>
       <div id="upload-documents" class="set"></div>
+      <h3>Optional plan</h3>
+      <div id="upload-plan" class="set"></div>
       <div class="set"><label><div>I approve this package for the company shown above<span>The package is frozen when queued. Local originals are retained, and later local edits do not withdraw uploaded data. The server stores a private draft; cloud analysis is not enabled yet.</span></div><input id="upload-consent" type="checkbox" /></label></div>
       <p id="upload-error" role="status"></p>
       <button id="upload-confirm" class="btn primary" disabled>Queue upload</button>
@@ -823,6 +831,10 @@
           $('upload-documents').innerHTML = preview.documents.length
             ? preview.documents.map((f) => `<label><div>${esc(f.name)}<span>${Number(f.size_bytes).toLocaleString()} bytes · full snapshot</span></div><input type="checkbox" data-upload-file="${esc(f.id)}" /></label>`).join('')
             : '<p class="muted">No supported snapshots are available. Activity metadata can still be uploaded.</p>';
+          const plan = preview.plan;
+          $('upload-plan').innerHTML = plan
+            ? `<label><div>Share the plan of this session<span>${plan.states} states · ${plan.moves} moves · ${plan.roles.map(esc).join(', ')}${plan.submits ? ` · ${plan.submits} submit${plan.submits === 1 ? '' : 's'} (always ask)` : ''}${plan.truncated ? ' · cut short' : ''}. Kinds of app, action classes, control labels and input names only — no values, titles, URLs or positions.</span></div><input type="checkbox" id="upload-share-plan" /></label>`
+            : '<p class="muted">No plan was compiled from this session.</p>';
           $('upload-consent').checked = false;
           $('upload-confirm').disabled = true;
           $('upload-error').textContent = '';
@@ -836,7 +848,8 @@
         $('upload-confirm').disabled = true;
         try {
           const selectedFileIds = [...$('upload-documents').querySelectorAll('input:checked')].map((e) => e.dataset.uploadFile);
-          await window.vista.submit(pendingShare.id, { consent: true, selectedFileIds, expectedBinding: pendingShare.binding });
+          const sharePlan = !!$('upload-share-plan')?.checked;
+          await window.vista.submit(pendingShare.id, { consent: true, selectedFileIds, sharePlan, expectedBinding: pendingShare.binding });
           pendingShare = null;
           $('upload-dialog').close();
           recordings = await window.vista.recordings();
@@ -1028,6 +1041,7 @@
         renderFiles();
         renderInsights();
         renderWorkflows();
+        renderPlan(id);
         const rec = recordings.find((x) => x.recording_id === id);
         if (rec) renderWorkspaceState(rec, uploadState(rec));
         // key added after the session ended, or the app was closed mid-way: pick the explanations up now
@@ -1041,6 +1055,7 @@
         renderFiles();
         renderInsights();
         renderWorkflows();
+        renderPlan(reviewing);
         renderReview();
       });
 
@@ -1666,6 +1681,40 @@
         const wf = vs?.workflows;
         $('wf-body').innerHTML = wf ? workflowsHtml(wf) : `<div class="empty">${vs?.insights?.running ? 'Working out the workflows…' : 'No workflow suggestions for this session yet.'}</div>`;
         $('wf-sub').textContent = wf?.fallback ? 'no repeatable pattern yet · session summarised' : wf?.workflows?.length ? `${wf.workflows.length} suggested · ${wf.environment?.roles?.length ?? 0} kinds of app` : '';
+      }
+      const ACTION_LABEL = { navigate: 'Switch to', click: 'Click', type_value: 'Fill', press: 'Press', read: 'Copy', extract: 'Extract', submit: 'Submit', wait: 'Wait', http_get: 'Fetch', create_task: 'Create task' };
+      function planHtml(plan, id) {
+        if (!plan?.moves?.length) return '<div class="empty">No moves compiled from this session yet.</div>';
+        const rows = plan.moves.map((m, i) => {
+          const what = m.action === 'type_value' ? `${m.control ? esc(m.control) : 'a field'} ← ${esc(m.slot ?? '')}`
+            : m.action === 'read' ? `${m.control ? esc(m.control) : 'selection'} → ${esc((m.effect[0] ?? '').replace(/^fact:/, ''))}`
+            : m.action === 'navigate' ? esc(m.role) : esc(m.control ?? m.role);
+          const cls = m.excluded ? ' style="opacity:.45"' : '';
+          const ask = m.action === 'submit' ? '<span class="muted">always asks</span>'
+            : `<button class="btn small" data-plan-policy="${esc(m.id)}" data-on="${m.policy === 'always_ask' ? '1' : '0'}">${m.policy === 'always_ask' ? 'Always ask ✓' : 'Always ask'}</button>`;
+          return `<div class="row"${cls}><span class="n">${i + 1}</span><span>${esc(ACTION_LABEL[m.action] ?? m.action)} ${what}</span><span class="muted">${esc(m.role)}</span>${plan.submitted ? '' : `${ask}<button class="btn small" data-plan-excl="${esc(m.id)}" data-on="${m.excluded ? '0' : '1'}">${m.excluded ? 'Put back' : 'Leave out'}</button>`}</div>`;
+        });
+        return rows.join('');
+      }
+      let planFor = null;
+      async function renderPlan(id) {
+        if (!id) return;
+        try { planFor = await window.vista.plan(id); } catch (e) { $('plan-body').innerHTML = `<div class="empty">${esc(e.message)}</div>`; return; }
+        if (reviewing !== id) return;
+        const s = planFor?.summary;
+        $('plan-sub').textContent = s ? `${s.states} states · ${s.moves} moves${s.truncated ? ' · cut short' : ''}` : '';
+        const box = $('plan-body');
+        box.innerHTML = planHtml(planFor, id);
+        box.querySelectorAll('[data-plan-excl]').forEach((b) => (b.onclick = async () => {
+          b.disabled = true;
+          try { planFor = await window.vista.editPlan(id, b.dataset.planExcl, { excluded: b.dataset.on === '1' }); } catch (e) { alert(e.message); }
+          renderPlan(id);
+        }));
+        box.querySelectorAll('[data-plan-policy]').forEach((b) => (b.onclick = async () => {
+          b.disabled = true;
+          try { planFor = await window.vista.editPlan(id, b.dataset.planPolicy, { policy: b.dataset.on === '1' ? null : 'always_ask' }); } catch (e) { alert(e.message); }
+          renderPlan(id);
+        }));
       }
       async function openWorkflows(id) {
         const r = recordings.find((x) => x.recording_id === id);

@@ -3,7 +3,9 @@ protocol, with Jev scripted or stubbed. Needs Postgres (`docker compose up -d`).
 
 from __future__ import annotations
 
+import json
 import uuid
+from pathlib import Path
 
 import pytest
 from sqlalchemy import select
@@ -33,6 +35,12 @@ BROWSER = {
     "goal": "Enter the invoice into the sandbox form and submit it.",
     "allowed_tools": ["read_source_records", "write_destination_records", "compare_with_manual_entry"],
     "success_criteria": ["The form shows the saved invoice"],
+}
+GRAPH = {
+    **BROWSER,
+    "required_inputs": ["input_1", "Sandbox form URL"],
+    "allowed_tools": ["read_source_records", "map_fields", "compare_with_manual_entry"],
+    "graph": json.loads((Path(__file__).parent / "fixtures" / "plan_invoice.json").read_text()),
 }
 INPUTS = {"Sandbox form URL": {"kind": "value", "value": "http://localhost:8765/_sandbox/entry.html"}}
 DEVICE = {"device_id": "device-1", "platform": "darwin", "browser": "true", "desktop": "true", "recorder_version": "0.3.0"}
@@ -120,6 +128,27 @@ def test_tenant_admin_can_approve_and_the_stub_model_executes_nothing(client, mo
     assert run["status"] == "stopped" and events(schema, run["agent_run_id"])[-1][0] == "result"
     analytics = client.get("/api/agents/analytics", headers=headers).json()
     assert any(a["agent_key"] == "computer_use" for a in analytics["agents"])
+
+
+def test_a_graph_definition_is_planned_over_its_recorded_moves_and_a_stopped_run_still_reports_its_delta(client, monkeypatch):
+    monkeypatch.setattr(settings, "typesafe_api_key", None)
+    monkeypatch.delenv("VISTA_JEV_CASSETTE", raising=False)
+    headers, company_id, schema, _ = company_admin(client)
+    workflow, version = approved(client, headers, GRAPH, name="Recorded")
+    run = start(client, headers, workflow, version, inputs={**INPUTS, "input_1": {"kind": "value", "value": "ACME"}}).json()
+    _drain()
+    run = client.get(f"/api/workflow-runs/{run['id']}", headers=headers).json()
+    assert run["status"] == "waiting_for_human" and run["pending"]["reason"] == "off_plan"
+    trace = events(schema, run["agent_run_id"])
+    judged = next(d for t, d in trace if t == "model_call")
+    assert judged["planner"] == "graph" and {"node", "edge", "policy", "p_node"} <= set(judged)
+    assert not [d for t, d in trace if t == "tool_call" and d.get("executed") and d.get("tool") != "observe"]
+
+    assert client.post(f"/api/workflow-runs/{run['id']}/stop", headers=headers, json={"reason": "enough"}).status_code == 200
+    _drain()
+    run = client.get(f"/api/workflow-runs/{run['id']}", headers=headers).json()
+    kind, result = events(schema, run["agent_run_id"])[-1]
+    assert run["status"] == "stopped" and kind == "result" and "graph_delta" in result and result["graph_delta"] is None
 
 
 def test_documents_run_finishes_with_verification_finding_and_usage(client, monkeypatch):

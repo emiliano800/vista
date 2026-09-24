@@ -14,6 +14,9 @@ from datetime import UTC, datetime, timedelta
 from vista.computer_use.harness import Action, ActionResult, Candidate, HarnessSuspended, Observation, ObserveContext, rank_candidates
 from vista.computer_use.planner import step_id_for
 
+# Page text the recorder sends back; enough for a list plus an open record's detail pane.
+MAX_TEXT = 12000
+
 CAPABILITIES = {
     "browser": {"navigate", "click", "type_value", "press", "read", "extract", "submit", "screenshot", "wait"},
     "desktop": {"navigate", "click", "type_value", "press", "submit", "screenshot", "wait"},
@@ -78,7 +81,7 @@ def observation_from_result(kind: str, result: dict) -> Observation | None:
         candidates.append(Candidate(cand.id, cand.role, cand.name, cand.kind, {**cand.attrs, "harness": kind}))
     facts = {k: v for k, v in obs.items() if k in ("url", "title", "app", "window_title", "sensitive")}
     if obs.get("text_excerpt"):
-        facts["text"] = str(obs["text_excerpt"])[:4000]
+        facts["text"] = str(obs["text_excerpt"])[:MAX_TEXT]
     return Observation(
         kind,
         facts,

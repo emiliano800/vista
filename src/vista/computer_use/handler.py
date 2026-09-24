@@ -18,6 +18,7 @@ from sqlalchemy import func, select, update
 
 from vista.agents.jev import judge
 from vista.computer_use import tools
+from vista.computer_use.graph import merge_run, plan_graph_step
 from vista.computer_use.harness import (
     CONTROL_PRIMITIVES,
     LOCAL_KINDS,
@@ -230,6 +231,7 @@ def _execute(session, tenant_schema: str, job: Job, run: WorkflowRun, owner: str
         run.status = status
         run.finished_at = _now()
         run.error = error
+        run.cost_usd = run_cost(session, run.agent_run_id)
         run.pending = None
         run.pending_step_id = None
         if outcome is not None:
@@ -237,6 +239,11 @@ def _execute(session, tenant_schema: str, job: Job, run: WorkflowRun, owner: str
         agent_run.status = "succeeded" if status == "succeeded" else status
         agent_run.finished_at = run.finished_at
         agent_run.error = error
+        delta = (
+            {}
+            if outcome is not None and "finding_id" in outcome
+            else {"graph_delta": merge_run(definition, PlannerState.from_checkpoint(run.checkpoint), str(run.id), None)}
+        )
         ledger.emit(
             "result",
             {
@@ -246,6 +253,7 @@ def _execute(session, tenant_schema: str, job: Job, run: WorkflowRun, owner: str
                 "error": error,
                 **(outcome or {}),
                 **(extra or {}),
+                **delta,
             },
         )
         session.commit()
@@ -449,7 +457,7 @@ def _execute(session, tenant_schema: str, job: Job, run: WorkflowRun, owner: str
             decision = Act(Action.from_json(pending["action"]), gated=bool(pending.get("gated")))
         else:
             state.pending = None
-            decision, judgment, detail = plan_step(
+            decision, judgment, detail = (plan_graph_step if definition.get("graph") else plan_step)(
                 state,
                 definition,
                 run.inputs or {},
@@ -472,6 +480,7 @@ def _execute(session, tenant_schema: str, job: Job, run: WorkflowRun, owner: str
                 },
             )
             ledger.usage(judgment)
+            run.cost_usd = run_cost(session, run.agent_run_id)
             run.checkpoint = state.to_checkpoint()
             session.commit()
 
@@ -662,6 +671,7 @@ def conclude(
         },
     )
     ledger.usage(verification.judgment)
+    run.cost_usd = run_cost(session, run.agent_run_id)
     passed = verification.passed
     status = "succeeded" if passed else "failed"
     outcome = {
@@ -696,6 +706,7 @@ def conclude(
             "cost_usd": str(run.cost_usd or 0),
             "undo": state.undo,
             "artifacts": [h.get("artifact_key") for h in state.history if h.get("artifact_key")],
+            "graph_delta": merge_run(definition, state, str(run.id), passed),
         },
     )
     session.add(finding)

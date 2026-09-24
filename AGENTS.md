@@ -115,7 +115,10 @@ CUA loops (observe → decide → act → verify) but deliberately bounded; the 
    value is resolved by code. The ledger and every remote request record the name,
    never the value.
 4. **Sandbox only.** `environment == "sandbox"` is an eligibility rule; browser steps run
-   in the recorder's own partition, desktop steps refuse private/sign-in windows.
+   in the recorder's own partition by default (opt-in `VISTA_CU_BROWSER=chrome` drives a
+   tab in the employee's own Chrome over its DevTools port instead — same vocabulary,
+   candidates and gates, but the employee's profile), desktop steps refuse
+   private/sign-in windows.
 5. **Limits enforced per step in code** — `max_steps`, `max_runtime_seconds`,
    `max_cost_usd` (summed from `usage_events`) — and mirrored on the device.
 6. **Risk gate.** `submit` always pauses; any primitive with `p_irreversible ≥`
@@ -128,6 +131,16 @@ CUA loops (observe → decide → act → verify) but deliberately bounded; the 
    time; a run-level lease (`lease_owner/lease_until`) stops two workers from acting.
 9. **Everything on the ledger.** Observe/act as `tool_call`, judgments as `model_call`
    + `usage_events`, pauses as `step` + `handoff`, the outcome as `finding` + `result`.
+10. **Recorded moves only, when a graph exists.** A definition that carries a `PlanGraph`
+   (compiled on-device from recordings, `taskmining/state.py` + `recorder/src/plan.js`)
+   is planned by `computer_use/graph.py` instead of `planner.py`: code locates the run on
+   the graph (`node`), Jev picks among that state's *observed outgoing edges* (`edge`),
+   the edge fixes primitive/control/slot, a declared-input slot is resolved without
+   asking, a fact slot only from the step whose edge produced it, and an edge's
+   `policy` (`confirm`/`always_ask`) gates like the risk gate. If Jev locates the run on
+   one state but picks a move recorded from another, it is asked once more over the
+   located state's own moves (`rejudged`); `done` is offered only at a state the recordings ended in; no edge fits → `off_plan` pause. Each run returns a `graph_delta` (executed/verified_ok/approved/denied/
+   effect_missing, provenance `run:<id>`) for a *draft*; the approved graph is immutable.
 
 Stub Jev (no `VISTA_TYPESAFE_API_KEY`) answers `none` → the agent executes nothing and
 pauses at step 1. That is the safe default, not a bug.
@@ -135,10 +148,20 @@ pauses at step 1. That is the safe default, not a bug.
 Employee side: the worker cannot reach a laptop, so the recorder *pulls* browser and
 desktop steps — presence + offers on its 30 s tick, claim with explicit consent
 (`consent.version = computer-use-v1`), 3 s session poll as heartbeat, one result per
-step, stop. This build's recorder ships **placeholder** browser/desktop harnesses that
-advertise no capability and answer `harness_unsupported` (the run then pauses for a
-person); the page/desktop drivers are a separate change behind the same interface
-(`src/recorder/src/computer-use/harnesses.js`).
+step, stop. Drivers (`src/recorder/src/computer-use/`): **browser** = a visible
+Electron `BrowserWindow` in its own partition (`persist:vista-computer-use`) driven over
+CDP, or with `VISTA_CU_BROWSER=chrome` a new tab in the employee's running Chrome
+(`browser-chrome.js`, `VISTA_CU_CHROME_ENDPOINT`, default `http://127.0.0.1:9222`) —
+candidates come from the accessibility tree (≤40 named controls; unnamed table rows are
+named in code from their first cells), clicks/typing go
+through CDP input or the real pointer (`@nut-tree-fork/nut-js`, optional; it jumps to the
+control, no glide); **desktop** = frontmost-window accessibility tree (macOS System Events,
+or Linux AT-SPI2 via `desktop-linux-atspi.py` + xdotool) + nut-js pointer/keyboard, `null`
+elsewhere; `open_app` only raises a window that is already open. Every targeted step cites the observation it was chosen from; stale
+observation, changed front window, secure fields and private/sign-in/payment windows
+fail closed (`stale_observation` / `sensitive_window`). A computer advertises a harness
+only when its driver exists; otherwise `harness_unsupported` pauses the run for a person
+(`harnesses.js`). `npm run test:browser` is the real-Electron smoke for the browser driver.
 
 ## A2A (agent-to-agent) protocol
 

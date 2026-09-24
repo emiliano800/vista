@@ -246,16 +246,22 @@ pulls work and the employee starts every session here, by hand:
    quitting the recorder ends the session (`POST …/sessions/{id}/stop`); a lost lease ends it
    locally. A session interrupted by a restart is listed as interrupted, never resumed silently.
 
-**This build ships placeholder harnesses** (`src/computer-use/harnesses.js`): they
-advertise `browser: false, desktop: false`, so the workspace never offers a browser/desktop
-run to this device, and a step that arrives anyway is answered `harness_unsupported` —
-which the server treats as "leave this step for a person". In `--demo` mode they advertise
-both kinds so the whole protocol can be walked through locally (offer → consent → step →
-refusal → the run pauses for a person in the workspace); the refusal message says so. The protocol, consent, limits,
-local log and kill switch are complete and tested (`test/cu-policy.test.js`,
-`test/cu-client.test.js`, `test/api.test.js`); the drivers that operate a sandboxed page or
-the desktop are a separate change and must keep the harness shape (`kind`, `supported`,
-`capabilities()`, `perform(step)`, `close()`).
+**Drivers** (`src/computer-use/`): `browser.js` opens a visible window in the recorder's own
+storage partition (`persist:vista-computer-use` — none of the employee's logins, cookies or
+history) and drives it over CDP: candidates are the ≤40 named controls in the accessibility
+tree, clicks go through the real pointer (`@nut-tree-fork/nut-js`, optional) or CDP input,
+typing through `Input.insertText`. `desktop.js` reads the frontmost window's accessibility
+tree and drives the real pointer/keyboard; only `desktop-macos.js` (System Events + nut-js,
+needs Accessibility permission) exists, so other platforms advertise `desktop: false`. Every
+targeted step must cite the observation it was chosen from and a control it enumerated; a
+stale observation, a changed front window, a secure text field or a sign-in/payment/private
+window fails closed (`stale_observation`, `sensitive_window`). A kind without a driver is an
+`UnsupportedHarness` (`harnesses.js`): it advertises no capability, so the workspace never
+offers such a run to this device, and a step that arrives anyway is answered
+`harness_unsupported` — which the server treats as "leave this step for a person". In
+`--demo` mode both kinds are unsupported-but-advertised so the whole protocol can be walked
+through locally. Tests: `test/cu-policy.test.js`, `test/cu-client.test.js`,
+`test/cu-drivers.test.js` (fake CDP page / AX backend), `npm run test:browser` (real Electron).
 
 Over the agent API (`VISTA_RECORDER_API_TOKEN`): `GET /computer-use/status`,
 `GET /computer-use/sessions` (presence + offers), `POST /computer-use/sessions/{run_id}/start`

@@ -5,7 +5,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 
-import { buildSubmissionPackage, deviceId, discoverWorkspaces, selectWorkspace, SubmissionQueue, uploadBinding } from '../src/intake.js';
+import { buildSubmissionPackage, deviceId, discoverWorkspaces, planPreview, selectWorkspace, SubmissionQueue, uploadBinding } from '../src/intake.js';
 import { buildSections, parseEvents } from '../src/sections.js';
 
 const sha = (data) => createHash('sha256').update(data).digest('hex');
@@ -133,6 +133,37 @@ test('an unprocessed session uploads only metadata and explicitly selected docum
     assert.throws(() => buildSubmissionPackage(f.root, 'session-1', f.config), /Confirm/);
     assert.throws(() => buildSubmissionPackage(f.root, '../other', f.config, { consent: true }), /Invalid recording/);
     assert.throws(() => buildSubmissionPackage(f.root, 'session-1', f.config, { consent: true, selectedFileIds: ['unknown'] }), /snapshot/);
+  } finally { f.cleanup(); }
+});
+
+test('the plan graph is uploaded only when ticked, after the employee\'s edits, and carries no values', () => {
+  const f = fixture();
+  try {
+    fs.appendFileSync(path.join(f.dir, 'events.jsonl'), '\n' + [
+      { timestamp: '2026-09-19T09:05:00Z', event_type: 'copy', app: 'Excel', element: 'B2', text: 'PRIVATE_CLIPBOARD', payload: { clip_hash: 'h1', chars: 6 } },
+      { timestamp: '2026-09-19T09:06:00Z', event_type: 'focus', app: 'QuickBooks', window_title: 'PRIVATE_TITLE', url: 'https://private.example/bill' },
+      { timestamp: '2026-09-19T09:06:30Z', event_type: 'click', app: 'QuickBooks', payload: { x: 500, y: 301 } },
+      { timestamp: '2026-09-19T09:07:00Z', event_type: 'paste', app: 'QuickBooks', element: 'Amount', text: 'PRIVATE_CLIPBOARD', payload: { clip_hash: 'h1' } },
+      { timestamp: '2026-09-19T09:08:00Z', event_type: 'shortcut', app: 'QuickBooks', text: 'Cmd+S' },
+    ].map((e) => JSON.stringify(e)).join('\n'));
+    assert.equal(buildSubmissionPackage(f.root, 'session-1', f.config, { consent: true }).manifest.artifacts.length, 1);
+    assert.ok(planPreview(f.root, 'session-1').moves >= 4);
+    const pack = buildSubmissionPackage(f.root, 'session-1', f.config, { consent: true, sharePlan: true });
+    const spec = pack.manifest.artifacts.find((a) => a.kind === 'plan');
+    assert.equal(spec.filename, 'plan.json');
+    assert.equal(spec.id, 'plan');
+    const text = pack.data.get('plan').toString();
+    for (const s of ['PRIVATE', 'private.example', '500', '301', 'h1', 'Excel', 'QuickBooks']) assert.ok(!text.includes(s), `plan leaks ${s}`);
+    const plan = JSON.parse(text);
+    assert.equal(plan.compiled_by, 'recorder-plan/1');
+    assert.deepEqual([...new Set(plan.nodes.map((n) => n.app_role))].sort(), ['accounting', 'spreadsheet']);
+    const submit = plan.edges.find((e) => e.action_class === 'submit');
+    assert.equal(submit.policy, 'always_ask');
+    const click = plan.edges.find((e) => e.action_class === 'click');
+    fs.writeFileSync(path.join(f.dir, 'plan-edits.json'), JSON.stringify({ [click.id]: { excluded: true } }));
+    const edited = JSON.parse(buildSubmissionPackage(f.root, 'session-1', f.config, { consent: true, sharePlan: true }).data.get('plan'));
+    assert.ok(!edited.edges.some((e) => e.id === click.id));
+    assert.equal(edited.edges.length, plan.edges.length - 1);
   } finally { f.cleanup(); }
 });
 
