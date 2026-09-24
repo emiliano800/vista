@@ -302,7 +302,7 @@ wired only in tests/eval. Any new automatic hop must follow the contract above.
   (`VISTA_TYPESAFE_API_KEY`; stub answers without it — recorder workflow candidates and
   every Computer Use Agent judgment; `VISTA_COMPUTER_USE_*` thresholds/timeouts in
   `config.py`) beside the OpenAI-compatible model; Electron
-  recorder (`src/recorder`, version 0.4.1; every change bumps `package.json` and pushes
+  recorder (`src/recorder`, version 0.4.3; every change bumps `package.json` and pushes
   a `recorder-vX.Y.Z` tag, which builds and publishes the installers; `overrides` pins
   `tar` ≥ 7.5.21 because `get-windows` → `node-pre-gyp` pulled a vulnerable `tar`);
   Cloudflare Worker + static web; Node 22 for JS tests (installed under
@@ -405,14 +405,28 @@ wired only in tests/eval. Any new automatic hop must follow the contract above.
   ANALYST key, not Meridian — scripts must select keys by section, not position.
 - Old "Vista Solutions / Vista Demo" key was revoked 2026-09-19 (rotation,
   replacement destroyed unread).
-- Deployed state 2026-09-24: image `53968b1` (task defs `vista-vista-api:23`,
-  `vista-worker:20`) went live at 13:24 UTC from a clean tree via the `vista-deploy`
-  profile. It carries platform migration `0005`, tenant `0020`–`0022`, the
-  `/api/deals/{deal}/imports…` and `/api/companies/{id}/reports` routes, the six demo
-  workspaces linked to their analyst companies, and the firm-counter fix `18713e8`
-  (duplicate `OP-063` on the live portfolio merge). Two deploys failed the evening
-  before (dev-only `httpx` import, then the `0022` rollback — see Gotchas). Deploy the
-  image and the Worker together.
+- Deployed state 2026-09-24: image `d16fb61` (task defs `vista-vista-api:26`,
+  `vista-worker:23`) went live at 22:02 UTC from a clean tree via the `vista-deploy`
+  profile, the fourth image of the day (`53968b1` 13:24, `e965454` 18:19). It carries
+  platform migration `0005`, tenant `0020`–`0022`, the `/api/deals/{deal}/imports…` and
+  `/api/companies/{id}/reports` routes, the six demo workspaces linked to their analyst
+  companies, the firm-counter fix `18713e8`, the unreadable-amount import exception
+  `e965454`, PRs #8–#9 (plan graph, browser/desktop harness drivers) and the recorder
+  upload binding alias `3a449c4`. Two deploys failed the evening before (dev-only
+  `httpx` import, then the `0022` rollback — see Gotchas). Deploy the image and the
+  Worker together. An ECS deploy is a CANARY rollout (5 % for 3 min, then 3 min bake
+  against `vista/vista-api/RollbackAlarm`) and takes about 10 minutes; AWS CLI
+  timestamps print in local time (-04:00), not UTC.
+- Recorder uploads and linked workspaces: linking a workspace tenant to its analyst
+  company turns its only upload workspace into kind `company`; the company's `deal_id`
+  stays an accepted alias so recorders enrolled before the link (binding
+  `{kind: deal, id: <deal>}` in `~/Vista/cloud.json`) keep uploading.
+- Recorder app names on macOS: the `get-windows` helper checks Screen Recording for
+  itself and macOS 26 does not credit it with the app's grant, so every event carried an
+  empty app until recorder 0.4.3 (`src/recorder/src/foreground.js` retries without the
+  check: app name kept, window title empty). A report whose apps are all "Unknown app"
+  has no transfers or loops, so the analysis never calls Jev — that is the first thing
+  to check when "Jev is not being called".
 
 ## Gotchas
 

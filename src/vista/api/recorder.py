@@ -23,6 +23,7 @@ from vista.recorder_uploads import (
     resolve_workspace,
     signed_uploads,
     submission_for,
+    workspace_keys,
     workspaces_for,
 )
 
@@ -78,7 +79,7 @@ def list_submissions(
     offset: int = Query(0, ge=0),
     principal: Principal = Depends(current_principal),
 ) -> list[dict]:
-    allowed = {(workspace["kind"], workspace["id"]) for workspace in workspaces_for(principal)}
+    allowed = workspace_keys(principal)
     with tenant_session(principal.tenant_schema) as session:
         rows = session.scalars(
             select(RecorderSubmission)

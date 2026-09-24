@@ -11,6 +11,7 @@ import { BrowserWindow, Menu, Tray, app, clipboard, desktopCapturer, globalShort
 import { CONFIDENCE_THRESHOLD, RESOLVED_STATUSES, SESSION_ID, applyDecision, describeSection, explainSection, openaiConfig, reviewSummary } from './explain.js';
 import { DEMO_KEYS, DemoHook, demoActiveWindow, demoClipboard, demoDocuments } from './demo.js';
 import { DEFAULT_SETTINGS, Recorder, keyNamesFrom, loadSettings } from './recorder.js';
+import { withPermissionFallback } from './foreground.js';
 import { FILES_DIR, FILES_FILE, FileTracker, axDocuments, documentFromTitle, lsofDocuments, publicFile, readFiles, snapshotFiles, spotlightSweep, writeFiles } from './files.js';
 import { redactText } from './redact.js';
 import { fetchReview, mergeReview, readSectionEdits, reportBundle, reviewItems, sendDecision, submitSections, uploadMedia, uploadReport, workspaceRecordingURL, workspaceRunState, workspaceURL } from './cloud.js';
@@ -95,7 +96,7 @@ async function buildRecorder() {
       console.error('uiohook-napi unavailable, input will not be recorded:', err.message);
     }
     try {
-      activeWindow = (await import('get-windows')).activeWindow;
+      activeWindow = withPermissionFallback((await import('get-windows')).activeWindow, { warn: (m) => console.warn(m) });
     } catch (err) {
       console.error('get-windows unavailable, foreground app will not be recorded:', err.message);
     }
