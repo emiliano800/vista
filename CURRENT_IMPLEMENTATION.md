@@ -4,7 +4,9 @@ Implementation reference; checked against repository commit `6b5ad5f` on
 2026-09-24. Deployment notes are historical and must be rechecked against AWS before
 assuming a newly pulled change is live. The ledger/company-import commits of
 2026-09-23 (platform migration `0005`, tenant migrations `0020`–`0022`) went live on
-2026-09-24 as image `b28094d`; image `53968b1`, deployed the same day at 13:24 UTC,
+2026-09-24 as image `b28094d`; image `53968b1`, deployed the same day at 13:24 UTC
+(followed by `e965454` at 18:19 and `d16fb61` at 22:02 with PRs #8–#9 and the recorder
+upload binding alias),
 adds the firm-counter race fix (`18713e8`) and the test tenant teardown (`6b5ad5f`).
 Production Jev went live the same day at 17:05 UTC through OpenRouter (stack
 parameter `TypeSafeBaseUrl`, commit `c77d871`), so recorder workflow candidates and
