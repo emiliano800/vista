@@ -12,7 +12,7 @@ from typing import Protocol
 
 from vista_device.frame import Frame
 
-ACTIONS: tuple[str, ...] = ("observe", "navigate", "click", "type", "press", "extract", "screenshot", "wait")
+ACTIONS: tuple[str, ...] = ("observe", "navigate", "click", "type", "press", "scroll", "extract", "screenshot", "wait")
 
 
 @dataclass

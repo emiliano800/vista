@@ -46,7 +46,7 @@ _ROLE_PATTERNS: tuple[tuple[str, re.Pattern[str]], ...] = (
 
 SIGNATURE_TOKEN = re.compile(
     r"^(?:(?:doc|rec|field|fact|dialog):[A-Za-z0-9_.-]{1,120}|msg:open"
-    r"|(?:have|read|open):[A-Za-z0-9_.:-]{1,120}|in:[0-9a-f]{16}|ctx:[A-Za-z0-9_.-]{1,64})$"
+    r"|(?:have|read|open):[A-Za-z0-9_.:-]{1,120}|in:[0-9a-f]{12,16}|ctx:[A-Za-z0-9_.-]{1,64})$"
 )
 L0_PREFIXES: tuple[str, ...] = ("have", "read", "open", "in", "ctx")
 # Irreversibility classes, least to most. Code assigns them; Jev's `p_irreversible` may raise, never lower.

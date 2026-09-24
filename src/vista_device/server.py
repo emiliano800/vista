@@ -4,7 +4,9 @@ Request  `{"id": 7, "method": "observe", "params": {...}}`
 Response `{"id": 7, "result": {...}}` or `{"id": 7, "error": {"code": "...", "message": "..."}}`
 
 Methods
-- `health`               → `{ok, version, drivers: {browser: bool, desktop: bool}, browser_use: bool}`
+- `health`               → `{ok, version, drivers: {browser: bool, desktop: bool}, browser_use: bool, self_tests: {kind: bool}}`
+                           (`self_tests` = a recorded self-test of this version passed on this computer; the run
+                           loop advertises a harness only when it is true)
 - `open`                 params `{kind, allowed_domains?, user_data_dir?, headless?, screenshots?, vocabulary?}`
 - `observe`              params `{kind}` → `{observation, cloud, leakage}`
 - `perform`              params `{kind, step}` → the harness result shape
@@ -36,8 +38,9 @@ from vista_device.drivers.browser import BrowserDriver, BrowserSession
 from vista_device.drivers.desktop_macos import DesktopDriver
 from vista_device.drivers.desktop_macos import available as desktop_available
 from vista_device.frame import Candidate, Frame, frame_from_candidates
+from vista_device.selftest_record import VERSION
+from vista_device.selftest_record import passed as selftest_passed
 
-VERSION = "0.1.0"
 DriverFactory = Callable[[dict], Driver]
 
 
@@ -61,6 +64,8 @@ class Sidecar:
             "version": VERSION,
             "drivers": {k: k in self.factories for k in ("browser", "desktop")},
             "browser_use": has_browser_use,
+            "macos_use": importlib.util.find_spec("mlx_use") is not None,
+            "self_tests": {k: selftest_passed(k) for k in ("browser", "desktop")},
         }
 
     async def set_context(self, params: dict) -> dict:
@@ -192,7 +197,12 @@ def default_factories() -> dict[str, DriverFactory]:
             screenshots=bool(o.get("screenshots", False)),
         )
     if desktop_available():
-        factories["desktop"] = lambda o: DesktopDriver(vocab=o.get("vocab"))
+        factories["desktop"] = lambda o: DesktopDriver(
+            vocab=o.get("vocab"),
+            screenshots=bool(o.get("screenshots", False)),
+            screenshot_dir=o.get("screenshot_dir"),
+            app=o.get("app"),
+        )
     return factories
 
 

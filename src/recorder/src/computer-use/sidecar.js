@@ -152,7 +152,7 @@ export class SidecarHarness {
       const opened = await this.client.call('open', { kind: this.kind, ...this.options });
       const obs = await this.client.call('observe', { kind: this.kind });
       this._caps = opened.capabilities ?? [];
-      this.supported = Array.isArray(obs?.observation?.l0) && obs.observation.l0.length > 0;
+      this.supported = Array.isArray(obs?.observation?.l0) && obs.observation.l0.length > 0 && obs.leakage?.ok !== false && obs.observation.settled !== false;
       this.selfTest = { at, ok: this.supported, l0: obs?.observation?.l0 ?? [], settled: obs?.observation?.settled ?? null };
     } catch (err) {
       this.supported = false;

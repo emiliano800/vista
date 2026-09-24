@@ -10,9 +10,10 @@ import pytest
 
 from taskmining.leakage import RecordingContext, check
 from taskmining.normalise import Vocabulary
+from vista_device import selftest
 from vista_device.drivers import Result
 from vista_device.drivers.browser import NodeView, candidates_from_views
-from vista_device.drivers.desktop_macos import ElementView, candidates_from_elements
+from vista_device.drivers.desktop_macos import ElementView, candidates_from_elements, key_event, text_of_views
 from vista_device.frame import Candidate, frame_from_candidates, l0_equal, path_shape, screen_class
 from vista_device.server import Sidecar, serve
 from vista_device.settle import settle
@@ -188,6 +189,8 @@ class FakeDriver:
         self.steps.append(step)
         if step.get("target_id") == "nope":
             return Result.refused("click", "stale_observation", "gone")
+        if step.get("action") == "extract":
+            return Result(True, "Read", frame=await self.observe(), result={"text": "Invoice 7 — ACME"})
         return Result(True, "Clicked", frame=await self.observe(), result={"url_after": "https://crm.example/invoices/7"})
 
     async def close(self):
@@ -237,6 +240,7 @@ def test_sidecar_protocol_round_trip():
     )
     by_id = {r["id"]: r for r in responses}
     assert by_id[1]["result"]["drivers"] == {"browser": True, "desktop": False}
+    assert set(by_id[1]["result"]["self_tests"]) == {"browser", "desktop"}
     assert by_id[3]["error"]["code"] == "harness_unsupported"
     assert by_id[4]["result"]["capabilities"] == ["observe", "click"]
     obs = by_id[5]["result"]
@@ -270,3 +274,48 @@ def test_frame_method_matches_direct_construction(kind):
         )
     )
     assert via["observation"]["l0"] == direct.l0 and via["cloud"]["l1"] == direct.l1
+
+
+def test_desktop_text_and_keys_are_bounded():
+    views = [
+        ElementView(0, "AXStaticText", "Total", (), value="1,200.00"),
+        ElementView(1, "AXTextField", "Amount", (), has_value=True, value="1,200.00"),
+        ElementView(-1, "AXStaticText", "", (), value="  spaced   words "),
+    ]
+    assert text_of_views(views) == "Total 1,200.00 Amount 1,200.00 spaced words"
+    assert len(text_of_views(views, limit=10)) <= 10
+    assert key_event("Enter") == (0x24, 0) and key_event("Cmd+S") == (0x01, 1)
+    assert key_event("Cmd+Q") is None and key_event("F13") is None
+
+
+def test_desktop_driver_is_not_advertised_off_macos():
+    from vista_device.drivers.desktop_macos import DesktopDriver, available
+    from vista_device.server import default_factories
+
+    if available():
+        pytest.skip("runs on a macOS device with mlx_use installed")
+    assert "desktop" not in default_factories()
+    with pytest.raises(Exception, match="macOS-use"):
+        DesktopDriver()
+
+
+def test_selftest_records_pass_and_failure(tmp_path):
+    fake = FakeDriver()
+    sidecar = Sidecar(factories={"browser": lambda o: fake})
+    ok = asyncio.run(selftest.run(sidecar, "browser"))
+    assert ok.ok and ok.candidates == 4 and ok.leakage_ok and ok.text_chars > 0 and ok.error is None
+    assert all(t.startswith(("have:", "read:", "open:", "in:", "ctx:")) for t in ok.l0)
+    assert fake.closed is True
+    missing = asyncio.run(selftest.run(sidecar, "desktop"))
+    assert missing.ok is False and missing.error["code"] == "harness_unsupported"
+    unknown = asyncio.run(selftest.run(sidecar, "region"))
+    assert unknown.ok is False and unknown.error["code"] == "invalid_value"
+
+    selftest.record_path("browser", tmp_path).parent.mkdir(parents=True, exist_ok=True)
+    selftest.record_path("browser", tmp_path).write_text(json.dumps(ok.to_json()))
+    assert selftest.passed("browser", tmp_path) is True
+    assert selftest.passed("desktop", tmp_path) is False
+    stale = dict(ok.to_json(), version="0.0.0")
+    selftest.record_path("browser", tmp_path).write_text(json.dumps(stale))
+    assert selftest.passed("browser", tmp_path) is False
+    assert json.dumps(ok.to_json()).count("ACME") == 0
