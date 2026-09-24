@@ -346,14 +346,16 @@ wired only in tests/eval. Any new automatic hop must follow the contract above.
   `vista` with `vista-api` and `vista-worker` (WorkerDesiredCount=1), model
   **gpt-6-astra** (key in Secrets Manager `vista/openai-api-key`; TypeSafe key, when
   supplied, in `vista/typesafe-api-key` as `VISTA_TYPESAFE_API_KEY` — without it Jev is
-  stub and the Computer Use Agent executes nothing; as of 2026-09-24 that secret does
-  NOT exist and the task definitions reference no such secret, so production Jev is the
-  stub. Jev is reached through OpenRouter, not TypeSafe directly: the stack parameter
+  stub and the Computer Use Agent executes nothing. Live since 2026-09-24 17:05 UTC:
+  Jev is reached through OpenRouter, not TypeSafe directly — stack parameter
   `TypeSafeBaseUrl` = `https://openrouter.ai/api/v1` (same `/systemone` API), model
-  `~typesafe/jev-latest`, and an OpenRouter key as the TypeSafe key — all three sit in
-  `deploy/aws/.env`. The OpenRouter account must hold credits; a key on an account
-  with none answers HTTP 402 on every judgment, which is worse than the stub, so
-  smoke-test one judgment before deploying the key), RDS
+  `~typesafe/jev-latest` (answers as `typesafe/jev-1.13-…`), and an OpenRouter key as
+  the TypeSafe key; all three sit in `deploy/aws/.env`. The OpenRouter account must
+  hold credits: a key on an account with none answers HTTP 402 on every judgment,
+  which is worse than the stub, so smoke-test one judgment before deploying a key.
+  ECS reads a secret only at task start — after changing the secret's VALUE alone,
+  `aws ecs update-service --force-new-deployment` both services (deploy profile) or the
+  running tasks keep the old value), RDS
   `vista-postgres`, S3 `vista-reports-630396228214`, endpoint
   `https://vi-6526b1efec4446e48c627173e9e805ce.ecs.us-east-1.on.aws`.
 - Cloudflare Worker `vista` serves bumpsolutions.org and auto-builds on push

@@ -6,8 +6,9 @@ assuming a newly pulled change is live. The ledger/company-import commits of
 2026-09-23 (platform migration `0005`, tenant migrations `0020`–`0022`) went live on
 2026-09-24 as image `b28094d`; image `53968b1`, deployed the same day at 13:24 UTC,
 adds the firm-counter race fix (`18713e8`) and the test tenant teardown (`6b5ad5f`).
-Production Jev is still the stub: no TypeSafe key is stored, so the Computer Use
-Agent executes nothing there.
+Production Jev went live the same day at 17:05 UTC through OpenRouter (stack
+parameter `TypeSafeBaseUrl`, commit `c77d871`), so recorder workflow candidates and
+Computer Use judgments are no longer stubbed there.
 (Roadmap: `NEXT_STEPS.md`. Business: `BUSINESS_COURSE_OF_ACTION.md`.)
 
 ## Product direction and current coverage
