@@ -1,6 +1,6 @@
 {
   "name": "vista-recorder",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "description": "One-button desktop recorder for Vista task mining: always-on overlay, cross-platform input hooks, active-window + screenshot capture, on-device redaction.",
   "private": true,
   "type": "module",
@@ -19,6 +19,9 @@
   "devDependencies": {
     "electron": "~43.7.2",
     "electron-builder": "^26.0.12"
+  },
+  "overrides": {
+    "tar": "^7.5.21"
   },
   "build": {
     "appId": "org.bumpsolutions.vista.recorder",
