@@ -1,6 +1,6 @@
 # PRD — Vista Computer-Use Executor: state-graph workflows, Jev-only decisions
 
-Status: draft for review · Owner: Yaphet · Repo: `emiliano800/vista`
+Status: superseded by `docs/computer_use_system.md` (task graph v3) — kept for the run infrastructure and slice history · Owner: Yaphet · Repo: `emiliano800/vista`
 Baseline: `origin/computer-use-agent` (unmerged, branches from `main@2d84379`) + `origin/jev-workflows`
 Supersedes: design v1 (device runner), v2 (recorded plan as skeleton)
 
