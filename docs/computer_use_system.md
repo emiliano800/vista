@@ -51,26 +51,36 @@ The attached map (Task Summary · Time Tracking · App Usage · Apps Data · Fil
 Formally, the run-time state object the code builds and (partly) sends to Jev:
 
 ```python
-class L0(InputModel):                 # identity: two frames are one node iff L0 sets are equal
-    have: set[SlotName]; read: set[SlotName]; open: set[SlotName]
-    in_: ScreenClass                  # sha1(url_path_shape | sorted(landmark_roles)) or title/landmark shape on desktop
-    ctx: set[DialogClass]             # confirm | error | autocomplete | validation | signin | payment | unknown
+class L0(InputModel):  # identity: two frames are one node iff L0 sets are equal
+    have: set[SlotName]
+    read: set[SlotName]
+    open: set[SlotName]
+    in_: ScreenClass  # sha1(url_path_shape | sorted(landmark_roles)) or title/landmark shape on desktop
+    ctx: set[DialogClass]  # confirm | error | autocomplete | validation | signin | payment | unknown
 
-class L1(InputModel):                 # context: tie-breaks, effect_seen, staleness — never identity
-    landmarks: list[Role]; modal: bool
+
+class L1(InputModel):  # context: tie-breaks, effect_seen, staleness — never identity
+    landmarks: list[Role]
+    modal: bool
     primary_button: Descriptor | None
-    control_classes: set[Role]        # presence only, never counts
+    control_classes: set[Role]  # presence only, never counts
+
 
 class Descriptor(InputModel):
-    role: Role; name: NormalisedName; landmark: Role | None
-    position: Literal["first","middle","last","only"]; aliases: list[NormalisedName]
+    role: Role
+    name: NormalisedName
+    landmark: Role | None
+    position: Literal["first", "middle", "last", "only"]
+    aliases: list[NormalisedName]
+
 
 class Edge(InputModel):
-    primitive: Primitive              # navigate|click|type_value|select|press|scroll|drag|read|extract|submit|wait
-    target: Descriptor | None; slot: SlotName | None
-    policy: Tier                      # shadow|ask|confirm|unattended (pinned per version)
-    irreversibility: Literal["navigational","mutating","committing"]   # code-assigned; Jev may only raise
-    stats: EdgeStats                  # outside the structural hash
+    primitive: Primitive  # navigate|click|type_value|select|press|scroll|drag|read|extract|submit|wait
+    target: Descriptor | None
+    slot: SlotName | None
+    policy: Tier  # shadow|ask|confirm|unattended (pinned per version)
+    irreversibility: Literal["navigational", "mutating", "committing"]  # code-assigned; Jev may only raise
+    stats: EdgeStats  # outside the structural hash
     provenance: list[Provenance]
 ```
 
