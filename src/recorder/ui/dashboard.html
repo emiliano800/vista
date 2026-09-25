@@ -1002,7 +1002,10 @@
         try {
           const answers = {};
           $('publish-questions').querySelectorAll('textarea[data-q]').forEach((t) => { if (t.value.trim()) answers[t.dataset.q] = t.value.trim(); });
-          if (Object.keys(answers).length) await window.vista.answerQuestions(pendingPublish.id, answers);
+          if (Object.keys(answers).length) {
+            const answered = await window.vista.answerQuestions(pendingPublish.id, answers);
+            if (['queued', 'running'].includes(answered?.status)) $('publish-error').textContent = 'Re-reading your session with your answers before sharing…';
+          }
           await window.vista.publishReport(pendingPublish.id, { consent: true });
           pendingPublish = null;
           $('publish-dialog').close();

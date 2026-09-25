@@ -1415,7 +1415,7 @@ async function withAnalysis(event, id, work) {
 }
 ipcMain.handle('recordings:analysis', (event, id) => withAnalysis(event, id, (config) => intakeQueue.status(config, id)));
 ipcMain.handle('recordings:answer', (event, id, answers) => withAnalysis(event, id, (config) => intakeQueue.answer(config, id, answers)));
-ipcMain.handle('recordings:publish', (event, id, options) => withAnalysis(event, id, (config) => intakeQueue.publish(config, id, options)));
+ipcMain.handle('recordings:publish', (event, id, options) => withAnalysis(event, id, (config) => intakeQueue.publish(config, id, { consent: options?.consent })));
 ipcMain.handle('recordings:reanalyze', (event, id) => withAnalysis(event, id, (config) => intakeQueue.reanalyze(config, id)));
 ipcMain.handle('recordings:upload-preview', (event, id) => {
   requireDashboard(event);

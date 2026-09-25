@@ -80,10 +80,12 @@ function server({ failDocumentOnce = false, badReceipt = false } = {}) {
     if (pathname === `/api/recorder/submissions/${id}/answers`) {
       const { answers } = JSON.parse(options.body);
       for (const q of cloud.report.questions) if (answers[q.id] !== undefined) q.answer = answers[q.id];
+      cloud.analysis_status = 'queued'; // an answer is evidence: the server re-reads the session
       return Response.json({ ...response(), ...cloud });
     }
     if (pathname === `/api/recorder/submissions/${id}/publish`) {
       assert.deepEqual(JSON.parse(options.body), { consent: true });
+      if (cloud.analysis_status !== 'succeeded') return Response.json({ detail: 'Only a completed analysis can be published' }, { status: 409 });
       cloud.publication_status = 'published';
       cloud.report.status = 'published';
       return Response.json({ ...response(), ...cloud });
@@ -353,7 +355,9 @@ test('accepted uploads poll for analysis, cache the draft report, take answers a
     let clock = 1_000_000;
     const srv = server();
     const changes = [];
-    const queue = new SubmissionQueue(f.home, { fetchImpl: srv.fetchImpl, now: () => clock, onChange: (s) => changes.push(s.analysis?.status ?? null) });
+    const sleeps = [];
+    const sleep = async (ms) => { sleeps.push(ms); clock += ms; if (sleeps.length >= 2) srv.cloud.analysis_status = 'succeeded'; };
+    const queue = new SubmissionQueue(f.home, { fetchImpl: srv.fetchImpl, now: () => clock, sleep, onChange: (s) => changes.push(s.analysis?.status ?? null) });
     queue.enqueue(f.root, 'session-1', f.config, { consent: true });
     await queue.flush(f.config);
     assert.equal(queue.entries()[0].status, 'accepted');
@@ -381,13 +385,23 @@ test('accepted uploads poll for analysis, cache the draft report, take answers a
     assert.throws(() => queue.answer(f.config, 'session-1', {}), /at least one/);
     const answered = await queue.answer(f.config, 'session-1', { q1: 'Month-end close' });
     assert.equal(answered.report.questions[0].answer, 'Month-end close');
+    assert.equal(answered.status, 'queued');
     assert.throws(() => queue.publish(f.config, 'session-1', {}), /Confirm/);
     assert.equal(queue.entries()[0].analysis.publication, 'draft');
-    const published = await queue.publish(f.config, 'session-1', { consent: true });
+    // Publishing right after an answer waits for the re-judged report instead of failing with 409.
+    const published = await queue.publish(f.config, 'session-1', { consent: true, pollMs: 2000 });
     assert.equal(published.publication, 'published');
+    assert.deepEqual(sleeps, [2000, 2000]);
+    sleeps.length = 0;
     assert.equal(queue.entries()[0].analysis.publication, 'published');
     const requeued = await queue.reanalyze(f.config, 'session-1');
     assert.equal(requeued.status, 'queued');
+    // A re-analysis that never finishes gives up with a retry hint rather than hanging.
+    srv.cloud.analysis_status = 'queued';
+    await queue.status(f.config, 'session-1');
+    const stuck = new SubmissionQueue(f.home, { fetchImpl: srv.fetchImpl, now: () => clock, sleep: async (ms) => { clock += ms; } });
+    await assert.rejects(stuck.publish(f.config, 'session-1', { consent: true, pollMs: 1000, timeoutMs: 2500 }), /still re-reading/);
+    srv.cloud.analysis_status = 'succeeded';
     assert.ok(changes.includes('queued') && changes.includes('succeeded'));
     const other = { ...f.config, workspace: { id: randomUUID(), kind: 'company' } };
     assert.throws(() => queue.acceptedEntry(other, 'session-1'), /Reconnect the workspace/);
