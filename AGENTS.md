@@ -60,9 +60,14 @@ foundation; `company/` calls the analyst shell and receives the firm-wide snapsh
 `account/` is the existing company operations/evidence workspace; it imports through
 the same canonical contract and reads the same findings, runs and recorder reports
 as the analyst (see "One ledger" under Architecture decisions). Dedicated CFO/FDE
-roles and views are not implemented. Current firm roles are
+roles are not implemented. Current firm roles are
 `analyst/operator/admin/viewer`; never relabel `operator` as an FDE role without
-implementing its scope. Tenant (company workspace) roles are `admin/member/viewer`
+implementing its scope. The FDE *clicks* (tier promotion past `ask`, accepting a shadow
+disagreement into a draft) exist as a provisional scope, `FirmContext.is_fde`
+(`portfolio/access.py`, `FDE_ROLES = {"admin"}`), derived server-side from the firm
+membership — never from the request body — and surfaced only on the firm routes
+(`/api/companies/{id}/workflows/…/graph`, `/deployment/` page). Tenant workflow routes
+always pass `fde=False`. Tenant (company workspace) roles are `admin/member/viewer`
 (`tenancy.py`); `owner` is a *deal-membership* role, not a tenant role — the workspace
 UI gates on the deal role while the API enforces tenant `admin` for workflow decisions
 and runs (`api/company_workflows.py`, `api/computer_use.py`). Enforce company/workflow restrictions server-side before

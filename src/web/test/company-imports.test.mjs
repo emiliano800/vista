@@ -8,7 +8,7 @@ import { JSDOM } from "jsdom";
 // then the File Reviewer runs over those records. Every server answer is a stub here;
 // the test is about what the page asks for and what it shows.
 const html = fs.readFileSync(new URL("../public/account/index.html", import.meta.url), "utf8");
-const source = fs.readFileSync(new URL("../public/account/app.js", import.meta.url), "utf8");
+import { source } from "./account-source.mjs";
 const deal = "00000000-0000-0000-0000-000000000001";
 const jobId = "00000000-0000-0000-0000-000000000002";
 const malicious = "<img src=x onerror=alert(1)>";

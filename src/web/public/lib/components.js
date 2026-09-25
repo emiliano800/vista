@@ -23,6 +23,7 @@ const NAV = [
   ["/opportunities/", "Opportunities"],
   ["/tasks/", "Tasks"],
   ["/agents/", "Agents"],
+  ["/deployment/", "Deployment"],
   ["/data/", "Data"],
 ];
 

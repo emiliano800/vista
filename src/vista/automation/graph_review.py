@@ -21,8 +21,9 @@ from pydantic import BaseModel, Field
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from taskmining import tiers
-from taskmining.state import merge_graphs, promotable, stricter
+from taskmining import leakage, tiers
+from taskmining.normalise import Vocabulary
+from taskmining.state import edge_id, empty_stats, merge_graphs, promotable, stricter
 from vista.automation import service
 from vista.automation.schemas import EdgePolicy, InputModel, Key, PlanGraph, Tier, VersionCreate, VersionOut, WorkflowDefinition
 from vista.computer_use.graph import merge_run
@@ -33,6 +34,7 @@ TERMINAL = ("succeeded", "failed", "stopped")
 DEMOTION_REASONS = ("denied", "effect_missing")
 # The policy a pinned tier implies at run time (v3 edges carry both; the tier is the source of truth).
 TIER_POLICY: dict[str, str] = {"shadow": "confirm", "ask": "always_ask", "confirm": "confirm", "unattended": "auto"}
+UNDER_SEGMENTED_OUT = 6  # mirrors recorder/src/plan.js: more out-edges than this and a state is under-segmented
 
 
 class RunStep(BaseModel):
@@ -99,6 +101,44 @@ class ShadowReport(BaseModel):
     edges: list[ShadowEdgeReport]
 
 
+class CompileSlot(BaseModel):
+    slot: str
+    method: str
+    controls: list[str]
+    single_recording: bool
+
+
+class CompileCriterion(BaseModel):
+    type: str
+    slot: str
+    source: str
+    read_back_via: str | None = None
+    covers: list[Key] = Field(default_factory=list)  # write edges this read-back covers
+
+
+class CompileReport(BaseModel):
+    """What the FDE reads of a compiled graph in the cloud. Derived from the graph alone: the
+    device kept the recording, so the leakage result here is the cloud's half of the check
+    (`recorder_uploads.plan_leakage`) and held-out locate/coverage arrive from the eval harness,
+    never from this view."""
+
+    compiled_by: str
+    recordings: list[str]  # provenance ids of source recordings
+    runs: int  # provenance ids of runs that added statistics
+    states: int
+    moves: int
+    irreversibility: dict[str, int]
+    slots: list[CompileSlot]
+    aliases: dict[Key, list[str]]  # per edge: descriptor aliases the compiler kept
+    criteria: list[CompileCriterion]
+    uncovered_writes: list[Key]  # write edges no read-back covers: their ceiling is `confirm`
+    vocabulary_size: int
+    under_segmented: int
+    leakage_ok: bool
+    leakage_strings_checked: int
+    held_out: dict | None = None
+
+
 class GraphReviewOut(BaseModel):
     version_id: uuid.UUID
     version_number: int
@@ -109,15 +149,24 @@ class GraphReviewOut(BaseModel):
     changes: list[EdgeChange]
     proposals: list[Proposal]
     shadow: ShadowReport
+    compile: CompileReport | None = None
     previous_version_number: int | None = None
     against_previous: list[EdgeChange]
     can_draft: bool
+    fde: bool = False  # the requester holds the FDE scope (server-derived; the client never claims it)
+
+
+class DisagreementAccept(InputModel):
+    edge_id: Key
+    acted: Key
 
 
 class GraphDraftCreate(InputModel):
     expected_version: int = Field(strict=True, ge=1)
     promote: list[Key] = Field(default_factory=list, max_length=600)
-    fde: bool = False  # the person clicking is the FDE; required for any promotion past `ask`
+    # Shadow disagreements the FDE accepts as structure: a new edge `frm → acted` with the
+    # proposed edge's move, at `shadow`/`always_ask`. FDE-only.
+    accept: list[DisagreementAccept] = Field(default_factory=list, max_length=100)
 
 
 def _runs(session: Session, version: WorkflowVersion) -> list[WorkflowRun]:
@@ -273,8 +322,105 @@ def shadow_report(runs: list[WorkflowRun]) -> ShadowReport:
     )
 
 
+def accepted_edge(graph: dict, disagreement: ShadowDisagreement, today) -> dict:
+    """The structural delta an accepted disagreement is: the proposed edge's move (class, control,
+    slot, descriptor, irreversibility) from `frm` to the node the employee actually reached, born at
+    `shadow`/`always_ask` with the shadow run as provenance. Never lowers the code-assigned class."""
+    src = next(e for e in graph["edges"] if e["id"] == disagreement.edge_id)
+    acted = disagreement.acted
+    if acted is None or acted not in {n["key"] for n in graph["nodes"]}:
+        raise HTTPException(422, f"Disagreement on {disagreement.edge_id} has no destination in this graph")
+    new = {
+        "id": edge_id(src["frm"], acted, src["action_class"], src.get("control"), src.get("slot")),
+        "frm": src["frm"],
+        "to": acted,
+        "action_class": src["action_class"],
+        "control": src.get("control"),
+        "slot": src.get("slot"),
+        "produces": list(src.get("produces") or []),
+        "effect": [],
+        "stats": {**empty_stats(), "support": 1},
+        "provenance": [{"source": "run", "id": str(disagreement.run_id), "event_ids": ["shadow"]}],
+        "policy": "always_ask",
+        "tier": "shadow",
+        "tier_since": today.isoformat(),
+    }
+    for k in ("descriptor", "irreversibility", "commit", "anchor_ref"):
+        if src.get(k) is not None:
+            new[k] = src[k]
+    return new
+
+
+def _accept_disagreements(draft: dict, report: ShadowReport, accept: list[DisagreementAccept], *, fde: bool, today) -> list[EdgeChange]:
+    if not accept:
+        return []
+    if not fde:
+        raise HTTPException(403, "Accepting a shadow disagreement into the structure is an FDE decision")
+    known = {(d.edge_id, d.acted): d for rep in report.edges for d in rep.disagreements}
+    changes: list[EdgeChange] = []
+    for a in accept:
+        d = known.get((a.edge_id, a.acted))
+        if d is None:
+            raise HTTPException(422, f"No shadow run disagreed on {a.edge_id} towards {a.acted}")
+        new = accepted_edge(draft, d, today)
+        if any(e["id"] == new["id"] for e in draft["edges"]):
+            continue
+        draft["edges"].append(new)
+        reason = f"accepted by FDE from shadow disagreement on {a.edge_id}"
+        changes.append(EdgeChange(edge_id=new["id"], kind="policy", before="", after="always_ask", reason=reason))
+    return changes
+
+
+def compile_report(graph: dict) -> CompileReport:
+    edges = graph["edges"]
+    criteria = list((graph.get("goal") or {}).get("criteria") or [])
+    writes = [e for e in edges if tiers.is_write(e)]
+    out: dict[str, int] = {}
+    for e in edges:
+        out[e["frm"]] = out.get(e["frm"], 0) + 1
+    classes: dict[str, int] = {}
+    for e in edges:
+        if e.get("irreversibility"):
+            classes[e["irreversibility"]] = classes.get(e["irreversibility"], 0) + 1
+    recordings = sorted({p["id"] for e in edges for p in e["provenance"] if p["source"] == "recording"})
+    run_ids = {p["id"] for e in edges for p in e["provenance"] if p["source"] == "run"}
+    vocab_json = graph.get("vocabulary")
+    vocab = Vocabulary.from_json(vocab_json) if vocab_json else Vocabulary()
+    check = leakage.check({k: v for k, v in graph.items() if k != "vocabulary"}, leakage.RecordingContext.build(vocab=vocab))
+    return CompileReport(
+        compiled_by=graph["compiled_by"],
+        recordings=recordings,
+        runs=len(run_ids),
+        states=len(graph["nodes"]),
+        moves=len(edges),
+        irreversibility=classes,
+        slots=[CompileSlot(**s) for s in graph.get("slot_table") or []],
+        aliases={e["id"]: list(e["descriptor"]["aliases"]) for e in edges if e.get("descriptor") and e["descriptor"].get("aliases")},
+        criteria=[
+            CompileCriterion(
+                type=c["type"],
+                slot=c["slot"],
+                source=c.get("source", "draft"),
+                read_back_via=c.get("read_back_via"),
+                covers=[w["id"] for w in writes if c["type"] == "read_back" and tiers.covering_read_back(w, [c])],
+            )
+            for c in criteria
+        ],
+        uncovered_writes=[w["id"] for w in writes if not tiers.covering_read_back(w, criteria)],
+        vocabulary_size=len((vocab_json or {}).get("words") or []),
+        under_segmented=sum(1 for n in out.values() if n > UNDER_SEGMENTED_OUT),
+        leakage_ok=check.ok,
+        leakage_strings_checked=check.strings_checked,
+    )
+
+
 def _fold(
-    version: WorkflowVersion, runs: list[WorkflowRun], promote: set[str], *, fde: bool = False
+    version: WorkflowVersion,
+    runs: list[WorkflowRun],
+    promote: set[str],
+    *,
+    fde: bool = False,
+    accept: list[DisagreementAccept] | None = None,
 ) -> tuple[dict | None, list[GraphRun], list[EdgeChange], list[Proposal]]:
     definition = version.definition
     graph = definition.get("graph")
@@ -300,7 +446,8 @@ def _fold(
     ]
     criteria = list((graph.get("goal") or {}).get("criteria") or [])
     policy_changes, proposals = _apply_policies(draft, promote, fde=fde, criteria=criteria)
-    return draft, views, changes + policy_changes, proposals
+    accepted = _accept_disagreements(draft, shadow_report(runs), accept or [], fde=fde, today=datetime.now(UTC).date())
+    return draft, views, changes + policy_changes + accepted, proposals
 
 
 def _previous_approved(session: Session, workflow: Workflow, version: WorkflowVersion) -> WorkflowVersion | None:
@@ -331,7 +478,7 @@ def _structural_diff(prev: dict | None, cur: dict | None) -> list[EdgeChange]:
     return out
 
 
-def review(session: Session, workflow: Workflow, version: WorkflowVersion) -> GraphReviewOut:
+def review(session: Session, workflow: Workflow, version: WorkflowVersion, *, fde: bool = False) -> GraphReviewOut:
     runs = _runs(session, version)
     draft, views, changes, proposals = _fold(version, runs, set())
     previous = _previous_approved(session, workflow, version) if version.number > 1 else None
@@ -347,14 +494,19 @@ def review(session: Session, workflow: Workflow, version: WorkflowVersion) -> Gr
         changes=changes,
         proposals=proposals,
         shadow=shadow_report(runs),
+        compile=compile_report(graph) if graph is not None else None,
         previous_version_number=previous.number if previous else None,
         against_previous=_structural_diff(previous.definition.get("graph") if previous else None, graph),
         can_draft=graph is not None and status == "approved" and version.number == workflow.latest_version and bool(changes or proposals),
+        fde=fde,
     )
 
 
-def create_draft(session: Session, workflow: Workflow, version: WorkflowVersion, user_id: uuid.UUID, body: GraphDraftCreate) -> VersionOut:
-    """The derived draft, made a real version (still unapproved) with the promotions the admin chose."""
+def create_draft(
+    session: Session, workflow: Workflow, version: WorkflowVersion, user_id: uuid.UUID, body: GraphDraftCreate, *, fde: bool = False
+) -> VersionOut:
+    """The derived draft, made a real version (still unapproved) with the promotions the admin chose.
+    `fde` is the server's finding about the requester, never the body's."""
     if body.expected_version != workflow.latest_version or version.number != workflow.latest_version:
         raise HTTPException(409, "The workflow has a newer version; reload before drafting")
     if service.decision_for(session, version) is None or service.decision_for(session, version).decision != "approved":
@@ -362,7 +514,7 @@ def create_draft(session: Session, workflow: Workflow, version: WorkflowVersion,
     if version.definition.get("graph") is None:
         raise HTTPException(409, "This version has no task graph")
     promote = set(body.promote)
-    draft, _, changes, proposals = _fold(version, _runs(session, version), promote, fde=body.fde)
+    draft, _, changes, proposals = _fold(version, _runs(session, version), promote, fde=fde, accept=body.accept)
     proposed = {p.edge_id for p in proposals}
     if promote - proposed:
         raise HTTPException(422, f"Edges not proposed for promotion: {sorted(promote - proposed)}")

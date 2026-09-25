@@ -10,6 +10,7 @@ from types import SimpleNamespace
 
 import pytest
 from fastapi import HTTPException
+from pydantic import ValidationError
 
 from taskmining import tiers
 from taskmining.state import merge_graphs
@@ -350,6 +351,60 @@ def test_review_out_carries_the_shadow_report_shape():
         can_draft=False,
     )
     assert out.shadow.agreement is None and out.shadow.edges == []
+
+
+def disagreeing_run() -> SimpleNamespace:
+    return run_with(
+        PlannerState(
+            recovery={"shadow": [{"edge": TYPE_AMOUNT["id"], "from": BILL_EMPTY["key"], "acted": GRAPH["goal"]["node"], "agree": False}]}
+        )
+    )
+
+
+def test_an_fde_accepts_a_shadow_disagreement_as_a_new_shadow_edge_and_an_admin_cannot():
+    runs = [disagreeing_run()]
+    accept = [graph_review.DisagreementAccept(edge_id=TYPE_AMOUNT["id"], acted=GRAPH["goal"]["node"])]
+    with pytest.raises(HTTPException) as e:
+        graph_review._fold(version(DEFINITION), runs, set(), accept=accept)
+    assert e.value.status_code == 403
+    draft, _, changes, _ = graph_review._fold(version(DEFINITION), runs, set(), fde=True, accept=accept)
+    new = [e for e in draft["edges"] if e["id"] not in {x["id"] for x in GRAPH["edges"]}]
+    (n,) = new
+    assert (n["frm"], n["to"], n["action_class"], n["slot"]) == (
+        BILL_EMPTY["key"],
+        GRAPH["goal"]["node"],
+        "type_value",
+        TYPE_AMOUNT["slot"],
+    )
+    assert (n["tier"], n["policy"], n["tier_since"]) == ("shadow", "always_ask", TODAY.isoformat())
+    assert n["provenance"] == [{"source": "run", "id": str(runs[0].id), "event_ids": ["shadow"]}]
+    assert any("shadow disagreement" in c.reason for c in changes)
+    PlanGraph.model_validate(draft)
+    # Only what a shadow run actually recorded can be accepted.
+    bogus = [graph_review.DisagreementAccept(edge_id=TYPE_AMOUNT["id"], acted=BILL_EMPTY["key"])]
+    with pytest.raises(HTTPException) as e:
+        graph_review._fold(version(DEFINITION), runs, set(), fde=True, accept=bogus)
+    assert e.value.status_code == 422
+
+
+def test_the_compile_report_is_derived_from_the_graph_alone_and_names_uncovered_writes():
+    rep = graph_review.compile_report(GRAPH)
+    assert rep.states == len(GRAPH["nodes"]) and rep.moves == len(GRAPH["edges"])
+    assert rep.leakage_ok is True and rep.leakage_strings_checked > 0
+    assert rep.recordings == sorted({p["id"] for e in GRAPH["edges"] for p in e["provenance"] if p["source"] == "recording"})
+    assert rep.runs == 0
+    writes = {e["id"] for e in GRAPH["edges"] if tiers.is_write(e)}
+    covered = {w for c in rep.criteria for w in c.covers}
+    assert set(rep.uncovered_writes) == writes - covered
+    assert {s.slot for s in rep.slots} >= {TYPE_AMOUNT["slot"]} or rep.slots == []
+    assert rep.held_out is None
+    graph_review.CompileReport.model_validate(rep.model_dump())
+
+
+def test_the_review_says_whether_the_requester_is_the_fde_and_the_body_cannot_claim_it():
+    assert "fde" not in graph_review.GraphDraftCreate.model_fields
+    with pytest.raises(ValidationError):
+        graph_review.GraphDraftCreate(expected_version=1, fde=True)
 
 
 def test_tier_since_is_a_date():

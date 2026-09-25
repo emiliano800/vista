@@ -6,7 +6,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import { JSDOM } from "jsdom";
 const html = fs.readFileSync(new URL("../public/account/index.html", import.meta.url), "utf8");
-const source = fs.readFileSync(new URL("../public/account/app.js", import.meta.url), "utf8");
+import { source } from "./account-source.mjs";
 const graph = JSON.parse(fs.readFileSync(new URL("../../../tests/fixtures/plan_invoice.json", import.meta.url), "utf8"));
 const company = "00000000-0000-0000-0000-000000000001";
 const workflowId = "00000000-0000-0000-0000-0000000000aa";
@@ -61,6 +61,54 @@ const review = (over = {}) => ({
   previous_version_number: null,
   against_previous: [],
   can_draft: true,
+  ...over,
+});
+const goalNode = graph.nodes.find((n) => n.terminal)?.key ?? graph.nodes[1].key;
+const shadow = {
+  runs: 2,
+  proposed: 3,
+  agreed: 1,
+  agreement: 0.333,
+  edges: [
+    {
+      edge_id: click.id,
+      proposed: 3,
+      agreed: 1,
+      agreement: 0.333,
+      disagreements: [
+        { run_id: runId, edge_id: click.id, frm: click.frm, acted: goalNode },
+        { run_id: runId, edge_id: click.id, frm: click.frm, acted: null },
+      ],
+    },
+  ],
+};
+const compile = {
+  compiled_by: graph.compiled_by,
+  recordings: ["rec-invoice-1"],
+  runs: 0,
+  states: graph.nodes.length,
+  moves: graph.edges.length,
+  irreversibility: { navigational: 5, mutating: 1, committing: 1 },
+  slots: [{ slot: "input_1", method: `transfer ${malicious}`, controls: ["amount"], single_recording: true }],
+  aliases: { [click.id]: ["save", malicious] },
+  criteria: [{ type: "read_back", slot: "input_1", source: "draft", read_back_via: read.id, covers: [click.id] }],
+  uncovered_writes: [read.id],
+  vocabulary_size: 12,
+  under_segmented: 0,
+  leakage_ok: true,
+  leakage_strings_checked: 40,
+  held_out: null,
+};
+const tierProposal = (over = {}) => ({
+  edge_id: click.id,
+  from_policy: "confirm",
+  to_policy: "auto",
+  reason: "10 executed, 10 verified",
+  from_tier: "confirm",
+  to_tier: "unattended",
+  needs_fde: true,
+  cooled: true,
+  ceiling: "unattended",
   ...over,
 });
 
@@ -144,7 +192,7 @@ test("the owner sees structure, policies, statistics, provenance, the run's path
     await settle(() => /v2 · draft/.test(ui.$("content").textContent));
     const post = ui.state.requests.find((r) => r.method === "POST");
     assert.equal(post.path, `/api/workflows/${workflowId}/versions/${versionId}/graph/draft`);
-    assert.deepEqual(post.body, { expected_version: 1, promote: [click.id] });
+    assert.deepEqual(post.body, { expected_version: 1, promote: [click.id], accept: [] });
     assert.ok(ui.$("content").querySelector('[data-decide="approved"]'), "the new draft awaits the ordinary approval");
   } finally {
     ui.dom.window.close();
@@ -169,6 +217,59 @@ test("members read the graph but cannot draft, and a version without runs offers
     assert.equal(details.querySelector("[data-draft-runs]"), null);
   } finally {
     quiet.dom.window.close();
+  }
+});
+
+test("the compile report and the shadow report are read by everyone; promotions past ask and accepting a disagreement are FDE clicks", async () => {
+  const owner = mount({ graphReview: review({ shadow, compile, proposals: [tierProposal()] }) });
+  try {
+    const details = await openGraph(owner);
+    const text = details.textContent;
+    assert.equal(details.querySelectorAll("img").length, 0, "compile report strings are escaped");
+    assert.match(text, /Compile report/);
+    assert.match(text, /no leakage/);
+    assert.match(text, /1 write without read-back/);
+    assert.match(text, /Aligned by/);
+    assert.match(text, /covers 1 write/);
+    assert.match(text, /Not measured yet/);
+    assert.match(text, /Shadow report/);
+    assert.match(text, /2 shadow runs · 3 proposals · 1 agreed · 33% agreement/);
+    assert.match(text, /the employee went to/);
+    assert.match(text, /an unknown state/);
+    assert.match(text, /confirm → unattended|confirm\s*→\s*unattended/);
+    assert.match(text, /FDE decision/);
+    assert.equal(details.querySelector(`[data-promote="${click.id}"]`).disabled, true, "the owner is not the FDE");
+    const acceptBox = details.querySelector("[data-accept-edge]");
+    assert.ok(acceptBox && acceptBox.disabled);
+    assert.equal(details.querySelectorAll("[data-accept-edge]").length, 1, "a disagreement with no destination cannot be accepted");
+  } finally {
+    owner.dom.window.close();
+  }
+  const fde = mount({ graphReview: review({ shadow, compile, fde: true, proposals: [tierProposal()] }) });
+  try {
+    const details = await openGraph(fde);
+    assert.match(details.textContent, /FDE click/);
+    const box = details.querySelector(`[data-promote="${click.id}"]`);
+    assert.ok(box && !box.disabled);
+    box.checked = true;
+    const acceptBox = details.querySelector("[data-accept-edge]");
+    assert.ok(!acceptBox.disabled);
+    acceptBox.checked = true;
+    details.querySelector("[data-draft-runs]").click();
+    await settle(() => fde.state.requests.some((r) => r.method === "POST"));
+    const post = fde.state.requests.find((r) => r.method === "POST");
+    assert.deepEqual(post.body, { expected_version: 1, promote: [click.id], accept: [{ edge_id: click.id, acted: goalNode }] });
+    assert.equal("fde" in post.body, false, "the client never claims the FDE scope");
+  } finally {
+    fde.dom.window.close();
+  }
+  const cooling = mount({ graphReview: review({ fde: true, proposals: [tierProposal({ cooled: false })] }) });
+  try {
+    const details = await openGraph(cooling);
+    assert.match(details.textContent, /cooling/);
+    assert.equal(details.querySelector(`[data-promote="${click.id}"]`).disabled, true, "even the FDE waits out the cooling period");
+  } finally {
+    cooling.dom.window.close();
   }
 });
 
