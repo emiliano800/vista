@@ -587,8 +587,12 @@ function actionsHtml(actions, key) {
       : "";
   return `<details class="what-to-do"><summary>What to do</summary>${asked}<ol class="small">${steps}</ol>${draft}<p class="small draft-result" data-draft-result="${esc(key)}" hidden></p></details>`;
 }
+// One judged workflow: Jev's status is a label (likely / unsure), never a reason to hide it;
+// the tasks under it are the small committed effects code observed in that stretch of work.
 function workflowItem(w) {
-  return `<li><strong>${esc(w.name)}</strong> — ${esc(w.apps.join(", "))}${w.evidence ? ` · ${esc(w.evidence)}` : ""} · ${Math.round((w.confidence ?? 0) * 100)}%${actionsHtml(w.actions, w.candidate ?? "")}</li>`;
+  const status = w.status ? ` <span class="tag ${w.status === "likely" ? "success" : "warning"}">${esc(w.status)}</span>` : "";
+  const tasks = (w.tasks ?? []).length ? `<ul class="small">${w.tasks.map((t) => `<li>${esc(t)}</li>`).join("")}</ul>` : "";
+  return `<li><strong>${esc(w.name)}</strong>${status} — ${esc(w.apps.join(", "))}${w.evidence ? ` · ${esc(w.evidence)}` : ""} · ${Math.round((w.confidence ?? 0) * 100)}%${tasks}${actionsHtml(w.actions, w.candidate ?? "")}</li>`;
 }
 // Wire every Draft workflow button under `root`: POST the prefilled definition to the
 // workspace's own workflows API, report the result in place, and refresh the Workflows nav.

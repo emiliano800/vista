@@ -37,23 +37,28 @@ def event(minute: int, app: str, event_type: str = "click", second: int = 0, cou
     return {"timestamp": f"2026-09-19T09:{minute:02d}:{second:02d}Z", "event_type": event_type, "app": app, "count": count}
 
 
-def test_observe_derives_spans_switches_transfers_loops_and_stretches():
-    events = [
+def busy_events() -> list[dict]:
+    """Two stretches of work: Excel↔Browser copying for 2½ minutes, then after 12 idle minutes a
+    short Mail↔Excel visit. Every gap inside a stretch is at most 30 s."""
+    return [
         event(0, "Excel", "key", count=40),
-        event(1, "Excel", "copy"),
-        event(1, "Browser", "paste", second=20),
-        event(2, "Browser", "click"),
-        event(3, "Excel", "copy"),
-        event(3, "Browser", "paste", second=30),
-        event(4, "Excel", "click"),
-        event(5, "Excel", "paste"),  # same app: internal paste, not a transfer
-        # idle for 10 minutes → a new stretch, and the Excel span ends at 09:05
+        event(0, "Excel", "copy", second=20),
+        event(0, "Browser", "paste", second=40),
+        event(1, "Browser", "click"),
+        event(1, "Excel", "copy", second=20),
+        event(1, "Browser", "paste", second=50),
+        event(2, "Excel", "click", second=10),
+        event(2, "Excel", "paste", second=30),  # same app: an internal paste, not a transfer between apps
+        # idle for 12 minutes → a new stretch, and the Excel span ends at 09:02:30
         event(15, "Mail", "click"),
-        event(16, "Mail", "key", count=12),
-        event(17, "Excel", "click"),  # copy from Excel 14 minutes ago is too old to count
-        event(17, "Excel", "paste", second=30),
+        event(15, "Mail", "key", second=20, count=12),
+        event(15, "Excel", "click", second=40),  # copy from Excel 14 minutes ago is too old to count
+        event(16, "Excel", "paste"),
     ]
-    observed = observe(events, MANIFEST)
+
+
+def test_observe_derives_spans_switches_transfers_loops_and_stretches():
+    observed = observe(busy_events(), MANIFEST)
     assert observed["events"] == 40 + 12 + 10
     apps = {a["app"]: a for a in observed["apps"]}
     assert set(apps) == {"Excel", "Browser", "Mail"}
@@ -67,6 +72,13 @@ def test_observe_derives_spans_switches_transfers_loops_and_stretches():
     assert [s["id"] for s in observed["stretches"]] == ["s1", "s2"]
     assert observed["stretches"][0]["switches"] == 4 and observed["stretches"][0]["apps"][0] == "Excel"
     assert observed["stretches"][1]["apps"] == ["Mail", "Excel"]
+    # The tasks inside each stretch: every copy→paste (the internal one too), every application typed into.
+    assert observed["stretches"][0]["tasks"] == [
+        {"kind": "transfer", "from": "Excel", "to": "Browser", "count": 2},
+        {"kind": "transfer", "from": "Excel", "to": "Excel", "count": 1},
+        {"kind": "entry", "app": "Excel", "count": 40},
+    ]
+    assert observed["stretches"][1]["tasks"] == [{"kind": "entry", "app": "Mail", "count": 12}]
     assert observed["session"] == MANIFEST
     # Idle time is not active time: the first stretch's Excel span ends at its last event.
     assert sum(a["active_s"] for a in observed["apps"]) <= 8 * 60
@@ -77,11 +89,19 @@ def test_observe_handles_an_empty_or_single_event_session():
     assert empty["events"] == 0 and empty["apps"] == [] and empty["stretches"] == [] and empty["switches"] == 0
     single = observe([event(0, "Mail")], MANIFEST)
     assert single["apps"][0]["app"] == "Mail" and single["stretches"][0]["duration_s"] == 0
+    assert single["stretches"][0]["tasks"] == [{"kind": "activity", "app": "Mail", "count": 1}]
+
+
+def test_a_gap_over_thirty_seconds_starts_a_new_stretch():
+    close = observe([event(0, "Excel"), event(0, "Excel", second=30)], MANIFEST)
+    apart = observe([event(0, "Excel"), event(0, "Excel", second=31)], MANIFEST)
+    assert len(close["stretches"]) == 1 and len(apart["stretches"]) == 2
 
 
 def test_questions_are_anchored_to_observed_facts_and_bounded():
-    busy = [event(0, "Excel")] + [event(m, "Browser" if m % 2 else "Excel", "click") for m in range(1, 9)]
-    busy += [event(10, "Excel", "copy"), event(10, "Browser", "paste", second=10)]
+    # Eight switches 20 s apart, then a transfer 20 s later: one stretch, since no gap exceeds 30 s.
+    busy = [event(0, "Excel")] + [event(m // 3, "Browser" if m % 2 else "Excel", "click", second=m % 3 * 20) for m in range(1, 9)]
+    busy += [event(3, "Excel", "copy"), event(3, "Browser", "paste", second=10)]
     observed = observe(busy, MANIFEST)
     questions = deterministic_questions(observed)
     assert 1 <= len(questions) <= MAX_QUESTIONS
@@ -149,40 +169,45 @@ def test_coverage_states_what_was_not_observable():
 
 
 def busy_session():
-    events = [
-        event(0, "Excel", "key", count=40),
-        event(1, "Excel", "copy"),
-        event(1, "Browser", "paste", second=20),
-        event(2, "Browser", "click"),
-        event(3, "Excel", "copy"),
-        event(3, "Browser", "paste", second=30),
-        event(4, "Excel", "click"),
-        event(5, "Excel", "paste"),
-        event(15, "Mail", "click"),
-        event(16, "Mail", "key", count=12),
-        event(17, "Excel", "click"),
-        event(17, "Excel", "paste", second=30),
-    ]
-    return observe(events, MANIFEST)
+    return observe(busy_events(), MANIFEST)
 
 
-def test_workflow_candidates_are_born_from_observed_facts_one_per_app_pair():
+def test_workflow_candidates_are_every_stretch_of_work_with_its_tasks():
     candidates = workflow_candidates(busy_session())
-    # Excel↔Browser shows up as a transfer, a loop and a stretch: one candidate, the transfer leading.
+    # One candidate per stretch: the Excel↔Browser copying, then the short Mail visit. Nothing needs two apps.
     assert [(c["id"], c["pattern"], c["apps"], c["count"]) for c in candidates] == [
-        ("c1", "transfer", ["Excel", "Browser"], 2),
-        ("c2", "loop", ["Excel", "Mail"], 2),
+        ("c1", "transfer", ["Excel", "Browser"], 1),
+        ("c2", "entry", ["Mail", "Excel"], 1),
     ]
     c1 = candidates[0]
-    assert c1["about"]["transfer"] == ["Excel", "Browser"] and c1["about"]["mean_latency_s"] == 25.0
-    assert [list(a)[0] for a in c1["about"]["also"]] == ["loop", "stretch"] and c1["about"]["also"][1]["stretch"] == "s1"
+    assert [t["name"] for t in c1["tasks"]] == [
+        "Copy and paste Excel → Browser 2×",
+        "Copy and paste within Excel",
+        "Type into Excel (40 keystrokes)",
+    ]
+    assert c1["about"]["stretches"] == ["s1"] and c1["about"]["switches"] == 4
+    assert c1["about"]["tasks"][0] == {"kind": "transfer", "from": "Excel", "to": "Browser", "count": 2}
     assert c1["evidence"] == (
-        "Copied from Excel and pasted into Browser 2 times, 25.0s apart on average; "
-        "also switched back and forth between Browser and Excel 4 times; "
-        "also 4 switches among Excel, Browser between 09:00 and 09:05"
+        "Copy and paste Excel → Browser 2×; Copy and paste within Excel; Type into Excel (40 keystrokes) between 09:00 and 09:02"
     )
-    assert candidates[1]["evidence"] == "Switched back and forth between Excel and Mail 2 times" and "also" not in candidates[1]["about"]
-    assert workflow_candidates(observe([event(0, "Mail")], MANIFEST)) == []
+    assert candidates[1]["evidence"] == "Type into Mail (12 keystrokes) between 09:15 and 09:16"
+
+
+def test_a_lone_click_in_one_app_is_still_a_candidate_and_recurring_stretches_merge():
+    lone = workflow_candidates(observe([event(0, "Mail")], MANIFEST))
+    assert [(c["pattern"], c["apps"], c["count"], c["tasks"][0]["name"]) for c in lone] == [
+        ("activity", ["Mail"], 1, "Work in Mail (1 click)")
+    ]
+    # The same Docs → Excel copy in three separate stretches is one candidate seen three times — that is what recurring means.
+    events = []
+    for m in (0, 5, 10):
+        events += [event(m, "Docs", "copy"), event(m, "Excel", "paste", second=15)]
+    repeated = workflow_candidates(observe(events, MANIFEST))
+    assert len(repeated) == 1 and repeated[0]["count"] == 3 and repeated[0]["apps"] == ["Docs", "Excel"]
+    assert repeated[0]["tasks"] == [
+        {"kind": "transfer", "from": "Docs", "to": "Excel", "count": 3, "name": "Copy and paste Docs → Excel 3×"}
+    ]
+    assert repeated[0]["evidence"].endswith("between 09:00 and 09:10, seen in 3 stretches of work")
 
 
 def test_judge_request_asks_four_typed_questions_per_candidate_over_the_facts():
@@ -190,16 +215,20 @@ def test_judge_request_asks_four_typed_questions_per_candidate_over_the_facts():
     candidates = workflow_candidates(observed)
     state, questions = judge_request(observed, candidates, [{"filename": "ar.xlsx", "summary": "workbook", "excerpt": "Invoice,Total"}])
     assert [c["id"] for c in state["candidates"]] == ["c1", "c2"] and "about" not in state["candidates"][0]
+    assert state["candidates"][0]["tasks"][0] == "Copy and paste Excel → Browser 2×"
     assert state["observed"]["transfers"] == observed["transfers"] and state["shared_documents"][0]["filename"] == "ar.xlsx"
     assert len(questions) == 4 * len(candidates)
     assert {questions[f"c1_{q}"]["type"] for q in ("workflow", "ask")} == {"noul"}
     assert questions["c1_kind"]["type"] == "choice" and NONE in questions["c1_kind"]["criteria"]
     assert questions["c1_mechanical"]["type"] == "score" and len(questions["c1_mechanical"]["criteria"]) == 4
     assert "Excel and Browser" in questions["c1_workflow"]["instructions"]
+    # A one-application candidate is only offered the kinds that fit inside one application.
+    _, lone = judge_request(observed, workflow_candidates(observe([event(0, "Mail", "key", count=5)], MANIFEST)), [])
+    assert set(lone["c1_kind"]["criteria"]) == {"data_entry", "document_work", NONE}
 
 
 def answers(cid, workflow, kind, p_kind, mechanical, p_mech, ask):
-    probs = {k: 0.0 for k in ("data_transfer", "lookup_and_enter", "reconciliation", "communication", "review_approval", NONE)}
+    probs = {k: 0.0 for k in (*KIND_NAMES, NONE)}
     probs[kind] = p_kind
     return {
         f"{cid}_workflow": {"type": "noul", "noul": workflow},
@@ -210,8 +239,8 @@ def answers(cid, workflow, kind, p_kind, mechanical, p_mech, ask):
 
 
 def judged():
-    """c1 (Excel→Browser transfer): a mechanical data transfer, nothing to ask.
-    c2 (Excel↔Mail loop): a communication loop, not mechanical, only the employee can say what it is."""
+    """c1 (Excel→Browser copying): a mechanical data transfer, nothing to ask.
+    c2 (Mail, then Excel): a communication loop, not mechanical, only the employee can say what it is."""
     return Judgment(
         model="jev-1.13.0",
         input_tokens=900,
@@ -226,10 +255,12 @@ def test_apply_judgment_is_templates_over_typed_answers():
     candidates = workflow_candidates(busy_session())
     interpretation, questions = apply_judgment(judged(), candidates, model="jev-1.13.0", source="live")
     assert interpretation["source"] == "live" and interpretation["model"] == "jev-1.13.0"
-    assert interpretation["rejected"] == 0 and interpretation["judged"] == 2
-    assert [w["name"] for w in interpretation["workflows"]] == ["Data transfer: Excel → Browser", "Communication loop: Excel ↔ Mail"]
+    assert interpretation["rejected"] == 0 and interpretation["unsure"] == 0 and interpretation["judged"] == 2
+    assert [w["name"] for w in interpretation["workflows"]] == ["Data transfer: Excel → Browser", "Communication loop: Mail ↔ Excel"]
+    assert [w["status"] for w in interpretation["workflows"]] == ["likely", "likely"]
     assert interpretation["workflows"][0]["confidence"] == 0.88  # min(p_workflow, p_kind)
-    assert interpretation["workflows"][0]["about"]["transfer"] == ["Excel", "Browser"]
+    assert interpretation["workflows"][0]["tasks"][0] == "Copy and paste Excel → Browser 2×"
+    assert interpretation["workflows"][0]["about"]["tasks"][0]["to"] == "Browser"
     auto = interpretation["automation_candidates"]
     assert [a["title"] for a in auto] == ["Automate data transfer: Excel → Browser"]
     assert (
@@ -240,31 +271,62 @@ def test_apply_judgment_is_templates_over_typed_answers():
         {
             "source": "model",
             "question": (
-                "Around your work in Mail, you kept returning to Excel. "
+                "Around your work in Excel, you kept returning to Mail. "
                 "What are you sending or receiving there, and who decides what happens next?"
             ),
-            "about": {"apps": ["Excel", "Mail"], "candidate": "c2"},
+            "about": {"apps": ["Mail", "Excel"], "candidate": "c2"},
         }
     ]
-    assert interpretation["summary"] == "2 recurring workflows judged from 2 observed patterns; 1 looks mechanical enough to automate."
-    # Declined either way: not a unit of work, or no kind fits.
-    declined = Judgment(
-        model="jev-1.13.0",
-        answers={**answers("c1", 0.30, "data_transfer", 0.9, 2.9, 0.9, 0.9), **answers("c2", 0.80, NONE, 0.7, 2.9, 0.9, 0.9)},
+    assert (
+        interpretation["summary"]
+        == "2 workflows from 2 stretches of work; 2 judged likely recurring; 1 looks mechanical enough to automate."
     )
-    interpretation, questions = apply_judgment(declined, candidates, model="jev-1.13.0", source="live")
-    assert interpretation["workflows"] == [] and interpretation["rejected"] == 2 and questions == []
-    assert interpretation["summary"] == "0 recurring workflows judged from 2 observed patterns."
 
 
-def test_jev_stub_proposes_nothing_and_no_candidates_means_no_model_call(monkeypatch):
+def test_low_confidence_and_no_kind_are_labels_not_filters():
+    """Jev doubting c1 is recurring, and finding no kind for c2, changes their status — both stay on the report."""
+    candidates = workflow_candidates(busy_session())
+    doubted = Judgment(
+        model="jev-1.13.0",
+        answers={**answers("c1", 0.30, "data_transfer", 0.9, 2.9, 0.9, 0.2), **answers("c2", 0.80, NONE, 0.7, 2.9, 0.9, 0.2)},
+    )
+    interpretation, questions = apply_judgment(doubted, candidates, model="jev-1.13.0", source="live")
+    unsure, unclear = interpretation["workflows"]
+    assert interpretation["rejected"] == 0 and interpretation["unsure"] == 2
+    assert unsure["name"] == "Data transfer: Excel → Browser" and unsure["status"] == "unsure" and unsure["confidence"] == 0.3
+    # Mechanical enough is still mechanical enough: the draft is offered, badged unsure, for the FDE to decide.
+    assert interpretation["automation_candidates"][0]["candidate"] == "c1" and unsure["actions"]["draft_definition"] is not None
+    assert unclear["name"] == "Unclear work: Mail, Excel" and unclear["kind"] == NONE and unclear["status"] == "unsure"
+    assert unclear["tasks"] == ["Type into Mail (12 keystrokes)"]
+    # No kind → nothing to automate and always something to ask, whatever p_ask said.
+    assert unclear["actions"]["draft_definition"] is None and len(interpretation["automation_candidates"]) == 1
+    assert questions == [
+        {
+            "source": "model",
+            "question": "You worked in Mail, Excel between 09:15 and 09:16. What were you doing, and is it something you repeat?",
+            "about": {"apps": ["Mail", "Excel"], "candidate": "c2"},
+        }
+    ]
+    assert (
+        "too little to classify" in unclear["actions"]["instructions"][1]
+        and "Nothing to automate yet" in unclear["actions"]["instructions"][2]
+    )
+    assert (
+        interpretation["summary"]
+        == "2 workflows from 2 stretches of work; 0 judged likely recurring; 1 looks mechanical enough to automate."
+    )
+
+
+def test_jev_stub_shows_every_stretch_as_unclear_and_proposes_nothing(monkeypatch):
     monkeypatch.setattr(settings, "typesafe_api_key", None)
     monkeypatch.delenv("VISTA_JEV_CASSETTE", raising=False)
     result = interpret_with_jev(busy_session(), [])
     assert result.source == "stub" and result.model == "stub-jev-v0" and result.input_tokens > 0
-    assert result.interpretation["workflows"] == [] and result.interpretation["rejected"] == 2 and result.questions == []
-    assert result.event == {"interpreter": "jev", "candidates": 2, "questions": 8, "rejected": 2, "employee_answers": 0}
-    quiet = interpret_with_jev(observe([event(0, "Mail")], MANIFEST), [], judge_fn=lambda *a: pytest.fail("must not call the model"))
+    assert [(w["kind"], w["status"]) for w in result.interpretation["workflows"]] == [(NONE, "unsure")] * 2
+    assert result.interpretation["automation_candidates"] == [] and result.interpretation["unsure"] == 2
+    assert [q["about"]["candidate"] for q in result.questions] == ["c1", "c2"]
+    assert result.event == {"interpreter": "jev", "candidates": 2, "questions": 8, "rejected": 0, "unsure": 2, "employee_answers": 0}
+    quiet = interpret_with_jev(observe([], MANIFEST), [], judge_fn=lambda *a: pytest.fail("must not call the model"))
     assert quiet.source == "code" and quiet.input_tokens == 0 and quiet.interpretation["summary"] == ""
 
 
@@ -284,16 +346,21 @@ def test_interpreter_setting_selects_jev_or_chat(monkeypatch):
 
 
 def test_every_kind_yields_a_valid_prefilled_workflow_definition():
-    c = workflow_candidates(busy_session())[0]  # the Excel → Browser transfer
+    c = workflow_candidates(busy_session())[0]  # the Excel → Browser copying
     docs = [{"filename": "ar_aging.xlsx", "summary": {"kind": "workbook"}, "excerpt": ""}]
     for kind in KIND_NAMES:
         definition = WorkflowDefinition.model_validate(draft_definition(kind, c, docs))  # raises on any schema violation
         assert definition.environment == "sandbox" and definition.limits.max_steps == 10
-        assert "Excel" in definition.goal and "Browser" in definition.goal
+        assert "Excel" in definition.goal and ("Browser" in definition.goal or kind in ("data_entry", "document_work"))
         assert definition.required_inputs[:2] == ["Excel export or sample", "Browser field list"]
         assert "shared document: ar_aging.xlsx" in definition.required_inputs
         assert all(t.islower() and " " not in t for t in definition.allowed_tools)
     assert "2 times per session" in draft_definition("data_transfer", c, [])["goal"]
+    # A one-application candidate drafts against that application alone.
+    lone = workflow_candidates(observe([event(0, "Excel", "key", count=30)], MANIFEST))[0]
+    entry = WorkflowDefinition.model_validate(draft_definition("data_entry", lone, []))
+    assert entry.goal.startswith("Enter the values the employee keys into Excel")
+    assert entry.required_inputs == ["Excel source values or sample", "Excel field list"]
 
 
 def test_instructions_are_specific_and_end_in_a_draft_or_a_smaller_fix():
@@ -304,12 +371,21 @@ def test_instructions_are_specific_and_end_in_a_draft_or_a_smaller_fix():
     )
     assert "ar_aging.xlsx" in with_docs[1] and "is the Excel source" in with_docs[1]
     assert "map each to a column in the Excel source" in with_docs[2]
-    assert "copied from Excel and pasted into Browser 2 times" in with_docs[3]
+    assert "copy and paste Excel → Browser 2×; copy and paste within Excel; type into Excel (40 keystrokes)" in with_docs[3]
     assert with_docs[4].startswith("Draft the workflow from the prefilled definition") and "$1.00 per run" in with_docs[4]
     assert "admin decision" in with_docs[5] and len(with_docs) == 6
     without = instructions_for("reconciliation", c, [], None, False)
     assert "the report asks" not in without[0] and "representative export or sample from Excel" in without[1]
     assert without[-1].startswith("Not mechanical enough to automate yet") and len(without) == 5
+    lone = workflow_candidates(observe([event(0, "Excel", "key", count=30)], MANIFEST))[0]
+    assert instructions_for("data_entry", lone, [], None, False)[0].startswith("Confirm with the employee what the work in Excel is")
+    assert instructions_for(NONE, lone, [], "What was it?", False) == [
+        "Confirm with the employee what the work in Excel is — the report asks: “What was it?”. "
+        "Their answer on the published report is the baseline; do not proceed from the pattern alone.",
+        "The observed tasks — type into Excel (30 keystrokes) — were too little to classify. Once the employee has said what they are, "
+        "decide whether they belong to a workflow already on this report or are one of their own, and rename it.",
+        "Nothing to automate yet: an unclear task is not a baseline. Revisit after the next recording of the same work.",
+    ]
 
 
 def test_apply_judgment_attaches_actions_only_where_they_apply():
@@ -339,7 +415,7 @@ def test_finding_rows_cite_report_candidate_run_and_carry_answer_and_actions():
     rows = finding_rows(FakeReport(interpretation, questions))
     assert [(r["kind"], r["title"]) for r in rows] == [
         ("proposed_automation", "Automate data transfer: Excel → Browser"),
-        ("inefficiency", "Communication loop: Excel ↔ Mail"),
+        ("inefficiency", "Communication loop: Mail ↔ Excel"),
     ]
     transfer, mail = rows
     assert transfer["evidence"]["refs"] == [
@@ -350,6 +426,8 @@ def test_finding_rows_cite_report_candidate_run_and_carry_answer_and_actions():
     assert transfer["evidence"]["mechanical"] == 2.7 and transfer["evidence"]["answer"] is None
     assert transfer["evidence"]["actions"]["draft_definition"]["goal"].startswith("Move the values")
     assert "Judged a recurring workflow at 88%; mechanical 2.7 of 3." in transfer["detail"]  # min(p_workflow, p_kind)
+    assert "Tasks: Copy and paste Excel → Browser 2×; Copy and paste within Excel; Type into Excel (40 keystrokes)." in transfer["detail"]
+    assert transfer["evidence"]["status"] == "likely" and transfer["evidence"]["tasks"][1] == "Copy and paste within Excel"
     assert transfer["finding_type"] == "workflow.data_transfer"
     assert mail["evidence"]["answer"] == "Vendor statements from the portal" and "Employee: Vendor statements" in mail["detail"]
     assert mail["finding_type"] == "workflow.communication" and "not mechanical enough" in mail["detail"]
@@ -443,19 +521,20 @@ def test_employee_answers_are_given_to_jev_and_quoted_in_the_summary():
 def test_jev_sees_typing_as_fields_typed_not_key_volume_and_ranks_candidates_the_same():
     events = [
         event(0, "Excel", "key", count=40),
-        event(1, "Excel", "copy"),
-        event(1, "Browser", "paste", second=20),
-        event(2, "Browser", "click"),
-        event(3, "Excel", "copy"),
-        event(3, "Browser", "paste", second=30),
-        event(4, "Excel", "click"),
-        event(5, "Excel", "paste"),
+        event(0, "Excel", "copy", second=10),
+        event(0, "Browser", "paste", second=20),
+        event(0, "Browser", "click", second=30),
+        event(0, "Excel", "copy", second=40),
+        event(0, "Browser", "paste", second=50),
+        event(1, "Excel", "click"),
+        event(1, "Excel", "paste", second=10),
     ]
     light = observe(events, MANIFEST)
     # The same session with two thousand more keystrokes in one continuous run of typing.
-    heavy = observe(events + [event(2, "Browser", "key", second=s, count=100) for s in range(1, 21)], MANIFEST)
-    assert heavy["apps"][1]["keys"] - light["apps"][1]["keys"] == 2000, "the recording keeps every key"
-    assert heavy["apps"][1]["typing_runs"] == light["apps"][1]["typing_runs"] + 1
+    heavy = observe(events + [event(1, "Browser", "key", second=s, count=100) for s in range(11, 31)], MANIFEST)
+    browser = lambda o: next(a for a in o["apps"] if a["app"] == "Browser")  # noqa: E731
+    assert browser(heavy)["keys"] - browser(light)["keys"] == 2000, "the recording keeps every key"
+    assert browser(heavy)["typing_runs"] == browser(light)["typing_runs"] + 1
     assert heavy["stretches"][0]["interactions"] == light["stretches"][0]["interactions"] + 1
     assert heavy["stretches"][0]["events"] == light["stretches"][0]["events"] + 2000
     same = lambda cs: [(c["id"], c["pattern"], c["apps"], c["count"]) for c in cs]  # noqa: E731
@@ -463,7 +542,7 @@ def test_jev_sees_typing_as_fields_typed_not_key_volume_and_ranks_candidates_the
     state, _ = judge_request(heavy, workflow_candidates(heavy), [])
     assert all("keys" not in a for a in state["observed"]["apps"])
     assert all("events" not in s and "interactions" in s for s in state["observed"]["stretches"])
-    assert [a["typing_runs"] for a in state["observed"]["apps"]] == [1, 1] and "typing_runs" in state["context"]
+    assert sorted(a["typing_runs"] for a in state["observed"]["apps"]) == [1, 1] and "typing_runs" in state["context"]
 
 
 def test_the_employee_summary_reaches_jev_as_context_bounded_and_never_as_a_candidate():

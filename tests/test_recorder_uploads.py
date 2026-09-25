@@ -429,7 +429,17 @@ def test_accepted_upload_is_analysed_by_the_worker_into_a_private_draft_report(c
     assert [a["app"] for a in report["observed"]["apps"]][:2] in (["Excel", "Portal"], ["Portal", "Excel"])
     assert report["observed"]["transfers"][0] == {"from": "Excel", "to": "Portal", "count": 5, "mean_latency_s": 60.0}
     assert report["observed"]["switches"] == 10
-    assert report["interpretation"]["source"] == "stub" and report["interpretation"]["workflows"] == []
+    # Stub Jev labels nothing as likely, but every stretch of work is still a visible workflow — and none is an automation.
+    interpretation = report["interpretation"]
+    assert interpretation["source"] == "stub" and interpretation["workflows"]
+    assert all(w["status"] == "unsure" and w["kind"] == "none" and w["tasks"] for w in interpretation["workflows"])
+    assert all(
+        t["from"] in w["apps"] and t["to"] in w["apps"]
+        for w in interpretation["workflows"]
+        for t in w["about"]["tasks"]
+        if t["kind"] == "transfer"
+    )
+    assert interpretation["automation_candidates"] == [] and interpretation["rejected"] == 0
     assert report["interpretation"]["documents"] == [{"filename": "invoice.csv", "summary": {"kind": "table", "rows": 2, "columns": 2}}]
     assert report["questions"] and all(q["answer"] is None for q in report["questions"])
     assert report["questions_open"] == len(report["questions"]) == report["questions_total"]
