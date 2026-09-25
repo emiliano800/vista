@@ -261,7 +261,7 @@ def test_jev_stub_proposes_nothing_and_no_candidates_means_no_model_call(monkeyp
     result = interpret_with_jev(busy_session(), [])
     assert result.source == "stub" and result.model == "stub-jev-v0" and result.input_tokens > 0
     assert result.interpretation["workflows"] == [] and result.interpretation["rejected"] == 2 and result.questions == []
-    assert result.event == {"interpreter": "jev", "candidates": 2, "questions": 8, "rejected": 2}
+    assert result.event == {"interpreter": "jev", "candidates": 2, "questions": 8, "rejected": 2, "employee_answers": 0}
     quiet = interpret_with_jev(observe([event(0, "Mail")], MANIFEST), [], judge_fn=lambda *a: pytest.fail("must not call the model"))
     assert quiet.source == "code" and quiet.input_tokens == 0 and quiet.interpretation["summary"] == ""
 
@@ -406,3 +406,33 @@ def test_coverage_and_jev_context_follow_the_sharing_policy():
     assert "titles" in state["context"] and "never captured" not in state["context"]
     state, _ = judge_request(observe([event(0, "Excel")], MANIFEST), [], [])
     assert "never captured" in state["context"]
+
+
+def test_employee_answers_are_given_to_jev_and_quoted_in_the_summary():
+    from vista.agents.jev import stub_answers
+
+    observed = observe(
+        [event(0, "Slack"), event(1, "Google Chrome"), event(2, "Slack"), event(3, "Google Chrome"), event(4, "Slack")], MANIFEST
+    )
+    candidates = workflow_candidates(observed)
+    assert candidates, "a Slack↔Chrome loop is a candidate"
+    answers = [{"question": "What were you working on?", "answer": "Taking Slack messages and copying them into a Google Doc, every day"}]
+
+    state, questions = judge_request(observed, candidates, [], answers)
+    assert state["employee_answers"] == answers
+    assert "employee_answers" in state["context"]
+    assert all("employee_answers" in q["instructions"] for q in questions.values())
+    plain_state, plain_questions = judge_request(observed, candidates, [])
+    assert "employee_answers" not in plain_state and all("employee_answers" not in q["instructions"] for q in plain_questions.values())
+
+    seen = []
+
+    def judge_fn(state, questions):
+        seen.append(state)
+        return Judgment(model="jev-test", source="live", answers=stub_answers(questions), input_tokens=10, output_tokens=0)
+
+    result = interpret_with_jev(observed, [], judge_fn=judge_fn, answers=answers)
+    assert seen[0]["employee_answers"] == answers
+    assert result.event["employee_answers"] == 1 and result.interpretation["answered"] == 1
+    assert "Read with 1 answer from the employee, who described it as: “Taking Slack messages" in result.interpretation["summary"]
+    assert interpret_with_jev(observed, [], judge_fn=judge_fn).interpretation["answered"] == 0

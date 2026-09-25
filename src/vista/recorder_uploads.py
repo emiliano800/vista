@@ -449,6 +449,10 @@ def record_answers(session: Session, principal: Principal, submission_id: uuid.U
     report.questions = questions
     report.updated_at = now
     session.flush()
+    # An answer is evidence, not a footnote: re-read the session with it. The draft's
+    # analysis goes back to "queued", so publishing waits for the re-judged report.
+    if any(q.get("answer") for q in questions) and row.analysis_status == "succeeded":
+        queue_analysis(session, principal, row)
     result = public_submission(row, report, full_report=True)
     session.commit()
     return result

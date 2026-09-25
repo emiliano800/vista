@@ -472,6 +472,15 @@ def test_answers_and_explicit_publication_make_a_report_visible_to_the_workspace
     q = next(q for q in answered["report"]["questions"] if q["id"] == first)
     assert q["answer"] == "Month-end vendor statements." and q["answered_at"]
     assert answered["report"]["questions_open"] == answered["report"]["questions_total"] - 1
+    # An answer is evidence: the session is re-read with it, and publishing waits for that.
+    assert answered["analysis_status"] == "queued" and answered["analysis_run_id"] != detail["analysis_run_id"]
+    assert client.post(publish, headers=headers, json={"consent": True}).status_code == 409
+    while process_one():
+        pass
+    reread = client.get(f"{ROOT}/{submission['id']}", headers=headers).json()
+    assert reread["analysis_status"] == "succeeded"
+    assert next(q for q in reread["report"]["questions"] if q["id"] == first)["answer"] == "Month-end vendor statements."
+    assert "Month-end vendor statements" in reread["report"]["interpretation"]["summary"]
     assert client.post(publish, headers=headers, json={}).status_code == 422
     assert client.post(publish, headers=headers, json={"consent": False}).status_code == 422
     published = client.post(publish, headers=headers, json={"consent": True}).json()
