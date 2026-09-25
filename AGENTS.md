@@ -175,6 +175,98 @@ fail closed (`stale_observation` / `sensitive_window`). A computer advertises a 
 only when its driver exists; otherwise `harness_unsupported` pauses the run for a person
 (`harnesses.js`). `npm run test:browser` is the real-Electron smoke for the browser driver.
 
+### Task graph v3 — target contract (design of record: `docs/computer_use_task_graph_v3.md`)
+
+The current `PlanGraph` keys nodes by `(app_role, activity, data_signature)` with
+control-derived tokens (`field:<control>`) and asks Jev once per step; that is v1. v3 is
+the agreed direction and is **not yet implemented**. When touching
+`taskmining/state.py`, `recorder/src/plan.js`, `computer_use/graph.py`, `handler.py` or
+the drivers, move toward these rules, never away from them. Every number below is
+*provisional* until milestone 1 (real recordings) replaces it with a measured one.
+
+- **Framing.** Process-mined task graph + typed selection — not RL. Recordings add
+  structure, runs add statistics, people approve structure. Terminal node = *goal frame*.
+  `workflow = [tasks] + non-essential frames; task = nodes + edges + goal + criteria`.
+- **State = L0 progress (identity) + L1 structure (context); both code-computed.**
+  L0 = `{have:<slot>, read:<slot>, open:<slot>, in:<screen-class>, ctx:<dialog-class>}`;
+  two frames are one node iff L0 sets are equal. `in:<screen-class>` is a hash of URL
+  path *shape* + sorted landmark roles (title/landmark shape on desktop) — no per-app
+  ontology; under-segmentation is accepted and measured (nodes with > 6 out-edges). L1 =
+  landmark roles, modal present, primary-button descriptor, control-class *presence*
+  (never counts) — tie-breaks, `effect_seen`, staleness only. Frame explanations from a
+  large model are review-time navigation; never a run-time input. Screenshot *region
+  mode* is research, not a fallback; never `unattended`.
+- **Slots exist before the workflow does (slot alignment, on device).** (1) transfer
+  linkage: a value read from control A and typed into B is one slot named from the
+  *source* (`fact:{A}`); (2) declared inputs, by value equality across the recording;
+  (3) leftover typed/selected controls clustered by descriptor similarity →
+  `field:{descriptor}` (the only place descriptor names reach identity, flagged when
+  single-recording); (4) employee merges/renames once in the storyboard. Alignment
+  method per slot goes in the compile report. Recordings whose slot tables cannot be
+  aligned stay separate drafts; never merged blindly.
+- **Edge = primitive × control descriptor × slot × policy × irreversibility class ×
+  stats × provenance.** Descriptor `(role, normalised name, landmark, position class,
+  aliases[])`; never a raw string, selector or coordinate — those stay in `anchors.json`.
+  Irreversibility class is assigned in code: `navigational` (navigate/read/extract/wait,
+  click on tab/link/row/menu) < `mutating` (type_value/select/press into a field) <
+  `committing` (`submit`, click whose normalised name is in the commit vocabulary
+  save/submit/send/post/delete/approve/confirm/pay, or closes a `ctx:confirm`). Jev's
+  `p_irreversible` may raise the class, never lower it. Typing is one edge keyed on
+  commit; mid-typing autocomplete/validation are `ctx:` nodes. Values never enter the graph.
+- **Run loop: code first, Jev only on ambiguity, straight-line only where the tier and
+  class allow.** Locate by L0 equality (Jev `node` only on ties); Jev only ever sees the
+  located node's own edges (`rejudged` is a defect counter, target 0). `target` resolves
+  in code when exactly one live candidate clears the descriptor threshold, Jev among
+  several, recovery when none. `effect_seen` is an L0/L1 diff first. Straight-line (no
+  `edge` question) only in tier `unattended`, only for `navigational` edges or `mutating`
+  edges on declared/transfer-linked slots, **never** `committing`; in `shadow`/`ask`
+  every step is judged. `committing`, `confirm`/`always_ask`, `p_irreversible ≥ 0.3`
+  pause. Settle = AX quiescence (200 ms window, 2 s cap). Budgets per tier.
+- **Recovery before pause, never affirmative.** One recovery fragment per app: on an
+  unexpected modal with no textbox and no commit-vocabulary primary button →
+  `press Escape` or click `(button, {cancel, close, dismiss, ×})`; otherwise pause.
+  `in:<unknown>` → the recorded navigational entry edge only. Stale/no-target →
+  re-observe once. Budget 2 per task per run; `off_plan` after. Sign-in / session
+  expired / payment / private → pause, always. Never click ok/yes/confirm/continue.
+- **Verification is typed first, and writes need read-back.** Criteria are predicates
+  over slots: `read_back` (code, after following the task's `read_back_via` edge to the
+  record's own view, optionally after `read_back_delay` for async apps), `present`
+  (code), `graded` (Jev, ≤1k normalised region text, threshold declared on the task).
+  Comparison on device; ledger gets slot names + booleans. A `committing` edge without a
+  covering `read_back` can never reach `unattended`; apps with nothing readable keep
+  writes at `confirm` — a stated ceiling, not a workaround.
+- **Privacy is an enforced property.** One normaliser for everything cloud-bound: digit
+  runs/IDs/dates/amounts/emails/phones → class tokens; any word not in the app's
+  *control-vocabulary* (AX names recurring across ≥ 2 records/screens, i.e. not
+  data-varying) → `{text}`; rows named from headers + position, never cell text. Leakage
+  test at compile and on every cloud-bound observation: exact recorded value / non-vocab
+  AX name / window title → fail; token not produced by the normaliser → fail; device-side
+  OCR sample searched for survivors. Frames and page text never leave the device; cloud
+  gets L0, L1, ≤40 descriptors, redacted declared-output slot values. Consent version
+  `computer-use-v2`. Known limits (single lower-case surnames, non-Latin) are reported,
+  not hidden.
+- **Gates.** Employee (#2): consent once, share-by-default withdrawable per recording,
+  one-tap exclude / always-ask per move, accept per run, kill switch. FDE (#1): approves
+  one task (≤ 25 edges) from the *compile report* (provenance, slot alignment evidence,
+  leakage result, held-out locate/coverage, aliases) and the *shadow report* (recorder
+  proposed, employee acted, code-scored agreement; disagreements become structural deltas
+  the FDE can accept) — never a diagram of hashed keys.
+- **Tiers and growth — promotion is asymmetric.** Per-edge tier `shadow → ask → confirm
+  → unattended`, pinned in the version. Entry conditions are computed in code from stats,
+  but promotion past `ask` is an **FDE click after a cooling period**; demotion is
+  automatic on any denial, verified failure, `effect_missing` on a write or leakage
+  failure. Stats (support, verified-ok, approved, denied, effect-missing, recovery-used,
+  aliases, shadow-agreement) live outside the structural hash and update on every run;
+  structural deltas (nodes, edges, descriptor roles, slots, criteria) batch into a weekly
+  draft per task and need approval. Stats alone can never change what the agent may do.
+- **Evaluation and honesty.** Milestone 0 = tooling on the synthetic CRM (a fixture,
+  never a benchmark; the 6/6 is dev smoke). Milestone 1 = ≥ 3 recordings × ≥ 5 tasks × 2
+  real apps from ≥ 2 people — the actual blocker, not an engineering task — producing the
+  first real thresholds. Milestone 2 = frozen dev/test sets, recording-compiled graphs
+  only, ≥ 1 write task per app, numbers per commit never combined across revisions.
+  Harnesses are advertised only after a recorded device self-test; macOS desktop has never
+  executed, Linux desktop failed its one smoke, region mode is not built.
+
 ## A2A (agent-to-agent) protocol
 
 Agents never call each other in-process. All hand-offs go through the platform

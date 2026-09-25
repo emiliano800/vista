@@ -2,6 +2,8 @@
 
 Status: design of record (v3), approved direction 2026-09-24; numbers provisional until milestone 1 · Baseline: `origin/devin/1790133120-harness-drivers` (v1 graph + hand-rolled drivers, unmerged) on top of `main@e965454`.
 
+The v3 contract this plan implements is `AGENTS.md` → "Task graph v3 — target contract"; the full design (system end to end + task graph in detail) is `docs/computer_use_task_graph_v3.md`. This file is the *work plan* against that design: drivers, data-type homes, work breakdown, invariants.
+
 ## 0. What exists today, and what does not
 
 | Referenced in the v3 contract | Reality on `emiliano800/vista` |
