@@ -163,8 +163,13 @@ sign-in `/signin/analyst/`, company workspace `/account/` (Overview / Data sourc
 agent findings) / Agents / Runs / Recordings, a three-step import dialog over the
 canonical contract, run-trace dialog, and a report dialog for published recording
 reports), and the analyst portfolio UI, whose company page also lists published
-recordings. A Cloudflare Worker serves assets and proxies an explicit `/api`
-allow-list to the backend.
+recordings. The analyst pages load a light firm snapshot (no canonical rows; ETag +
+304 revalidation, cached in `sessionStorage` between pages) and fetch each
+company's rows per collection when a tab shows them, with the original values of a
+row served on demand for "View source" (2026-09-25; measured on the demo firm, the
+per-page payload went from 1.06 MB / 3.0 s to 0.18 MB / 0.9 s, and a repeat visit
+renders from the cache). A Cloudflare Worker serves assets and proxies an explicit
+`/api` allow-list to the backend.
 
 ## Live deployment (AWS, account 630396228214, us-east-1)
 

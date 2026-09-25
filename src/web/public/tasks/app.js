@@ -29,7 +29,9 @@ const OUTCOMES = [
   "Implemented",
   "Needs further work",
 ];
-const analyst = await mountShell();
+const analyst = await mountShell({
+  onUpdate: () => (id ? detail : list)(),
+});
 const id = qs().get("id");
 
 const isOpen = (t) => !["Complete", "Dismissed"].includes(t.status);

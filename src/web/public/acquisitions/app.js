@@ -17,7 +17,9 @@ import {
   resolveException,
 } from "/lib/store.js";
 
-const analyst = await mountShell();
+const analyst = await mountShell({
+  onUpdate: () => (id ? detail : list)(),
+});
 const id = qs().get("id");
 if (analyst) (id ? detail : list)();
 

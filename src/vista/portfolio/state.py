@@ -5,6 +5,7 @@ and the agent-interpretation layer (opportunities, findings, agents, runs)."""
 from __future__ import annotations
 
 import uuid
+from concurrent.futures import ThreadPoolExecutor
 from datetime import UTC, date, datetime
 
 from sqlalchemy import func, select
@@ -48,57 +49,170 @@ CLOSED_TASK = ("Complete", "Dismissed")
 CLOSED_OPP = ("Dismissed", "Realized")
 
 
-def _prov_index(session: Session) -> dict[tuple[str, uuid.UUID], RecordProvenance]:
-    rows = session.scalars(select(RecordProvenance).where(RecordProvenance.field_name.is_(None))).all()
+# Snapshot key -> (provenance entity_type, model). The keys are the collections the analyst
+# UI addresses (`/companies/{id}/records/{key}/{record_id}`, `loadRecords` in the store).
+RECORD_KINDS: dict[str, tuple[str, type]] = {
+    "customers": ("customer", Customer),
+    "invoices": ("invoice", Invoice),
+    "vendors": ("vendor", Vendor),
+    "purchases": ("vendor_purchase", VendorPurchase),
+    "subscriptions": ("subscription", Subscription),
+    "policies": ("policy", Policy),
+    "purchaseOrders": ("purchase_order", PurchaseOrder),
+    "purchaseOrderLines": ("purchase_order_line", PurchaseOrderLine),
+    "inventory": ("inventory_balance", InventoryBalance),
+}
+# Provenance fields a list row carries. `original` / `normalized` (the raw and cleaned
+# values, ~70% of every row on the wire) are served per record on demand.
+PROVENANCE_SUMMARY_FIELDS = ("file", "sheet", "row", "importJob", "confidence", "review")
+
+
+def _prov_index(session: Session, entity_types: tuple[str, ...] | None = None) -> dict[tuple[str, uuid.UUID], RecordProvenance]:
+    query = select(RecordProvenance).where(RecordProvenance.field_name.is_(None))
+    if entity_types is not None:
+        query = query.where(RecordProvenance.entity_type.in_(entity_types))
+    rows = session.scalars(query).all()
     return {(p.entity_type, p.entity_id): p for p in rows}
 
 
-def company_records(session: Session, include_provenance: bool = True) -> dict:
-    prov = _prov_index(session) if include_provenance else {}
-    vendors = session.scalars(select(Vendor).order_by(Vendor.normalized_name)).all()
+def _summarise_provenance(row: dict) -> dict:
+    p = row.get("provenance")
+    if p:
+        row["provenance"] = {k: p.get(k) for k in PROVENANCE_SUMMARY_FIELDS}
+    return row
+
+
+def company_records(
+    session: Session,
+    include_provenance: bool = True,
+    keys: tuple[str, ...] | None = None,
+    full_provenance: bool = True,
+) -> dict:
+    """Canonical rows of one company, serialised. `keys` limits the collections built
+    (a list route asks for one); `full_provenance=False` keeps only the provenance summary
+    on every row (see `record_detail` for the original values)."""
+    wanted = tuple(RECORD_KINDS) if keys is None else tuple(k for k in RECORD_KINDS if k in keys)
+    if not include_provenance:
+        prov: dict[tuple[str, uuid.UUID], RecordProvenance] = {}
+    else:
+        prov = _prov_index(session, tuple(RECORD_KINDS[k][0] for k in wanted))
+    vendors = session.scalars(select(Vendor).order_by(Vendor.normalized_name)).all() if {"vendors", "purchases"} & set(wanted) else []
     vendor_name = {v.id: v.normalized_name for v in vendors}
-    line_count = dict(
-        session.execute(
-            select(PurchaseOrderLine.purchase_order_id, func.count())
-            .where(PurchaseOrderLine.purchase_order_id.is_not(None))
-            .group_by(PurchaseOrderLine.purchase_order_id)
-        ).all()
+    line_count = (
+        dict(
+            session.execute(
+                select(PurchaseOrderLine.purchase_order_id, func.count())
+                .where(PurchaseOrderLine.purchase_order_id.is_not(None))
+                .group_by(PurchaseOrderLine.purchase_order_id)
+            ).all()
+        )
+        if "purchaseOrders" in wanted
+        else {}
     )
-    return {
-        "customers": [
+    builders = {
+        "customers": lambda: [
             ser.customer(c, prov.get(("customer", c.id)))
             for c in session.scalars(select(Customer).order_by(Customer.created_at, Customer.display_name))
         ],
-        "invoices": [
+        "invoices": lambda: [
             ser.invoice(i, prov.get(("invoice", i.id)))
             for i in session.scalars(select(Invoice).order_by(Invoice.issue_date, Invoice.source_invoice_number))
         ],
-        "vendors": [ser.vendor(v, prov.get(("vendor", v.id))) for v in vendors],
-        "purchases": [
+        "vendors": lambda: [ser.vendor(v, prov.get(("vendor", v.id))) for v in vendors],
+        "purchases": lambda: [
             ser.purchase(p, vendor_name.get(p.vendor_id, ""), prov.get(("vendor_purchase", p.id)))
             for p in session.scalars(select(VendorPurchase).order_by(VendorPurchase.purchase_date, VendorPurchase.sku))
         ],
-        "subscriptions": [
+        "subscriptions": lambda: [
             ser.subscription(s, prov.get(("subscription", s.id)))
             for s in session.scalars(select(Subscription).order_by(Subscription.product_name))
         ],
-        "policies": [
+        "policies": lambda: [
             ser.policy(p, prov.get(("policy", p.id)))
             for p in session.scalars(select(Policy).order_by(Policy.expiration_date, Policy.policy_number))
         ],
-        "purchaseOrders": [
+        "purchaseOrders": lambda: [
             ser.purchase_order(po, line_count.get(po.id, 0), prov.get(("purchase_order", po.id)))
             for po in session.scalars(select(PurchaseOrder).order_by(PurchaseOrder.po_date, PurchaseOrder.po_number))
         ],
-        "purchaseOrderLines": [
+        "purchaseOrderLines": lambda: [
             ser.purchase_order_line(line, prov.get(("purchase_order_line", line.id)))
             for line in session.scalars(select(PurchaseOrderLine).order_by(PurchaseOrderLine.po_number, PurchaseOrderLine.line_number))
         ],
-        "inventory": [
+        "inventory": lambda: [
             ser.inventory_balance(b, prov.get(("inventory_balance", b.id)))
             for b in session.scalars(select(InventoryBalance).order_by(InventoryBalance.warehouse, InventoryBalance.item_id))
         ],
     }
+    records = {k: builders[k]() for k in wanted}
+    if include_provenance and not full_provenance:
+        for rows in records.values():
+            for row in rows:
+                _summarise_provenance(row)
+    return records
+
+
+def record_detail(session: Session, key: str, record_id: uuid.UUID) -> dict | None:
+    """One canonical row with its full provenance (original and normalized values)."""
+    entity_type, model = RECORD_KINDS[key]
+    row = session.get(model, record_id)
+    if row is None:
+        return None
+    prov = session.scalars(
+        select(RecordProvenance).where(
+            RecordProvenance.entity_type == entity_type,
+            RecordProvenance.entity_id == record_id,
+            RecordProvenance.field_name.is_(None),
+        )
+    ).first()
+    if key == "purchases":
+        vendor = session.get(Vendor, row.vendor_id) if row.vendor_id else None
+        return ser.purchase(row, vendor.normalized_name if vendor else "", prov)
+    if key == "purchaseOrders":
+        lines = session.scalar(select(func.count()).where(PurchaseOrderLine.purchase_order_id == row.id)) or 0
+        return ser.purchase_order(row, lines, prov)
+    serializer = {
+        "customers": ser.customer,
+        "invoices": ser.invoice,
+        "vendors": ser.vendor,
+        "subscriptions": ser.subscription,
+        "policies": ser.policy,
+        "purchaseOrderLines": ser.purchase_order_line,
+        "inventory": ser.inventory_balance,
+    }[key]
+    return serializer(row, prov)
+
+
+def record_summary(session: Session) -> dict[str, dict]:
+    """Per collection: row count, source files and how the rows were accepted — what the
+    company Data tab shows without the rows themselves."""
+    counts = {key: session.scalar(select(func.count()).select_from(model)) or 0 for key, (_t, model) in RECORD_KINDS.items()}
+    by_type = {t: key for key, (t, _m) in RECORD_KINDS.items()}
+    summary = {key: {"count": counts[key], "files": [], "autoAccepted": 0, "reviewed": 0, "humanReviewed": 0} for key in RECORD_KINDS}
+    confident = (RecordProvenance.confidence >= 0.9).label("confident")
+    grouped = session.execute(
+        select(
+            RecordProvenance.entity_type,
+            RecordProvenance.source_filename,
+            RecordProvenance.human_verified,
+            confident,
+            func.count(),
+        )
+        .where(RecordProvenance.field_name.is_(None))
+        .group_by(RecordProvenance.entity_type, RecordProvenance.source_filename, RecordProvenance.human_verified, confident)
+    ).all()
+    for entity_type, filename, human, confident, n in grouped:
+        key = by_type.get(entity_type)
+        if key is None:
+            continue
+        s = summary[key]
+        if filename and filename not in s["files"]:
+            s["files"].append(filename)
+        bucket = "humanReviewed" if human else ("autoAccepted" if confident else "reviewed")
+        s[bucket] += n
+    for s in summary.values():
+        s["files"].sort()
+    return summary
 
 
 def company_imports(session: Session) -> tuple[list[dict], list[dict]]:
@@ -174,7 +288,8 @@ def load_company(ref: CompanyRef, include_records: bool = True) -> tuple[dict, C
     with company_session(ref) as session:
         m = company_metrics(session, period, now)
         jobs, open_x = company_imports(session)
-        records = company_records(session) if include_records else {}
+        records = company_records(session, full_provenance=False) if include_records else {}
+        c["records"] = record_summary(session)
         tasks = [ser.task(t) for t in session.scalars(select(Task).order_by(Task.created_at))]
         # The agent layer is read straight from the ledger the company workspace and the
         # recorder write to; nothing is mirrored for the analyst.
@@ -326,7 +441,13 @@ def snapshot(session: Session, ctx: FirmContext, include_records: bool = True) -
     """Everything the analyst UI needs, scoped to the firm's companies."""
     now = today()
     period = reporting_period(now)
-    loaded = [load_company(ref, include_records) for ref in ctx.companies]
+    # Each company is its own tenant session, so the six (or sixty) loads are independent
+    # round trips; run them side by side instead of one after another.
+    if len(ctx.companies) > 1:
+        with ThreadPoolExecutor(max_workers=min(8, len(ctx.companies))) as pool:
+            loaded = list(pool.map(lambda ref: load_company(ref, include_records), ctx.companies))
+    else:
+        loaded = [load_company(ref, include_records) for ref in ctx.companies]
     companies = []
     tasks: list[dict] = []
     agents: list[dict] = []

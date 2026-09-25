@@ -11,18 +11,24 @@ export class ApiError extends Error {
   }
 }
 
+// `meta: true` resolves to { status, etag, body } instead of the body alone and
+// accepts a 304 (the caller sent If-None-Match and keeps what it has).
 export async function api(path, options = {}, fetchImpl = globalThis.fetch) {
+  const { meta = false, ...init } = options;
   const response = await fetchImpl(`/api${path}`, {
     credentials: "same-origin",
     cache: "no-store",
-    ...options,
+    ...init,
     headers: {
       "Content-Type": "application/json",
       "X-Vista-Request": "1",
-      ...options.headers,
+      ...init.headers,
     },
   });
-  if (response.status === 204) return null;
+  const etag = response.headers?.get?.("ETag") ?? null;
+  if (meta && response.status === 304) return { status: 304, etag, body: null };
+  if (response.status === 204)
+    return meta ? { status: 204, etag, body: null } : null;
   let body = null;
   try {
     body = await response.json();
@@ -42,7 +48,17 @@ export async function api(path, options = {}, fetchImpl = globalThis.fetch) {
               : "The workspace could not complete this request. Please try again.";
     throw new ApiError(response.status, detail);
   }
-  return body;
+  return meta ? { status: response.status, etag, body } : body;
+}
+
+// The analyst shell keeps its last portfolio snapshot in sessionStorage
+// (`store.js`); it goes whenever the identity behind the session changes.
+export function clearSnapshot() {
+  try {
+    globalThis.sessionStorage?.removeItem("vista.analyst.snapshot");
+  } catch {
+    /* no session storage */
+  }
 }
 
 export function normalizeKey(token) {
@@ -59,6 +75,7 @@ export async function signIn(
 ) {
   const key = normalizeKey(token);
   if (!key) throw new Error("Invalid access key");
+  clearSnapshot();
   try {
     await api(
       "/auth/session",
@@ -94,6 +111,7 @@ export function session(storage = globalThis.localStorage) {
 }
 export async function signOut(storage = globalThis.localStorage, fetchImpl) {
   storage?.removeItem(SESSION_KEY);
+  clearSnapshot();
   try {
     await api("/auth/session", { method: "DELETE" }, fetchImpl);
   } catch {
@@ -127,6 +145,7 @@ export async function requireAnalyst(
   } catch (error) {
     if (error.status === 401 || error.status === 403) {
       storage?.removeItem(SESSION_KEY);
+      clearSnapshot();
       toSignIn();
       return null;
     }

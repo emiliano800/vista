@@ -10,7 +10,7 @@ const importRead =
 const importWrite =
   /^\/api\/deals\/[0-9a-f-]{36}\/(?:review|imports(?:\/[0-9a-f-]{36}\/(?:dataset|mappings\/approve|approve|exceptions\/X-\d{1,6}))?)$/i;
 const portfolioRead =
-  /^\/api\/(?:portfolio(?:\/(?:me|companies|attention|activity|interpretation\/[0-9a-f-]{36}))?|companies\/[a-z0-9-]{1,64}(?:\/(?:customers|invoices|vendors|purchases|subscriptions|policies|purchase-orders|inventory|tasks|imports|reports(?:\/[0-9a-f-]{36})?))?|import-datasets|import-jobs\/[0-9a-f-]{36}(?:\/(?:mappings|preview|exceptions))?|opportunities|tasks)$/i;
+  /^\/api\/(?:portfolio(?:\/(?:me|companies|attention|activity|interpretation\/[0-9a-f-]{36}))?|companies\/[a-z0-9-]{1,64}(?:\/(?:customers|invoices|vendors|purchases|subscriptions|policies|purchase-orders|inventory|tasks|imports|reports(?:\/[0-9a-f-]{36})?|records\/(?:customers|invoices|vendors|purchases|subscriptions|policies|purchaseOrders|purchaseOrderLines|inventory)\/[0-9a-f-]{36}))?|import-datasets|import-jobs\/[0-9a-f-]{36}(?:\/(?:mappings|preview|exceptions))?|opportunities|tasks)$/i;
 const portfolioWrite =
   /^\/api\/(?:portfolio\/(?:analysis|interpretation|companies)|companies\/[a-z0-9-]{1,64}\/(?:imports|exceptions\/[0-9a-f-]{36}\/resolve)|import-jobs\/[0-9a-f-]{36}\/(?:dataset|mappings\/approve|approve|exceptions\/X-\d{1,6})|opportunities\/OP-\d{1,6}\/status|tasks(?:\/T-\d{1,6})?|findings\/(?:F-\d{1,6}|[0-9a-f-]{36})\/status)$/i;
 const syntheticWrite = /^\/api\/synthetic\/(?:discovery|analyze)$/i;
@@ -149,12 +149,16 @@ async function handle(request, env) {
         return new Response("Upload too large", { status: 413 });
     }
     const headers = new Headers();
+    // `if-none-match` lets the analyst shell revalidate its cached portfolio
+    // snapshot (the API answers 304 when nothing changed); the response ETag
+    // passes through untouched.
     for (const name of [
       "content-type",
       "authorization",
       "cookie",
       "x-vista-request",
       "origin",
+      "if-none-match",
     ]) {
       if (request.headers.has(name))
         headers.set(name, request.headers.get(name));
@@ -171,7 +175,12 @@ async function handle(request, env) {
         redirect: "manual",
         signal: AbortSignal.timeout(30000),
       });
-      if (response.status >= 300 && response.status < 400)
+      // 304 is a conditional-read answer, not a redirect.
+      if (
+        response.status >= 300 &&
+        response.status < 400 &&
+        response.status !== 304
+      )
         return Response.json(
           { detail: "The workspace backend returned an unexpected redirect." },
           { status: 502 },

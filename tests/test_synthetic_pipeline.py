@@ -81,7 +81,7 @@ def test_high_tier_industrial_files_land_as_purchase_orders_lines_and_inventory(
     inv = import_table(client, headers, cid, NORTHFIELD / "05_inventory" / "inventory_balances.csv", "inventory")
     assert (pos["recordsImported"], lines["recordsImported"], inv["recordsImported"]) == (260, 665, 127)
 
-    body = client.get(f"/api/companies/{cid}/purchase-orders", headers=headers).json()
+    body = client.get(f"/api/companies/{cid}/purchase-orders?provenance=full", headers=headers).json()
     assert len(body["purchaseOrders"]) == 260 and len(body["lines"]) == 665
     po = next(p for p in body["purchaseOrders"] if p["poNumber"] == "PO-31001")
     assert po["vendorId"], "PO resolved to the imported supplier row"
@@ -157,7 +157,7 @@ def test_policies_join_to_imported_clients(client, source_store):  # noqa: F811
     import_table(client, headers, cid, MERIDIAN / "01_clients_crm" / "clients.csv", "customers")
     done = import_table(client, headers, cid, MERIDIAN / "02_policies_exposures" / "policies.csv", "policies")
     assert done["recordsImported"] == 122
-    policies = client.get(f"/api/companies/{cid}/policies", headers=headers).json()
+    policies = client.get(f"/api/companies/{cid}/policies?provenance=full", headers=headers).json()
     assert len(policies) == 122
     p = next(p for p in policies if p["policyNumber"] == "CNA-GL-9800363")
     assert p["customerId"], "policy resolved to the imported client row"

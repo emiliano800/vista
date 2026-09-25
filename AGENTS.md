@@ -57,6 +57,18 @@ The split is a product boundary, not a mandate for separate backend deployments.
 
 Implementation status: `src/web/public/portfolio/` and `company/` provide the analyst
 foundation; `company/` calls the analyst shell and receives the firm-wide snapshot.
+Since 2026-09-25 that snapshot is the *light* one (`GET /api/portfolio?records=false`:
+metrics, integration, per-collection record counts/files under `company.records`,
+tasks, opportunities, findings, agents, runs, activity — no canonical rows), served
+with an ETag and answering 304 to `If-None-Match`; `lib/store.js` keeps it in
+`sessionStorage` so the next page renders at once and revalidates behind it
+(`onRefresh` → the page's render). Canonical rows are fetched per company and
+collection by the tab that shows them (`loadRecords` → `/companies/{id}/{collection}`),
+with only a provenance summary per row; `/companies/{id}/records/{kind}/{record_id}`
+returns one row with its original/normalized values for "View source"
+(`?provenance=full` on a list route does the same for every row). The server loads
+the companies of a snapshot in parallel (`portfolio/state.snapshot`). Never put the
+rows back in the snapshot.
 `account/` is the existing company operations/evidence workspace; it imports through
 the same canonical contract and reads the same findings, runs and recorder reports
 as the analyst (see "One ledger" under Architecture decisions). Dedicated CFO/FDE

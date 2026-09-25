@@ -30,7 +30,7 @@ import {
   runPortfolioInterpretation,
 } from "/lib/store.js";
 
-const analyst = await mountShell();
+const analyst = await mountShell({ onUpdate: () => render() });
 if (analyst) render();
 
 function render() {

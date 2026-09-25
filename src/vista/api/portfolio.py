@@ -6,9 +6,13 @@ from __future__ import annotations
 
 import base64
 import binascii
+import hashlib
+import json
 import uuid
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from fastapi.encoders import jsonable_encoder
+from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 from sqlalchemy import select
 
@@ -19,7 +23,7 @@ from vista.portfolio import interpret, service
 from vista.portfolio import serializers as ser
 from vista.portfolio.access import FirmContext, company_session, firm_context, writer_context
 from vista.portfolio.processors import DATASETS
-from vista.portfolio.state import company_imports, company_records, firm_layer, load_company, snapshot
+from vista.portfolio.state import RECORD_KINDS, company_imports, company_records, firm_layer, load_company, record_detail, snapshot
 from vista.recorder_analysis import public_report
 
 router = APIRouter(tags=["portfolio"])
@@ -39,11 +43,26 @@ def me(ctx: FirmContext = Depends(firm_context)) -> dict:
     }
 
 
+def _etag(body: dict) -> str:
+    """A validator over the snapshot's content — `generatedAt` changes on every call and is
+    left out, so an unchanged portfolio answers 304 to a client that still holds it."""
+    content = {k: v for k, v in body.items() if k != "generatedAt"}
+    digest = hashlib.sha256(json.dumps(content, sort_keys=True, separators=(",", ":"), default=str).encode()).hexdigest()
+    return f'W/"{digest[:32]}"'
+
+
 @router.get("/portfolio")
-def portfolio(records: bool = True, ctx: FirmContext = Depends(firm_context)) -> dict:
-    """Full workspace snapshot (metrics, companies, tasks, opportunities, agents, activity)."""
+def portfolio(request: Request, records: bool = True, ctx: FirmContext = Depends(firm_context)) -> Response:
+    """Workspace snapshot (metrics, companies, tasks, opportunities, agents, activity).
+    `records=false` leaves the canonical rows out (the UI fetches those per company and
+    collection); the response carries an ETag and answers 304 to a matching If-None-Match."""
     with platform_session() as session:
-        return snapshot(session, ctx, include_records=records)
+        body = jsonable_encoder(snapshot(session, ctx, include_records=records))
+    etag = _etag(body)
+    headers = {"ETag": etag, "Vary": "Cookie, Authorization"}
+    if request.headers.get("if-none-match") == etag:
+        return Response(status_code=304, headers=headers)
+    return JSONResponse(body, headers=headers)
 
 
 @router.get("/portfolio/companies")
@@ -56,7 +75,7 @@ def portfolio_companies(ctx: FirmContext = Depends(firm_context)) -> list[dict]:
 @router.get("/portfolio/attention")
 def portfolio_attention(ctx: FirmContext = Depends(firm_context)) -> list[dict]:
     with platform_session() as session:
-        return snapshot(session, ctx, include_records=True)["attention"]
+        return snapshot(session, ctx, include_records=False)["attention"]
 
 
 @router.get("/portfolio/activity")
@@ -114,53 +133,69 @@ def company(company_id: str, ctx: FirmContext = Depends(firm_context)) -> dict:
     return c
 
 
-def _records(company_id: str, ctx: FirmContext, key: str) -> list[dict]:
+def _records(company_id: str, ctx: FirmContext, keys: tuple[str, ...], provenance: str) -> dict:
+    """One company's rows for `keys`. Rows carry the provenance summary (file, sheet, row,
+    import job, confidence, review); `provenance=full` adds the original and normalized
+    values to every row, and the per-record route serves them for one row."""
+    if provenance not in ("summary", "full"):
+        raise HTTPException(422, "provenance must be 'summary' or 'full'")
     ref = ctx.company(company_id)
     with company_session(ref) as ts:
-        return company_records(ts)[key]
+        return company_records(ts, keys=keys, full_provenance=provenance == "full")
 
 
 @router.get("/companies/{company_id}/customers")
-def customers(company_id: str, ctx: FirmContext = Depends(firm_context)) -> list[dict]:
-    return _records(company_id, ctx, "customers")
+def customers(company_id: str, provenance: str = "summary", ctx: FirmContext = Depends(firm_context)) -> list[dict]:
+    return _records(company_id, ctx, ("customers",), provenance)["customers"]
 
 
 @router.get("/companies/{company_id}/invoices")
-def invoices(company_id: str, ctx: FirmContext = Depends(firm_context)) -> list[dict]:
-    return _records(company_id, ctx, "invoices")
+def invoices(company_id: str, provenance: str = "summary", ctx: FirmContext = Depends(firm_context)) -> list[dict]:
+    return _records(company_id, ctx, ("invoices",), provenance)["invoices"]
 
 
 @router.get("/companies/{company_id}/vendors")
-def vendors(company_id: str, ctx: FirmContext = Depends(firm_context)) -> list[dict]:
-    return _records(company_id, ctx, "vendors")
+def vendors(company_id: str, provenance: str = "summary", ctx: FirmContext = Depends(firm_context)) -> list[dict]:
+    return _records(company_id, ctx, ("vendors",), provenance)["vendors"]
 
 
 @router.get("/companies/{company_id}/purchases")
-def purchases(company_id: str, ctx: FirmContext = Depends(firm_context)) -> list[dict]:
-    return _records(company_id, ctx, "purchases")
+def purchases(company_id: str, provenance: str = "summary", ctx: FirmContext = Depends(firm_context)) -> list[dict]:
+    return _records(company_id, ctx, ("purchases",), provenance)["purchases"]
 
 
 @router.get("/companies/{company_id}/subscriptions")
-def subscriptions(company_id: str, ctx: FirmContext = Depends(firm_context)) -> list[dict]:
-    return _records(company_id, ctx, "subscriptions")
+def subscriptions(company_id: str, provenance: str = "summary", ctx: FirmContext = Depends(firm_context)) -> list[dict]:
+    return _records(company_id, ctx, ("subscriptions",), provenance)["subscriptions"]
 
 
 @router.get("/companies/{company_id}/policies")
-def policies(company_id: str, ctx: FirmContext = Depends(firm_context)) -> list[dict]:
-    return _records(company_id, ctx, "policies")
+def policies(company_id: str, provenance: str = "summary", ctx: FirmContext = Depends(firm_context)) -> list[dict]:
+    return _records(company_id, ctx, ("policies",), provenance)["policies"]
 
 
 @router.get("/companies/{company_id}/purchase-orders")
-def purchase_orders(company_id: str, ctx: FirmContext = Depends(firm_context)) -> dict:
-    ref = ctx.company(company_id)
-    with company_session(ref) as ts:
-        records = company_records(ts)
+def purchase_orders(company_id: str, provenance: str = "summary", ctx: FirmContext = Depends(firm_context)) -> dict:
+    records = _records(company_id, ctx, ("purchaseOrders", "purchaseOrderLines"), provenance)
     return {"purchaseOrders": records["purchaseOrders"], "lines": records["purchaseOrderLines"]}
 
 
 @router.get("/companies/{company_id}/inventory")
-def inventory(company_id: str, ctx: FirmContext = Depends(firm_context)) -> list[dict]:
-    return _records(company_id, ctx, "inventory")
+def inventory(company_id: str, provenance: str = "summary", ctx: FirmContext = Depends(firm_context)) -> list[dict]:
+    return _records(company_id, ctx, ("inventory",), provenance)["inventory"]
+
+
+@router.get("/companies/{company_id}/records/{kind}/{record_id}")
+def record(company_id: str, kind: str, record_id: uuid.UUID, ctx: FirmContext = Depends(firm_context)) -> dict:
+    """One canonical row with its full provenance — what "View source" opens."""
+    if kind not in RECORD_KINDS:
+        raise HTTPException(404, "Unknown record kind")
+    ref = ctx.company(company_id)
+    with company_session(ref) as ts:
+        row = record_detail(ts, kind, record_id)
+    if row is None:
+        raise HTTPException(404, "Record not found")
+    return row
 
 
 @router.get("/companies/{company_id}/tasks")

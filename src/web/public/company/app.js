@@ -39,6 +39,9 @@ import {
   createTask,
   resolveException,
   companyName,
+  loadRecords,
+  recordsLoaded,
+  recordDetail,
 } from "/lib/store.js";
 import { api } from "/lib/auth.js";
 
@@ -63,13 +66,41 @@ const HIDE_EMPTY = {
   purchasing: "purchaseOrders",
   inventory: "inventory",
 };
-const analyst = await mountShell();
-const showSource = mountSourceDialog();
+// Which canonical collections a tab shows; they are fetched when the tab opens,
+// not with the snapshot (`loadRecords` in the store).
+const NEEDS = {
+  customers: ["customers"],
+  finance: ["invoices"],
+  vendors: ["vendors", "purchases"],
+  software: ["subscriptions"],
+  policies: ["policies"],
+  purchasing: ["purchaseOrders", "purchaseOrderLines"],
+  inventory: ["inventory"],
+};
+const RECORD_LABELS = {
+  customers: "Customers",
+  invoices: "Invoices",
+  vendors: "Vendors",
+  purchases: "Vendor purchases",
+  subscriptions: "Subscriptions",
+  policies: "Policies",
+  purchaseOrders: "Purchase orders",
+  purchaseOrderLines: "Purchase order lines",
+  inventory: "Inventory balances",
+};
 const id = qs().get("id");
 const tab = qs().get("tab") ?? "overview";
+const analyst = await mountShell({
+  onUpdate: () => {
+    if (company(id)) render();
+  },
+});
+const showSource = mountSourceDialog();
 let c = null;
-const viewSource = (list) => (r) =>
-  `<button class="link sm" data-source="${esc(r.id)}">View source</button>`;
+// `kind` is the collection the row belongs to, so "View source" can fetch the
+// row's original values.
+const viewSource = (kind) => (r) =>
+  `<button class="link sm" data-source="${esc(r.id)}" data-kind="${esc(kind)}">View source</button>`;
 if (analyst) {
   c = company(id);
   if (!c)
@@ -78,12 +109,14 @@ if (analyst) {
   else render();
 }
 
-function bindSources(list) {
+// lists: { [kind]: rows } for every collection rendered on the tab.
+function bindSources(lists) {
   $("view")
     .querySelectorAll("[data-source]")
     .forEach((b) => {
       b.onclick = () => {
-        const r = list.find((x) => x.id === b.dataset.source);
+        const kind = b.dataset.kind;
+        const r = (lists[kind] ?? []).find((x) => x.id === b.dataset.source);
         showSource(
           r,
           r?.name ??
@@ -94,12 +127,16 @@ function bindSources(list) {
             r?.poNumber ??
             r?.itemId ??
             r?.id,
+          r ? () => recordDetail(c.id, kind, r.id) : null,
         );
       };
     });
 }
 
-function render() {
+const recordCount = (kind) =>
+  c.records?.[kind]?.count ?? (c[kind] ?? []).length;
+
+async function render() {
   c = company(id);
   const m = companyMetrics(c);
   const integ = integrationSteps(c);
@@ -154,7 +191,7 @@ function render() {
     ])}
     <p class="demo-line">${esc(DEMO_NOTE)}</p>
     <nav class="tabs" aria-label="Company sections">${TABS.filter(
-      ([key]) => !HIDE_EMPTY[key] || (c[HIDE_EMPTY[key]] ?? []).length,
+      ([key]) => !HIDE_EMPTY[key] || recordCount(HIDE_EMPTY[key]),
     )
       .map(
         ([key, label]) =>
@@ -179,7 +216,19 @@ function render() {
       tasks: tasksTab,
       agents: agentsTab,
     }[tab] ?? overview;
-  renderTab(m, integ);
+  const needs = NEEDS[tab] ?? [];
+  if (needs.length && !recordsLoaded(c.id, needs)) {
+    $("tab").innerHTML =
+      `<p class="muted">Loading ${esc(needs.map((k) => RECORD_LABELS[k].toLowerCase()).join(" and "))}…</p>`;
+    try {
+      await loadRecords(c.id, needs);
+    } catch (error) {
+      $("tab").innerHTML = `<p class="empty">${esc(error.message)}</p>`;
+      return;
+    }
+    c = company(id);
+  }
+  renderTab(companyMetrics(c), integ);
 }
 
 function overview(m, integ) {
@@ -244,31 +293,16 @@ function data() {
               `<a href="/data/?company=${esc(c.id)}&entity=${esc(r.key)}">Explore →</a>`,
           },
         ],
-        [
-          ["customers", "Customers", c.customers],
-          ["invoices", "Invoices", c.invoices],
-          ["vendors", "Vendors", c.vendors],
-          ["purchases", "Vendor purchases", c.purchases],
-          ["subscriptions", "Subscriptions", c.subscriptions],
-          ["policies", "Policies", c.policies ?? []],
-          ["purchaseOrders", "Purchase orders", c.purchaseOrders ?? []],
-          [
-            "purchaseOrderLines",
-            "Purchase order lines",
-            c.purchaseOrderLines ?? [],
-          ],
-          ["inventory", "Inventory balances", c.inventory ?? []],
-        ]
-          .filter(([, , list]) => list.length)
-          .map(([key, entity, list]) => ({
+        // Counted by the server from the provenance rows; the records themselves
+        // are fetched only by the tabs that show them.
+        Object.entries(c.records ?? {})
+          .filter(([, r]) => r.count)
+          .map(([key, r]) => ({
             key,
-            entity,
-            count: list.length,
-            files: [
-              ...new Set(list.map((r) => r.provenance?.file).filter(Boolean)),
-            ],
-            auto: list.filter((r) => r.provenance?.review === "auto-accepted")
-              .length,
+            entity: RECORD_LABELS[key] ?? key,
+            count: r.count,
+            files: r.files ?? [],
+            auto: r.autoAccepted ?? 0,
           })),
       ),
       { eyebrow: "Canonical records with provenance" },
@@ -359,13 +393,13 @@ function customers() {
           render: (r) =>
             badge(r.status, r.status === "active" ? "success" : ""),
         },
-        { label: "", render: viewSource(rows) },
+        { label: "", render: viewSource("customers") },
       ],
       rows,
     ),
     { eyebrow: "Standardized customer records" },
   );
-  bindSources(rows);
+  bindSources({ customers: rows });
 }
 
 function finance(m) {
@@ -435,7 +469,7 @@ function finance(m) {
             render: (r) => esc(money(r.outstanding)),
           },
           { label: "Status", render: (r) => badge(r.status) },
-          { label: "", render: viewSource(sorted) },
+          { label: "", render: viewSource("invoices") },
         ],
         sorted.slice(0, 250),
       ),
@@ -444,7 +478,7 @@ function finance(m) {
           sorted.length > 250 ? `Showing 250 of ${integer(sorted.length)}` : "",
       },
     )}`;
-  bindSources(sorted);
+  bindSources({ invoices: sorted });
 }
 
 function vendors(m) {
@@ -486,7 +520,7 @@ function vendors(m) {
                 v.provenance?.confidence >= 0.9 ? "Verified" : "Needs review",
               ),
           },
-          { label: "", render: viewSource(byVendor) },
+          { label: "", render: viewSource("vendors") },
         ],
         byVendor,
       ),
@@ -514,12 +548,12 @@ function vendors(m) {
             render: (p) => esc(money(p.unitPrice)),
           },
           { label: "Total", num: true, render: (p) => esc(money(p.total)) },
-          { label: "", render: viewSource(purchases) },
+          { label: "", render: viewSource("purchases") },
         ],
         purchases.slice(0, 200),
       ),
     )}`;
-  bindSources([...byVendor, ...purchases]);
+  bindSources({ vendors: byVendor, purchases });
 }
 
 function software() {
@@ -543,13 +577,13 @@ function software() {
             `${esc(date(s.renewalDate))}${-daysBetween(s.renewalDate) <= 30 && -daysBetween(s.renewalDate) >= 0 ? ` ${badge(`${-daysBetween(s.renewalDate)} days`, "danger")}` : ""}`,
         },
         { label: "Contract notes", render: (s) => esc(s.notes || "—") },
-        { label: "", render: viewSource(rows) },
+        { label: "", render: viewSource("subscriptions") },
       ],
       rows,
     ),
     { eyebrow: `${money(annual)} annualized from monthly cost × 12` },
   );
-  bindSources(rows);
+  bindSources({ subscriptions: rows });
 }
 
 function policies(m) {
@@ -598,7 +632,7 @@ function policies(m) {
             render: (p) => esc(money(p.expectedCommission)),
           },
           { label: "Status", render: (p) => badge(p.status) },
-          { label: "", render: viewSource(rows) },
+          { label: "", render: viewSource("policies") },
         ],
         rows.slice(0, 250),
       ),
@@ -608,7 +642,7 @@ function policies(m) {
           rows.length > 250 ? `Showing 250 of ${integer(rows.length)}` : "",
       },
     )}`;
-  bindSources(rows);
+  bindSources({ policies: rows });
 }
 
 function purchasing(m) {
@@ -654,7 +688,7 @@ function purchasing(m) {
           },
           { label: "Total", num: true, render: (p) => esc(money(p.total)) },
           { label: "Status", render: (p) => badge(p.status) },
-          { label: "", render: viewSource(orders) },
+          { label: "", render: viewSource("purchaseOrders") },
         ],
         orders.slice(0, 250),
       ),
@@ -694,7 +728,7 @@ function purchasing(m) {
               `${esc(date(l.promisedDate))}${late.includes(l) ? ` ${badge(`${daysBetween(l.promisedDate)} days late`, "danger")}` : ""}`,
           },
           { label: "Status", render: (l) => badge(l.status) },
-          { label: "", render: viewSource(openLines) },
+          { label: "", render: viewSource("purchaseOrderLines") },
         ],
         openLines.slice(0, 250),
       ),
@@ -705,7 +739,7 @@ function purchasing(m) {
             : "",
       },
     )}`;
-  bindSources([...orders, ...openLines]);
+  bindSources({ purchaseOrders: orders, purchaseOrderLines: openLines });
 }
 
 function inventory(m) {
@@ -758,7 +792,7 @@ function inventory(m) {
             render: (b) => esc(money(b.extendedValue)),
           },
           { label: "Last count", render: (b) => esc(date(b.lastCountDate)) },
-          { label: "", render: viewSource(rows) },
+          { label: "", render: viewSource("inventory") },
         ],
         rows.slice(0, 250),
       ),
@@ -768,7 +802,7 @@ function inventory(m) {
           rows.length > 250 ? `Showing 250 of ${integer(rows.length)}` : "",
       },
     )}`;
-  bindSources(rows);
+  bindSources({ inventory: rows });
 }
 
 function findingsTab() {

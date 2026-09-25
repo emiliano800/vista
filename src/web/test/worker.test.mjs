@@ -85,6 +85,30 @@ test("proxy forwards sessions, preserves cookies, never caches data, rejects cro
     );
     assert.equal(forwarded.options.headers.get("cookie"), "vista_session=old");
     assert.equal(forwarded.options.headers.get("x-untrusted"), null);
+    // Conditional snapshot reads reach the API; the validator comes back with the answer.
+    globalThis.fetch = async (url, options) => {
+      forwarded = { url, options };
+      return new Response(null, { status: 304, headers: { ETag: 'W/"abc"' } });
+    };
+    const revalidate = await worker.fetch(
+      new Request("https://bumpsolutions.org/api/portfolio?records=false", {
+        headers: { cookie: "vista_session=old", "if-none-match": 'W/"abc"' },
+      }),
+      env,
+    );
+    assert.equal(forwarded.url.href, "https://api.example.com/api/portfolio?records=false");
+    assert.equal(forwarded.options.headers.get("if-none-match"), 'W/"abc"');
+    assert.equal(revalidate.status, 304);
+    assert.equal(revalidate.headers.get("etag"), 'W/"abc"');
+    globalThis.fetch = async (url, options) => {
+      forwarded = { url, options };
+      return new Response("{}", {
+        headers: {
+          "Set-Cookie":
+            "vista_session=opaque; Secure; HttpOnly; SameSite=Lax; Path=/",
+        },
+      });
+    };
     assert.equal(forwarded.options.redirect, "manual");
     assert.match(response.headers.get("set-cookie"), /HttpOnly/);
     assert.equal(response.headers.get("cache-control"), "no-store");
@@ -276,6 +300,13 @@ test("portfolio proxy exposes policies, purchasing and inventory reads and the i
   assert.equal(await status(request, "POST"), 405);
   assert.equal(await status("/portfolio/interpretation/not-a-uuid", "GET"), 404);
   assert.equal(await status(`${company}/purchase-order-lines`, "GET"), 404);
+  // One canonical row with its full provenance, per collection key.
+  const row = "8f1c2a3e-0b4d-4c5e-9f6a-7b8c9d0e1f2a";
+  for (const kind of ["invoices", "purchaseOrderLines", "inventory"])
+    assert.equal(await status(`${company}/records/${kind}/${row}`, "GET"), 503);
+  assert.equal(await status(`${company}/records/invoices/${row}`, "POST"), 405);
+  assert.equal(await status(`${company}/records/widgets/${row}`, "GET"), 404);
+  assert.equal(await status(`${company}/records/invoices/not-a-uuid`, "GET"), 404);
   // Finding triage addresses the shared ledger by display ref or uuid; the retired
   // workspace mirror routes are gone.
   assert.equal(await status("/findings/F-012/status", "POST"), 503);

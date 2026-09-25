@@ -2,7 +2,7 @@
 // inline scripts or styles so the same-origin CSP keeps holding).
 import { requireAnalyst, signOut } from "./auth.js";
 import { DEMO_NOTE } from "./format.js";
-import { companies, load } from "./store.js";
+import { companies, load, onRefresh, refresh, snapshot } from "./store.js";
 
 export const esc = (value) =>
   String(value ?? "").replace(
@@ -28,19 +28,36 @@ const NAV = [
 ];
 
 // Mounts the sidebar + header controls and resolves to the analyst session
-// once the firm's portfolio snapshot has been fetched from the API.
-export async function mountShell() {
-  const analyst = await requireAnalyst();
+// once the firm's portfolio snapshot is in memory. The session check and the
+// snapshot load run side by side; a snapshot cached from the previous page
+// resolves at once and is revalidated behind the page — when that brings a
+// changed snapshot, `onUpdate` (the page's render) runs again.
+export async function mountShell({ onUpdate = null } = {}) {
+  const [analyst, loadError] = await Promise.all([
+    requireAnalyst(),
+    load().then(
+      () => null,
+      (error) => error,
+    ),
+  ]);
   if (!analyst) return null;
-  try {
-    await load();
-  } catch (error) {
-    message(error.message, "danger");
+  if (loadError) {
+    message(loadError.message, "danger");
     return null;
+  }
+  // A cached snapshot of another firm (same browser, new sign-in) is not shown.
+  if (snapshot().firm?.id && snapshot().firm.id !== analyst.firmId) {
+    try {
+      await refresh();
+    } catch (error) {
+      message(error.message, "danger");
+      return null;
+    }
   }
   const here = location.pathname.replace(/index\.html$/, "");
   const nav = $("sidebar");
-  if (nav) {
+  const renderNav = () => {
+    if (!nav) return;
     const list = companies();
     nav.innerHTML = `
       <p class="eyebrow">${esc(analyst.firm)}</p>
@@ -55,7 +72,12 @@ export async function mountShell() {
       <div class="side-foot">
         <span class="side-user">${esc(analyst.name)}<small>${esc(analyst.role)} · ${esc(analyst.email)}</small></span>
       </div>`;
-  }
+  };
+  renderNav();
+  onRefresh(() => {
+    renderNav();
+    onUpdate?.();
+  });
   const out = $("signout");
   if (out) {
     out.hidden = false;
@@ -186,10 +208,14 @@ export function provenanceHtml(p) {
       <div><dt>Import job</dt><dd class="mono">${esc(p.importJob || "—")}</dd></div>
       <div><dt>Confidence · review</dt><dd>${esc(Math.round((p.confidence ?? 1) * 100))}% · ${esc(p.review || "—")}</dd></div>
     </dl>
-    <div class="two-col">
+    ${
+      p.original === undefined && p.normalized === undefined
+        ? `<p class="muted">Loading original values…</p>`
+        : `<div class="two-col">
       <div><p class="eyebrow">Original values</p>${kv(p.original)}</div>
       <div><p class="eyebrow">Normalized values</p>${kv(p.normalized)}</div>
-    </div>`;
+    </div>`
+    }`;
 }
 export function mountSourceDialog() {
   let dialog = $("source-dialog");
@@ -203,9 +229,36 @@ export function mountSourceDialog() {
     if (event.target === dialog || event.target.closest("[data-close]"))
       dialog.close();
   });
-  return (record, title = "Where did this come from?") => {
-    dialog.innerHTML = `<div class="dialog-body"><div class="dialog-head"><p class="eyebrow">View source</p><h2>${esc(title)}</h2><button class="ghost sm" data-close>Close</button></div>${provenanceHtml(record?.provenance)}</div>`;
+  // `loadFull`, when given, fetches the record with its original and normalized
+  // values (list rows carry only the provenance summary) once the dialog is open.
+  let opened = 0;
+  return async (
+    record,
+    title = "Where did this come from?",
+    loadFull = null,
+  ) => {
+    const seq = ++opened;
+    const body = () =>
+      `<div class="dialog-body"><div class="dialog-head"><p class="eyebrow">View source</p><h2>${esc(title)}</h2><button class="ghost sm" data-close>Close</button></div>${provenanceHtml(record?.provenance)}</div>`;
+    dialog.innerHTML = body();
     dialog.showModal();
+    if (
+      !loadFull ||
+      !record?.provenance ||
+      record.provenance.original !== undefined
+    )
+      return;
+    try {
+      const full = await loadFull();
+      if (full?.provenance) record = { ...record, provenance: full.provenance };
+    } catch {
+      record = {
+        ...record,
+        provenance: { ...record.provenance, original: {}, normalized: {} },
+      };
+    }
+    // Only the record the dialog still shows gets its values filled in.
+    if (dialog.open && seq === opened) dialog.innerHTML = body();
   };
 }
 

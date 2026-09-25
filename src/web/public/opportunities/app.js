@@ -26,6 +26,8 @@ import {
   companyName,
   tasks,
   evidenceRows,
+  loadRecords,
+  recordDetail,
   setOpportunityStatus,
   createTask,
 } from "/lib/store.js";
@@ -46,7 +48,13 @@ const STATUSES = [
   "Dismissed",
   "Realized",
 ];
-const analyst = await mountShell();
+// Evidence entity -> the company collection its rows live in.
+const EVIDENCE_KIND = {
+  purchase: "purchases",
+  subscription: "subscriptions",
+  invoice: "invoices",
+};
+const analyst = await mountShell({ onUpdate: () => (id ? detail : list)() });
 const showSource = mountSourceDialog();
 const id = qs().get("id");
 
@@ -120,7 +128,7 @@ function list() {
     )}`;
 }
 
-function detail() {
+async function detail() {
   const o = opportunities().find((x) => x.id === id);
   if (!o) {
     $("view").innerHTML =
@@ -130,6 +138,16 @@ function detail() {
   const linked = tasks().filter(
     (t) => t.sourceType === "opportunity" && t.sourceId === o.id,
   );
+  // The cited rows are fetched for the companies this opportunity names only.
+  try {
+    await Promise.all(
+      o.evidence
+        .filter((ref) => EVIDENCE_KIND[ref.entity])
+        .map((ref) => loadRecords(ref.companyId, [EVIDENCE_KIND[ref.entity]])),
+    );
+  } catch (error) {
+    message(error.message, "danger");
+  }
   const evidence = o.evidence.map((ref) => ({ ref, rows: evidenceRows(ref) }));
   document.title = `Vista · ${o.id}`;
   $("view").innerHTML = `
@@ -221,10 +239,16 @@ function detail() {
     .querySelectorAll("[data-source]")
     .forEach((b) => {
       b.onclick = () => {
-        const r = evidence
-          .flatMap((e) => e.rows)
-          .find((x) => x.id === b.dataset.source);
-        showSource(r, r?.number ?? r?.sku ?? r?.product ?? r?.title ?? r?.id);
+        const hit = evidence.find((e) =>
+          e.rows.some((x) => x.id === b.dataset.source),
+        );
+        const r = hit?.rows.find((x) => x.id === b.dataset.source);
+        const kind = EVIDENCE_KIND[hit?.ref.entity];
+        showSource(
+          r,
+          r?.number ?? r?.sku ?? r?.product ?? r?.title ?? r?.id,
+          kind ? () => recordDetail(hit.ref.companyId, kind, r.id) : null,
+        );
       };
     });
 }

@@ -156,7 +156,15 @@ def test_import_pipeline_writes_canonical_rows_only_after_approval(client, sourc
     assert overdue["provenance"]["file"] == "invoices.csv"
     assert overdue["provenance"]["importJob"] == job["id"]
     assert overdue["provenance"]["row"] == 4, "spreadsheet row number, header is row 1"
-    assert overdue["provenance"]["original"]["Amount Due"] == "960.50"
+    assert "original" not in overdue["provenance"], "list rows carry the provenance summary; values come per record"
+    detail = client.get(f"/api/companies/{cid}/records/invoices/{overdue['id']}", headers=headers)
+    assert detail.status_code == 200, detail.text
+    assert detail.json()["provenance"]["original"]["Amount Due"] == "960.50"
+    assert detail.json()["provenance"]["normalized"]["outstanding_balance"] == 960.5
+    full = client.get(f"/api/companies/{cid}/invoices?provenance=full", headers=headers).json()
+    assert next(i for i in full if i["number"] == "INV-1003")["provenance"]["original"]["Amount Due"] == "960.50"
+    assert client.get(f"/api/companies/{cid}/records/widgets/{overdue['id']}", headers=headers).status_code == 404
+    assert client.get(f"/api/companies/{cid}/records/invoices/{uuid.uuid4()}", headers=headers).status_code == 404
 
     company = client.get(f"/api/companies/{cid}", headers=headers).json()
     assert company["metrics"]["outstandingAr"] == pytest.approx(1850.0 + 960.5)
@@ -362,7 +370,7 @@ def test_unreadable_amount_is_an_exception_not_a_silent_zero(client, source_stor
     # Decided as zero: the row imports with the original text kept in provenance.
     zeroed = run("Import as zero")
     assert (zeroed["recordsImported"], zeroed["recordsRejected"]) == (3, 0)
-    inv = next(i for i in client.get(f"/api/companies/{cid}/invoices", headers=headers).json() if i["number"] == "INV-1003")
+    inv = next(i for i in client.get(f"/api/companies/{cid}/invoices?provenance=full", headers=headers).json() if i["number"] == "INV-1003")
     assert inv["amount"] == 0 and inv["provenance"]["original"]["Invoice Total"] == "N/A"
 
 
@@ -377,3 +385,48 @@ def test_normalize_money_reads_numbers_and_refuses_text():
     assert normalize_money(42) == 42.0
     assert normalize_money("") == 0.0 and normalize_money(None) == 0.0
     assert normalize_money("N/A") is None and normalize_money("TBD") is None and normalize_money("see note") is None
+
+
+def test_light_snapshot_carries_record_summaries_and_answers_304_when_unchanged(client, source_store, monkeypatch):
+    monkeypatch.setattr(settings, "demo_today", "2026-09-19")  # the simple fixture's invoices are dated mid-2026
+    headers, _ = make_firm()
+    cid = client.post("/api/portfolio/companies", headers=headers, json={"name": "Cedar Climate", "acquired": "2026-08-01"}).json()["id"]
+    job = upload(client, headers, cid, "invoices.csv")
+    client.post(
+        f"/api/import-jobs/{job['id']}/mappings/approve",
+        headers=headers,
+        json={"mappings": [{"source": m["source"], "target": m["target"], "confirmed": True} for m in job["mappings"]]},
+    )
+    assert client.post(f"/api/import-jobs/{job['id']}/approve", headers=headers).status_code == 200
+
+    light = client.get("/api/portfolio?records=false", headers=headers)
+    assert light.status_code == 200, light.text
+    etag = light.headers["etag"]
+    assert etag.startswith('W/"')
+    company = light.json()["companies"][0]
+    assert "invoices" not in company, "the light snapshot leaves the rows out"
+    assert company["records"]["invoices"] == {
+        "count": 3,
+        "files": ["invoices.csv"],
+        "autoAccepted": 3,
+        "reviewed": 0,
+        "humanReviewed": 0,
+    }
+    assert company["records"]["customers"]["count"] == 0
+    assert company["metrics"]["invoiceCount"] == 3
+
+    again = client.get("/api/portfolio?records=false", headers={**headers, "If-None-Match": etag})
+    assert again.status_code == 304
+    assert again.headers["etag"] == etag
+
+    # A change on the ledger changes the validator: the client gets a fresh body.
+    task = {"title": "Chase INV-1003", "companyId": cid, "category": "Integration"}
+    assert client.post("/api/tasks", headers=headers, json=task).status_code == 201
+    changed = client.get("/api/portfolio?records=false", headers={**headers, "If-None-Match": etag})
+    assert changed.status_code == 200
+    assert changed.headers["etag"] != etag
+    assert len(changed.json()["tasks"]) == 1
+
+    full = client.get("/api/portfolio", headers=headers).json()["companies"][0]
+    assert len(full["invoices"]) == 3
+    assert set(full["invoices"][0]["provenance"]) == {"file", "sheet", "row", "importJob", "confidence", "review"}

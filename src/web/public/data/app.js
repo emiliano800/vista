@@ -9,7 +9,12 @@ import {
   mountSourceDialog,
 } from "/lib/components.js";
 import { money, integer, date, DEMO_NOTE, daysBetween } from "/lib/format.js";
-import { companies, companyName } from "/lib/store.js";
+import {
+  companies,
+  companyName,
+  loadRecords,
+  recordDetail,
+} from "/lib/store.js";
 
 const ENTITIES = {
   customers: {
@@ -232,11 +237,11 @@ const ENTITIES = {
   },
 };
 const PAGE = 100;
-const analyst = await mountShell();
+const analyst = await mountShell({ onUpdate: () => render() });
 const showSource = mountSourceDialog();
 if (analyst) render();
 
-function render() {
+async function render() {
   const q = qs();
   const entity = ENTITIES[q.get("entity")] ? q.get("entity") : "customers";
   const companyId = q.get("company") ?? "";
@@ -245,6 +250,17 @@ function render() {
   const page = Math.max(1, Number(q.get("page") ?? 1));
   const def = ENTITIES[entity];
   const src = companies().filter((c) => !companyId || c.id === companyId);
+  // Only the selected collection is fetched, for the selected companies.
+  if (!src.every((c) => Array.isArray(c[entity]))) {
+    $("view").innerHTML =
+      `<div class="page-head"><div><p class="eyebrow">${esc(analyst.firm)}</p><h1>Data explorer</h1><p class="muted">Loading ${esc(def.label.toLowerCase())}…</p></div></div>`;
+    try {
+      await Promise.all(src.map((c) => loadRecords(c.id, [entity])));
+    } catch (error) {
+      $("view").innerHTML += `<p class="empty">${esc(error.message)}</p>`;
+      return;
+    }
+  }
   let rows = src.flatMap((c) => c[entity] ?? []);
   const total = rows.length;
   rows = rows.filter(def.filters[filter]?.[1] ?? (() => true));
@@ -318,7 +334,11 @@ function render() {
     .forEach((b) => {
       b.onclick = () => {
         const r = shown.find((x) => x.id === b.dataset.source);
-        showSource(r, r?.name ?? r?.number ?? r?.sku ?? r?.product ?? r?.id);
+        showSource(
+          r,
+          r?.name ?? r?.number ?? r?.sku ?? r?.product ?? r?.id,
+          r ? () => recordDetail(r.companyId, entity, r.id) : null,
+        );
       };
     });
 }

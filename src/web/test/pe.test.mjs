@@ -28,9 +28,10 @@ const memoryStorage = () => {
     removeItem: (k) => m.delete(k),
   };
 };
-const json = (status, body) => ({
+const json = (status, body, headers = {}) => ({
   ok: status < 400,
   status,
+  headers: { get: (name) => headers[name.toLowerCase()] ?? null },
   json: async () => body,
 });
 const ME = {
@@ -111,7 +112,15 @@ test("signIn exchanges the key for a server session and caches the server identi
   const s = await signIn(DEMO_KEY, storage, fetch);
   assert.equal(s.email, ME.email);
   assert.equal(session(storage).firm, ME.firm.name);
-  await signOut(storage, fetch);
+  globalThis.sessionStorage = memoryStorage();
+  globalThis.sessionStorage.setItem("vista.analyst.snapshot", "{}");
+  try {
+    await signOut(storage, fetch);
+  } finally {
+    const left = globalThis.sessionStorage.getItem("vista.analyst.snapshot");
+    delete globalThis.sessionStorage;
+    assert.equal(left, null, "signing out drops the cached portfolio snapshot");
+  }
   assert.equal(session(storage), null);
   assert.ok(
     fetch.calls.some(
@@ -145,8 +154,51 @@ test("requireAnalyst trusts the server: 401/403 clears the cache and redirects t
 });
 
 // ---- store: reads come from the snapshot, writes go to the API then refresh ----
+const RECORDS = {
+  "c-harbor": {
+    invoices: [
+      {
+        id: "i1",
+        companyId: "c-harbor",
+        outstanding: 100,
+        dueDate: "2026-05-01",
+      },
+      {
+        id: "i2",
+        companyId: "c-harbor",
+        outstanding: 100,
+        dueDate: "2026-10-01",
+      },
+      {
+        id: "i3",
+        companyId: "c-harbor",
+        outstanding: 0,
+        dueDate: "2026-01-01",
+      },
+    ],
+    purchases: [
+      { id: "p1", companyId: "c-harbor", sku: "CAP-45", date: "2026-06-01" },
+    ],
+    subscriptions: [],
+    vendors: [{ id: "v1", companyId: "c-harbor", name: "Carrier" }],
+    customers: [],
+    "purchase-orders": {
+      purchaseOrders: [{ id: "po1" }],
+      lines: [{ id: "l1" }, { id: "l2" }],
+    },
+  },
+  "c-summit": {
+    invoices: [],
+    purchases: [],
+    subscriptions: [],
+    vendors: [],
+    customers: [],
+    "purchase-orders": { purchaseOrders: [], lines: [] },
+  },
+};
 const SNAPSHOT = {
   today: "2026-09-19",
+  firm: { id: "f-1", name: "Northstar HVAC Holdings", slug: "northstar" },
   metrics: {
     companies: 2,
     revenue: 1000,
@@ -163,15 +215,22 @@ const SNAPSHOT = {
       metrics: { revenue: 600, outstandingAr: 200, overdueAr: 100 },
       summary: {},
       integration: { steps: [], complete: 7, total: 7, label: "Complete" },
-      invoices: [
-        { id: "i1", outstanding: 100, dueDate: "2026-05-01" },
-        { id: "i2", outstanding: 100, dueDate: "2026-10-01" },
-        { id: "i3", outstanding: 0, dueDate: "2026-01-01" },
-      ],
-      purchases: [{ id: "p1", sku: "CAP-45", date: "2026-06-01" }],
-      subscriptions: [],
-      vendors: [],
-      customers: [],
+      records: {
+        invoices: {
+          count: 3,
+          files: ["invoices.csv"],
+          autoAccepted: 3,
+          reviewed: 0,
+          humanReviewed: 0,
+        },
+        purchaseOrders: {
+          count: 1,
+          files: [],
+          autoAccepted: 1,
+          reviewed: 0,
+          humanReviewed: 0,
+        },
+      },
       importJobs: [],
       importExceptions: [
         {
@@ -189,11 +248,7 @@ const SNAPSHOT = {
       metrics: { revenue: 400 },
       summary: {},
       integration: { steps: [] },
-      invoices: [],
-      purchases: [],
-      subscriptions: [],
-      vendors: [],
-      customers: [],
+      records: {},
       importJobs: [],
       importExceptions: [],
     },
@@ -209,11 +264,23 @@ const SNAPSHOT = {
     },
   ],
   agents: [
-    { id: "file_reviewer-harbor", companyId: "c-harbor", status: "Active", review: 2 },
+    {
+      id: "file_reviewer-harbor",
+      companyId: "c-harbor",
+      status: "Active",
+      review: 2,
+    },
   ],
   runs: [{ id: "R-1", agentId: "file_reviewer-harbor", companyId: "c-harbor" }],
   findings: [
-    { id: "F-001", uuid: "11111111-1111-1111-1111-111111111111", companyId: "c-harbor", status: "Open", severity: "High", runId: "R-1" },
+    {
+      id: "F-001",
+      uuid: "11111111-1111-1111-1111-111111111111",
+      companyId: "c-harbor",
+      status: "Open",
+      severity: "High",
+      runId: "R-1",
+    },
   ],
   activity: [
     { at: "2026-09-01T00:00:00Z", companyId: "c-harbor", text: "old" },
@@ -222,10 +289,24 @@ const SNAPSHOT = {
   attention: [{ companyId: "c-harbor", title: "2 AR items need review" }],
 };
 
+// Every snapshot answer carries a validator derived from its content, like the API.
+// (A fresh copy each time, as a parsed response body is; the store attaches rows to it.)
+const withEtag = (snapshot) =>
+  json(200, structuredClone(snapshot), {
+    etag: `W/"${JSON.stringify(snapshot).length}"`,
+  });
+function recordRoutes(records = RECORDS) {
+  const routes = {};
+  for (const [cid, byRoute] of Object.entries(records))
+    for (const [route, body] of Object.entries(byRoute))
+      routes[`GET /api/companies/${cid}/${route}`] = () => json(200, body);
+  return routes;
+}
 function storeFetch(extra = {}) {
   let snapshot = structuredClone(SNAPSHOT);
   const fetch = mockFetch({
-    "GET /api/portfolio": () => json(200, snapshot),
+    "GET /api/portfolio?records=false": () => withEtag(snapshot),
+    ...recordRoutes(),
     "POST /api/portfolio/analysis": () => {
       snapshot.opportunities.push({
         id: "OP-2",
@@ -282,6 +363,17 @@ test("store reads every figure from the server snapshot; nothing is computed fro
     );
     assert.equal(store.portfolioMetrics().revenue, 1000);
     assert.equal(store.portfolioMetrics().rows.length, 2);
+    assert.equal(
+      store.company("c-harbor").invoices,
+      undefined,
+      "the light snapshot carries no canonical rows",
+    );
+    assert.equal(store.recordsLoaded("c-harbor", ["invoices"]), false);
+    await store.loadRecords("c-harbor", ["invoices", "purchases"]);
+    assert.equal(
+      store.recordsLoaded("c-harbor", ["invoices", "purchases"]),
+      true,
+    );
     const m = store.companyMetrics(store.company("c-harbor"));
     assert.equal(m.revenue, 600);
     assert.deepEqual(
@@ -315,12 +407,151 @@ test("store reads every figure from the server snapshot; nothing is computed fro
     );
     await store.load();
     assert.equal(
-      fetch.calls.filter((c) => c.url === "/api/portfolio").length,
+      fetch.calls.filter((c) => c.url === "/api/portfolio?records=false")
+        .length,
       1,
       "snapshot is cached until a mutation",
     );
   } finally {
     delete globalThis.fetch;
+    store.setState(null);
+  }
+});
+
+test("canonical rows are fetched per company and collection, once, and survive a snapshot refresh", async () => {
+  const fetch = storeFetch();
+  globalThis.fetch = fetch;
+  try {
+    store.setState(null);
+    await store.load();
+    const calls = (route) =>
+      fetch.calls.filter((c) => c.url === `/api/companies/c-harbor/${route}`)
+        .length;
+    // Concurrent callers share one request; purchase orders and lines share one route.
+    await Promise.all([
+      store.loadRecords("c-harbor", ["invoices"]),
+      store.loadRecords("c-harbor", ["invoices", "purchaseOrders"]),
+      store.loadRecords("c-harbor", ["purchaseOrderLines"]),
+    ]);
+    assert.equal(calls("invoices"), 1);
+    assert.equal(calls("purchase-orders"), 1);
+    assert.equal(store.company("c-harbor").purchaseOrderLines.length, 2);
+    assert.equal(
+      store.company("c-summit").invoices,
+      undefined,
+      "other companies untouched",
+    );
+    await store.loadRecords("c-harbor", ["invoices"]);
+    assert.equal(
+      calls("invoices"),
+      1,
+      "loaded collections are not fetched again",
+    );
+
+    // A refresh replaces the snapshot; the rows already fetched stay attached.
+    await store.createTask({ title: "x", companyId: "c-harbor" });
+    assert.equal(store.company("c-harbor").invoices.length, 3);
+    assert.equal(calls("invoices"), 1);
+
+    // Resolving an import exception can rewrite rows: that company's are fetched again.
+    await store.resolveException("c-harbor", "X-1", "Merge");
+    assert.equal(store.company("c-harbor").invoices, undefined);
+    await store.loadRecords("c-harbor", ["invoices"]);
+    assert.equal(calls("invoices"), 2);
+
+    await store.loadPortfolioRecords(["vendors"]);
+    assert.equal(store.company("c-harbor").vendors.length, 1);
+    assert.equal(store.company("c-summit").vendors.length, 0);
+    assert.equal(await store.loadRecords("nope", ["invoices"]), null);
+    // A failed fetch is not remembered as loaded.
+    globalThis.fetch = mockFetch({
+      "GET /api/companies/c-harbor/customers": () => json(500, null),
+    });
+    await assert.rejects(store.loadRecords("c-harbor", ["customers"]));
+    assert.equal(store.recordsLoaded("c-harbor", ["customers"]), false);
+  } finally {
+    delete globalThis.fetch;
+    store.setState(null);
+  }
+});
+
+test("the next page renders from the cached snapshot and revalidates with If-None-Match", async () => {
+  const storage = memoryStorage();
+  globalThis.sessionStorage = storage;
+  let snapshot = structuredClone(SNAPSHOT);
+  const fetch = mockFetch({
+    "GET /api/portfolio?records=false": (call) => {
+      const tag = `W/"${JSON.stringify(snapshot).length}"`;
+      return call.headers["If-None-Match"] === tag
+        ? json(304, null, { etag: tag })
+        : withEtag(snapshot);
+    },
+    ...recordRoutes(),
+  });
+  globalThis.fetch = fetch;
+  const updates = [];
+  const off = store.onRefresh((s) => updates.push(s.tasks.length));
+  try {
+    store.setState(null);
+    await store.load();
+    const cached = JSON.parse(storage.getItem(store.SNAPSHOT_KEY));
+    assert.equal(cached.snapshot.companies.length, 2);
+    assert.match(cached.etag, /^W\//);
+    assert.equal(
+      cached.snapshot.companies[0].invoices,
+      undefined,
+      "rows fetched later are never written to the cache",
+    );
+    await store.loadRecords("c-harbor", ["invoices"]);
+    assert.equal(
+      JSON.parse(storage.getItem(store.SNAPSHOT_KEY)).snapshot.companies[0]
+        .invoices,
+      undefined,
+    );
+
+    // A new page: the cached copy is in memory before any request completes.
+    store.setState(null);
+    const before = fetch.calls.length;
+    const p = store.load();
+    assert.equal(
+      store.companies().length,
+      2,
+      "resolved from sessionStorage at once",
+    );
+    await p;
+    await new Promise((r) => setTimeout(r, 5));
+    const revalidation = fetch.calls
+      .slice(before)
+      .find((c) => c.url === "/api/portfolio?records=false");
+    assert.equal(revalidation.headers["If-None-Match"], cached.etag);
+    assert.deepEqual(updates, [], "304: nothing changed, nobody re-renders");
+
+    // The server has more: the revalidation replaces the snapshot and notifies the page.
+    snapshot.tasks.push({ id: "T-9", companyId: "c-summit", status: "Open" });
+    store.setState(null);
+    await store.load();
+    await new Promise((r) => setTimeout(r, 5));
+    assert.deepEqual(updates, [2]);
+    assert.equal(store.tasks().length, 2);
+    assert.equal(
+      JSON.parse(storage.getItem(store.SNAPSHOT_KEY)).snapshot.tasks.length,
+      2,
+    );
+
+    // A forced refresh (after a mutation) always asks the server, even with a cache.
+    await store.refresh();
+    assert.equal(
+      fetch.calls.filter((c) => c.url === "/api/portfolio?records=false")
+        .length,
+      4,
+    );
+    store.clearCache();
+    assert.equal(storage.getItem(store.SNAPSHOT_KEY), null);
+  } finally {
+    off();
+    delete globalThis.fetch;
+    delete globalThis.sessionStorage;
+    store.setState(null);
   }
 });
 
@@ -389,7 +620,7 @@ test("runPortfolioInterpretation queues the chain, polls until done, then refres
   let polls = 0;
   let snapshot = structuredClone(SNAPSHOT);
   const fetch = mockFetch({
-    "GET /api/portfolio": () => json(200, snapshot),
+    "GET /api/portfolio?records=false": () => withEtag(snapshot),
     "POST /api/portfolio/interpretation": () =>
       json(202, {
         request_id: request,
