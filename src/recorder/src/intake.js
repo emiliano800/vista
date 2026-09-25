@@ -252,12 +252,13 @@ export function buildSubmissionPackage(root, id, config, { selectedFileIds = [],
 }
 
 export class SubmissionQueue {
-  constructor(home, { fetchImpl = fetch, onChange = () => {}, now = () => Date.now(), isCurrent = () => true } = {}) {
+  constructor(home, { fetchImpl = fetch, onChange = () => {}, now = () => Date.now(), isCurrent = () => true, sleep = (ms) => new Promise((r) => setTimeout(r, ms)) } = {}) {
     this.root = path.join(home, 'upload-queue');
     fs.mkdirSync(this.root, { recursive: true, mode: 0o700 });
     this.fetch = fetchImpl;
     this.onChange = onChange;
     this.now = now;
+    this.sleep = sleep;
     this.isCurrent = isCurrent;
     this.running = null;
   }
@@ -336,8 +337,26 @@ export class SubmissionQueue {
     return this.submissionAction(config, id, 'answers', { answers });
   }
   // The employee's second, explicit consent: the draft becomes visible to the workspace.
-  publish(config, id, { consent } = {}) {
+  // Answering a question sends the session back through analysis, so a publish that
+  // follows an answer waits for the re-judged report; the server refuses to publish
+  // anything but a completed analysis.
+  publish(config, id, { consent, pollMs = 2000, timeoutMs = 180000 } = {}) {
     if (consent !== true) throw new Error('Confirm that the report may be shared with your workspace.');
+    return this.#publish(config, id, pollMs, timeoutMs);
+  }
+
+  async #publish(config, id, pollMs, timeoutMs) {
+    const pending = () => ['queued', 'running'].includes(this.acceptedEntry(config, id).analysis?.status);
+    if (pending()) {
+      const deadline = this.now() + timeoutMs;
+      while (pending()) {
+        if (this.now() >= deadline) throw new Error('Your workspace is still re-reading this session with your answers. Try sharing again in a moment.');
+        await this.sleep(pollMs);
+        await this.status(config, id);
+      }
+      const { status, error } = this.acceptedEntry(config, id).analysis;
+      if (status !== 'succeeded') throw new Error(error ?? 'Your workspace could not finish reading this session; retry the analysis before sharing.');
+    }
     return this.submissionAction(config, id, 'publish', { consent: true });
   }
   reanalyze(config, id) { return this.submissionAction(config, id, 'analyze', {}); }
