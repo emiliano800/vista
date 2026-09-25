@@ -630,9 +630,14 @@ def workflow_candidates(observed: dict) -> list[dict]:
         for t in tasks:
             t["name"] = task_name(t)
         first, last = g["stretches"][0], g["stretches"][-1]
+        # The applications the tasks name come first — a paste can land in a later stretch
+        # than its copy — then the ones the stretches spent most time in.
+        apps = _dedupe(
+            [a for t in tasks for a in (t.get("from"), t.get("to"), t.get("app")) if a] + [a for a, _ in g["apps"].most_common()]
+        )
         c = {
             "pattern": tasks[0]["kind"],
-            "apps": [a for a, _ in g["apps"].most_common(3)],
+            "apps": apps[:3],
             "count": len(g["stretches"]),
             "tasks": tasks,
             "about": {
