@@ -53,6 +53,24 @@ TRANSFER_WINDOW_S = 120  # copy in app A → paste in app B within this window c
 MAX_QUESTIONS = 6
 MAX_DOCUMENT_EXCERPT = 1200
 COVERAGE_EXCLUDED = ["window_title", "url", "typed_text", "clipboard", "screenshots", "video", "raw_events"]
+DETAIL_SAMPLE = 120  # characters kept of a typed run or a transferred clipboard value
+DETAIL_TOP = 5  # titles / pages / files / typed samples kept per application
+TYPED_RUN_GAP_S = 5.0  # keystrokes further apart than this start a new typed run
+
+
+def _page(url: str) -> str:
+    """A URL without its query string, so a page is one entry however it was parameterised."""
+    return url.split("?", 1)[0].split("#", 1)[0][:DETAIL_SAMPLE]
+
+
+def _dedupe(values: list[str]) -> list[str]:
+    seen: set[str] = set()
+    out: list[str] = []
+    for v in values:
+        if v not in seen:
+            seen.add(v)
+            out.append(v)
+    return out
 
 
 # ---- observed facts (pure code) -------------------------------------------------
@@ -70,12 +88,44 @@ def observe(events: list[dict], manifest: dict) -> dict:
     """Deterministic facts from metadata-only events. Input rows are
     {timestamp, event_type, app, count}; output is JSON-serialisable."""
     rows = sorted(
-        ({"t": _ts(e["timestamp"]), "type": e["event_type"], "app": str(e["app"])[:128], "n": int(e.get("count") or 1)} for e in events),
+        (
+            {
+                "t": _ts(e["timestamp"]),
+                "type": e["event_type"],
+                "app": str(e["app"])[:128],
+                "n": int(e.get("count") or 1),
+                # Present only under activity-full-v1 (see recorder_uploads.DETAIL_FIELDS).
+                "title": str(e.get("window_title") or "").strip()[:255],
+                "url": str(e.get("url") or "").strip()[:2048],
+                "text": str(e.get("text") or "")[:4000],
+            }
+            for e in events
+        ),
         key=lambda r: r["t"],
     )
     per_app: dict[str, dict] = defaultdict(
-        lambda: {"active_s": 0.0, "events": 0, "clicks": 0, "keys": 0, "copies": 0, "pastes": 0, "spans": 0}
+        lambda: {"active_s": 0.0, "events": 0, "clicks": 0, "keys": 0, "typing_runs": 0, "copies": 0, "pastes": 0, "spans": 0}
     )
+    # A typing run is one field's worth of keys (gap-separated); it is the unit of work, the
+    # keystroke count is only how long the value was. Runs are counted with or without text.
+    key_app: str | None = None
+    key_t: datetime | None = None
+    # Detail, when the upload carried it: what was on screen and what moved, per app and per transfer.
+    titles: dict[str, Counter] = defaultdict(Counter)
+    pages: dict[str, Counter] = defaultdict(Counter)
+    files: dict[str, Counter] = defaultdict(Counter)
+    typed: dict[str, list[str]] = defaultdict(list)
+    samples: dict[tuple[str, str], list[str]] = defaultdict(list)
+    run_app: str | None = None
+    run_text = ""
+    run_t: datetime | None = None
+
+    def flush_run() -> None:
+        nonlocal run_app, run_text, run_t
+        if run_app is not None and len(run_text.strip()) >= 3:
+            typed[run_app].append(run_text.strip()[:DETAIL_SAMPLE])
+        run_app, run_text, run_t = None, "", None
+
     transitions: Counter = Counter()
     transition_gap: dict[tuple[str, str], list[float]] = defaultdict(list)
     transfers: Counter = Counter()
@@ -100,6 +150,28 @@ def observe(events: list[dict], manifest: dict) -> dict:
         app, t = row["app"], row["t"]
         stats = per_app[app]
         stats["events"] += row["n"]
+        if row["type"] == "file":
+            if row["title"]:
+                files[app][row["title"]] += 1  # a file event names the document, not a window
+        elif row["title"]:
+            titles[app][row["title"]] += 1
+        if row["url"]:
+            pages[app][_page(row["url"])] += 1
+        # Typed text arrives one keystroke per event; join a run in one app into a sample.
+        is_keystroke = row["type"] == "key" and row["text"] and len(row["text"]) <= 2
+        if not is_keystroke or run_app != app or (run_t is not None and (t - run_t).total_seconds() > TYPED_RUN_GAP_S):
+            flush_run()
+        if is_keystroke:
+            run_app, run_t = app, t
+            run_text += row["text"]
+        new_run = False
+        if row["type"] == "key":
+            if key_app != app or key_t is None or (t - key_t).total_seconds() > TYPED_RUN_GAP_S:
+                stats["typing_runs"] += 1
+                new_run = True
+            key_app, key_t = app, t
+        else:
+            key_app, key_t = None, None
         if row["type"] == "click":
             stats["clicks"] += row["n"]
         elif row["type"] == "key":
@@ -113,6 +185,9 @@ def observe(events: list[dict], manifest: dict) -> dict:
                 if last_copy["app"] != app:
                     transfers[(last_copy["app"], app)] += 1
                     transfer_latency[(last_copy["app"], app)].append((t - last_copy["t"]).total_seconds())
+                    moved = (last_copy["text"] or row["text"]).strip()
+                    if moved:
+                        samples[(last_copy["app"], app)].append(moved[:DETAIL_SAMPLE])
                 else:
                     internal_pastes += 1
         gap = (t - previous["t"]).total_seconds() if previous else 0.0
@@ -122,9 +197,14 @@ def observe(events: list[dict], manifest: dict) -> dict:
         if stretch is None or gap > STRETCH_GAP_S:
             if stretch is not None:
                 stretches.append(stretch)
-            stretch = {"start": t, "end": t, "events": 0, "switches": 0, "apps": Counter()}
+            stretch = {"start": t, "end": t, "events": 0, "interactions": 0, "switches": 0, "apps": Counter()}
         stretch["end"] = t
         stretch["events"] += row["n"]
+        # Interactions count a typing run once, so a long value does not make a stretch look busier.
+        if row["type"] != "key":
+            stretch["interactions"] += row["n"]
+        elif new_run:
+            stretch["interactions"] += 1
         stretch["apps"][app] += row["n"]
         if previous is not None and previous["app"] != app:
             switches += 1
@@ -140,6 +220,7 @@ def observe(events: list[dict], manifest: dict) -> dict:
         close_span(previous["t"])
     if stretch is not None:
         stretches.append(stretch)
+    flush_run()
 
     total_active = sum(v["active_s"] for v in per_app.values())
     total_events = sum(v["events"] for v in per_app.values()) or 1
@@ -152,6 +233,21 @@ def observe(events: list[dict], manifest: dict) -> dict:
         }
         for app, v in sorted(per_app.items(), key=lambda kv: (-kv[1]["active_s"], -kv[1]["events"], kv[0]))
     ]
+    for entry in apps:
+        name = entry["app"]
+        for key, counter in (("titles", titles), ("pages", pages), ("files", files)):
+            if counter[name]:
+                entry[key] = [value for value, _ in counter[name].most_common(DETAIL_TOP)]
+        if typed[name]:
+            entry["typed"] = _dedupe(typed[name])[:DETAIL_TOP]
+    transfer_rows = [
+        {"from": a, "to": b, "count": n, "mean_latency_s": round(sum(transfer_latency[(a, b)]) / len(transfer_latency[(a, b)]), 1)}
+        for (a, b), n in transfers.most_common(20)
+    ]
+    for tr in transfer_rows:
+        moved = _dedupe(samples[(tr["from"], tr["to"])])
+        if moved:
+            tr["samples"] = moved[:3]
     loops = Counter()
     for (a, b), n in transitions.items():
         back = transitions.get((b, a), 0)
@@ -165,10 +261,7 @@ def observe(events: list[dict], manifest: dict) -> dict:
             {"from": a, "to": b, "count": n, "mean_gap_s": round(sum(transition_gap[(a, b)]) / len(transition_gap[(a, b)]), 1)}
             for (a, b), n in transitions.most_common(20)
         ],
-        "transfers": [
-            {"from": a, "to": b, "count": n, "mean_latency_s": round(sum(transfer_latency[(a, b)]) / len(transfer_latency[(a, b)]), 1)}
-            for (a, b), n in transfers.most_common(20)
-        ],
+        "transfers": transfer_rows,
         "internal_pastes": internal_pastes,
         "loops": [{"between": [a, b], "count": n} for (a, b), n in loops.most_common(10)],
         "stretches": [
@@ -178,6 +271,7 @@ def observe(events: list[dict], manifest: dict) -> dict:
                 "end": s["end"].isoformat(),
                 "duration_s": round((s["end"] - s["start"]).total_seconds(), 1),
                 "events": s["events"],
+                "interactions": s["interactions"],
                 "switches": s["switches"],
                 "apps": [a for a, _ in s["apps"].most_common(6)],
             }
@@ -191,16 +285,27 @@ def observe(events: list[dict], manifest: dict) -> dict:
     }
 
 
-def coverage_for(observed: dict, document_count: int) -> dict:
+def has_detail(observed: dict) -> bool:
+    """Whether the upload carried titles, pages, typed text or clipboard contents."""
+    return any(k in a for a in observed.get("apps", []) for k in ("titles", "pages", "files", "typed")) or any(
+        "samples" in t for t in observed.get("transfers", [])
+    )
+
+
+def coverage_for(observed: dict, document_count: int, sharing_policy: str = "activity-metadata-v1") -> dict:
+    full = sharing_policy == "activity-full-v1"
     return {
-        "sharing_policy": "activity-metadata-v1",
-        "fields": ["timestamp", "event_type", "app", "count"],
-        "excluded": COVERAGE_EXCLUDED,
+        "sharing_policy": sharing_policy,
+        "fields": ["timestamp", "event_type", "app", "count"] + (["window_title", "url", "element", "text"] if full else []),
+        "excluded": ["screenshots", "video"] if full else COVERAGE_EXCLUDED,
         "events": observed["events"],
         "apps": len(observed["apps"]),
         "documents": document_count,
         "note": (
-            "Activities are known only at application level; documents, records and web pages the employee "
+            "Window titles, pages, typed text and clipboard contents were shared for this session, so what "
+            "moved between applications is observable; screenshots and video stayed on the device."
+            if full
+            else "Activities are known only at application level; documents, records and web pages the employee "
             "worked on are not observable unless a document snapshot was shared."
         ),
     }
@@ -415,7 +520,13 @@ def workflow_candidates(observed: dict) -> list[dict]:
                     "pattern": "stretch",
                     "apps": s["apps"][:3],
                     "count": s["switches"],
-                    "about": {"stretch": s["id"], "start": s["start"], "end": s["end"], "switches": s["switches"], "events": s["events"]},
+                    "about": {
+                        "stretch": s["id"],
+                        "start": s["start"],
+                        "end": s["end"],
+                        "switches": s["switches"],
+                        "interactions": s.get("interactions", s["events"]),
+                    },
                 }
             )
     # One candidate per pair of applications: a transfer, a loop and a stretch between the
@@ -437,40 +548,88 @@ def workflow_candidates(observed: dict) -> list[dict]:
     return [{"id": f"c{i + 1}", **{k: v for k, v in c.items() if k != "rank"}} for i, c in enumerate(merged[:MAX_CANDIDATES])]
 
 
-def judge_request(observed: dict, candidates: list[dict], docs: list[dict]) -> tuple[dict, dict]:
-    """State and questions for one Jev call: four typed questions per candidate, all answered in parallel."""
+MAX_SUMMARY = 2000
+
+
+def judge_facts(observed: dict) -> dict:
+    """The observed facts as Jev sees them. Keystrokes are how a value was entered, not how much
+    work it was: the per-app `keys` count is dropped in favour of `typing_runs` (fields typed),
+    and a stretch reports `interactions` (a typing run counts once) rather than raw `events`."""
     facts = {k: observed[k] for k in ("events", "apps", "switches", "transfers", "loops", "stretches", "session")}
+    facts["apps"] = [{k: v for k, v in a.items() if k != "keys"} for a in observed["apps"]]
+    facts["stretches"] = [{**{k: v for k, v in s.items() if k != "events"}} for s in observed["stretches"]]
+    return facts
+
+
+def judge_request(
+    observed: dict, candidates: list[dict], docs: list[dict], answers: list[dict] | None = None, summary: str | None = None
+) -> tuple[dict, dict]:
+    """State and questions for one Jev call: four typed questions per candidate, all answered in parallel.
+
+    `answers` are the employee's own replies to the report's questions (question, answer). They
+    are facts about the session that no metadata carries — what moved and why — and once given
+    they are re-judged with, never only stored beside, the observed patterns. `summary` is what
+    the employee typed at Start about the session's purpose: context for every judgment, never
+    a value the graph or a run could use."""
+    facts = judge_facts(observed)
+    answered = [{"question": a["question"], "answer": a["answer"]} for a in (answers or []) if a.get("answer")]
+    stated = " ".join(str(summary or "").split())[:MAX_SUMMARY]
     state = {
         "context": (
-            "Metadata-only record of one employee's work session: application names, timing, switches and "
-            "copy→paste transfers. Window titles, URLs, typed text and screenshots were never captured."
+            "Record of one employee's work session: application names, timing, switches and copy→paste transfers, "
+            "with the window titles and pages seen in each application (`titles`, `pages`, `files`), samples of "
+            "what was typed there (`typed`) and of what each transfer moved (`samples`). Screenshots were not captured."
+            if has_detail(observed)
+            else "Metadata-only record of one employee's work session: application names, timing, switches and "
+            "copy→paste transfers. Window titles, URLs, typed text and screenshots were not shared."
         ),
         "observed": facts,
         "shared_documents": [{"filename": d["filename"], "summary": d["summary"], "excerpt": d["excerpt"]} for d in docs],
         "candidates": [{k: c[k] for k in ("id", "pattern", "apps", "count", "evidence")} for c in candidates],
     }
+    state["context"] += (
+        " `typing_runs` is how many fields were typed into; how many keys that took says nothing about whether the work is mechanical."
+    )
+    if stated:
+        state["employee_summary"] = stated
+        state["context"] += (
+            " `employee_summary` is what the employee said the session was for before recording it, in their "
+            "own words; read every pattern in that light."
+        )
+    if answered:
+        state["employee_answers"] = answered
+        state["context"] += (
+            " `employee_answers` are the employee's own replies about this session: what they were doing, what moved "
+            "between the applications and whether they repeat it. Treat them as the most direct evidence there is."
+        )
+    with_answers = " and the employee's own account in `employee_answers`" if answered else ""
+    if stated:
+        with_answers += " and the session's stated purpose in `employee_summary`"
     questions: dict[str, dict] = {}
     for c in candidates:
         ref = f"candidate `{c['id']}` in `candidates` ({' and '.join(c['apps'])}; {c['evidence'].lower()})"
         questions[f"{c['id']}_workflow"] = noul(
             f"Is {ref} a recurring unit of work — something this employee does the same way again and again — "
-            "rather than incidental switching between applications?",
+            f"rather than incidental switching between applications? Judge from the pattern{with_answers}.",
             {
                 "true": "A repeatable task with a purpose that spans these applications.",
                 "false": "Incidental, one-off, or just where the employee's attention happened to go.",
             },
         )
         questions[f"{c['id']}_kind"] = choice(
-            f"What kind of work is {ref}? Judge from the pattern, the timing, and any `shared_documents`.", KINDS
+            f"What kind of work is {ref}? Judge from the pattern, the timing, any `shared_documents`{with_answers}.", KINDS
         )
         questions[f"{c['id']}_mechanical"] = score(
-            f"How mechanical is {ref}: how much of it is the same steps in the same order, with no decision to make?", MECHANICAL
+            f"How mechanical is {ref}: how much of it is the same steps in the same order, with no decision to make?"
+            f"{' Weigh what the employee said in `employee_answers`.' if answered else ''}",
+            MECHANICAL,
         )
         questions[f"{c['id']}_ask"] = noul(
-            f"Could only the employee say what {ref} actually is — what moves between the applications, and why?",
+            f"Could only the employee say what {ref} actually is — what moves between the applications, and why?"
+            f"{' They have already answered in `employee_answers`; ask again only if that leaves it unclear.' if answered else ''}",
             {
                 "true": "The metadata leaves the task itself unknown; ask before proposing anything.",
-                "false": "The pattern and the shared documents already make the task clear enough to describe.",
+                "false": "The pattern, the shared documents and any answers already make the task clear enough to describe.",
             },
         )
     return state, questions
@@ -669,10 +828,13 @@ def apply_judgment(
     source: str,
     docs: list[dict] | None = None,
     plan: dict | None = None,
+    answers: list[dict] | None = None,
 ) -> tuple[dict, list[dict]]:
     """Turn typed answers into the report's interpretation. Nothing here is generated:
     names, rationales, questions and next steps are templates over the candidate and
-    the chosen labels, and confidence is the least certain judgment an item depends on."""
+    the chosen labels, and confidence is the least certain judgment an item depends on.
+    `answers` are the employee's replies that this judgment was made with; the summary
+    quotes the first so the reader sees the task in the employee's words."""
     workflows, automation, questions, declined = [], [], [], 0
     for c in candidates:
         p_workflow = judgment.noul(f"{c['id']}_workflow")
@@ -726,6 +888,12 @@ def apply_judgment(
             f"judged from {len(candidates)} observed pattern{'s' if len(candidates) != 1 else ''}"
         )
         summary += f"; {len(automation)} look{'s' if len(automation) == 1 else ''} mechanical enough to automate." if workflows else "."
+    answered = [a for a in (answers or []) if a.get("answer")]
+    if answered:
+        quoted = str(answered[0]["answer"]).strip()[:200]
+        summary = (summary + " " if summary else "") + (
+            f"Read with {len(answered)} answer{'s' if len(answered) != 1 else ''} from the employee, who described it as: “{quoted}”."
+        )
     interpretation = {
         "source": source,
         "model": model,
@@ -734,6 +902,7 @@ def apply_judgment(
         "automation_candidates": automation,
         "rejected": declined,
         "judged": len(candidates),
+        "answered": len(answered),
     }
     if plan:
         interpretation["plan"] = {
@@ -756,19 +925,35 @@ class Interpretation:
     event: dict  # interpreter-specific detail for the `model_call` event
 
 
-def interpret_with_jev(observed: dict, docs: list[dict], judge_fn=judge, plan: dict | None = None) -> Interpretation:
+def interpret_with_jev(
+    observed: dict,
+    docs: list[dict],
+    judge_fn=judge,
+    plan: dict | None = None,
+    answers: list[dict] | None = None,
+    summary: str | None = None,
+) -> Interpretation:
     candidates = workflow_candidates(observed)
+    answered = [a for a in (answers or []) if a.get("answer")]
     if not candidates:
-        interpretation, questions = apply_judgment(Judgment(model="none", source="code"), [], model="none", source="code", plan=plan)
+        interpretation, questions = apply_judgment(
+            Judgment(model="none", source="code"), [], model="none", source="code", plan=plan, answers=answered
+        )
         return Interpretation(
             interpretation, questions, "none", "code", 0, 0, {"interpreter": "jev", "candidates": 0, "questions": 0, "rejected": 0}
         )
-    state, questions = judge_request(observed, candidates, docs)
+    state, questions = judge_request(observed, candidates, docs, answered, summary)
     judgment = judge_fn(state, questions)
     interpretation, model_questions = apply_judgment(
-        judgment, candidates, model=judgment.model, source=judgment.source, docs=docs, plan=plan
+        judgment, candidates, model=judgment.model, source=judgment.source, docs=docs, plan=plan, answers=answered
     )
-    event = {"interpreter": "jev", "candidates": len(candidates), "questions": len(questions), "rejected": interpretation["rejected"]}
+    event = {
+        "interpreter": "jev",
+        "candidates": len(candidates),
+        "questions": len(questions),
+        "rejected": interpretation["rejected"],
+        "employee_answers": len(answered),
+    }
     return Interpretation(
         interpretation, model_questions, judgment.model, judgment.source, judgment.input_tokens, judgment.output_tokens, event
     )
@@ -782,9 +967,11 @@ def interpret_with_chat(observed: dict, docs: list[dict], llm=chat) -> Interpret
     return Interpretation(interpretation, model_questions, r.model, r.source, r.input_tokens, r.output_tokens, event)
 
 
-def interpret(observed: dict, docs: list[dict], plan: dict | None = None) -> Interpretation:
+def interpret(
+    observed: dict, docs: list[dict], plan: dict | None = None, answers: list[dict] | None = None, summary: str | None = None
+) -> Interpretation:
     if settings.recorder_interpreter == "jev":
-        return interpret_with_jev(observed, docs, plan=plan)
+        return interpret_with_jev(observed, docs, plan=plan, answers=answers, summary=summary)
     return interpret_with_chat(observed, docs)
 
 
@@ -917,7 +1104,10 @@ def _analyze(tenant_schema: str, submission_id: uuid.UUID, run_id: uuid.UUID, se
                 "stretches": len(observed["stretches"]),
             },
         )
-        result = interpret(observed, docs, plan)
+        # A re-run after the employee answered: their replies are evidence for this judgment.
+        prior = session.scalar(select(RecorderReport).where(RecorderReport.submission_id == submission_id))
+        answers = [{"question": q["question"], "answer": q["answer"]} for q in (prior.questions if prior else []) if q.get("answer")]
+        result = interpret(observed, docs, plan, answers, summary=row.manifest.get("summary_text"))
         interpretation, model_questions = result.interpretation, result.questions
         seq = _emit(
             session,
@@ -954,7 +1144,7 @@ def _analyze(tenant_schema: str, submission_id: uuid.UUID, run_id: uuid.UUID, se
                 if q["question"] in previous and previous[q["question"]].get("answer"):
                     q["answer"], q["answered_at"] = previous[q["question"]]["answer"], previous[q["question"]]["answered_at"]
         report.run_id = run_id
-        report.coverage = coverage_for(observed, len(docs))
+        report.coverage = coverage_for(observed, len(docs), str(row.manifest.get("sharing_policy") or "activity-metadata-v1"))
         report.observed = observed
         report.interpretation = {**interpretation, "documents": [{"filename": d["filename"], "summary": d["summary"]} for d in docs]}
         report.questions = questions

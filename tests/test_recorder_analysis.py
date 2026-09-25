@@ -1,6 +1,8 @@
 """Metadata-only recorder analysis: deterministic facts, questions, and the
 guard rails around the model's interpretation. No database, no model."""
 
+import json
+
 import pytest
 
 from vista.agents.jev import NONE, Judgment
@@ -17,6 +19,7 @@ from vista.recorder_analysis import (
     deterministic_questions,
     draft_definition,
     finding_rows,
+    has_detail,
     instructions_for,
     interpret,
     interpret_with_jev,
@@ -260,7 +263,7 @@ def test_jev_stub_proposes_nothing_and_no_candidates_means_no_model_call(monkeyp
     result = interpret_with_jev(busy_session(), [])
     assert result.source == "stub" and result.model == "stub-jev-v0" and result.input_tokens > 0
     assert result.interpretation["workflows"] == [] and result.interpretation["rejected"] == 2 and result.questions == []
-    assert result.event == {"interpreter": "jev", "candidates": 2, "questions": 8, "rejected": 2}
+    assert result.event == {"interpreter": "jev", "candidates": 2, "questions": 8, "rejected": 2, "employee_answers": 0}
     quiet = interpret_with_jev(observe([event(0, "Mail")], MANIFEST), [], judge_fn=lambda *a: pytest.fail("must not call the model"))
     assert quiet.source == "code" and quiet.input_tokens == 0 and quiet.interpretation["summary"] == ""
 
@@ -362,3 +365,125 @@ def test_finding_rows_cite_report_candidate_run_and_carry_answer_and_actions():
     assert legacy[0]["kind"] == "inefficiency" and legacy[0]["evidence"]["refs"] == ["report:00000000-0000-0000-0000-00000000bbbb"]
     assert legacy[0]["finding_type"] is None and legacy[0]["evidence"]["actions"] is None
     assert finding_rows(FakeReport({}, [])) == []
+
+
+def _detail_event(minute: int, app: str, event_type: str = "click", **fields) -> dict:
+    return {**event(minute, app, event_type), **fields}
+
+
+def test_observe_keeps_titles_pages_typed_runs_and_transfer_samples_when_the_upload_carried_them():
+    events = [
+        _detail_event(0, "Excel", "focus", window_title="Q3 invoices.xlsx"),
+        _detail_event(1, "Excel", "copy", window_title="Q3 invoices.xlsx", text="INV-1042  $1,250.00"),
+        *[{**_detail_event(1, "Excel", "key", text=ch), "timestamp": f"2026-09-19T09:01:{10 + i:02d}Z"} for i, ch in enumerate("Paid")],
+        _detail_event(2, "Browser", "focus", window_title="Portal — Payments", url="https://portal.example/pay?id=9"),
+        {
+            **_detail_event(2, "Browser", "paste", url="https://portal.example/pay?id=9", text="INV-1042  $1,250.00"),
+            "timestamp": "2026-09-19T09:02:30Z",
+        },
+        _detail_event(3, "Browser", "file", window_title="remittance.pdf"),
+    ]
+    observed = observe(events, MANIFEST)
+    excel = next(a for a in observed["apps"] if a["app"] == "Excel")
+    browser = next(a for a in observed["apps"] if a["app"] == "Browser")
+    assert excel["titles"] == ["Q3 invoices.xlsx"] and excel["typed"] == ["Paid"]
+    assert browser["titles"] == ["Portal — Payments"] and browser["pages"] == ["https://portal.example/pay"]
+    assert browser["files"] == ["remittance.pdf"]
+    assert observed["transfers"][0]["samples"] == ["INV-1042  $1,250.00"]
+    assert has_detail(observed)
+    # Metadata-only sessions look exactly as before: no detail keys at all.
+    plain = observe([event(0, "Excel"), event(1, "Browser")], MANIFEST)
+    assert not has_detail(plain) and "titles" not in plain["apps"][0]
+
+
+def test_coverage_and_jev_context_follow_the_sharing_policy():
+    detailed = observe([_detail_event(0, "Excel", window_title="Q3 invoices.xlsx")], MANIFEST)
+    full = coverage_for(detailed, document_count=0, sharing_policy="activity-full-v1")
+    assert (
+        full["sharing_policy"] == "activity-full-v1" and "window_title" in full["fields"] and full["excluded"] == ["screenshots", "video"]
+    )
+    metadata = coverage_for(observe([event(0, "Excel")], MANIFEST), document_count=0)
+    assert metadata["sharing_policy"] == "activity-metadata-v1" and "window_title" in metadata["excluded"]
+    state, _ = judge_request(detailed, [], [])
+    assert "titles" in state["context"] and "not shared" not in state["context"]
+    state, _ = judge_request(observe([event(0, "Excel")], MANIFEST), [], [])
+    assert "not shared" in state["context"]
+
+
+def test_employee_answers_are_given_to_jev_and_quoted_in_the_summary():
+    from vista.agents.jev import stub_answers
+
+    observed = observe(
+        [event(0, "Slack"), event(1, "Google Chrome"), event(2, "Slack"), event(3, "Google Chrome"), event(4, "Slack")], MANIFEST
+    )
+    candidates = workflow_candidates(observed)
+    assert candidates, "a Slack↔Chrome loop is a candidate"
+    answers = [{"question": "What were you working on?", "answer": "Taking Slack messages and copying them into a Google Doc, every day"}]
+
+    state, questions = judge_request(observed, candidates, [], answers)
+    assert state["employee_answers"] == answers
+    assert "employee_answers" in state["context"]
+    assert all("employee_answers" in q["instructions"] for q in questions.values())
+    plain_state, plain_questions = judge_request(observed, candidates, [])
+    assert "employee_answers" not in plain_state and all("employee_answers" not in q["instructions"] for q in plain_questions.values())
+
+    seen = []
+
+    def judge_fn(state, questions):
+        seen.append(state)
+        return Judgment(model="jev-test", source="live", answers=stub_answers(questions), input_tokens=10, output_tokens=0)
+
+    result = interpret_with_jev(observed, [], judge_fn=judge_fn, answers=answers)
+    assert seen[0]["employee_answers"] == answers
+    assert result.event["employee_answers"] == 1 and result.interpretation["answered"] == 1
+    assert "Read with 1 answer from the employee, who described it as: “Taking Slack messages" in result.interpretation["summary"]
+    assert interpret_with_jev(observed, [], judge_fn=judge_fn).interpretation["answered"] == 0
+
+
+def test_jev_sees_typing_as_fields_typed_not_key_volume_and_ranks_candidates_the_same():
+    events = [
+        event(0, "Excel", "key", count=40),
+        event(1, "Excel", "copy"),
+        event(1, "Browser", "paste", second=20),
+        event(2, "Browser", "click"),
+        event(3, "Excel", "copy"),
+        event(3, "Browser", "paste", second=30),
+        event(4, "Excel", "click"),
+        event(5, "Excel", "paste"),
+    ]
+    light = observe(events, MANIFEST)
+    # The same session with two thousand more keystrokes in one continuous run of typing.
+    heavy = observe(events + [event(2, "Browser", "key", second=s, count=100) for s in range(1, 21)], MANIFEST)
+    assert heavy["apps"][1]["keys"] - light["apps"][1]["keys"] == 2000, "the recording keeps every key"
+    assert heavy["apps"][1]["typing_runs"] == light["apps"][1]["typing_runs"] + 1
+    assert heavy["stretches"][0]["interactions"] == light["stretches"][0]["interactions"] + 1
+    assert heavy["stretches"][0]["events"] == light["stretches"][0]["events"] + 2000
+    same = lambda cs: [(c["id"], c["pattern"], c["apps"], c["count"]) for c in cs]  # noqa: E731
+    assert same(workflow_candidates(heavy)) == same(workflow_candidates(light))
+    state, _ = judge_request(heavy, workflow_candidates(heavy), [])
+    assert all("keys" not in a for a in state["observed"]["apps"])
+    assert all("events" not in s and "interactions" in s for s in state["observed"]["stretches"])
+    assert [a["typing_runs"] for a in state["observed"]["apps"]] == [1, 1] and "typing_runs" in state["context"]
+
+
+def test_the_employee_summary_reaches_jev_as_context_bounded_and_never_as_a_candidate():
+    observed = busy_session()
+    candidates = workflow_candidates(observed)
+    without, _ = judge_request(observed, candidates, [])
+    assert "employee_summary" not in without and "employee_summary" not in without["context"]
+    summary = "  Re-keying\n vendor   bills from PDF into QuickBooks " + "x" * 3000
+    state, questions = judge_request(observed, candidates, [], summary=summary)
+    assert state["employee_summary"].startswith("Re-keying vendor bills from PDF into QuickBooks x")
+    assert len(state["employee_summary"]) == 2000 and "employee_summary" in state["context"]
+    assert state["candidates"] == without["candidates"] and set(questions) == set(judge_request(observed, candidates, [])[1])
+    assert "employee_summary" in questions["c1_workflow"]["instructions"] and "Re-keying" not in json.dumps(questions)
+    seen = {}
+    stub = lambda qs: {**answers("c1", 0.1, NONE, 0.9, 0.5, 0.9, 0.9), **answers("c2", 0.1, NONE, 0.9, 0.5, 0.9, 0.9)}  # noqa: E731
+    captured = interpret_with_jev(
+        observed,
+        [],
+        judge_fn=lambda state, questions: (seen.update(state), Judgment("stub-jev-v0", stub(questions), 1, 0, "stub"))[1],
+        summary="Vendor bills",
+    )
+    assert seen["employee_summary"] == "Vendor bills" and captured.source == "stub"
+    assert interpret(observed, [], summary="Vendor bills").event["candidates"] == 2

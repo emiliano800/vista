@@ -103,12 +103,32 @@ class RecordingContext:
         )
 
 
+def is_key_script(value: object) -> bool:
+    """A `type_value` edge's recorded keystrokes: `[{t, key, masked?}]`. The one place typed
+    text travels with a graph — only under the full-detail sharing policy, which the upload
+    refuses otherwise — so the check skips it; every other string still faces the recorded values."""
+    return (
+        isinstance(value, list)
+        and bool(value)
+        and all(
+            isinstance(k, dict)
+            and set(k) <= {"t", "key", "masked"}
+            and isinstance(k.get("t"), int)
+            and isinstance(k.get("key"), str)
+            and len(k["key"]) <= 32
+            for k in value
+        )
+    )
+
+
 def _strings(payload: object, path: str = "$") -> Iterator[tuple[str, str, str]]:
     """Every string in `payload` as (path, last key, value)."""
     if isinstance(payload, str):
         yield path, path.rsplit(".", 1)[-1].split("[", 1)[0], payload
     elif isinstance(payload, dict):
         for k, v in payload.items():
+            if k == "keys" and is_key_script(v):
+                continue
             yield from _strings(v, f"{path}.{k}")
     elif isinstance(payload, list | tuple):
         for i, v in enumerate(payload):

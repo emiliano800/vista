@@ -30,6 +30,8 @@ export const MAX_EDGES = 600;
 export const MAX_L0 = 40;
 export const UNDER_SEGMENTED_OUT = 6; // a node with more out-edges than this is counted as under-segmented
 const MAX_PROVENANCE = 50;
+/** Keystrokes kept on one `type_value` edge: every key with its offset from the first, in order. */
+export const MAX_KEYS = 2000;
 const STATE_WINDOW_MS = 1500; // a `state` frame this close before a click describes the control under it
 // A frame holds at most this many of each; bounded like working memory.
 const HELD = { open: 8, have: 20, read: 8 };
@@ -160,7 +162,7 @@ class Graph {
     return key;
   }
 
-  move(frm, to, action, { control = null, descriptor = null, slot = null, irreversibility = null, produces = [], effect = [], events = [], anchor = null, commit = null }) {
+  move(frm, to, action, { control = null, descriptor = null, slot = null, irreversibility = null, produces = [], effect = [], events = [], anchor = null, commit = null, keys = null }) {
     const id = edgeId(frm, to, action, control, slot);
     let e = this.edges.get(id);
     if (!e) {
@@ -172,6 +174,7 @@ class Graph {
         produces: [...produces], effect: [...effect], stats: emptyStats(),
         provenance: [{ source: 'recording', id: this.recordingId, event_ids: [] }],
         policy: defaultPolicy(action, cls), anchor_ref: `${this.recordingId}:${id}`,
+        ...(keys ? { keys } : {}),
       };
       e.stats.support = e.stats.recorded = 1;
       this.edges.set(id, e);
@@ -188,6 +191,21 @@ class Graph {
     const edges = [...this.edges.values()].sort((a, b) => (a.id < b.id ? -1 : 1));
     return { start: this.start ? [this.start] : [], nodes, edges, trajectories: 1, truncated: this.truncated, compiled_by: COMPILED_BY };
   }
+}
+
+// One recorded keystroke as the graph keeps it: the key (a typed character or a key name;
+// `•` where the recorder masked it in a sign-in, payment or private window) and its offset
+// from the first key of the run. Uploaded with the graph: the employee chose to share how
+// the field was typed so a run can reproduce it.
+function keyOf(e) {
+  if (e.payload?.masked) return { key: '•', masked: true };
+  const k = e.text ? String(e.text) : e.payload?.key ? String(e.payload.key) : '';
+  return { key: k.slice(0, 32) || '•', masked: !k };
+}
+function pushKey(keys, t0, t, key) {
+  if (!keys || keys.length >= MAX_KEYS || !key) return;
+  const k = typeof key === 'string' ? { key, masked: false } : key;
+  keys.push({ t: Math.max(0, Math.round(t - t0)), key: k.key, ...(k.masked ? { masked: true } : {}) });
 }
 
 // Documents open in `app` at `t`, as ordinal names in order of first appearance.
@@ -249,7 +267,7 @@ export function compilePlan({ recordingId, events = [], files = [], excluded = [
   let l1 = {};
   let lastState = null; // last `state` event: { t, payload }
   let lastClip = null;
-  let typing = null; // { events, anchor, text, element } pending key run
+  let typing = null; // { events, anchor, text, element, keys, t0 } pending key run
   let clicks = null; // { events, anchor, state } pending click run
   let inputs = 0;
 
@@ -281,11 +299,14 @@ export function compilePlan({ recordingId, events = [], files = [], excluded = [
     cur = to;
   };
   const underPointer = (t) => (lastState && t - lastState.t <= STATE_WINDOW_MS ? lastState.payload.under_pointer : null);
-  const flushTyping = (commit = null, commitEvent = null) => {
+  const flushTyping = (commit = null, commitEvent = null, commitAt = null, commitKey = null) => {
     if (!typing) return;
-    const { events: ids, anchor, text, element } = typing;
+    const { events: ids, anchor, text, element, keys, t0 } = typing;
     typing = null;
-    if (commitEvent !== null) ids.push(commitEvent);
+    if (commitEvent !== null) {
+      ids.push(commitEvent);
+      pushKey(keys, t0, commitAt ?? t0, commitKey ?? commit);
+    }
     let slot;
     if (text && typedValues.has(text)) slot = typedValues.get(text);
     else {
@@ -298,7 +319,7 @@ export function compilePlan({ recordingId, events = [], files = [], excluded = [
     declareSlot(slot, 'declared', control);
     fill(effect);
     const descriptor = describe(null, control, vocab);
-    advance('type_value', { control, descriptor, slot, effect: [`have:${effect}`], events: ids, anchor, commit }, anchor.t);
+    advance('type_value', { control, descriptor, slot, effect: [`have:${effect}`], events: ids, anchor, commit, keys }, anchor.t);
   };
   const flushClicks = () => {
     if (!clicks) return;
@@ -352,7 +373,7 @@ export function compilePlan({ recordingId, events = [], files = [], excluded = [
         flushClicks();
         const key = e.payload?.key;
         if (key === 'Enter' || key === 'Return' || key === 'Tab') {
-          if (typing) { flushTyping(keyName(key), i); break; }
+          if (typing) { flushTyping(keyName(key), i, t, String(key)); break; }
           const descriptor = { role: 'key', name: keyName(key), landmark: null, position: null };
           advance('press', { control: descriptor.name, descriptor, irreversibility: irreversibilityOf('press', descriptor, { ctx }), events: [i], anchor: anchorOf(e, t) }, t);
           break;
@@ -363,8 +384,9 @@ export function compilePlan({ recordingId, events = [], files = [], excluded = [
           advance('press', { control: descriptor.name, descriptor, events: [i], anchor: anchorOf(e, t) }, t);
           break;
         }
-        if (!typing) typing = { events: [], anchor: anchorOf(e, t), text: '', element: e.element ?? lastState?.payload?.under_pointer?.name ?? null };
+        if (!typing) typing = { events: [], anchor: anchorOf(e, t), text: '', element: e.element ?? lastState?.payload?.under_pointer?.name ?? null, keys: [], t0: t };
         if (typing.events.length < MAX_PROVENANCE) typing.events.push(i);
+        pushKey(typing.keys, typing.t0, t, keyOf(e));
         if (key === 'Backspace') typing.text = typing.text.slice(0, -1);
         else if (e.text) typing.text += String(e.text);
         break;

@@ -472,6 +472,15 @@ def test_answers_and_explicit_publication_make_a_report_visible_to_the_workspace
     q = next(q for q in answered["report"]["questions"] if q["id"] == first)
     assert q["answer"] == "Month-end vendor statements." and q["answered_at"]
     assert answered["report"]["questions_open"] == answered["report"]["questions_total"] - 1
+    # An answer is evidence: the session is re-read with it, and publishing waits for that.
+    assert answered["analysis_status"] == "queued" and answered["analysis_run_id"] != detail["analysis_run_id"]
+    assert client.post(publish, headers=headers, json={"consent": True}).status_code == 409
+    while process_one():
+        pass
+    reread = client.get(f"{ROOT}/{submission['id']}", headers=headers).json()
+    assert reread["analysis_status"] == "succeeded"
+    assert next(q for q in reread["report"]["questions"] if q["id"] == first)["answer"] == "Month-end vendor statements."
+    assert "Month-end vendor statements" in reread["report"]["interpretation"]["summary"]
     assert client.post(publish, headers=headers, json={}).status_code == 422
     assert client.post(publish, headers=headers, json={"consent": False}).status_code == 422
     published = client.post(publish, headers=headers, json={"consent": True}).json()
@@ -570,3 +579,85 @@ def test_recorder_enrolled_before_the_link_keeps_uploading_by_deal_id(client):
 
     # Only that deal is an alias; any other deal id is still nobody's workspace.
     assert client.post(ROOT, headers=headers, json=body(str(uuid.uuid4()), "deal")).status_code == 404
+
+
+def test_full_detail_policy_accepts_titles_and_text_and_metadata_policy_still_refuses_them(client, workspace, store):
+    headers, _, _, wid = workspace
+    rich = json.dumps(
+        {
+            "schema_version": 1,
+            "events": [
+                {
+                    "timestamp": "2026-09-19T09:01:00Z",
+                    "event_type": "copy",
+                    "app": "Excel",
+                    "count": 1,
+                    "window_title": "Q3.xlsx",
+                    "text": "INV-1042",
+                },
+                {
+                    "timestamp": "2026-09-19T09:02:00Z",
+                    "event_type": "paste",
+                    "app": "Portal",
+                    "count": 1,
+                    "url": "https://portal.example/pay",
+                    "text": "INV-1042",
+                },
+                {"timestamp": "2026-09-19T09:03:00Z", "event_type": "file", "app": "Portal", "count": 1, "window_title": "remittance.pdf"},
+            ],
+        }
+    ).encode()
+    full = body(wid)
+    full["sharing_policy"] = "activity-full-v1"
+    full["artifacts"][0] = artifact("activity", rich)
+    submission = create(client, headers, full)
+    upload_files(client, headers, submission, store, activity=rich)
+    accepted = client.post(f"{ROOT}/{submission['id']}/complete", headers=headers)
+    assert accepted.status_code == 200, accepted.text
+    assert accepted.json()["receipt"]["artifact_count"] == 2
+
+    # The same package under the metadata policy is refused, and the refusal never echoes the content.
+    plain = body(wid)
+    plain["artifacts"][0] = artifact("activity", rich)
+    submission = create(client, headers, plain)
+    upload_files(client, headers, submission, store, activity=rich)
+    refused = client.post(f"{ROOT}/{submission['id']}/complete", headers=headers)
+    assert refused.status_code == 422 and "INV-1042" not in refused.text and "Q3.xlsx" not in refused.text
+
+
+PLAN_V3 = (Path(__file__).parent / "fixtures" / "plan_invoice_v3.json").read_bytes()
+
+
+def test_key_scripts_upload_only_under_full_detail_and_the_employee_summary_reaches_the_analysis(client, workspace, store, monkeypatch):
+    headers, _, _, wid = workspace
+    assert any(e.get("keys") for e in json.loads(PLAN_V3)["edges"]), "the recorder fixture carries a key script"
+    # A metadata-only package may not carry typed text, even inside a plan.
+    submission = create(client, headers, plan_body(wid, PLAN_V3))
+    upload_plan(client, headers, submission, store, PLAN_V3)
+    response = client.post(f"{ROOT}/{submission['id']}/complete", headers=headers)
+    assert response.status_code == 422 and "keystrokes" in response.text and "ACM" not in response.text
+
+    manifest = plan_body(wid, PLAN_V3)
+    manifest["sharing_policy"] = "activity-full-v1"
+    manifest["summary_text"] = "Re-keying vendor bills from PDF into QuickBooks"
+    assert client.post(ROOT, headers=headers, json={**manifest, "summary_text": "x" * 4097}).status_code == 422
+    submission = create(client, headers, manifest)
+    upload_plan(client, headers, submission, store, PLAN_V3)
+    assert client.post(f"{ROOT}/{submission['id']}/complete", headers=headers).json()["upload_status"] == "accepted"
+
+    from vista import recorder_analysis
+
+    seen = {}
+    real = recorder_analysis.interpret
+
+    def spy(observed, docs, plan=None, answers=None, summary=None):
+        seen["summary"] = summary
+        return real(observed, docs, plan, answers, summary=summary)
+
+    monkeypatch.setattr(recorder_analysis, "interpret", spy)
+    while process_one():
+        pass
+    detail = client.get(f"{ROOT}/{submission['id']}", headers=headers).json()
+    assert detail["analysis_status"] == "succeeded", detail
+    assert seen["summary"] == "Re-keying vendor bills from PDF into QuickBooks"
+    assert detail["report"]["interpretation"]["plan"]["moves"] == 7

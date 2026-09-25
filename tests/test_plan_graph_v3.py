@@ -126,3 +126,35 @@ def test_locate_is_l0_equality_and_merge_keeps_slots_goal_and_stricter_class():
     m_click = next(e for e in merged["edges"] if e["action_class"] == "click")
     assert m_click["irreversibility"] == "committing" and m_click["policy"] == "always_ask" and m_click["stats"]["support"] == 2
     PlanGraph.model_validate(merged)
+
+
+def test_a_type_value_edge_carries_a_bounded_time_ordered_key_script_outside_its_identity():
+    typed = next(e for e in FIXTURE["edges"] if e["action_class"] == "type_value")
+    script = [{"t": 0, "key": "A"}, {"t": 82, "key": "C"}, {"t": 151, "key": "M"}, {"t": 900, "key": "Enter"}]
+    script.append({"t": 950, "key": "•", "masked": True})
+    with_keys = copy.deepcopy(FIXTURE)
+    edge = next(e for e in with_keys["edges"] if e["id"] == typed["id"])
+    edge["keys"] = script
+    graph = PlanGraph.model_validate(with_keys)
+    dumped = graph.model_dump(mode="json")
+    got = next(e for e in dumped["edges"] if e["id"] == typed["id"])
+    assert got["keys"] == script, "unmasked keys serialise without `masked`; masked ones keep it"
+    assert all("keys" not in e for e in dumped["edges"] if e["id"] != typed["id"]), "absent scripts do not serialise"
+    assert got["id"] == typed["id"], "keys are not identity"
+    assert PlanGraph.model_validate(FIXTURE).model_dump(mode="json")["nodes"] == dumped["nodes"]
+    for bad in (
+        [{"t": 0, "key": ""}],
+        [{"t": -1, "key": "A"}],
+        [{"t": "0", "key": "A"}],
+        [{"t": 100, "key": "A"}, {"t": 50, "key": "B"}],
+        [{"t": 0, "key": "x" * 33}],
+        [{"t": i, "key": "a"} for i in range(2001)],
+    ):
+        edge["keys"] = bad
+        with pytest.raises(ValidationError):
+            PlanGraph.model_validate(with_keys)
+    edge["keys"] = script
+    other = next(e for e in with_keys["edges"] if e["action_class"] == "click")
+    other["keys"] = script
+    with pytest.raises(ValidationError, match="type_value"):
+        PlanGraph.model_validate(with_keys)

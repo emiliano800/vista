@@ -230,3 +230,38 @@ test('graphs are bounded: a very long session is truncated, not unbounded', () =
   assert.equal(graph.truncated, true);
   for (const n of graph.nodes) assert.ok(n.l0.length <= 40);
 });
+
+test('a type_value edge carries every key of its run with its offset from the first, commit included; masked keys stay masked', () => {
+  const events = invoiceEvents();
+  const { graph } = compilePlan({ recordingId: 'rec-1', events, files });
+  const typed = graph.edges.find((e) => e.action_class === 'type_value' && e.slot === 'input_1');
+  assert.deepEqual(typed.keys, [
+    { t: 0, key: 'A' },
+    { t: 100, key: 'C' },
+    { t: 200, key: 'M' },
+    { t: 1000, key: 'Enter' },
+  ]);
+  assert.ok(graph.edges.filter((e) => e.action_class !== 'type_value').every((e) => !('keys' in e)), 'only typing carries keys');
+  // Same keys typed on a second recording: the edge merges and keeps one script (structure is not the keys).
+  const again = compilePlan({ recordingId: 'rec-2', events: invoiceEvents(), files });
+  const merged = mergeGraphs([graph, again.graph]);
+  const twice = merged.edges.find((e) => e.id === typed.id);
+  assert.equal(twice.keys.length, 4);
+  assert.equal(twice.stats.support, 2);
+  // Masked keys (sign-in, payment, keyContent off) are counted and timed but never spelt out.
+  const masked = events.map((e) => (e.event_type === 'key' && e.text ? { ...e, text: '', payload: { masked: true } } : e));
+  const hidden = compilePlan({ recordingId: 'rec-3', events: masked, files }).graph.edges.find((e) => e.action_class === 'type_value' && e.keys?.length === 4);
+  assert.deepEqual(hidden.keys.slice(0, 3), [{ t: 0, key: '•', masked: true }, { t: 100, key: '•', masked: true }, { t: 200, key: '•', masked: true }]);
+  assert.ok(!JSON.stringify(hidden).includes('ACM'));
+});
+
+test('the compile report passes a key script but still fails a recorded value anywhere else', () => {
+  const { graph, report } = compilePlan({ recordingId: 'rec-1', events: invoiceEvents(), files });
+  assert.equal(report.leakage.ok, true, JSON.stringify(report.leakage.failures));
+  const typed = graph.edges.find((e) => e.keys);
+  assert.ok(typed.keys.length > 0);
+  const leaked = JSON.parse(JSON.stringify(graph));
+  leaked.edges[0].keys = '1,250.00'; // a string in `keys` is not a key script
+  const values = compileReport(leaked, { recordingId: 'rec-1', events: invoiceEvents(), files });
+  assert.equal(values.leakage.ok, false);
+});

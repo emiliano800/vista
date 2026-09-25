@@ -28,7 +28,15 @@ from vista.storage import s3_client
 ANALYSIS_JOB = "analyze_submission"
 ANALYSIS_RUN_TYPE = "submission_analysis"
 
-MAX_ACTIVITY_BYTES = 4 * 1024 * 1024
+MAX_ACTIVITY_BYTES = 16 * 1024 * 1024  # full-detail activity carries titles, URLs and typed text
+# What an activity artifact may carry. "activity-metadata-v1" is app names, event types, counts
+# and timestamps only, checked on both ends against the recording's values and titles.
+# "activity-full-v1" adds window titles, page URLs, control labels, typed text, clipboard
+# contents and opened file names, as recorded on the device (after on-device redaction), so the
+# analysis can say what a workflow does. Screenshots and video are never uploaded under either.
+SHARING_POLICIES = ("activity-metadata-v1", "activity-full-v1")
+FULL_DETAIL_POLICY = "activity-full-v1"
+DETAIL_FIELDS = ("window_title", "url", "element", "text")
 MAX_PLAN_BYTES = 1024 * 1024
 MAX_FILE_BYTES = 20 * 1024 * 1024
 MAX_TOTAL_BYTES = 50 * 1024 * 1024
@@ -86,7 +94,7 @@ class ArtifactSpec(StrictModel):
 
 class SubmissionCreate(StrictModel):
     format_version: Literal[2]
-    sharing_policy: Literal["activity-metadata-v1"]
+    sharing_policy: Literal["activity-metadata-v1", "activity-full-v1"]
     consent: Literal[True]
     consent_version: Literal["activity-metadata-v1", "computer-use-v2"] = "activity-metadata-v1"
     device_id: uuid.UUID
@@ -96,6 +104,8 @@ class SubmissionCreate(StrictModel):
     ended_at: AwareDatetime
     active_seconds: int = Field(strict=True, ge=0)
     artifacts: list[ArtifactSpec] = Field(min_length=1, max_length=12)
+    # The employee's own words at Start: what the session was for. Context for the analysis only.
+    summary_text: str | None = Field(default=None, max_length=4096)
 
     @model_validator(mode="after")
     def bounded(self):
@@ -114,14 +124,30 @@ class SubmissionCreate(StrictModel):
 
 class ActivityEvent(StrictModel):
     timestamp: AwareDatetime
-    event_type: Literal["focus", "click", "key", "scroll", "copy", "paste", "shortcut"]
+    event_type: Literal["focus", "click", "key", "scroll", "copy", "paste", "shortcut", "file"]
     app: str = Field(min_length=1, max_length=128)
     count: int = Field(strict=True, ge=1, le=10000)
+    # Present only under activity-full-v1; a metadata-only package carrying any of them is refused.
+    window_title: str | None = Field(default=None, min_length=1, max_length=255)
+    url: str | None = Field(default=None, min_length=1, max_length=2048)
+    element: str | None = Field(default=None, min_length=1, max_length=255)
+    text: str | None = Field(default=None, min_length=1, max_length=4000)
+
+    def detail_fields(self) -> list[str]:
+        return [f for f in DETAIL_FIELDS if getattr(self, f) is not None]
 
 
 class ActivityPayload(StrictModel):
     schema_version: Literal[1]
     events: list[ActivityEvent] = Field(max_length=50000)
+
+    def check_policy(self, sharing_policy: str) -> None:
+        """A metadata-only package must be exactly that; 'file' events name documents and are detail too."""
+        if sharing_policy == FULL_DETAIL_POLICY:
+            return
+        for event in self.events:
+            if event.detail_fields() or event.event_type == "file":
+                raise ValueError("Activity payload carries detail that the sharing policy excludes")
 
 
 def _workspaces(principal: Principal) -> tuple[list[dict], dict[tuple[str, str], dict]]:
@@ -303,15 +329,19 @@ def verify_objects(principal: Principal, row: RecorderSubmission) -> list[dict]:
             try:
                 activity = ActivityPayload.model_validate_json(data)
                 manifest = SubmissionCreate.model_validate(row.manifest)
+                activity.check_policy(manifest.sharing_policy)
                 if any(not manifest.started_at <= event.timestamp <= manifest.ended_at for event in activity.events):
                     raise ValueError("Event outside session")
             except (ValidationError, ValueError) as exc:
-                raise HTTPException(422, "Activity artifact is not valid metadata-only session data") from exc
+                raise HTTPException(422, "Activity artifact is not valid session data for its sharing policy") from exc
         elif artifact["kind"] == "plan":
             try:
                 graph = PlanGraph.model_validate_json(data)
             except ValidationError as exc:
                 raise HTTPException(422, "Plan artifact is not a valid state graph") from exc
+            manifest = SubmissionCreate.model_validate(row.manifest)
+            if manifest.sharing_policy != FULL_DETAIL_POLICY and any(e.keys for e in graph.edges):
+                raise HTTPException(422, "Plan artifact carries keystrokes, which only a full-detail upload may share")
             report = plan_leakage(graph)
             if not report.ok:
                 raise HTTPException(422, f"Plan artifact failed the privacy check: {report.summary()}")
@@ -424,6 +454,10 @@ def record_answers(session: Session, principal: Principal, submission_id: uuid.U
     report.questions = questions
     report.updated_at = now
     session.flush()
+    # An answer is evidence, not a footnote: re-read the session with it. The draft's
+    # analysis goes back to "queued", so publishing waits for the re-judged report.
+    if any(q.get("answer") for q in questions) and row.analysis_status == "succeeded":
+        queue_analysis(session, principal, row)
     result = public_submission(row, report, full_report=True)
     session.commit()
     return result
