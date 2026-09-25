@@ -136,6 +136,19 @@ class EdgeStats(InputModel):
     approved: int = Field(default=0, strict=True, ge=0)
     denied: int = Field(default=0, strict=True, ge=0)
     effect_missing: int = Field(default=0, strict=True, ge=0)
+    recovery_used: int = Field(default=0, strict=True, ge=0)
+    shadow_total: int = Field(default=0, strict=True, ge=0)
+    shadow_agree: int = Field(default=0, strict=True, ge=0)
+    verified_fail: int = Field(default=0, strict=True, ge=0)
+    leakage_failed: int = Field(default=0, strict=True, ge=0)
+
+    @model_serializer(mode="wrap")
+    def _without_zero_tier_stats(self, handler: SerializerFunctionWrapHandler):
+        data = handler(self)
+        for k in ("recovery_used", "shadow_total", "shadow_agree", "verified_fail", "leakage_failed"):
+            if not data.get(k):
+                data.pop(k, None)
+        return data
 
 
 class Provenance(InputModel):
@@ -161,11 +174,12 @@ class GraphEdge(InputModel):
     irreversibility: Irreversibility | None = None
     commit: Name | None = None
     tier: Tier | None = None  # pinned autonomy tier; promotion past `ask` is an FDE click
+    tier_since: Annotated[str, StringConstraints(pattern=r"^\d{4}-\d{2}-\d{2}$")] | None = None
 
     @model_serializer(mode="wrap")
     def _without_absent_v3_fields(self, handler: SerializerFunctionWrapHandler):
         data = handler(self)
-        for k in ("descriptor", "irreversibility", "commit", "tier"):
+        for k in ("descriptor", "irreversibility", "commit", "tier", "tier_since"):
             if data.get(k) is None:
                 data.pop(k, None)
         return data

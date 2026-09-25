@@ -74,6 +74,9 @@ def request_for(
         req["value"] = "text" if action.primitive == "read" else "table"
     elif action.primitive == "wait":
         req["value"] = int(action.args.get("ms", 1500))
+    if action.args.get("read_back"):
+        # Device-side comparison: the expected value travels down, only a boolean comes back.
+        req["read_back"] = {"slot": action.args["read_back"], "expected": action.value, "delay_ms": int(action.args.get("delay_ms", 0))}
     return req
 
 
@@ -132,9 +135,12 @@ def _v3_observation(kind: str, obs: dict, result: dict) -> Observation | None:
     )
 
 
+_RESULT_FACTS = ("url_after", "title_after", "columns", "rows", "text", "count", "previous_value", "read_back", "leakage_failed")
+
+
 def action_result_from(kind: str, step_id: str, result: dict) -> ActionResult:
     payload = result.get("result") or {}
-    facts = {k: v for k, v in payload.items() if k in ("url_after", "title_after", "columns", "rows", "text", "count", "previous_value")}
+    facts = {k: v for k, v in payload.items() if k in _RESULT_FACTS}
     if "url_after" in facts:
         facts["url"] = facts.pop("url_after")
     if "title_after" in facts:

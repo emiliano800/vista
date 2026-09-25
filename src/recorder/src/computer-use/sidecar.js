@@ -178,7 +178,17 @@ export class SidecarHarness {
     // Only the cloud block, and only when its own leakage test passed; the local observation
     // (raw url/title/text) never enters a step result.
     const observation = res.leakage?.ok && res.cloud ? { ...res.cloud, observation_id: res.observation?.observation_id ?? null, settled: res.observation?.settled ?? true } : null;
-    return { ok: !!res.ok, description: res.description ?? '', observation, result: res.result ?? null, evidence: res.evidence ?? null, error: res.error ?? null };
+    const result = res.result ?? null;
+    // A failed leakage test is reported as a bare flag (it demotes the edge); its findings stay local.
+    const leakageFailed = !!res.leakage && res.leakage.ok === false;
+    return {
+      ok: !!res.ok,
+      description: res.description ?? '',
+      observation,
+      result: leakageFailed ? { ...(result ?? {}), leakage_failed: true } : result,
+      evidence: res.evidence ?? null,
+      error: res.error ?? null,
+    };
   }
 
   async close() {

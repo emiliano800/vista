@@ -66,6 +66,7 @@ RECOVERY_BUDGET = 2  # recovery moves per task per run; `off_plan` after
 EFFECT_SEEN = 0.5
 NODE_CONFIDENCE = 0.5
 MAX_EDGE_OFFERS = 12
+SHADOW_MAX_WAITS = 20  # observe-only ticks before a shadow proposal is scored as not acted on
 TIERS: tuple[str, ...] = ("shadow", "ask", "confirm", "unattended")
 DISMISS_WORDS: frozenset[str] = frozenset({"cancel", "close", "dismiss", "×", "x", "no"})
 AFFIRMATIVE_WORDS: frozenset[str] = frozenset({"ok", "yes", "confirm", "continue"}) | COMMIT_VOCAB
@@ -306,6 +307,84 @@ def _empty_judgment() -> Judgment:
     return Judgment("code", {}, 0, 0, "code")
 
 
+# ---- read-back and shadow -------------------------------------------------------------------------
+
+
+def criteria_of(definition: dict) -> list[dict]:
+    goal = (definition.get("graph") or {}).get("goal") or {}
+    return list(goal.get("criteria") or [])
+
+
+def pending_read_backs(definition: dict, state: PlannerState) -> list[dict]:
+    """`read_back` criteria the device has not answered yet, in declared order."""
+    answered = state.recovery.get("read_back") or {}
+    return [c for c in criteria_of(definition) if c.get("type") == "read_back" and c["slot"] not in answered]
+
+
+def expected_value(slot: str, inputs: dict[str, dict], state: PlannerState) -> str | None:
+    """The value a read-back compares against: the declared input or the gathered fact of that slot."""
+    b = inputs.get(slot)
+    if b and b.get("kind") == "value" and b.get("value") not in (None, ""):
+        return str(b["value"])
+    for facts in state.facts.values():
+        if isinstance(facts, dict) and facts.get(slot) not in (None, ""):
+            return str(facts[slot])
+    return None
+
+
+def read_back_action(
+    definition: dict, graph: Graph, state: PlannerState, inputs: dict[str, dict], observation: Observation, step_id: str, seq: int
+) -> tuple[Action | None, dict]:
+    """On the goal frame, the next `read_back` criterion becomes a device-side comparison along
+    the task's `read_back_via` edge. Criteria that cannot be checked are answered `False` at once."""
+    for c in pending_read_backs(definition, state):
+        slot = str(c["slot"])
+        via = graph.edges.get(str(c.get("read_back_via") or ""))
+        value = expected_value(slot, inputs, state)
+        if via is None or edge_class(via) != "navigational" or value is None:
+            state.recovery.setdefault("read_back", {})[slot] = False
+            continue
+        target, _ = resolve_target(via, observation.candidates)
+        reads_screen = via["action_class"] in ("read", "extract")
+        if needs_target(via) and target is None and not reads_screen:
+            state.recovery.setdefault("read_back", {})[slot] = False
+            continue
+        state.recovery["read_back_pending"] = slot
+        primitive = via["action_class"] if via["action_class"] in ("read", "extract", "click", "navigate") else "extract"
+        args = {"read_back": slot, "delay_ms": int(c.get("read_back_delay") or 0) * 1000}
+        return Action(step_id, seq, primitive, target=target, value_input=slot, value=value, args=args), {"slot": slot, "via": via["id"]}
+    return None, {}
+
+
+def record_read_back(state: PlannerState, facts: dict) -> None:
+    """The device's answer to a pending read-back: a boolean per slot, never the text."""
+    slot = state.recovery.pop("read_back_pending", None)
+    answer = facts.get("read_back")
+    if slot is None or not isinstance(answer, dict):
+        return
+    state.recovery.setdefault("read_back", {})[slot] = bool(answer.get("ok"))
+
+
+def score_shadow(state: PlannerState, located: list[dict], graph: Graph, l0: frozenset[str]) -> bool | None:
+    """In `shadow` the recorder proposes and the employee acts: once the screen leaves the frame the
+    proposal was made on, the located node is compared with the proposed edge's destination."""
+    pending = state.recovery.get("shadow_pending")
+    if not pending:
+        return None
+    if frozenset(pending["l0"]) == l0:
+        pending["waited"] = int(pending.get("waited", 0)) + 1
+        if pending["waited"] < SHADOW_MAX_WAITS:
+            return None
+        acted = None
+    else:
+        acted = located[0]["key"] if len(located) == 1 else None
+    edge = graph.edges.get(pending["edge"], {})
+    agree = acted is not None and acted == edge.get("to")
+    state.recovery.pop("shadow_pending", None)
+    state.recovery.setdefault("shadow", []).append({"edge": pending["edge"], "from": pending["from"], "acted": acted, "agree": agree})
+    return agree
+
+
 # ---- the step -------------------------------------------------------------------------------------
 
 
@@ -346,6 +425,7 @@ def plan_v3_step(
             last_effect = effect
 
     located = locate(graph, l0)
+    shadow_agree = score_shadow(state, located, graph, l0)
     detail: dict = {
         "step_id": step_id,
         "seq": seq,
@@ -368,6 +448,7 @@ def plan_v3_step(
         "p_irreversible": 0.0,
         "effect_seen": last.get("effect_seen") if last else None,
         "straight_line": False,
+        "shadow_agree": shadow_agree,
     }
     judgment = _empty_judgment()
 
@@ -398,7 +479,9 @@ def plan_v3_step(
         if used >= RECOVERY_BUDGET:
             return pause("off_plan", f"Recovery budget spent ({used}); the screen is not a recorded state.")
         state.recovery["used"] = used + 1
-        state.recovery.setdefault("log", []).append({"seq": seq, "kind": kind, "primitive": action.primitive})
+        state.recovery.setdefault("log", []).append(
+            {"seq": seq, "kind": kind, "primitive": action.primitive, "edge": last["edge"] if last else None}
+        )
         detail["recovery"] = kind
         detail["next_action"] = action.primitive
         return Act(action)
@@ -452,6 +535,14 @@ def plan_v3_step(
             last_effect = []
     state.node = node["key"]
     offered = edges_for(node)
+
+    # Goal frame: read-backs are checked in code before anyone is asked whether the task is done.
+    if node.get("terminal") and pending_read_backs(definition, state):
+        rb, rb_detail = read_back_action(definition, graph, state, inputs, observation, step_id, seq)
+        if rb is not None:
+            detail.update({"next_action": rb.primitive, "read_back": rb_detail})
+            state.trajectory.append({"edge": rb_detail["via"], "step_id": step_id, "seq": seq, "effect_seen": True, "read_back": True})
+            return Act(rb), judgment, detail
 
     # Targets in code, for every offered edge.
     resolved: dict[str, Candidate | None] = {}
@@ -576,7 +667,15 @@ def plan_v3_step(
     if decided == "deny":
         return Stop("denied"), judgment, detail
     committing = cls == "committing" or primitive in ALWAYS_GATED
-    gated = committing or edge["policy"] != "auto" or p_irreversible >= risk_threshold or edge_tier(edge) in ("shadow", "ask")
+    if edge_tier(edge) == "shadow" and mode != "dry_run":
+        # Shadow: the recorder proposes, the employee acts; nothing is performed and nobody is paused.
+        if not any(p["step_id"] == step_id for p in state.proposals):
+            state.proposals.append({"edge": edge["id"], "step_id": step_id, "shadow": True})
+        state.recovery["shadow_pending"] = {"edge": edge["id"], "from": node["key"], "l0": sorted(l0), "seq": seq}
+        detail["shadow"] = True
+        detail["next_action"] = "wait"
+        return Act(Action(step_id, seq, "wait", args={"ms": 3000})), judgment, detail
+    gated = committing or edge["policy"] != "auto" or p_irreversible >= risk_threshold or edge_tier(edge) == "ask"
     if gated and decided != "approve":
         if not any(p["step_id"] == step_id for p in state.proposals):
             state.proposals.append({"edge": edge["id"], "step_id": step_id})

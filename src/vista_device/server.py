@@ -28,8 +28,9 @@ import importlib.util
 import json
 import sys
 from collections.abc import Awaitable, Callable
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from secrets import token_hex
+from unicodedata import normalize as unicode_normalize
 
 from taskmining.leakage import RecordingContext, check
 from taskmining.normalise import Vocabulary
@@ -40,6 +41,11 @@ from vista_device.drivers.desktop_macos import available as desktop_available
 from vista_device.frame import Candidate, Frame, frame_from_candidates
 from vista_device.selftest_record import VERSION
 from vista_device.selftest_record import passed as selftest_passed
+
+
+def _fold(text: str) -> str:
+    return " ".join(unicode_normalize("NFKC", text).casefold().split())
+
 
 DriverFactory = Callable[[dict], Driver]
 
@@ -99,8 +105,23 @@ class Sidecar:
         alias = self.aliases.get(str(params.get("kind", "browser")), {})
         if step.get("target_id") is not None and str(step["target_id"]) in alias:
             step["target_id"] = alias[str(step["target_id"])]
+        read_back = step.pop("read_back", None)
+        if isinstance(read_back, dict) and read_back.get("delay_ms"):
+            await asyncio.sleep(min(int(read_back["delay_ms"]), 600_000) / 1000)
         result = await driver.perform(step, None)
+        if isinstance(read_back, dict):
+            result = self._compare_read_back(result, read_back)
         return self._result(result, kind=str(params.get("kind", "browser")))
+
+    @staticmethod
+    def _compare_read_back(result: Result, read_back: dict) -> Result:
+        """Read-back is compared on the device: the text read never leaves, only `{slot, ok}`."""
+        text = str((result.result or {}).get("text") or (result.frame.text_local if result.frame is not None else ""))
+        expected = str(read_back.get("expected") or "")
+        ok = bool(result.ok) and bool(expected) and _fold(expected) in _fold(text)
+        payload = {k: v for k, v in (result.result or {}).items() if k != "text"}
+        payload["read_back"] = {"slot": str(read_back.get("slot") or ""), "ok": ok}
+        return replace(result, result=payload)
 
     async def frame(self, params: dict) -> dict:
         vocab = Vocabulary.from_json(params["vocabulary"]) if params.get("vocabulary") else self.vocab

@@ -20,6 +20,8 @@ import hashlib
 import re
 from collections.abc import Iterable
 
+from taskmining.tiers import lower as lower_tier
+
 APP_ROLES: tuple[str, ...] = (
     "accounting",
     "crm",
@@ -262,8 +264,8 @@ def merge_graphs(graphs: list[dict]) -> dict:
                     "policy": e.get("policy") or default_policy(e["action_class"], e.get("irreversibility")),
                 }
                 continue
-            for k in cur["stats"]:
-                cur["stats"][k] += int(e.get("stats", {}).get(k, 0))
+            for k in set(cur["stats"]) | set(e.get("stats", {})):
+                cur["stats"][k] = int(cur["stats"].get(k, 0)) + int(e.get("stats", {}).get(k, 0))
             cur["provenance"] = sorted(cur["provenance"] + list(e.get("provenance", [])), key=_prov_key)[:MAX_PROVENANCE]
             ref = e.get("anchor_ref")
             if ref and (not cur.get("anchor_ref") or ref < cur["anchor_ref"]):
@@ -272,6 +274,11 @@ def merge_graphs(graphs: list[dict]) -> dict:
             if cur.get("irreversibility") or e.get("irreversibility"):
                 cur["irreversibility"] = raise_irreversibility(cur.get("irreversibility") or "navigational", e.get("irreversibility"))
             cur["produces"] = sorted(set(cur["produces"]) | set(e.get("produces", [])))
+            if cur.get("tier") or e.get("tier"):
+                cur["tier"] = lower_tier(cur.get("tier"), e.get("tier"))
+                since = [t for t in (cur.get("tier_since"), e.get("tier_since")) if t]
+                if since:
+                    cur["tier_since"] = min(since)
             cur["effect"] = sorted(set(cur["effect"]) | set(e.get("effect", [])))
     out = {
         "start": sorted(start),

@@ -18,6 +18,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from taskmining.state import app_role, empty_stats, jaccard
+from taskmining.tiers import empty_tier_stats
 from vista.agents.jev import NONE, Judgment, noul, pick
 from vista.computer_use.harness import ALWAYS_GATED, TARGETED, VALUED, WRITE_PRIMITIVES, Action, Candidate, Observation
 from vista.computer_use.planner import (
@@ -478,11 +479,13 @@ def plan_graph_step(
 # ---- what a run gives back to the graph ------------------------------------------------------------
 
 
-def merge_run(definition: dict, state: PlannerState, run_id: str, verified: bool | None) -> dict | None:
+def merge_run(definition: dict, state: PlannerState, run_id: str, verified: bool | None, *, leakage_failed: int = 0) -> dict | None:
     """The run as a graph delta: only the edges it traversed, with this run's counts and
-    provenance, in the same shape as a recorded graph so `merge_graphs` can fold it into a draft."""
+    provenance, in the same shape as a recorded graph so `merge_graphs` can fold it into a draft.
+    Statistics only — the structural fields are copied from the version's graph unchanged."""
     graph = Graph.from_definition(definition)
-    if graph is None or not (state.trajectory or state.proposals):
+    shadow = [x for x in (state.recovery.get("shadow") or []) if x.get("edge") in graph.edges] if graph else []
+    if graph is None or not (state.trajectory or state.proposals or shadow):
         return None
     edges: dict[str, dict] = {}
 
@@ -491,7 +494,7 @@ def merge_run(definition: dict, state: PlannerState, run_id: str, verified: bool
             edge_id,
             {
                 **graph.edges[edge_id],
-                "stats": empty_stats(),
+                "stats": {**empty_stats(), **empty_tier_stats()},
                 "provenance": [{"source": "run", "id": run_id, "event_ids": []}],
             },
         )
@@ -506,15 +509,30 @@ def merge_run(definition: dict, state: PlannerState, run_id: str, verified: bool
         s["support"] += 1
         s["executed"] += 1
         s["verified_ok"] += 1 if verified else 0
+        s["verified_fail"] += 1 if verified is False else 0
         s["effect_missing"] += 1 if t.get("effect_seen") is False else 0
+        s["leakage_failed"] += int(leakage_failed) if t is state.trajectory[-1] else 0
     for p in state.proposals:
         decision = state.decisions.get(p["step_id"], {}).get("decision")
         if decision in ("approve", "deny"):
             touch(p["edge"], p["step_id"])["approved" if decision == "approve" else "denied"] += 1
+    for i, x in enumerate(shadow):
+        s = touch(x["edge"], f"shadow:{run_id}:{i}")
+        s["support"] += 1
+        s["shadow_total"] += 1
+        s["shadow_agree"] += 1 if x.get("agree") else 0
+    for i, r in enumerate(state.recovery.get("log") or []):
+        edge_id = r.get("edge") if isinstance(r, dict) else None
+        if edge_id in graph.edges:
+            touch(edge_id, f"recovery:{run_id}:{i}")["recovery_used"] += 1
     if not edges:
         return None
+    for e in edges.values():  # the tier statistics appear only once they are non-zero
+        for k in empty_tier_stats():
+            if not e["stats"].get(k):
+                e["stats"].pop(k, None)
     keys = {e["frm"] for e in edges.values()} | {e["to"] for e in edges.values()}
-    first = graph.edges[(state.trajectory or state.proposals)[0]["edge"]]["frm"]
+    first = graph.edges[(state.trajectory or state.proposals or shadow)[0]["edge"]]["frm"]
     return {
         "start": [first],
         "nodes": [graph.nodes[k] for k in sorted(keys)],
