@@ -150,6 +150,13 @@ CUA loops (observe → decide → act → verify) but deliberately bounded; the 
 Stub Jev (no `VISTA_TYPESAFE_API_KEY`) answers `none` → the agent executes nothing and
 pauses at step 1. That is the safe default, not a bug.
 
+Performance numbers come only from `make cu-eval SET=dev|test` (`scripts/cu_eval.py`,
+`taskmining/evaluate.py`) over `tests/fixtures/cu/`: recording-compiled graphs only, one
+report per git revision (never combined across revisions), `kind: synthetic` cases scored
+as smoke and excluded from benchmark totals, the `test` set frozen by manifest hash. It
+also reports milestone 1 / 2 status; every threshold constant in `taskmining/` stays
+provisional until that report replaces it.
+
 Employee side: the worker cannot reach a laptop, so the recorder *pulls* browser and
 desktop steps — presence + offers on its 30 s tick, claim with explicit consent
 (`consent.version = computer-use-v1`), 3 s session poll as heartbeat, one result per

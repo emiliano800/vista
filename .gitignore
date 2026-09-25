@@ -17,3 +17,8 @@ node_modules/
 
 # macOS
 .DS_Store
+
+# cu-eval reports are per-revision artifacts
+eval/cu/*.json
+eval/cu/*.md
+!eval/cu/README.md
