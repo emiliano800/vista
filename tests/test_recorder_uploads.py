@@ -257,11 +257,13 @@ def test_activity_content_must_be_metadata_only(client, workspace, store):
     assert client.get(f"{ROOT}/{submission['id']}", headers=headers).json()["receipt"] is None
 
 
-PLAN = (Path(__file__).parent / "fixtures" / "plan_invoice.json").read_bytes()
+PLAN = (Path(__file__).parent / "fixtures" / "plan_invoice_v2.json").read_bytes()
+PLAN_V1 = (Path(__file__).parent / "fixtures" / "plan_invoice.json").read_bytes()
 
 
-def plan_body(workspace_id, plan=PLAN):
+def plan_body(workspace_id, plan=PLAN, consent_version="computer-use-v2"):
     manifest = body(workspace_id)
+    manifest["consent_version"] = consent_version
     manifest["artifacts"] = [artifact("activity", ACTIVITY), artifact("plan", plan, "plan", "plan.json", "application/json")]
     return manifest
 
@@ -291,6 +293,18 @@ def test_plan_graph_is_an_optional_artifact_that_must_be_a_valid_graph(client, w
     assert response.status_code == 422 and "INV-1042" not in response.text
     assert client.get(f"{ROOT}/{submission['id']}", headers=headers).json()["receipt"] is None
 
+    # A structurally valid graph whose names are not in its own vocabulary (a v1 compile with raw
+    # control names, or one whose vocabulary no longer covers its names) fails the server's half of the leakage test.
+    for raw in (PLAN_V1, PLAN.replace(b'"amount"\n', b'"vendor"\n')):
+        submission = create(client, headers, plan_body(wid, raw))
+        upload_plan(client, headers, submission, store, raw)
+        response = client.post(f"{ROOT}/{submission['id']}/complete", headers=headers)
+        assert response.status_code == 422 and "privacy" in response.text and "ACME" not in response.text and "Total" not in response.text
+
+    # The plan artifact needs the consent card that describes it.
+    assert client.post(ROOT, headers=headers, json=plan_body(wid, consent_version="activity-metadata-v1")).status_code == 422
+    assert client.post(ROOT, headers=headers, json=plan_body(wid, consent_version="computer-use-v1")).status_code == 422
+
     submission = create(client, headers, plan_body(wid))
     upload_plan(client, headers, submission, store, PLAN)
     accepted = client.post(f"{ROOT}/{submission['id']}/complete", headers=headers).json()
@@ -298,8 +312,8 @@ def test_plan_graph_is_an_optional_artifact_that_must_be_a_valid_graph(client, w
     while process_one():
         pass
     report = client.get(f"{ROOT}/{submission['id']}", headers=headers).json()["report"]
-    assert report["interpretation"]["plan"] == {"states": 5, "moves": 7, "trajectories": 1, "roles": ["accounting", "pdf"]}
-    for secret in ("INV-1042", "ACME", "1,250", "qbo.example", "Preview", "QuickBooks"):
+    assert report["interpretation"]["plan"] == {"states": 6, "moves": 8, "trajectories": 1, "roles": ["accounting", "pdf"]}
+    for secret in ("INV-1042", "ACME", "1,250", "qbo.example", "Preview", "QuickBooks", "Total", "Memo", "Beta"):
         assert secret not in json.dumps(report)
 
 

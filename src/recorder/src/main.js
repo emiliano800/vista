@@ -21,7 +21,7 @@ import { JobStore } from './jobs.js';
 import { reviewFiles } from './filereview.js';
 import { FLAG_DECISIONS, INSIGHTS_FILE, buildInsights, insightsSummary, summarizeInsights } from './insights.js';
 import { WORKFLOWS_FILE, refineSessionWorkflow, sessionDigest, suggestWorkflows, workflowsStub } from './workflows.js';
-import { deviceId, discoverWorkspaces, documentOptions, planPreview, selectWorkspace, SubmissionQueue, uploadBinding } from './intake.js';
+import { CONSENT_VERSION, deviceId, discoverWorkspaces, documentOptions, planPreview, selectWorkspace, SubmissionQueue, uploadBinding } from './intake.js';
 import { ANCHORS_FILE, applyPlanEdits, compilePlan, PLAN_EDITS_FILE, PLAN_FILE, planSummary } from './plan.js';
 import { ComputerUseClient } from './computer-use/client.js';
 import { defaultHarnesses } from './computer-use/harnesses.js';
@@ -1224,7 +1224,7 @@ ipcMain.handle('cloud:connect', async (event, input) => {
   writePrivate(CLOUD_FILE, {
     protocol: 2, url, workspace: { id: workspace.id, kind: workspace.kind }, companyId: workspace.id,
     companyName: workspace.name, userId: identity.user_id, tenantId: identity.tenant_id, email: identity.email,
-    deviceId: deviceId(HOME), consentVersion: 'activity-metadata-v1', encryptedToken: safeStorage.encryptString(token).toString('base64'),
+    deviceId: deviceId(HOME), consentVersion: CONSENT_VERSION, encryptedToken: safeStorage.encryptString(token).toString('base64'),
   });
   pendingEnrollment = null;
   resumeUploads(true);
@@ -1377,7 +1377,10 @@ ipcMain.handle('recordings:upload-preview', (event, id) => {
   } catch (e) {
     console.error('Plan graph preview failed:', e?.message ?? e);
   }
-  return { companyName: c.companyName, email: c.email, binding: uploadBinding(c), documents: documentOptions(RECORDINGS, id), plan };
+  return {
+    companyName: c.companyName, email: c.email, binding: uploadBinding(c), documents: documentOptions(RECORDINGS, id), plan,
+    planAllowed: (c.consentVersion ?? 'activity-metadata-v1') === CONSENT_VERSION,
+  };
 });
 ipcMain.handle('cloud:upload', async (event, id) => {
   requireDashboard(event);

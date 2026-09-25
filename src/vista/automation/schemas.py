@@ -98,13 +98,36 @@ class GraphEdge(InputModel):
         return self
 
 
+VocabWord = Annotated[str, StringConstraints(min_length=1, max_length=64)]
+
+
+class GraphVocabulary(InputModel):
+    """The words a graph may say as themselves: control names recurring across screens of the
+    recording (`taskmining.normalise.Vocabulary`). Everything else in a name is a class token."""
+
+    method: Literal["recurring-ax-names/1"] = "recurring-ax-names/1"
+    min_screens: int = Field(default=2, strict=True, ge=1)
+    screens: int = Field(default=0, strict=True, ge=0)
+    size: int = Field(default=0, strict=True, ge=0)
+    words: list[VocabWord] = Field(default_factory=list, max_length=2000)
+    extra: list[VocabWord] = Field(default_factory=list, max_length=500)
+
+
 class PlanGraph(InputModel):
     start: list[Key] = Field(min_length=1, max_length=20)
     nodes: list[GraphNode] = Field(min_length=1, max_length=200)
     edges: list[GraphEdge] = Field(max_length=600)
     trajectories: int = Field(strict=True, ge=1)
     truncated: bool = False
-    compiled_by: Literal["recorder-plan/1"] = "recorder-plan/1"
+    compiled_by: Literal["recorder-plan/1", "recorder-plan/2"] = "recorder-plan/1"
+    vocabulary: GraphVocabulary | None = None
+
+    @model_serializer(mode="wrap")
+    def _without_absent_vocabulary(self, handler: SerializerFunctionWrapHandler):
+        data = handler(self)
+        if self.vocabulary is None:
+            data.pop("vocabulary", None)
+        return data
 
     @model_validator(mode="after")
     def connected(self):

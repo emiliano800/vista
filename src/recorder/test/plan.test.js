@@ -2,64 +2,50 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 
-import { applyPlanEdits, compilePlan, edgeId, mergeGraphs, planSummary, stateKey } from '../src/plan.js';
+import { applyPlanEdits, compilePlan, compileReport, edgeId, mergeGraphs, planSummary, stateKey } from '../src/plan.js';
 
-const T0 = Date.parse('2026-09-19T09:00:00Z');
-const at = (ms) => new Date(T0 + ms).toISOString();
-const ev = (ms, event_type, app, extra = {}) => ({ timestamp: at(ms), event_type, app, window_title: '', url: '', text: '', payload: {}, ...extra });
-
-// An invoice re-keyed from a PDF into QuickBooks, then saved.
-function invoiceEvents() {
-  return [
-    ev(0, 'focus', 'Preview', { window_title: 'INV-1042 ACME.pdf' }),
-    ev(1000, 'copy', 'Preview', { element: 'Total', text: '1,250.00', payload: { clip_hash: 'h-total', chars: 8 } }),
-    ev(2000, 'focus', 'QuickBooks', { window_title: 'Bills - ACME Corp', url: 'https://qbo.example/bills/new' }),
-    ev(3000, 'click', 'QuickBooks', { payload: { x: 412, y: 233 } }),
-    ev(4000, 'paste', 'QuickBooks', { element: 'Amount', text: '1,250.00', payload: { clip_hash: 'h-total' } }),
-    ev(5000, 'key', 'QuickBooks', { text: 'A' }),
-    ev(5100, 'key', 'QuickBooks', { text: 'C' }),
-    ev(5200, 'key', 'QuickBooks', { text: 'M' }),
-    ev(6000, 'key', 'QuickBooks', { payload: { key: 'Enter' } }),
-    ev(7000, 'shortcut', 'QuickBooks', { text: 'Cmd+S' }),
-  ];
-}
-const files = [{ id: 'abcdef123456', name: 'INV-1042 ACME.pdf', ext: '.pdf', intervals: [{ start: T0, end: T0 + 1500, app: 'Preview' }] }];
-
-const SECRETS = ['INV-1042', 'ACME', '1,250', 'qbo.example', '412', '233', 'h-total'];
+import { SECRETS, T0, at, ev, invoiceEvents, invoiceFiles as files } from './fixtures/invoice-recording.js';
 
 test('a recording compiles to a deterministic state graph with no values in it', () => {
   const a = compilePlan({ recordingId: 'rec-1', events: invoiceEvents(), files });
   const b = compilePlan({ recordingId: 'rec-1', events: invoiceEvents(), files });
   assert.equal(JSON.stringify(a.graph), JSON.stringify(b.graph));
-  const { graph, anchors } = a;
-  assert.equal(graph.compiled_by, 'recorder-plan/1');
+  const { graph, anchors, report } = a;
+  assert.equal(graph.compiled_by, 'recorder-plan/2');
   assert.equal(graph.trajectories, 1);
   assert.equal(graph.start.length, 1);
   const text = JSON.stringify(graph);
   for (const s of SECRETS) assert.ok(!text.includes(s), `graph leaks ${s}`);
   assert.ok(JSON.stringify(anchors).includes('qbo.example'), 'anchors keep the URL locally');
+  assert.ok(JSON.stringify(anchors).includes('Total'), 'anchors keep the raw control name locally');
+  assert.deepEqual(graph.vocabulary.words, ['amount'], 'only names recurring across screens are vocabulary');
+  assert.equal(report.leakage.ok, true, JSON.stringify(report.leakage.failures));
+  assert.ok(report.values_checked >= 5 && report.titles_checked === 3);
 
   const actions = graph.edges.map((e) => e.action_class).sort();
-  assert.deepEqual(actions, ['click', 'navigate', 'press', 'read', 'submit', 'type_value', 'type_value']);
+  assert.deepEqual(actions, ['click', 'navigate', 'press', 'read', 'submit', 'type_value', 'type_value', 'type_value']);
   const read = graph.edges.find((e) => e.action_class === 'read');
   assert.deepEqual(read.produces, ['f1']);
   assert.deepEqual(read.effect, ['fact:f1']);
-  assert.equal(read.control, 'Total');
-  const paste = graph.edges.find((e) => e.action_class === 'type_value' && e.slot === 'f1');
-  assert.equal(paste.control, 'Amount');
-  assert.deepEqual(paste.effect, ['field:Amount']);
-  const typed = graph.edges.find((e) => e.action_class === 'type_value' && e.slot !== 'f1');
-  assert.equal(typed.slot, 'input_1');
+  assert.equal(read.control, null, 'a name seen on one screen is data, not a control name');
+  const paste = graph.edges.find((e) => e.action_class === 'type_value' && e.control === 'amount');
+  assert.equal(paste.slot, 'f1');
+  assert.deepEqual(paste.effect, ['field:amount']);
+  assert.equal(paste.provenance[0].event_ids.length, 2, 'the second bill re-keys the same amount from the same state: one move, two citations');
+  const memo = graph.edges.find((e) => e.action_class === 'type_value' && e.slot === 'f1' && e.control === null);
+  assert.deepEqual(memo.effect, ['field:c2'], 'an unnamed control is an ordinal (Total was c1)');
+  const typed = graph.edges.find((e) => e.action_class === 'type_value' && e.slot === 'input_1');
   assert.equal(typed.provenance[0].event_ids.length, 3, 'a run of printable keys is one move');
   const submit = graph.edges.find((e) => e.action_class === 'submit');
   assert.equal(submit.policy, 'always_ask');
-  assert.equal(submit.control, 'Cmd+S');
+  assert.equal(submit.control, 'cmd+s');
+  assert.equal(graph.edges.find((e) => e.action_class === 'press').control, 'enter');
 
   const start = graph.nodes.find((n) => n.key === graph.start[0]);
   assert.equal(start.app_role, 'pdf');
   assert.deepEqual(start.signature, ['doc:d1']);
   const held = graph.nodes.find((n) => n.key === paste.to);
-  assert.deepEqual(held.signature, ['fact:f1', 'field:Amount']);
+  assert.deepEqual(held.signature, ['fact:f1', 'field:amount']);
   assert.equal(held.app_role, 'accounting');
   assert.equal(graph.nodes.filter((n) => n.terminal).length, 1);
 
@@ -73,8 +59,18 @@ test('a recording compiles to a deterministic state graph with no values in it',
 });
 
 test('state keys match the worker: sha1 of role|activity|sorted signature, 16 hex chars', () => {
-  const expect = createHash('sha1').update('accounting|accounting|fact:f1,field:Amount').digest('hex').slice(0, 16);
-  assert.equal(stateKey('accounting', 'accounting', ['field:Amount', 'fact:f1']), expect);
+  const expect = createHash('sha1').update('accounting|accounting|fact:f1,field:amount').digest('hex').slice(0, 16);
+  assert.equal(stateKey('accounting', 'accounting', ['field:amount', 'fact:f1']), expect);
+});
+
+test('the compile report fails a graph that carries a recorded value, a title or a non-vocabulary name', () => {
+  const { graph } = compilePlan({ recordingId: 'rec-1', events: invoiceEvents(), files });
+  const leaky = { ...graph, edges: graph.edges.map((e, i) => (i === 0 ? { ...e, control: 'Bills - ACME Corp' } : i === 1 ? { ...e, control: 'Memo' } : e)) };
+  const report = compileReport(leaky, { events: invoiceEvents(), files });
+  assert.equal(report.leakage.ok, false);
+  const reasons = new Set(report.leakage.failures.map((f) => f.reason));
+  assert.ok(reasons.has('window_title') && reasons.has('non_vocab_name'));
+  assert.ok(!JSON.stringify(report.leakage.failures).includes('ACME'));
 });
 
 test('excluded sections, pauses and private apps never reach the graph', () => {
@@ -98,6 +94,7 @@ test('a second recording of the same work merges onto the same states and adds s
   const merged = mergeGraphs([one, two]);
   assert.equal(merged.trajectories, 2);
   assert.deepEqual(merged.start, one.start);
+  assert.deepEqual(merged.vocabulary.words, ['amount']);
   const read = merged.edges.find((e) => e.action_class === 'read');
   assert.equal(read.stats.support, 2);
   assert.deepEqual(read.provenance.map((p) => p.id), ['rec-1', 'rec-2']);

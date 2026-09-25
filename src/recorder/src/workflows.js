@@ -18,6 +18,8 @@ const ROLES = [
   ['documents', /word|docs|pages|notepad|textedit/i],
 ];
 
+export const APP_ROLES = new Set([...ROLES.map(([r]) => r), 'workspace', 'other']);
+
 export function appRole(app, title = '') {
   const s = `${app} ${title}`;
   for (const [role, re] of ROLES) if (re.test(s)) return role;

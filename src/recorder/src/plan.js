@@ -6,18 +6,23 @@
 // type_value, press, submit, click) with the control it touched and the input or
 // fact it used. Every move cites the event lines it came from. Values, titles, URLs,
 // coordinates and clipboard text never enter the graph; they stay in the anchors
-// file beside it, which never leaves this computer. Deterministic: the same
-// events.jsonl always compiles to the same graph, and the key functions match
+// file beside it, which never leaves this computer. Control names pass through the
+// one normaliser (normalise.js): a name survives only when it recurs across screens of
+// the recording (the app's control vocabulary); anything else is data and the control
+// becomes an ordinal (`field:c3`). The compile report carries the vocabulary and the
+// leakage check of the graph against everything the recording saw. Deterministic: the
+// same events.jsonl always compiles to the same graph, and the key functions match
 // src/taskmining/state.py byte for byte so the worker can compare states by key.
 import { createHash } from 'node:crypto';
 
+import { Vocabulary, checkLeakage, informative, keyName, normalise, recordingContext } from './normalise.js';
 import { redactText } from './redact.js';
 import { appRole } from './workflows.js';
 
 export const PLAN_FILE = 'plan.json';
 export const ANCHORS_FILE = 'anchors.json';
 export const PLAN_EDITS_FILE = 'plan-edits.json';
-export const COMPILED_BY = 'recorder-plan/1';
+export const COMPILED_BY = 'recorder-plan/2';
 export const MAX_NODES = 200;
 export const MAX_EDGES = 600;
 const MAX_PROVENANCE = 50;
@@ -34,6 +39,48 @@ export const edgeId = (frm, to, action, control, slot) => h([frm, to, action, co
 const emptyStats = () => ({ support: 0, recorded: 0, executed: 0, verified_ok: 0, approved: 0, denied: 0, effect_missing: 0 });
 const defaultPolicy = (action) => (action === 'submit' ? 'always_ask' : ['click', 'type_value', 'create_task'].includes(action) ? 'confirm' : 'auto');
 const label = (s) => redactText(String(s ?? '')).replace(/[\x00-\x1f]/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 255) || null;
+const fieldToken = (name) => `field:${name.replace(/[^A-Za-z0-9_.-]/g, '_').replace(/_+/g, '_').replace(/^_|_$/g, '').slice(0, 120)}`;
+
+/** Events the compiler may look at: in time, not struck out, not in a private app. */
+function visibleEvents(events, hidden) {
+  return events.filter((e) => {
+    const t = Date.parse(e.timestamp);
+    if (!Number.isFinite(t) || hidden.some(([a, b]) => t >= a && t < b)) return false;
+    return !!e.app && !PRIVATE.test(e.app) && appRole(e.app, e.window_title) !== 'password_manager';
+  });
+}
+
+/** The recording's control vocabulary: element names that recur across (app, window) screens. */
+export function recordingVocabulary(events, { extra = [] } = {}) {
+  const screens = new Map();
+  const titles = new Map(); // app -> last title seen, for events written without one
+  for (const e of events) {
+    if (e.window_title) titles.set(e.app, e.window_title);
+    if (!e.element) continue;
+    const k = `${e.app}\0${e.window_title || titles.get(e.app) || ''}`;
+    if (!screens.has(k)) screens.set(k, new Set());
+    screens.get(k).add(String(e.element));
+  }
+  return Vocabulary.build([...screens.values()], { extra });
+}
+
+/**
+ * Everything the recording saw that must not appear in anything cloud-bound: typed and
+ * clipboard text, URLs, titles, file names and paths, the intent text. Element names are
+ * not values — they face the vocabulary rule instead — and key combos name no data.
+ */
+export function recordingValues(events, files = [], manifest = {}) {
+  const values = new Set(), titles = new Set();
+  for (const e of events) {
+    if (e.text && !keyName(e.text)) values.add(String(e.text));
+    if (e.url) values.add(String(e.url));
+    if (e.window_title) titles.add(String(e.window_title));
+    for (const k of ['clip_hash', 'source_title', 'text']) if (e.payload?.[k]) values.add(String(e.payload[k]));
+  }
+  for (const f of files) for (const k of ['name', 'path']) if (f[k]) values.add(String(f[k]));
+  if (manifest.summary_text) values.add(String(manifest.summary_text));
+  return { values: [...values], titles: [...titles] };
+}
 
 class Graph {
   constructor(recordingId) {
@@ -99,11 +146,22 @@ function docsOpen(files, app, t) {
  * lines in order (their index is the provenance id); `excluded` are time ranges
  * the employee struck out and `files` the tracked documents (files.json).
  */
-export function compilePlan({ recordingId, events = [], files = [], excluded = [], manifest = {} }) {
+export function compilePlan({ recordingId, events = [], files = [], excluded = [], manifest = {}, vocabularyExtra = [] }) {
   const g = new Graph(recordingId);
   const hidden = [...excluded, ...(manifest.pauses ?? [])]
     .map((r) => [Date.parse(r.start), Date.parse(r.end ?? manifest.ended_at)])
     .filter(([a, b]) => Number.isFinite(a) && Number.isFinite(b));
+  const visible = visibleEvents(events, hidden);
+  const vocab = recordingVocabulary(visible, { extra: vocabularyExtra });
+  const controls = new Map(); // raw element name -> ordinal, for names outside the vocabulary
+  const controlOf = (element) => {
+    const raw = label(element);
+    if (!raw) return { control: null, token: null };
+    const name = normalise(raw, vocab);
+    if (informative(name)) return { control: name, token: fieldToken(name) };
+    if (!controls.has(raw)) controls.set(raw, controls.size + 1);
+    return { control: null, token: `field:c${controls.get(raw)}` };
+  };
   const filled = new Map(); // app -> field tokens, oldest first
   const facts = new Map(); // clip hash -> fact name, oldest first
   let cur = null; // current node key
@@ -149,52 +207,52 @@ export function compilePlan({ recordingId, events = [], files = [], excluded = [
   const flush = () => { flushTyping(); flushClicks(); };
   const anchorOf = (e, t, extra = {}) => ({ t, app: e.app, window_title: e.window_title ?? '', url: e.url ?? '', element: e.element ?? '', ...extra });
 
-  events.forEach((e, i) => {
+  const index = new Map(events.map((e, i) => [e, i]));
+  for (const e of visible) {
+    const i = index.get(e);
     const t = Date.parse(e.timestamp);
-    if (!Number.isFinite(t) || hidden.some(([a, b]) => t >= a && t < b)) return;
-    if (!e.app || PRIVATE.test(e.app) || appRole(e.app, e.window_title) === 'password_manager') return;
     if (e.app !== app) {
       flush();
       app = e.app;
       role = appRole(app, e.window_title);
       if (!cur) cur = g.node(role, role, sig(t));
       else advance('navigate', { events: [i], anchor: anchorOf(e, t) }, t);
-      if (e.event_type === 'focus') return;
+      if (e.event_type === 'focus') continue;
     }
     switch (e.event_type) {
       case 'focus':
-        return;
+        break;
       case 'key': {
         flushClicks();
         const key = e.payload?.key;
         if (key && key !== 'Enter' && key !== 'Return' && key !== 'Tab' && key !== 'Backspace') {
           flushTyping();
-          advance('press', { control: key, events: [i], anchor: anchorOf(e, t) }, t);
-          return;
+          advance('press', { control: keyName(key) ?? 'key', events: [i], anchor: anchorOf(e, t) }, t);
+          break;
         }
         if (key === 'Enter' || key === 'Return') {
           flushTyping();
-          advance('press', { control: 'Enter', events: [i], anchor: anchorOf(e, t) }, t);
-          return;
+          advance('press', { control: 'enter', events: [i], anchor: anchorOf(e, t) }, t);
+          break;
         }
         if (!typing) typing = { events: [], anchor: anchorOf(e, t) };
         if (typing.events.length < MAX_PROVENANCE) typing.events.push(i);
-        return;
+        break;
       }
       case 'click':
         flushTyping();
         if (!clicks) clicks = { events: [], anchor: anchorOf(e, t, { x: e.payload?.x, y: e.payload?.y, points: [] }) };
         if (clicks.events.length < MAX_PROVENANCE) clicks.events.push(i);
         if (clicks.anchor.points.length < MAX_PROVENANCE) clicks.anchor.points.push([e.payload?.x, e.payload?.y]);
-        return;
+        break;
       case 'copy': {
         flush();
         const hash = e.payload?.clip_hash || `e${i}`;
         if (!facts.has(hash)) facts.set(hash, `f${facts.size + 1}`);
         const fact = facts.get(hash);
         lastClip = { fact, hash };
-        advance('read', { control: label(e.element), produces: [fact], effect: [`fact:${fact}`], events: [i], anchor: anchorOf(e, t) }, t);
-        return;
+        advance('read', { control: controlOf(e.element).control, produces: [fact], effect: [`fact:${fact}`], events: [i], anchor: anchorOf(e, t) }, t);
+        break;
       }
       case 'paste': {
         flush();
@@ -202,29 +260,53 @@ export function compilePlan({ recordingId, events = [], files = [], excluded = [
         const fact = hash && facts.has(hash) ? facts.get(hash) : lastClip?.fact ?? null;
         let slot = fact;
         if (!slot) { inputs += 1; slot = `input_${inputs}`; }
-        const control = label(e.element);
-        const token = `field:${control ? control.replace(/[^A-Za-z0-9_.-]/g, '_').slice(0, 120) : slot}`;
-        fill(token);
-        advance('type_value', { control, slot, effect: [token], events: [i], anchor: anchorOf(e, t) }, t);
-        return;
+        const { control, token } = controlOf(e.element);
+        const effect = token ?? `field:${slot}`;
+        fill(effect);
+        advance('type_value', { control, slot, effect: [effect], events: [i], anchor: anchorOf(e, t) }, t);
+        break;
       }
       case 'shortcut': {
         flush();
-        const combo = label(e.text) ?? 'shortcut';
+        const combo = keyName(e.text) ?? 'shortcut';
         if (SUBMIT_COMBO.test(combo)) {
           const cleared = last(filled.get(app) ?? [], HELD.fields);
           filled.set(app, []);
           advance('submit', { control: combo, effect: cleared, events: [i], anchor: anchorOf(e, t) }, t);
         } else advance('press', { control: combo, events: [i], anchor: anchorOf(e, t) }, t);
-        return;
+        break;
       }
       default:
-        return;
+        break;
     }
-  });
+  }
   flush();
   if (cur && g.nodes.has(cur)) g.nodes.get(cur).terminal = true;
-  return { graph: g.toJSON(), anchors: { recording_id: recordingId, edges: g.anchors } };
+  const graph = { ...g.toJSON(), vocabulary: vocab.toJSON() };
+  const report = compileReport(graph, { events: visible, files, manifest, vocab });
+  return { graph, anchors: { recording_id: recordingId, edges: g.anchors }, report };
+}
+
+/**
+ * The compile report: what the FDE reads instead of a diagram of hashed keys — the vocabulary
+ * the graph may speak, and the leakage check of the graph against every value, element name,
+ * URL and title the recording saw. `ok: false` means the graph must not leave the device.
+ */
+export function compileReport(graph, { events = [], files = [], manifest = {}, vocab = null } = {}) {
+  const { values, titles } = recordingValues(events, files, manifest);
+  const v = vocab ?? new Vocabulary({ words: graph.vocabulary?.words ?? [], extra: graph.vocabulary?.extra ?? [] });
+  const ctx = recordingContext({ values, titles, vocab: v });
+  const { vocabulary: _omit, ...checked } = graph; // the vocabulary lists its own words by design
+  const leakage = checkLeakage(checked, ctx);
+  return {
+    compiled_by: graph.compiled_by,
+    states: graph.nodes.length,
+    moves: graph.edges.length,
+    vocabulary: v.toJSON(),
+    leakage: { ok: leakage.ok, strings_checked: leakage.strings_checked, failures: leakage.failures, known_limits: leakage.known_limits },
+    values_checked: ctx.values.size,
+    titles_checked: ctx.titles.size,
+  };
 }
 
 /** Union of graphs: nodes by key, edges by id, stats summed, provenance appended, stricter policy kept. */
@@ -260,6 +342,17 @@ export function mergeGraphs(graphs) {
     }
   }
   const by = (k) => (a, b) => (a[k] < b[k] ? -1 : a[k] > b[k] ? 1 : 0);
+  const vocabularies = graphs.map((g) => g.vocabulary).filter(Boolean);
+  const vocabulary = vocabularies.length
+    ? {
+        method: vocabularies[0].method,
+        min_screens: Math.min(...vocabularies.map((v) => v.min_screens)),
+        screens: vocabularies.reduce((n, v) => n + (v.screens ?? 0), 0),
+        words: [...new Set(vocabularies.flatMap((v) => v.words ?? []))].sort(),
+        extra: [...new Set(vocabularies.flatMap((v) => v.extra ?? []))].sort(),
+      }
+    : null;
+  if (vocabulary) vocabulary.size = vocabulary.words.length + vocabulary.extra.length;
   return {
     start: [...start].sort(),
     nodes: [...nodes.values()].sort(by('key')),
@@ -267,6 +360,7 @@ export function mergeGraphs(graphs) {
     trajectories,
     truncated,
     compiled_by: graphs.find((g) => g.compiled_by)?.compiled_by ?? COMPILED_BY,
+    ...(vocabulary ? { vocabulary } : {}),
   };
 }
 

@@ -5,7 +5,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 
-import { buildSubmissionPackage, deviceId, discoverWorkspaces, planPreview, selectWorkspace, SubmissionQueue, uploadBinding } from '../src/intake.js';
+import { buildSubmissionPackage, CONSENT_VERSION, deviceId, packageLeakage, discoverWorkspaces, planPreview, selectWorkspace, SubmissionQueue, uploadBinding } from '../src/intake.js';
 import { buildSections, parseEvents } from '../src/sections.js';
 
 const sha = (data) => createHash('sha256').update(data).digest('hex');
@@ -33,6 +33,7 @@ function fixture() {
   const config = {
     protocol: 2, url: 'https://vista.example', userId: randomUUID(), tenantId: randomUUID(), deviceId: deviceId(home),
     workspace: { id: randomUUID(), kind: 'company' }, token: 'PRIVATE_ACCESS_KEY'.repeat(4),
+    consentVersion: CONSENT_VERSION,
   };
   return { home, root, dir, config, cleanup: () => fs.rmSync(home, { recursive: true, force: true }) };
 }
@@ -155,7 +156,8 @@ test('the plan graph is uploaded only when ticked, after the employee\'s edits, 
     const text = pack.data.get('plan').toString();
     for (const s of ['PRIVATE', 'private.example', '500', '301', 'h1', 'Excel', 'QuickBooks']) assert.ok(!text.includes(s), `plan leaks ${s}`);
     const plan = JSON.parse(text);
-    assert.equal(plan.compiled_by, 'recorder-plan/1');
+    assert.equal(plan.compiled_by, 'recorder-plan/2');
+    assert.equal(pack.manifest.consent_version, CONSENT_VERSION);
     assert.deepEqual([...new Set(plan.nodes.map((n) => n.app_role))].sort(), ['accounting', 'spreadsheet']);
     const submit = plan.edges.find((e) => e.action_class === 'submit');
     assert.equal(submit.policy, 'always_ask');
@@ -164,6 +166,35 @@ test('the plan graph is uploaded only when ticked, after the employee\'s edits, 
     const edited = JSON.parse(buildSubmissionPackage(f.root, 'session-1', f.config, { consent: true, sharePlan: true }).data.get('plan'));
     assert.ok(!edited.edges.some((e) => e.id === click.id));
     assert.equal(edited.edges.length, plan.edges.length - 1);
+  } finally { f.cleanup(); }
+});
+
+test('a plan is never packaged under an older consent version; activity metadata still is', () => {
+  const f = fixture();
+  try {
+    const stale = { ...f.config, consentVersion: 'activity-metadata-v1' };
+    assert.equal(buildSubmissionPackage(f.root, 'session-1', stale, { consent: true }).manifest.consent_version, 'activity-metadata-v1');
+    assert.throws(() => buildSubmissionPackage(f.root, 'session-1', stale, { consent: true, sharePlan: true }), /Reconnect/);
+    assert.throws(() => buildSubmissionPackage(f.root, 'session-1', { ...f.config, consentVersion: 'made-up' }, { consent: true }), /Reconnect/);
+  } finally { f.cleanup(); }
+});
+
+test('a recorded value or title surviving into the cloud-bound payload fails the privacy check without being echoed', () => {
+  const f = fixture();
+  try {
+    fs.appendFileSync(path.join(f.dir, 'events.jsonl'), '\n' + [
+      { timestamp: '2026-09-19T09:06:00Z', event_type: 'focus', app: 'QuickBooks', window_title: 'PRIVATE_TITLE', url: 'https://private.example/bill' },
+      { timestamp: '2026-09-19T09:07:00Z', event_type: 'paste', app: 'QuickBooks', element: 'Amount', text: 'PRIVATE_CLIPBOARD', payload: { clip_hash: 'h1' } },
+    ].map((e) => JSON.stringify(e)).join('\n'));
+    const raw = fs.readFileSync(path.join(f.dir, 'events.jsonl'), 'utf8');
+    const manifest = JSON.parse(fs.readFileSync(path.join(f.dir, 'manifest.json'), 'utf8'));
+    const clean = buildSubmissionPackage(f.root, 'session-1', f.config, { consent: true, sharePlan: true });
+    assert.ok(packageLeakage({ plan: JSON.parse(clean.data.get('plan')) }, raw, manifest).ok);
+    for (const leaked of [{ note: 'PRIVATE_CLIPBOARD' }, { title: 'PRIVATE_TITLE' }, { name: 'not-a-normaliser-token {x}' }]) {
+      const report = packageLeakage({ plan: leaked }, raw, manifest);
+      assert.equal(report.ok, false);
+      assert.ok(!JSON.stringify(report.failures).includes('PRIVATE'), 'the report must not echo the value');
+    }
   } finally { f.cleanup(); }
 });
 

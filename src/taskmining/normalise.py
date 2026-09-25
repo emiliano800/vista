@@ -54,12 +54,50 @@ TOKENS: frozenset[str] = frozenset({f"{{{name}}}" for name, _ in CLASS_PATTERNS}
 _TOKEN = re.compile(r"\{[a-z]+\}")
 _WORD = re.compile(r"\{[a-z]+\}|[^\W_]+(?:['’][^\W_]+)?", re.UNICODE)
 _SPACE = re.compile(r"\s+")
+# Keys and shortcut combos are a closed set: they name no data and pass as themselves.
+_KEY_NAMES = frozenset(
+    {
+        "enter",
+        "return",
+        "tab",
+        "escape",
+        "esc",
+        "backspace",
+        "delete",
+        "space",
+        "up",
+        "down",
+        "left",
+        "right",
+        "home",
+        "end",
+        "pageup",
+        "pagedown",
+        "insert",
+        "capslock",
+    }
+)
+_KEY_COMBO = re.compile(
+    r"^(?:(?:cmd|ctrl|alt|shift|meta|option|win|super|fn)\+)+"
+    r"(?:[a-z0-9]|f\d{1,2}|enter|return|tab|escape|esc|backspace|delete|space|up|down|left|right|home|end|pageup|pagedown|insert)$"
+)
+_FKEY = re.compile(r"^f\d{1,2}$")
 
 KNOWN_LIMITS: tuple[str, ...] = (
     "A single lower-case surname that recurs across screens is indistinguishable from a control name and joins the vocabulary.",
     "Non-Latin scripts get no class detection; they pass through the vocabulary rule only.",
     "Letters-only identifiers (a customer code such as `ACME`) are words to the normaliser; they leave only via the vocabulary.",
 )
+
+
+def key_name(text: str) -> str | None:
+    """A key name or shortcut combo in canonical form (`cmd+s`, `enter`), or None if it is not one."""
+    k = _SPACE.sub("", str(text or "").strip().lower())
+    if not k:
+        return None
+    if k in _KEY_NAMES or _FKEY.match(k) or len(k) == 1 or _KEY_COMBO.match(k):
+        return k
+    return None
 
 
 def classify(text: str) -> str:
@@ -105,6 +143,17 @@ class Vocabulary:
         vocab = frozenset(w for w, c in seen.items() if c >= min_screens)
         return cls(words=vocab, min_screens=min_screens, screens=n, extra=extra_words)
 
+    @classmethod
+    def from_json(cls, data: dict) -> Vocabulary:
+        """A vocabulary as a compiled graph carries it (`to_json`); the word lists are trusted as words only."""
+        return cls(
+            words=frozenset(str(w).lower() for w in data.get("words", [])),
+            min_screens=int(data.get("min_screens", MIN_SCREENS)),
+            screens=int(data.get("screens", 0)),
+            extra=frozenset(str(w).lower() for w in data.get("extra", [])),
+            method=str(data.get("method", "recurring-ax-names/1")),
+        )
+
     def __contains__(self, word: str) -> bool:
         w = word.lower()
         return w in self.words or w in self.extra
@@ -134,6 +183,11 @@ def normalise(text: str, vocab: Vocabulary | None = None) -> str:
         else:
             parts.append("{text}")
     return _SPACE.sub(" ", " ".join(parts)).strip()[:MAX_LEN]
+
+
+def informative(text: str) -> bool:
+    """True when the normalised text still says something (not only `{text}`)."""
+    return bool(text) and any(w != "{text}" for w in text.split(" "))
 
 
 def row_name(headers: Iterable[str], position: int, vocab: Vocabulary | None = None) -> str:
