@@ -1,6 +1,8 @@
 """Metadata-only recorder analysis: deterministic facts, questions, and the
 guard rails around the model's interpretation. No database, no model."""
 
+import json
+
 import pytest
 
 from vista.agents.jev import NONE, Judgment
@@ -436,3 +438,52 @@ def test_employee_answers_are_given_to_jev_and_quoted_in_the_summary():
     assert result.event["employee_answers"] == 1 and result.interpretation["answered"] == 1
     assert "Read with 1 answer from the employee, who described it as: “Taking Slack messages" in result.interpretation["summary"]
     assert interpret_with_jev(observed, [], judge_fn=judge_fn).interpretation["answered"] == 0
+
+
+def test_jev_sees_typing_as_fields_typed_not_key_volume_and_ranks_candidates_the_same():
+    events = [
+        event(0, "Excel", "key", count=40),
+        event(1, "Excel", "copy"),
+        event(1, "Browser", "paste", second=20),
+        event(2, "Browser", "click"),
+        event(3, "Excel", "copy"),
+        event(3, "Browser", "paste", second=30),
+        event(4, "Excel", "click"),
+        event(5, "Excel", "paste"),
+    ]
+    light = observe(events, MANIFEST)
+    # The same session with two thousand more keystrokes in one continuous run of typing.
+    heavy = observe(events + [event(2, "Browser", "key", second=s, count=100) for s in range(1, 21)], MANIFEST)
+    assert heavy["apps"][1]["keys"] - light["apps"][1]["keys"] == 2000, "the recording keeps every key"
+    assert heavy["apps"][1]["typing_runs"] == light["apps"][1]["typing_runs"] + 1
+    assert heavy["stretches"][0]["interactions"] == light["stretches"][0]["interactions"] + 1
+    assert heavy["stretches"][0]["events"] == light["stretches"][0]["events"] + 2000
+    same = lambda cs: [(c["id"], c["pattern"], c["apps"], c["count"]) for c in cs]  # noqa: E731
+    assert same(workflow_candidates(heavy)) == same(workflow_candidates(light))
+    state, _ = judge_request(heavy, workflow_candidates(heavy), [])
+    assert all("keys" not in a for a in state["observed"]["apps"])
+    assert all("events" not in s and "interactions" in s for s in state["observed"]["stretches"])
+    assert [a["typing_runs"] for a in state["observed"]["apps"]] == [1, 1] and "typing_runs" in state["context"]
+
+
+def test_the_employee_summary_reaches_jev_as_context_bounded_and_never_as_a_candidate():
+    observed = busy_session()
+    candidates = workflow_candidates(observed)
+    without, _ = judge_request(observed, candidates, [])
+    assert "employee_summary" not in without and "employee_summary" not in without["context"]
+    summary = "  Re-keying\n vendor   bills from PDF into QuickBooks " + "x" * 3000
+    state, questions = judge_request(observed, candidates, [], summary=summary)
+    assert state["employee_summary"].startswith("Re-keying vendor bills from PDF into QuickBooks x")
+    assert len(state["employee_summary"]) == 2000 and "employee_summary" in state["context"]
+    assert state["candidates"] == without["candidates"] and set(questions) == set(judge_request(observed, candidates, [])[1])
+    assert "employee_summary" in questions["c1_workflow"]["instructions"] and "Re-keying" not in json.dumps(questions)
+    seen = {}
+    stub = lambda qs: {**answers("c1", 0.1, NONE, 0.9, 0.5, 0.9, 0.9), **answers("c2", 0.1, NONE, 0.9, 0.5, 0.9, 0.9)}  # noqa: E731
+    captured = interpret_with_jev(
+        observed,
+        [],
+        judge_fn=lambda state, questions: (seen.update(state), Judgment("stub-jev-v0", stub(questions), 1, 0, "stub"))[1],
+        summary="Vendor bills",
+    )
+    assert seen["employee_summary"] == "Vendor bills" and captured.source == "stub"
+    assert interpret(observed, [], summary="Vendor bills").event["candidates"] == 2

@@ -157,6 +157,22 @@ class Provenance(InputModel):
     event_ids: list[Annotated[str, StringConstraints(pattern=r"^[A-Za-z0-9_:-]{1,64}$")]] = Field(default_factory=list, max_length=50)
 
 
+class KeyPress(InputModel):
+    """One recorded keystroke of a `type_value` edge: the key (a typed character or a key
+    name, `•` where the recorder masked it) and its offset in ms from the run's first key."""
+
+    t: int = Field(strict=True, ge=0, le=86_400_000)
+    key: Annotated[str, StringConstraints(min_length=1, max_length=32)]
+    masked: bool = False
+
+    @model_serializer(mode="wrap")
+    def _without_unmasked(self, handler: SerializerFunctionWrapHandler):
+        data = handler(self)
+        if not data.get("masked"):
+            data.pop("masked", None)
+        return data
+
+
 class GraphEdge(InputModel):
     id: Key
     frm: Key
@@ -175,11 +191,12 @@ class GraphEdge(InputModel):
     commit: Name | None = None
     tier: Tier | None = None  # pinned autonomy tier; promotion past `ask` is an FDE click
     tier_since: Annotated[str, StringConstraints(pattern=r"^\d{4}-\d{2}-\d{2}$")] | None = None
+    keys: list[KeyPress] | None = Field(default=None, max_length=2000)  # how the field was typed, in order and time
 
     @model_serializer(mode="wrap")
     def _without_absent_v3_fields(self, handler: SerializerFunctionWrapHandler):
         data = handler(self)
-        for k in ("descriptor", "irreversibility", "commit", "tier", "tier_since"):
+        for k in ("descriptor", "irreversibility", "commit", "tier", "tier_since", "keys"):
             if data.get(k) is None:
                 data.pop(k, None)
         return data
@@ -196,6 +213,10 @@ class GraphEdge(InputModel):
             raise ValueError("A committing edge always asks a person")
         if self.tier == "unattended" and (self.irreversibility == "committing" or self.action_class == "submit"):
             raise ValueError("A committing edge can never be unattended")
+        if self.keys is not None and self.action_class != "type_value":
+            raise ValueError("Only a type_value edge carries keystrokes")
+        if self.keys and any(a.t > b.t for a, b in zip(self.keys, self.keys[1:], strict=False)):
+            raise ValueError("Keystrokes are in time order")
         return self
 
 

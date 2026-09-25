@@ -111,3 +111,20 @@ def test_ocr_survivors_finds_values_still_legible_on_screen():
     ctx = leakage.RecordingContext.build(values=["INV-1042"], titles=["Bills — QuickBooks"])
     assert not leakage.ocr_survivors("Bill inv-1042 saved", ctx).ok
     assert leakage.ocr_survivors("Bill {id} saved", ctx).ok
+
+
+def test_a_type_value_edge_key_script_is_the_one_exempt_field_and_only_when_shaped_like_one():
+    ctx = leakage.RecordingContext.build(values=["INV-1042", "ACME"], titles=["QuickBooks — Bills"], vocab=VOCAB)
+    script = [{"t": 0, "key": "A"}, {"t": 82, "key": "C"}, {"t": 151, "key": "M"}, {"t": 900, "key": "Enter"}]
+    script.append({"t": 950, "key": "•", "masked": True})
+    assert leakage.is_key_script(script) and not leakage.is_key_script([]) and not leakage.is_key_script("ACME")
+    assert not leakage.is_key_script([{"t": "0", "key": "A"}]) and not leakage.is_key_script([{"key": "A"}])
+    assert leakage.check({"edges": [{"control": "Amount", "slot": "input_1", "keys": script}]}, ctx).ok
+    # The same typed text anywhere else — or `keys` that is not a key script — still fails.
+    for payload in (
+        {"edges": [{"control": "Amount", "keys": "INV-1042"}]},
+        {"edges": [{"control": "Amount", "keys": [{"t": 0, "key": "A", "title": "QuickBooks — Bills"}]}]},
+        {"edges": [{"control": "Amount", "keys": script, "value": "INV-1042"}]},
+        {"edges": [{"control": "Amount", "typed": [{"t": 0, "key": "INV-1042"}]}]},
+    ):
+        assert not leakage.check(payload, ctx).ok, payload

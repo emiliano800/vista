@@ -213,6 +213,8 @@ export function buildSubmissionPackage(root, id, config, { selectedFileIds = [],
   const cloudBound = { apps: [...new Set(events.events.map((e) => e.app))] };
   if (sharePlan === true) {
     const plan = reviewedPlan(dir, id, raw, m, excluded, { ownApps });
+    // Keystrokes on `type_value` edges are typed text: they travel only with a full-detail upload.
+    if (!full) plan.edges = plan.edges.map(({ keys, ...e }) => e);
     if (plan.nodes.length && plan.edges.length) cloudBound.plan = plan;
   }
   // The leakage test asks whether anything the recording saw is in the package. In full
@@ -241,6 +243,9 @@ export function buildSubmissionPackage(root, id, config, { selectedFileIds = [],
       device_id: config.deviceId, source_id: id, workspace: binding.workspace,
       started_at: new Date(m.started_at).toISOString(), ended_at: new Date(m.ended_at).toISOString(),
       active_seconds: Math.max(0, Math.min(elapsed, Math.floor(Number(m.active_seconds) || 0))), artifacts,
+      // The employee's own words at Start: what this session was for. Context for the analysis,
+      // never a graph value.
+      ...(m.summary_text ? { summary_text: String(m.summary_text).replace(/[\x00-\x08\x0b-\x1f]/g, '').trim().slice(0, 4096) } : {}),
     },
     data,
   };

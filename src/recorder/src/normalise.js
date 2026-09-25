@@ -153,10 +153,25 @@ export function recordingContext({ values = [], titles = [], vocab = null } = {}
   };
 }
 
+/**
+ * A `type_value` edge's recorded keystrokes, `[{t, key, masked?}]`: the one place typed text
+ * travels with a graph — only in a full-detail upload; a metadata upload strips it first. The
+ * check skips it; every other string still faces the recorded values.
+ */
+export const isKeyScript = (v) =>
+  Array.isArray(v) &&
+  v.length > 0 &&
+  v.every((k) => k && typeof k === 'object' && Object.keys(k).every((f) => f === 't' || f === 'key' || f === 'masked') && Number.isInteger(k.t) && typeof k.key === 'string' && k.key.length <= 32);
+
 function* strings(payload, path = '$') {
   if (typeof payload === 'string') yield [path, path.split('.').pop().split('[')[0], payload];
   else if (Array.isArray(payload)) for (let i = 0; i < payload.length; i++) yield* strings(payload[i], `${path}[${i}]`);
-  else if (payload && typeof payload === 'object') for (const [k, v] of Object.entries(payload)) yield* strings(v, `${path}.${k}`);
+  else if (payload && typeof payload === 'object') {
+    for (const [k, v] of Object.entries(payload)) {
+      if (k === 'keys' && isKeyScript(v)) continue;
+      yield* strings(v, `${path}.${k}`);
+    }
+  }
 }
 
 const exempt = (value) => HASH.test(value) || SLOT_PREFIX.test(value) || APP_ROLES.has(value) || LANDMARK_ROLES.has(value) || keyName(value) === value;

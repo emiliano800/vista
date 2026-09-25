@@ -186,7 +186,25 @@
         }
       ],
       "policy": "confirm",
-      "anchor_ref": "rec-1:97ca0fc75eec4dce"
+      "anchor_ref": "rec-1:97ca0fc75eec4dce",
+      "keys": [
+        {
+          "t": 0,
+          "key": "A"
+        },
+        {
+          "t": 100,
+          "key": "C"
+        },
+        {
+          "t": 200,
+          "key": "M"
+        },
+        {
+          "t": 1000,
+          "key": "Enter"
+        }
+      ]
     },
     {
       "id": "99d31f2d7fe34553",
