@@ -245,3 +245,12 @@ test('mouse path and app lifecycle stay off when their settings are off; private
   assert.equal(ev.filter((e) => e.event_type === 'path' || e.event_type === 'drag').length, 0);
   assert.deepEqual(ev.filter((e) => e.event_type === 'app_start').map((e) => e.app), ['(private)']);
 });
+
+test('the recorder itself is an own app under its real name, whatever settings.json says', async () => {
+  const { isOwnApp, ownAppList } = await import('../src/recorder.js');
+  assert.equal(isOwnApp('Vista Recorder', ['Vista', 'Electron']), true, 'settings saved by 0.4.x lack the real name');
+  assert.equal(isOwnApp('vista recorder', []), true);
+  assert.equal(isOwnApp('Google Chrome', ['Vista', 'Electron']), false);
+  assert.equal(isOwnApp('Slack', ['Slack']), true, 'settings still add their own');
+  assert.deepEqual(ownAppList(['Slack', 'Vista']), ['vista recorder', 'vista', 'electron', 'slack']);
+});

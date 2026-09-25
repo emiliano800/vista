@@ -19,6 +19,21 @@
 // business step.
 import { createHash } from 'node:crypto';
 import { EventEmitter } from 'node:events';
+
+// The recorder's own process names, whatever a saved settings.json says: settings
+// written by 0.4.x carried ['Vista', 'Electron'] while the app is called "Vista
+// Recorder", so its own clicks were counted as the employee's work (2026-09-24).
+export const OWN_APP_NAMES = ['vista recorder', 'vista', 'electron'];
+
+/** Every own-app name: the built-ins plus whatever settings add. */
+export function ownAppList(settingsOwnApps) {
+  return [...new Set([...OWN_APP_NAMES, ...(settingsOwnApps ?? []).map((p) => String(p).toLowerCase())])];
+}
+
+export function isOwnApp(app, settingsOwnApps) {
+  const a = String(app ?? '').toLowerCase();
+  return ownAppList(settingsOwnApps).includes(a);
+}
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
@@ -61,7 +76,7 @@ export const DEFAULT_SETTINGS = {
   changeMinGapMs: 1500,       // never more than one change-shot per this window
   privateApps: ['1Password', 'Bitwarden', 'KeePass', 'LastPass', 'Keychain Access', 'Signal', 'WhatsApp'],
   privateTitles: ['password', 'bank', 'banking', 'incognito', 'private browsing'],
-  ownApps: ['Vista', 'Electron'], // the recorder itself: time and clicks here are not the employee's work
+  ownApps: ['Vista Recorder', 'Vista', 'Electron'], // the recorder itself: time and clicks here are not the employee's work
   openaiApiKey: '',           // AI explanations after a session; OPENAI_API_KEY / VISTA_OPENAI_API_KEY env overrides
   openaiModel: '', // empty → provider default (explain.js); VISTA_OPENAI_MODEL env overrides
   clarifyScreenshots: true,   // also send up to 3 low-res frames per section to a local model (legacy local AI only)
@@ -539,8 +554,7 @@ export class Recorder extends EventEmitter {
   }
 
   _isOwn(app) {
-    const a = app.toLowerCase();
-    return (this.settings.ownApps ?? []).some((p) => a === p.toLowerCase());
+    return isOwnApp(app, this.settings.ownApps);
   }
 
   _tickApp() {
