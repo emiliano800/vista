@@ -48,7 +48,7 @@ from vista.models.platform import Job
 from vista.models.tenant import AgentRun, AgentRunEvent, RecorderReport, RecorderSubmission
 
 IDLE_GAP_S = 120  # a focus span ends when nothing happens for this long
-STRETCH_GAP_S = 300  # work stretches are separated by gaps of at least this long
+STRETCH_GAP_S = 30  # work stretches are separated by gaps of at least this long
 TRANSFER_WINDOW_S = 120  # copy in app A → paste in app B within this window counts as a transfer
 MAX_QUESTIONS = 6
 MAX_DOCUMENT_EXCERPT = 1200
@@ -124,6 +124,8 @@ def observe(events: list[dict], manifest: dict) -> dict:
         nonlocal run_app, run_text, run_t
         if run_app is not None and len(run_text.strip()) >= 3:
             typed[run_app].append(run_text.strip()[:DETAIL_SAMPLE])
+            if run_stretch is not None:
+                run_stretch["typed"][run_app].append(run_text.strip()[:DETAIL_SAMPLE])
         run_app, run_text, run_t = None, "", None
 
     transitions: Counter = Counter()
@@ -138,6 +140,7 @@ def observe(events: list[dict], manifest: dict) -> dict:
     span_app: str | None = None
     span_start: datetime | None = None
     stretch: dict | None = None
+    run_stretch: dict | None = None  # the stretch a typed run started in
 
     def close_span(end: datetime) -> None:
         nonlocal span_app, span_start
@@ -161,9 +164,6 @@ def observe(events: list[dict], manifest: dict) -> dict:
         is_keystroke = row["type"] == "key" and row["text"] and len(row["text"]) <= 2
         if not is_keystroke or run_app != app or (run_t is not None and (t - run_t).total_seconds() > TYPED_RUN_GAP_S):
             flush_run()
-        if is_keystroke:
-            run_app, run_t = app, t
-            run_text += row["text"]
         new_run = False
         if row["type"] == "key":
             if key_app != app or key_t is None or (t - key_t).total_seconds() > TYPED_RUN_GAP_S:
@@ -172,24 +172,6 @@ def observe(events: list[dict], manifest: dict) -> dict:
             key_app, key_t = app, t
         else:
             key_app, key_t = None, None
-        if row["type"] == "click":
-            stats["clicks"] += row["n"]
-        elif row["type"] == "key":
-            stats["keys"] += row["n"]
-        elif row["type"] == "copy":
-            stats["copies"] += row["n"]
-            last_copy = row
-        elif row["type"] == "paste":
-            stats["pastes"] += row["n"]
-            if last_copy is not None and 0 <= (t - last_copy["t"]).total_seconds() <= TRANSFER_WINDOW_S:
-                if last_copy["app"] != app:
-                    transfers[(last_copy["app"], app)] += 1
-                    transfer_latency[(last_copy["app"], app)].append((t - last_copy["t"]).total_seconds())
-                    moved = (last_copy["text"] or row["text"]).strip()
-                    if moved:
-                        samples[(last_copy["app"], app)].append(moved[:DETAIL_SAMPLE])
-                else:
-                    internal_pastes += 1
         gap = (t - previous["t"]).total_seconds() if previous else 0.0
         idle = previous is not None and gap > IDLE_GAP_S
         if idle:
@@ -197,7 +179,21 @@ def observe(events: list[dict], manifest: dict) -> dict:
         if stretch is None or gap > STRETCH_GAP_S:
             if stretch is not None:
                 stretches.append(stretch)
-            stretch = {"start": t, "end": t, "events": 0, "interactions": 0, "switches": 0, "apps": Counter()}
+            stretch = {
+                "start": t,
+                "end": t,
+                "events": 0,
+                "interactions": 0,
+                "switches": 0,
+                "apps": Counter(),
+                # The small committed effects inside the stretch — what `workflow_candidates` calls tasks.
+                "moves": Counter(),  # (from app, to app) → pastes within the transfer window, same app included
+                "moved": defaultdict(list),  # (from, to) → clipboard samples, when shared
+                "keys": Counter(),  # app → keystrokes
+                "typed": defaultdict(list),  # app → typed runs, when shared
+                "files": defaultdict(list),  # app → files opened, when shared
+                "clicks": Counter(),  # app → clicks
+            }
         stretch["end"] = t
         stretch["events"] += row["n"]
         # Interactions count a typing run once, so a long value does not make a stretch look busier.
@@ -206,6 +202,36 @@ def observe(events: list[dict], manifest: dict) -> dict:
         elif new_run:
             stretch["interactions"] += 1
         stretch["apps"][app] += row["n"]
+        if is_keystroke:
+            if run_app is None:
+                run_stretch = stretch
+            run_app, run_t = app, t
+            run_text += row["text"]
+        if row["type"] == "click":
+            stats["clicks"] += row["n"]
+            stretch["clicks"][app] += row["n"]
+        elif row["type"] == "key":
+            stats["keys"] += row["n"]
+            stretch["keys"][app] += row["n"]
+        elif row["type"] == "copy":
+            stats["copies"] += row["n"]
+            last_copy = row
+        elif row["type"] == "paste":
+            stats["pastes"] += row["n"]
+            if last_copy is not None and 0 <= (t - last_copy["t"]).total_seconds() <= TRANSFER_WINDOW_S:
+                moved = (last_copy["text"] or row["text"]).strip()
+                stretch["moves"][(last_copy["app"], app)] += 1
+                if moved:
+                    stretch["moved"][(last_copy["app"], app)].append(moved[:DETAIL_SAMPLE])
+                if last_copy["app"] != app:
+                    transfers[(last_copy["app"], app)] += 1
+                    transfer_latency[(last_copy["app"], app)].append((t - last_copy["t"]).total_seconds())
+                    if moved:
+                        samples[(last_copy["app"], app)].append(moved[:DETAIL_SAMPLE])
+                else:
+                    internal_pastes += 1
+        elif row["type"] == "file" and row["title"] and row["title"] not in stretch["files"][app]:
+            stretch["files"][app].append(row["title"])
         if previous is not None and previous["app"] != app:
             switches += 1
             stretch["switches"] += 1
@@ -274,6 +300,7 @@ def observe(events: list[dict], manifest: dict) -> dict:
                 "interactions": s["interactions"],
                 "switches": s["switches"],
                 "apps": [a for a, _ in s["apps"].most_common(6)],
+                "tasks": _stretch_tasks(s),
             }
             for i, s in enumerate(stretches)
         ],
@@ -283,6 +310,31 @@ def observe(events: list[dict], manifest: dict) -> dict:
             "active_seconds": manifest.get("active_seconds"),
         },
     }
+
+
+def _stretch_tasks(s: dict) -> list[dict]:
+    """The small committed effects inside one stretch, in a fixed order: every copy→paste (same
+    application included), every application typed into, every file opened. A stretch with none
+    of those still did something, so it keeps one `activity` task per application clicked in.
+    Counts and samples describe the task; its identity is (kind, apps) only."""
+    tasks: list[dict] = []
+    for (src, dst), n in sorted(s["moves"].items(), key=lambda kv: (-kv[1], kv[0])):
+        task = {"kind": "transfer", "from": src, "to": dst, "count": n}
+        if s["moved"][(src, dst)]:
+            task["samples"] = _dedupe(s["moved"][(src, dst)])[:3]
+        tasks.append(task)
+    for app, n in sorted(s["keys"].items(), key=lambda kv: (-kv[1], kv[0])):
+        task = {"kind": "entry", "app": app, "count": n}
+        if s["typed"][app]:
+            task["samples"] = _dedupe(s["typed"][app])[:3]
+        tasks.append(task)
+    for app in sorted(s["files"]):
+        for name in s["files"][app][:DETAIL_TOP]:
+            tasks.append({"kind": "open", "app": app, "file": name, "count": 1})
+    if not tasks:
+        for app, n in sorted(s["clicks"].items(), key=lambda kv: (-kv[1], kv[0])) or [(a, 0) for a, _ in s["apps"].most_common(1)]:
+            tasks.append({"kind": "activity", "app": app, "count": n})
+    return tasks
 
 
 def has_detail(observed: dict) -> bool:
@@ -450,14 +502,15 @@ def parse(text: str) -> ModelOutput | None:
 #
 # The chat interpretation above asks a model to *write* workflows and then drops what it
 # invented. This path never lets it invent: code derives every candidate from the observed
-# transfers, loops and stretches, so each one is born citing its evidence, and Jev only
-# answers typed questions about each — is it a unit of work, of what kind, how mechanical,
-# and whether only the employee can say. Wording and thresholds live here, not in the
-# model, so changing a threshold never re-runs inference.
+# stretches of work and the tasks inside them, so each one is born citing its evidence, and
+# Jev only answers typed questions about each — is it recurring, of what kind, how mechanical,
+# and whether only the employee can say. Jev labels; it never filters. A candidate it is
+# unsure about is still a workflow on the report, marked as such, because the employee and
+# the FDE are the gates that decide what becomes an automation. Wording and thresholds live
+# here, not in the model, so changing a threshold never re-runs inference.
 
-MAX_CANDIDATES = 8
-MIN_STRETCH_SWITCHES = 4
-WORKFLOW_THRESHOLD = 0.5  # p(recurring unit of work) needed to report a workflow
+MAX_CANDIDATES = 20
+WORKFLOW_THRESHOLD = 0.5  # p(recurring unit of work) at which a workflow is marked `likely` rather than `unsure`
 AUTOMATION_THRESHOLD = 2.0  # mechanical score (0..3) needed to propose automation
 QUESTION_THRESHOLD = 0.6  # p(only the employee can say what it is) needed to ask
 
@@ -467,85 +520,136 @@ KINDS = {
     "reconciliation": "Two applications are compared back and forth to check that they agree.",
     "communication": "Messages or email are read or written around work in another application.",
     "review_approval": "Something is examined in one application and then approved, filed or forwarded in another.",
-    NONE: "None of these describes it, or it is incidental switching rather than a unit of work.",
+    "data_entry": "Values are typed or pasted into one application, record after record.",
+    "document_work": "A document, sheet or page is read, edited or filed within one application.",
+    NONE: "None of these describes it, or it is too little to tell what the work is.",
 }
+SINGLE_APP_KINDS = ("data_entry", "document_work")  # the only kinds a one-application candidate is offered
 KIND_NAMES = {
     "data_transfer": "Data transfer",
     "lookup_and_enter": "Look up and enter",
     "reconciliation": "Reconciliation",
     "communication": "Communication loop",
     "review_approval": "Review and approval",
+    "data_entry": "Data entry",
+    "document_work": "Document work",
 }
+UNCLEAR_NAME = "Unclear work"
 MECHANICAL = [
     "Every step needs the employee's judgment; nothing repeats the same way twice.",
     "Mostly judgment, with a few steps that repeat the same way each time.",
     "Mostly the same steps every time, with an occasional decision or exception.",
     "The same mechanical sequence every time: the same fields, the same order, no decision.",
 ]
+TASK_ORDER = {"transfer": 0, "entry": 1, "open": 2, "activity": 3}
+
+
+def _kinds_for(c: dict) -> dict[str, str]:
+    """The kinds Jev may choose for one candidate: everything for work across applications,
+    only the single-application kinds (and none) for work inside one."""
+    if len(c["apps"]) >= 2:
+        return dict(KINDS)
+    return {k: KINDS[k] for k in (*SINGLE_APP_KINDS, NONE)}
+
+
+def _pair(c: dict) -> tuple[str, str]:
+    """(source, destination) applications of a candidate; one application plays both parts."""
+    apps = c["apps"]
+    return apps[0], apps[1] if len(apps) > 1 else apps[0]
+
+
+def _transfer_count(c: dict) -> int:
+    """Pastes moved between the candidate's two applications across all its stretches, or its stretch count."""
+    a, b = _pair(c)
+    return sum(t["count"] for t in c["tasks"] if t["kind"] == "transfer" and (t["from"], t["to"]) == (a, b)) or c["count"]
+
+
+def task_name(t: dict) -> str:
+    """One templated line per task, from the facts only."""
+    n = t.get("count") or 0
+    times = f" {n}×" if n > 1 else ""
+    sample = f" “{t['samples'][0]}”" if t.get("samples") else ""
+    if t["kind"] == "transfer":
+        where = f"within {t['from']}" if t["from"] == t["to"] else f"{t['from']} → {t['to']}"
+        return f"Copy and paste {where}{times}{sample}"
+    if t["kind"] == "entry":
+        return f"Type into {t['app']}" + (f":{sample}" if sample else f" ({n} keystroke{'s' if n != 1 else ''})")
+    if t["kind"] == "open":
+        return f"Open {t['file']} in {t['app']}"
+    return f"Work in {t['app']}" + (f" ({n} click{'s' if n != 1 else ''})" if n else "")
+
+
+def _task_key(t: dict) -> tuple:
+    """A task's identity: kind and applications (and file), never its counts or samples."""
+    if t["kind"] == "transfer":
+        return ("transfer", t["from"], t["to"])
+    if t["kind"] == "open":
+        return ("open", t["app"], t["file"])
+    return (t["kind"], t["app"])
 
 
 def _evidence_text(c: dict) -> str:
-    a, b = c["apps"][0], c["apps"][1]
-    n = c["count"]
     about = c["about"]
-    if c["pattern"] == "transfer":
-        return f"Copied from {a} and pasted into {b} {n} time{'s' if n != 1 else ''}, {about['mean_latency_s']}s apart on average"
-    if c["pattern"] == "loop":
-        return f"Switched back and forth between {a} and {b} {n} times"
-    return (
-        f"{about['switches']} switches among {', '.join(c['apps'])} between {_clock(_ts(about['start']))} and {_clock(_ts(about['end']))}"
-    )
+    when = f"between {_clock(_ts(about['start']))} and {_clock(_ts(about['end']))}"
+    tasks = "; ".join(t["name"] for t in c["tasks"][:4])
+    if len(c["tasks"]) > 4:
+        tasks += f"; and {len(c['tasks']) - 4} more"
+    seen = f", seen in {c['count']} stretches of work" if c["count"] > 1 else ""
+    return f"{tasks[0].upper() + tasks[1:]} {when}{seen}"
 
 
 def workflow_candidates(observed: dict) -> list[dict]:
-    """Every recurring cross-application pattern in the observed facts, each carrying
-    the fact it came from (`about`) and a sentence stating it (`evidence`)."""
-    found: list[dict] = []
-    for t in observed["transfers"]:
-        found.append(
-            {
-                "pattern": "transfer",
-                "apps": [t["from"], t["to"]],
-                "count": t["count"],
-                "about": {"transfer": [t["from"], t["to"]], "count": t["count"], "mean_latency_s": t["mean_latency_s"]},
-            }
-        )
-    for loop in observed["loops"]:
-        a, b = loop["between"]
-        found.append({"pattern": "loop", "apps": [a, b], "count": loop["count"], "about": {"loop": [a, b], "count": loop["count"]}})
+    """Every stretch of work is a candidate workflow, made of the tasks observed inside it —
+    one application or several, one paste or forty. Stretches with the same set of tasks are
+    one candidate whose `count` is how many times it was seen. Nothing is dropped for being
+    small or one-off: Jev labels each and the report shows them all, so a single copy from a
+    document into a sheet is visible instead of silently below a threshold."""
+    groups: dict[tuple, dict] = {}
     for s in observed["stretches"]:
-        if len(s["apps"]) >= 2 and s["switches"] >= MIN_STRETCH_SWITCHES:
-            found.append(
-                {
-                    "pattern": "stretch",
-                    "apps": s["apps"][:3],
-                    "count": s["switches"],
-                    "about": {
-                        "stretch": s["id"],
-                        "start": s["start"],
-                        "end": s["end"],
-                        "switches": s["switches"],
-                        "interactions": s.get("interactions", s["events"]),
-                    },
-                }
-            )
-    # One candidate per pair of applications: a transfer, a loop and a stretch between the
-    # same two apps are three views of one piece of work, not three workflows. The most
-    # specific pattern leads (a transfer says more than a loop, a loop more than a stretch);
-    # the others stay attached as evidence, and the pair ranks by its strongest signal.
-    priority = {"transfer": 0, "loop": 1, "stretch": 2}
-    groups: dict[frozenset, list[dict]] = {}
-    for c in found:
-        groups.setdefault(frozenset(c["apps"][:2]), []).append(c)
-    merged = []
-    for members in groups.values():
-        members.sort(key=lambda c: (priority[c["pattern"]], -c["count"]))
-        primary, extra = members[0], members[1:]
-        about = dict(primary["about"], also=[e["about"] for e in extra]) if extra else primary["about"]
-        evidence = "; also ".join([_evidence_text(primary)] + [_evidence_text(e)[0].lower() + _evidence_text(e)[1:] for e in extra])
-        merged.append({**primary, "about": about, "evidence": evidence, "rank": max(m["count"] for m in members)})
-    merged.sort(key=lambda c: (-c["rank"], c["pattern"], c["apps"]))
-    return [{"id": f"c{i + 1}", **{k: v for k, v in c.items() if k != "rank"}} for i, c in enumerate(merged[:MAX_CANDIDATES])]
+        if not s["tasks"]:
+            continue
+        key = tuple(sorted(_task_key(t) for t in s["tasks"]))
+        g = groups.setdefault(key, {"stretches": [], "tasks": {}, "apps": Counter(), "events": 0, "interactions": 0, "switches": 0})
+        g["stretches"].append(s)
+        g["events"] += s["events"]
+        g["interactions"] += s.get("interactions", s["events"])
+        g["switches"] += s["switches"]
+        for rank, app in enumerate(s["apps"]):
+            g["apps"][app] += len(s["apps"]) - rank
+        for t in s["tasks"]:
+            merged = g["tasks"].get(_task_key(t))
+            if merged is None:
+                merged = g["tasks"][_task_key(t)] = {k: v for k, v in t.items() if k != "samples"}
+            else:
+                merged["count"] += t["count"]
+            if t.get("samples"):
+                merged["samples"] = _dedupe(merged.get("samples", []) + t["samples"])[:3]
+    found = []
+    for g in groups.values():
+        tasks = sorted(g["tasks"].values(), key=lambda t: (TASK_ORDER[t["kind"]], -t["count"]))
+        for t in tasks:
+            t["name"] = task_name(t)
+        first, last = g["stretches"][0], g["stretches"][-1]
+        c = {
+            "pattern": tasks[0]["kind"],
+            "apps": [a for a, _ in g["apps"].most_common(3)],
+            "count": len(g["stretches"]),
+            "tasks": tasks,
+            "about": {
+                "stretches": [s["id"] for s in g["stretches"]],
+                "start": first["start"],
+                "end": last["end"],
+                "switches": g["switches"],
+                "events": g["events"],
+                "interactions": g["interactions"],
+                "tasks": [{k: v for k, v in t.items() if k != "name"} for t in tasks],
+            },
+        }
+        c["evidence"] = _evidence_text(c)
+        found.append(c)
+    # Work that moved or entered something ranks above bare activity; then what recurred most.
+    found.sort(key=lambda c: (TASK_ORDER[c["pattern"]], -c["count"], -c["about"]["events"], c["apps"]))
+    return [{"id": f"c{i + 1}", **c} for i, c in enumerate(found[:MAX_CANDIDATES])]
 
 
 MAX_SUMMARY = 2000
@@ -582,10 +686,14 @@ def judge_request(
             if has_detail(observed)
             else "Metadata-only record of one employee's work session: application names, timing, switches and "
             "copy→paste transfers. Window titles, URLs, typed text and screenshots were not shared."
-        ),
+        )
+        + " `candidates` are stretches of work, each listing the `tasks` observed inside it; one may be a single task.",
         "observed": facts,
         "shared_documents": [{"filename": d["filename"], "summary": d["summary"], "excerpt": d["excerpt"]} for d in docs],
-        "candidates": [{k: c[k] for k in ("id", "pattern", "apps", "count", "evidence")} for c in candidates],
+        "candidates": [
+            {**{k: c[k] for k in ("id", "pattern", "apps", "count", "evidence")}, "tasks": [t["name"] for t in c["tasks"]]}
+            for c in candidates
+        ],
     }
     state["context"] += (
         " `typing_runs` is how many fields were typed into; how many keys that took says nothing about whether the work is mechanical."
@@ -607,17 +715,17 @@ def judge_request(
         with_answers += " and the session's stated purpose in `employee_summary`"
     questions: dict[str, dict] = {}
     for c in candidates:
-        ref = f"candidate `{c['id']}` in `candidates` ({' and '.join(c['apps'])}; {c['evidence'].lower()})"
+        ref = f"candidate `{c['id']}` in `candidates` ({' and '.join(c['apps'])}; {c['evidence'][0].lower() + c['evidence'][1:]})"
         questions[f"{c['id']}_workflow"] = noul(
             f"Is {ref} a recurring unit of work — something this employee does the same way again and again — "
-            f"rather than incidental switching between applications? Judge from the pattern{with_answers}.",
+            f"rather than incidental activity? Judge from the tasks and the timing{with_answers}.",
             {
-                "true": "A repeatable task with a purpose that spans these applications.",
+                "true": "A repeatable task with a purpose.",
                 "false": "Incidental, one-off, or just where the employee's attention happened to go.",
             },
         )
         questions[f"{c['id']}_kind"] = choice(
-            f"What kind of work is {ref}? Judge from the pattern, the timing, any `shared_documents`{with_answers}.", KINDS
+            f"What kind of work is {ref}? Judge from the tasks, the timing, any `shared_documents`{with_answers}.", _kinds_for(c)
         )
         questions[f"{c['id']}_mechanical"] = score(
             f"How mechanical is {ref}: how much of it is the same steps in the same order, with no decision to make?"
@@ -625,32 +733,36 @@ def judge_request(
             MECHANICAL,
         )
         questions[f"{c['id']}_ask"] = noul(
-            f"Could only the employee say what {ref} actually is — what moves between the applications, and why?"
+            f"Could only the employee say what {ref} actually is — what the values are, where they come from, and why?"
             f"{' They have already answered in `employee_answers`; ask again only if that leaves it unclear.' if answered else ''}",
             {
                 "true": "The metadata leaves the task itself unknown; ask before proposing anything.",
-                "false": "The pattern, the shared documents and any answers already make the task clear enough to describe.",
+                "false": "The tasks, the shared documents and any answers already make the work clear enough to describe.",
             },
         )
     return state, questions
 
 
 def _workflow_name(kind: str, apps: list[str]) -> str:
+    if kind == NONE:
+        return f"{UNCLEAR_NAME}: {', '.join(apps[:3])}"
+    if kind in SINGLE_APP_KINDS:
+        return f"{KIND_NAMES[kind]}: {apps[0]}"
     joiner = " → " if kind == "data_transfer" else " ↔ "
     return f"{KIND_NAMES[kind]}: {joiner.join(apps[:2])}"
 
 
 def _question_for(kind: str, c: dict) -> str:
-    a, b, n = c["apps"][0], c["apps"][1], c["count"]
+    (a, b), n = _pair(c), _transfer_count(c)
+    when = f"between {_clock(_ts(c['about']['start']))} and {_clock(_ts(c['about']['end']))}"
     return {
         "data_transfer": (
-            f"You moved values from {a} into {b} about {n} times. "
+            f"You moved values from {a} into {b} about {n} time{'s' if n != 1 else ''}. "
             "What is being re-keyed, and is there a file or export it could come from instead?"
         ),
-        "lookup_and_enter": f"You went between {a} and {b} {n} times. What do you look up in one before entering it in the other?",
+        "lookup_and_enter": f"You went between {a} and {b}. What do you look up in one before entering it in the other?",
         "reconciliation": (
-            f"You went back and forth between {a} and {b} {n} times. "
-            "What are you checking agrees between them, and what happens when it doesn't?"
+            f"You went back and forth between {a} and {b}. What are you checking agrees between them, and what happens when it doesn't?"
         ),
         "communication": (
             f"Around your work in {b}, you kept returning to {a}. "
@@ -659,6 +771,9 @@ def _question_for(kind: str, c: dict) -> str:
         "review_approval": (
             f"Between {a} and {b}: what do you check in the first before acting in the second, and does anyone else have to approve it?"
         ),
+        "data_entry": f"You entered values in {a} {when}. What are they, where do they come from, and how often do you enter them?",
+        "document_work": f"You worked in {a} {when}. Which document or page was it, what did you do to it, and is that a regular task?",
+        NONE: f"You worked in {', '.join(c['apps'][:3])} {when}. What were you doing, and is it something you repeat?",
     }[kind]
 
 
@@ -675,6 +790,8 @@ TOOLS = {
     "reconciliation": ["read_source_records", "read_destination_records", "match_records", "report_differences"],
     "communication": ["read_messages", "extract_requests", "create_task", "draft_reply"],
     "review_approval": ["read_source_records", "check_against_rules", "route_for_approval", "record_decision"],
+    "data_entry": ["read_source_records", "map_fields", "write_destination_records", "compare_with_manual_entry"],
+    "document_work": ["read_source_records", "extract_requests", "write_destination_records", "compare_with_manual_entry"],
 }
 DRAFT_LIMITS = {"max_steps": 10, "max_runtime_seconds": 300, "max_cost_usd": "1.00"}
 
@@ -693,7 +810,7 @@ def graph_for(plan: dict | None, apps: list[str]) -> dict | None:
 
 def draft_definition(kind: str, c: dict, docs: list[dict], plan: dict | None = None) -> dict:
     """A `WorkflowDefinition` (automation/schemas.py) prefilled from the kind and the apps."""
-    a, b, n = c["apps"][0], c["apps"][1], c["count"]
+    (a, b), n = _pair(c), _transfer_count(c)
     goal = {
         "data_transfer": (
             f"Move the values the employee re-keys from {a} into {b} (about {n} times per session) without manual entry, "
@@ -710,6 +827,14 @@ def draft_definition(kind: str, c: dict, docs: list[dict], plan: dict | None = N
         ),
         "review_approval": (
             f"Check what the employee examines in {a} against the rules that decide it, and route the result for approval in {b}."
+        ),
+        "data_entry": (
+            f"Enter the values the employee keys into {a} from their source without manual entry, "
+            "and list anything that could not be mapped for a person to handle."
+        ),
+        "document_work": (
+            f"Do the routine edits the employee makes to the document in {a} the same way each time, "
+            "and leave anything that needs a decision for a person."
         ),
     }[kind]
     criteria = {
@@ -734,8 +859,17 @@ def draft_definition(kind: str, c: dict, docs: list[dict], plan: dict | None = N
             f"Every case in the sample gets the same decision the employee gave it in {a}",
             "Anything the rules do not cover is routed to a person with the reason",
         ],
+        "data_entry": [
+            f"Every value written to {a} equals the corresponding source value",
+            f"No record is created in {a} that the employee would not have created by hand",
+            "Anything that could not be mapped is listed for a person instead of guessed",
+        ],
+        "document_work": [
+            f"The document in {a} ends in the state the employee would have left it in",
+            "Nothing is deleted or sent without a person confirming it",
+        ],
     }[kind]
-    inputs = [f"{a} export or sample", f"{b} field list"]
+    inputs = [f"{a} export or sample", f"{b} field list"] if a != b else [f"{a} source values or sample", f"{a} field list"]
     graph = graph_for(plan, c["apps"])
     if graph is not None:
         # every value the employee typed is a declared input the FDE binds before a run
@@ -761,12 +895,21 @@ def draft_definition(kind: str, c: dict, docs: list[dict], plan: dict | None = N
 
 def instructions_for(kind: str, c: dict, docs: list[dict], question: str | None, automation: bool) -> list[str]:
     """Specific next steps for the FDE, in order. Each names the apps, the counts and the documents involved."""
-    a, b = c["apps"][0], c["apps"][1]
+    a, b = _pair(c)
+    tasks = "; ".join(t["name"][0].lower() + t["name"][1:] for t in c["tasks"][:4])
+    confirm = f"what actually moves between {a} and {b}" if a != b else f"what the work in {a} is"
     steps = [
-        f"Confirm with the employee what actually moves between {a} and {b}"
+        f"Confirm with the employee {confirm}"
         + (f" — the report asks: “{question}”" if question else "")
         + ". Their answer on the published report is the baseline; do not proceed from the pattern alone."
     ]
+    if kind == NONE:
+        steps.append(
+            f"The observed tasks — {tasks} — were too little to classify. Once the employee has said what they are, "
+            "decide whether they belong to a workflow already on this report or are one of their own, and rename it."
+        )
+        steps.append("Nothing to automate yet: an unclear task is not a baseline. Revisit after the next recording of the same work.")
+        return steps
     if docs:
         names = ", ".join(d["filename"] for d in docs[:3])
         steps.append(
@@ -796,10 +939,18 @@ def instructions_for(kind: str, c: dict, docs: list[dict], question: str | None,
             "review_approval": (
                 f"Write down the rules the employee applies in {a} before acting in {b}, including who else must approve, and when."
             ),
+            "data_entry": (
+                f"List the fields in {a} that receive the values and where each value comes from (a document, a message, memory). "
+                "Note any value the employee changes on the way (formats, codes, defaults)."
+            ),
+            "document_work": (
+                f"Write down which document or page in {a} the work is on and the edits made to it each time, "
+                "and which of them ever need a decision."
+            ),
         }[kind]
     )
     steps.append(
-        f"Measure the baseline from this session — {c['evidence'][0].lower() + c['evidence'][1:]} — then ask how often it recurs per week "
+        f"Measure the baseline from this session — {tasks} — then ask how often it recurs per week "
         "and how long one round takes, so an outcome can be compared to something."
     )
     if automation:
@@ -833,21 +984,22 @@ def apply_judgment(
     """Turn typed answers into the report's interpretation. Nothing here is generated:
     names, rationales, questions and next steps are templates over the candidate and
     the chosen labels, and confidence is the least certain judgment an item depends on.
+    Every candidate becomes a workflow: `status` is `likely` when Jev rated it a recurring
+    unit of work of a known kind, `unsure` otherwise — a label for the reader, not a filter.
     `answers` are the employee's replies that this judgment was made with; the summary
     quotes the first so the reader sees the task in the employee's words."""
-    workflows, automation, questions, declined = [], [], [], 0
+    workflows, automation, questions, unsure = [], [], [], 0
     for c in candidates:
         p_workflow = judgment.noul(f"{c['id']}_workflow")
         kind, p_kind = judgment.choice(f"{c['id']}_kind")
         mechanical, p_mechanical = judgment.score(f"{c['id']}_mechanical")
         p_ask = judgment.noul(f"{c['id']}_ask")
-        if p_workflow < WORKFLOW_THRESHOLD or kind == NONE:
-            declined += 1
-            continue
+        likely = p_workflow >= WORKFLOW_THRESHOLD and kind != NONE
+        unsure += 0 if likely else 1
         confidence = round(min(p_workflow, p_kind), 2)
         name = _workflow_name(kind, c["apps"])
-        automate = mechanical >= AUTOMATION_THRESHOLD
-        asked = _question_for(kind, c) if p_ask >= QUESTION_THRESHOLD else None
+        automate = kind != NONE and mechanical >= AUTOMATION_THRESHOLD
+        asked = _question_for(kind, c) if p_ask >= QUESTION_THRESHOLD or kind == NONE else None
         actions = {
             "instructions": instructions_for(kind, c, list(docs or []), asked, automate),
             "draft_definition": draft_definition(kind, c, list(docs or []), plan) if automate else None,
@@ -856,7 +1008,9 @@ def apply_judgment(
         item = {
             "name": name,
             "kind": kind,
+            "status": "likely" if likely else "unsure",
             "apps": c["apps"],
+            "tasks": [t["name"] for t in c["tasks"]],
             "evidence": c["evidence"],
             "about": c["about"],
             "confidence": confidence,
@@ -883,11 +1037,12 @@ def apply_judgment(
             questions.append({"source": "model", "question": asked, "about": {"apps": c["apps"], "candidate": c["id"]}})
     summary = ""
     if candidates:
+        likely_n = len(workflows) - unsure
         summary = (
-            f"{len(workflows)} recurring workflow{'s' if len(workflows) != 1 else ''} "
-            f"judged from {len(candidates)} observed pattern{'s' if len(candidates) != 1 else ''}"
+            f"{len(workflows)} workflow{'s' if len(workflows) != 1 else ''} from {len(candidates)} "
+            f"stretch{'es' if len(candidates) != 1 else ''} of work; {likely_n} judged likely recurring"
         )
-        summary += f"; {len(automation)} look{'s' if len(automation) == 1 else ''} mechanical enough to automate." if workflows else "."
+        summary += f"; {len(automation)} look{'s' if len(automation) == 1 else ''} mechanical enough to automate."
     answered = [a for a in (answers or []) if a.get("answer")]
     if answered:
         quoted = str(answered[0]["answer"]).strip()[:200]
@@ -900,7 +1055,8 @@ def apply_judgment(
         "summary": summary,
         "workflows": workflows,
         "automation_candidates": automation,
-        "rejected": declined,
+        "rejected": 0,
+        "unsure": unsure,
         "judged": len(candidates),
         "answered": len(answered),
     }
@@ -952,6 +1108,7 @@ def interpret_with_jev(
         "candidates": len(candidates),
         "questions": len(questions),
         "rejected": interpretation["rejected"],
+        "unsure": interpretation["unsure"],
         "employee_answers": len(answered),
     }
     return Interpretation(
@@ -1182,10 +1339,14 @@ def finding_rows(report: RecorderReport) -> list[dict]:
         auto = automation.get(cid) if cid else None
         answer = answers.get(cid) if cid else None
         detail = [w.get("evidence") or ""]
-        if w.get("kind") in KINDS:
+        if w.get("tasks"):
+            detail.append("Tasks: " + "; ".join(w["tasks"]) + ".")
+        if w.get("kind") in KIND_NAMES:
             detail.append(KINDS[w["kind"]])
+        pct = round((w.get("confidence") or 0) * 100)
+        likely = w.get("status", "likely") == "likely"
         detail.append(
-            f"Judged a recurring workflow at {round((w.get('confidence') or 0) * 100)}%"
+            (f"Judged a recurring workflow at {pct}%" if likely else f"Unsure it is a recurring workflow ({pct}%)")
             + (f"; mechanical {auto['mechanical']} of 3." if auto else "; not mechanical enough to automate yet.")
         )
         if answer:
@@ -1205,6 +1366,8 @@ def finding_rows(report: RecorderReport) -> list[dict]:
                     "from_run": str(report.run_id) if report.run_id else None,
                     "apps": w.get("apps", []),
                     "kind": w.get("kind"),
+                    "status": w.get("status"),
+                    "tasks": w.get("tasks"),
                     "confidence": w.get("confidence"),
                     "mechanical": auto.get("mechanical") if auto else None,
                     "question": actions.get("question") if actions else None,
