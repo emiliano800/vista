@@ -58,6 +58,7 @@ class PlannerState:
     node: str | None = None  # graph planner: the state key the run is believed to be in
     trajectory: list[dict] = field(default_factory=list)  # graph planner: edges acted on, {"edge", "step_id", "seq", "effect_seen"}
     proposals: list[dict] = field(default_factory=list)  # graph planner: edges that paused for a person, {"edge", "step_id"}
+    recovery: dict = field(default_factory=dict)  # run loop v3: {"used", "log", "rejudged", "reobserved_at", "l0"}
 
     @classmethod
     def from_checkpoint(cls, data: dict | None) -> PlannerState:
@@ -74,6 +75,7 @@ class PlannerState:
             node=data.get("node"),
             trajectory=list(data.get("trajectory", [])),
             proposals=list(data.get("proposals", [])),
+            recovery=dict(data.get("recovery", {})),
         )
 
     def to_checkpoint(self) -> dict:
@@ -89,6 +91,7 @@ class PlannerState:
             "node": self.node,
             "trajectory": self.trajectory,
             "proposals": self.proposals,
+            "recovery": self.recovery,
         }
 
     def executed(self, step_id: str) -> bool:

@@ -32,6 +32,7 @@ from vista.computer_use.harness import (
 from vista.computer_use.harness_local import DocumentsHarness, HttpHarness, WorkspaceHarness
 from vista.computer_use.harness_remote import RemoteHarness
 from vista.computer_use.planner import Act, Finish, Pause, PlannerState, Stop, facts_from_result, plan_step, verify
+from vista.computer_use.run_v3 import is_v3, plan_v3_step
 from vista.computer_use.service import JOB_KIND, TERMINAL
 from vista.config import settings
 from vista.db import platform_session, tenant_session
@@ -457,7 +458,8 @@ def _execute(session, tenant_schema: str, job: Job, run: WorkflowRun, owner: str
             decision = Act(Action.from_json(pending["action"]), gated=bool(pending.get("gated")))
         else:
             state.pending = None
-            decision, judgment, detail = (plan_graph_step if definition.get("graph") else plan_step)(
+            planner = plan_v3_step if is_v3(definition, observation) else plan_graph_step if definition.get("graph") else plan_step
+            decision, judgment, detail = planner(
                 state,
                 definition,
                 run.inputs or {},

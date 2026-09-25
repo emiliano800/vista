@@ -54,6 +54,7 @@ class Sidecar:
     drivers: dict[str, Driver] = field(default_factory=dict)
     context: RecordingContext = field(default_factory=lambda: RecordingContext.build())
     vocab: Vocabulary | None = None
+    aliases: dict[str, dict[str, str]] = field(default_factory=dict)  # kind → {cloud alias: real candidate id}
 
     # ---- methods ------------------------------------------------------------------------------
 
@@ -90,13 +91,16 @@ class Sidecar:
         driver = self._driver(params)
         if isinstance(driver, DesktopDriver) and params.get("pid") is not None:
             driver.bind(int(params["pid"]))
-        return self._package(await driver.observe())
+        return self._package(await driver.observe(), str(params.get("kind", "browser")))
 
     async def perform(self, params: dict) -> dict:
         driver = self._driver(params)
         step = dict(params.get("step") or {})
+        alias = self.aliases.get(str(params.get("kind", "browser")), {})
+        if step.get("target_id") is not None and str(step["target_id"]) in alias:
+            step["target_id"] = alias[str(step["target_id"])]
         result = await driver.perform(step, None)
-        return self._result(result)
+        return self._result(result, kind=str(params.get("kind", "browser")))
 
     async def frame(self, params: dict) -> dict:
         vocab = Vocabulary.from_json(params["vocabulary"]) if params.get("vocabulary") else self.vocab
@@ -144,11 +148,13 @@ class Sidecar:
             raise DriverError("harness_unsupported", f"The {kind} driver is not open.")
         return d
 
-    def _package(self, f: Frame) -> dict:
+    def _package(self, f: Frame, kind: str | None = None) -> dict:
         cloud = f.cloud()
+        if kind is not None:
+            self.aliases[kind] = {t["id"]: real for real, t in f.targets()}
         return {"observation": f.observation(_observation_id()), "cloud": cloud, "leakage": check(cloud, self.context).to_json()}
 
-    def _result(self, r: Result) -> dict:
+    def _result(self, r: Result, kind: str | None = None) -> dict:
         out = {
             "ok": r.ok,
             "description": r.description,
@@ -160,7 +166,7 @@ class Sidecar:
             "leakage": None,
         }
         if r.frame is not None:
-            out.update(self._package(r.frame))
+            out.update(self._package(r.frame, kind))
         return out
 
     async def dispatch(self, request: dict) -> dict:

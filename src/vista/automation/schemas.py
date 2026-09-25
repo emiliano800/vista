@@ -35,6 +35,7 @@ AppRole = Literal["accounting", "crm", "spreadsheet", "pdf", "email", "browser",
 ActionClass = Literal["navigate", "click", "type_value", "press", "read", "extract", "submit", "wait", "http_get", "create_task"]
 EdgePolicy = Literal["auto", "confirm", "always_ask"]
 Irreversibility = Literal["navigational", "mutating", "committing"]
+Tier = Literal["shadow", "ask", "confirm", "unattended"]
 SlotMethod = Literal["transfer", "declared", "descriptor", "storyboard"]
 CriterionType = Literal["read_back", "present", "graded"]
 assert set(AppRole.__args__) == set(APP_ROLES) and set(ActionClass.__args__) == ACTION_CLASSES and EdgePolicy.__args__ == POLICIES
@@ -159,11 +160,12 @@ class GraphEdge(InputModel):
     descriptor: ControlDescriptor | None = None
     irreversibility: Irreversibility | None = None
     commit: Name | None = None
+    tier: Tier | None = None  # pinned autonomy tier; promotion past `ask` is an FDE click
 
     @model_serializer(mode="wrap")
     def _without_absent_v3_fields(self, handler: SerializerFunctionWrapHandler):
         data = handler(self)
-        for k in ("descriptor", "irreversibility", "commit"):
+        for k in ("descriptor", "irreversibility", "commit", "tier"):
             if data.get(k) is None:
                 data.pop(k, None)
         return data
@@ -178,6 +180,8 @@ class GraphEdge(InputModel):
             raise ValueError("A submit edge is committing")
         if self.irreversibility == "committing" and self.policy != "always_ask":
             raise ValueError("A committing edge always asks a person")
+        if self.tier == "unattended" and (self.irreversibility == "committing" or self.action_class == "submit"):
+            raise ValueError("A committing edge can never be unattended")
         return self
 
 

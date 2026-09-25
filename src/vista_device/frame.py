@@ -124,15 +124,39 @@ class Frame:
 
     def cloud(self) -> dict:
         """What may leave the device about this frame: L0, L1, at most `MAX_DESCRIPTORS`
-        normalised descriptors. No URL, title, text or raw name."""
+        normalised descriptors, and the same descriptors once per live candidate under an opaque
+        per-observation alias (`targets`) so the run loop can resolve an edge's descriptor to a
+        thing it may act on. No URL, title, text or raw name."""
         return {
             "kind": self.kind,
             "sensitive": self.sensitive,
+            "settled": self.settled,
             "l0": list(self.l0),
             "l1": dict(self.l1),
             "descriptors": [d.to_json() for d in self.descriptors[:MAX_DESCRIPTORS]],
+            "targets": [t for _, t in self.targets()],
             "fields_with_value": list(self.fields_with_value),
         }
+
+    def targets(self, vocab: Vocabulary | None = None) -> list[tuple[str, dict]]:
+        """`(real candidate id, cloud target)` pairs; the alias is the target's `id`."""
+        out: list[tuple[str, dict]] = []
+        for i, c in enumerate(self.candidates[:MAX_DESCRIPTORS]):
+            d = descriptor_for(c, vocab or self.extra.get("vocab"))
+            out.append(
+                (
+                    c.id,
+                    {
+                        **d.to_json(),
+                        "id": f"c{i}",
+                        "kind": c.kind,
+                        "has_value": c.has_value,
+                        "disabled": c.disabled,
+                        "primary": c.primary,
+                    },
+                )
+            )
+        return out
 
     def to_json(self) -> dict:
         data = asdict(self)
@@ -235,6 +259,7 @@ def frame_from_candidates(
         fields_with_value=fields_with_value,
         text_local=(text or "")[:MAX_TEXT],
         settled=settled,
+        extra={"vocab": vocab} if vocab is not None else {},
     )
 
 

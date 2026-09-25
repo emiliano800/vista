@@ -224,6 +224,7 @@ def test_sidecar_protocol_round_trip():
             {"id": 5, "method": "observe", "params": {"kind": "browser"}},
             {"id": 6, "method": "perform", "params": {"kind": "browser", "step": {"action": "click", "target_id": "3"}}},
             {"id": 7, "method": "perform", "params": {"kind": "browser", "step": {"action": "click", "target_id": "nope"}}},
+            {"id": 11, "method": "perform", "params": {"kind": "browser", "step": {"action": "click", "target_id": "c2"}}},
             {
                 "id": 8,
                 "method": "frame",
@@ -248,6 +249,11 @@ def test_sidecar_protocol_round_trip():
     assert "ACME" not in json.dumps(obs["cloud"])
     assert by_id[6]["result"]["ok"] is True and by_id[6]["result"]["observation"]["l0"] == obs["observation"]["l0"]
     assert by_id[7]["result"]["ok"] is False and by_id[7]["result"]["error"]["code"] == "stale_observation"
+    # The cloud block names each live candidate under an opaque alias; perform translates it back.
+    targets = obs["cloud"]["targets"]
+    assert [t["id"] for t in targets] == ["c0", "c1", "c2", "c3"] and targets[2]["role"] == "button" and "Save" not in json.dumps(targets)
+    assert obs["cloud"]["settled"] is True
+    assert by_id[11]["result"]["ok"] is True and fake.steps[-1]["target_id"] == "3"
     assert by_id[8]["result"]["observation"]["l0"][0].startswith("in:") and by_id[8]["result"]["leakage"]["ok"]
     assert by_id[9]["error"]["code"] == "harness_unsupported"
     assert by_id[10]["error"]["code"] == "unknown_method"
