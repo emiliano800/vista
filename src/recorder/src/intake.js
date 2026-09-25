@@ -10,6 +10,13 @@ import { redactText } from './redact.js';
 import { buildSections, parseEvents } from './sections.js';
 
 export const SHARING_POLICY = 'activity-metadata-v1';
+// Full detail: the same events with window titles, page URLs, control labels, typed text,
+// clipboard contents and opened file names, as recorded (on-device redaction already applied).
+// Screenshots, video and the raw log never leave the device. Chosen per upload in the dialog;
+// the default comes from settings.shareDetail.
+export const SHARING_POLICY_FULL = 'activity-full-v1';
+export const DETAIL_FIELDS = ['window_title', 'url', 'element', 'text'];
+const DETAIL_LIMITS = { window_title: 255, url: 2048, element: 255, text: 4000 };
 // The consent card shown at connect time. `computer-use-v2` states both halves — the full
 // recording stays on the device; the cloud gets activity metadata and, when shared, the task's
 // structure — and is the only version under which a plan may leave the device.
@@ -25,11 +32,12 @@ export const DOCUMENT_TYPES = {
   '.docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
   '.pptx': 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
 };
-const MAX_ACTIVITY = 4 * 1024 * 1024;
+const MAX_ACTIVITY = 16 * 1024 * 1024;
 const MAX_PLAN = 1024 * 1024;
 const MAX_FILE = 20 * 1024 * 1024;
 const MAX_TOTAL = 50 * 1024 * 1024;
 const EVENT_TYPES = new Set(['focus', 'click', 'key', 'scroll', 'copy', 'paste', 'shortcut']);
+const DETAIL_EVENT_TYPES = new Set([...EVENT_TYPES, 'file']); // opened documents, by name, in full detail
 const ID = /^[A-Za-z0-9_-]{1,128}$/;
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const hash = (data) => createHash('sha256').update(data).digest('hex');
@@ -124,7 +132,9 @@ export function planPreview(root, id, opts = {}) {
   return planSummary(reviewedPlan(dir, id, raw, m, excluded, opts));
 }
 
-export function metadataEvents(raw, manifest, excluded = []) {
+export function metadataEvents(raw, manifest, excluded = [], { detail = 'metadata' } = {}) {
+  const full = detail === 'full';
+  const types = full ? DETAIL_EVENT_TYPES : EVENT_TYPES;
   const events = [];
   const start = Date.parse(manifest.started_at), end = Date.parse(manifest.ended_at);
   const hidden = [...excluded, ...(manifest.pauses ?? [])].map((range) => {
@@ -135,13 +145,22 @@ export function metadataEvents(raw, manifest, excluded = []) {
   for (const line of raw.split('\n')) {
     if (!line.trim()) continue;
     const e = JSON.parse(line);
-    if (!EVENT_TYPES.has(e.event_type)) continue;
+    if (!types.has(e.event_type)) continue;
     const at = Date.parse(e.timestamp);
     if (!Number.isFinite(at)) throw new Error('A recording event has an invalid timestamp.');
     if (at < start || at > end || hidden.some(([from, to]) => at >= from && at < to)) continue;
     const app = redactText(String(e.app || 'Unknown app')).replace(/[\x00-\x1f]/g, '').trim().slice(0, 128);
     if (!app || /private|1password|bitwarden|keychain|lastpass|keepass/i.test(app)) continue;
-    events.push({ timestamp: new Date(at).toISOString(), event_type: e.event_type, app, count: 1 });
+    const event = { timestamp: new Date(at).toISOString(), event_type: e.event_type, app, count: 1 };
+    if (full) {
+      // Private windows never reach events.jsonl and on-device redaction already ran; what is
+      // recorded is what is shared, trimmed to the server's field limits.
+      for (const field of DETAIL_FIELDS) {
+        const value = String(e[field] ?? '').replace(/[\x00-\x08\x0b-\x1f]/g, '').trim();
+        if (value) event[field] = value.slice(0, DETAIL_LIMITS[field]);
+      }
+    }
+    events.push(event);
     if (events.length > 50000) throw new Error('This session is too large to upload; record a shorter session.');
   }
   return { schema_version: 1, events };
@@ -157,8 +176,10 @@ export function packageLeakage(payload, raw, manifest, files = [], { ownApps = [
   return checkLeakage(payload, recordingContext({ values, titles, vocab: recordingVocabulary(events) }));
 }
 
-export function buildSubmissionPackage(root, id, config, { selectedFileIds = [], consent = false, sharePlan = false, ownApps = [] } = {}) {
+export function buildSubmissionPackage(root, id, config, { selectedFileIds = [], consent = false, sharePlan = false, ownApps = [], shareDetail = 'metadata' } = {}) {
   if (consent !== true) throw new Error('Confirm the sharing package before uploading.');
+  if (shareDetail !== 'full' && shareDetail !== 'metadata') throw new Error('Unknown sharing level.');
+  const full = shareDetail === 'full';
   const consentVersion = config.consentVersion ?? 'activity-metadata-v1';
   if (!CONSENT_VERSIONS.has(consentVersion)) throw new Error('Reconnect your workspace to accept the current recording and sharing notice.');
   if (sharePlan === true && consentVersion !== CONSENT_VERSION)
@@ -178,7 +199,7 @@ export function buildSubmissionPackage(root, id, config, { selectedFileIds = [],
   const edits = fs.existsSync(path.join(dir, 'sections.json'))
     ? JSON.parse(readInside(dir, 'sections.json', MAX_ACTIVITY).toString('utf8')) : {};
   const excluded = buildSections(parseEvents(raw), m).filter((section) => edits[section.id]?.excluded);
-  const events = metadataEvents(raw, m, excluded);
+  const events = metadataEvents(raw, m, excluded, { detail: shareDetail });
   const data = new Map();
   const artifacts = [];
   const add = (artifactId, kind, filename, contentType, bytes) => {
@@ -194,8 +215,12 @@ export function buildSubmissionPackage(root, id, config, { selectedFileIds = [],
     const plan = reviewedPlan(dir, id, raw, m, excluded, { ownApps });
     if (plan.nodes.length && plan.edges.length) cloudBound.plan = plan;
   }
-  const leak = packageLeakage(cloudBound, raw, m, files, { ownApps });
-  if (!leak.ok) throw new Error(`This package did not pass the privacy check and was not queued: ${describeFailures(leak)}`);
+  // The leakage test asks whether anything the recording saw is in the package. In full
+  // detail that is the point of the package, so the test applies to metadata uploads only.
+  if (!full) {
+    const leak = packageLeakage(cloudBound, raw, m, files, { ownApps });
+    if (!leak.ok) throw new Error(`This package did not pass the privacy check and was not queued: ${describeFailures(leak)}`);
+  }
   add('activity', 'activity', 'activity.json', 'application/json', Buffer.from(JSON.stringify(events)));
   if (cloudBound.plan) add('plan', 'plan', 'plan.json', 'application/json', Buffer.from(JSON.stringify(cloudBound.plan)));
   for (const fileId of selectedFileIds) {
@@ -212,7 +237,7 @@ export function buildSubmissionPackage(root, id, config, { selectedFileIds = [],
   return {
     binding,
     manifest: {
-      format_version: 2, sharing_policy: SHARING_POLICY, consent: true, consent_version: consentVersion,
+      format_version: 2, sharing_policy: full ? SHARING_POLICY_FULL : SHARING_POLICY, consent: true, consent_version: consentVersion,
       device_id: config.deviceId, source_id: id, workspace: binding.workspace,
       started_at: new Date(m.started_at).toISOString(), ended_at: new Date(m.ended_at).toISOString(),
       active_seconds: Math.max(0, Math.min(elapsed, Math.floor(Number(m.active_seconds) || 0))), artifacts,

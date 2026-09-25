@@ -10,7 +10,7 @@ import { BrowserWindow, Menu, Tray, app, clipboard, desktopCapturer, globalShort
 
 import { CONFIDENCE_THRESHOLD, RESOLVED_STATUSES, SESSION_ID, applyDecision, describeSection, explainSection, openaiConfig, reviewSummary } from './explain.js';
 import { DEMO_KEYS, DemoHook, demoActiveWindow, demoClipboard, demoDocuments } from './demo.js';
-import { DEFAULT_SETTINGS, Recorder, keyNamesFrom, loadSettings } from './recorder.js';
+import { DEFAULT_SETTINGS, Recorder, isOwnApp as isOwnAppName, keyNamesFrom, loadSettings, ownAppList } from './recorder.js';
 import { withPermissionFallback } from './foreground.js';
 import { FILES_DIR, FILES_FILE, FileTracker, axDocuments, documentFromTitle, lsofDocuments, publicFile, readFiles, snapshotFiles, spotlightSweep, writeFiles } from './files.js';
 import { redactText } from './redact.js';
@@ -559,8 +559,12 @@ function firstError(items) {
 // Video sections: the long single-window stretches of a recording, computed
 // once after Stop (and again when the employee asks) from events.jsonl.
 function isOwnApp(app) {
-  const a = String(app ?? '').toLowerCase();
-  return (recorder?.settings.ownApps ?? DEFAULT_SETTINGS.ownApps).some((p) => a === p.toLowerCase());
+  return isOwnAppName(app, recorder?.settings.ownApps ?? DEFAULT_SETTINGS.ownApps);
+}
+
+/** The own-app list handed to intake, plan and section code: built-ins plus settings. */
+function ownApps() {
+  return ownAppList(recorder?.settings?.ownApps ?? DEFAULT_SETTINGS.ownApps);
 }
 
 function readEvents(dir) {
@@ -657,7 +661,7 @@ function sectionsFor(recordingId) {
     const a = Date.parse(s.start), b = Date.parse(s.end);
     s.files = files.filter((f) => f.intervals.some((iv) => Date.parse(iv.start) < b && Date.parse(iv.end) > a)).map((f) => f.name);
   }
-  const apps = m.submitted ? m.submitted.apps ?? [] : appSpans(events, m, { ownApps: recorder?.settings?.ownApps ?? [] });
+  const apps = m.submitted ? m.submitted.apps ?? [] : appSpans(events, m, { ownApps: ownApps() });
   return {
     recording_id: recordingId,
     video,
@@ -1386,7 +1390,11 @@ async function queueSubmission(id, options) {
   const config = cloudConfig();
   if (options?.consent !== true || JSON.stringify(options.expectedBinding) !== JSON.stringify(uploadBinding(config)))
     throw new Error('Review and confirm the upload destination and selected files again.');
-  intakeQueue.enqueue(RECORDINGS, id, config, { ...options, ownApps: recorder?.settings?.ownApps ?? [] });
+  intakeQueue.enqueue(RECORDINGS, id, config, {
+    ...options,
+    ownApps: ownApps(),
+    shareDetail: options.shareDetail ?? recorder?.settings?.shareDetail ?? DEFAULT_SETTINGS.shareDetail,
+  });
   resumeUploads(true);
   return sectionsFor(id);
 }
@@ -1414,7 +1422,7 @@ ipcMain.handle('recordings:upload-preview', (event, id) => {
   const c = cloudConfig();
   let plan = null;
   try {
-    plan = planPreview(RECORDINGS, id, { ownApps: recorder?.settings?.ownApps ?? [] });
+    plan = planPreview(RECORDINGS, id, { ownApps: ownApps() });
   } catch (e) {
     console.error('Plan graph preview failed:', e?.message ?? e);
   }
@@ -1546,7 +1554,7 @@ async function submitRecording(id, options = {}) {
     const files_list = writeFilesStub(dir, stub);
     fs.writeFileSync(
       path.join(stub, 'manifest.json'),
-      JSON.stringify({ ...m, files: {}, submitted: { at: new Date().toISOString(), recording_id: cloudId, files: files.length, sections, files_list, apps: appSpans(readEvents(dir), m, { ownApps: recorder?.settings?.ownApps ?? [] }) } }, null, 2),
+      JSON.stringify({ ...m, files: {}, submitted: { at: new Date().toISOString(), recording_id: cloudId, files: files.length, sections, files_list, apps: appSpans(readEvents(dir), m, { ownApps: ownApps() }) } }, null, 2),
     );
     fs.rmSync(dir, { recursive: true, force: true });
     saveState({ status: 'submitted', submittedAt: new Date().toISOString(), recordingId: cloudId, files: files.length, progress: null });

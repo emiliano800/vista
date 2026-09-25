@@ -394,3 +394,27 @@ test('accepted uploads poll for analysis, cache the draft report, take answers a
     assert.ok(!JSON.stringify(queue.entries()).includes('PRIVATE'));
   } finally { f.cleanup(); }
 });
+
+test('full detail keeps titles, pages and typed text in the package and names its policy', () => {
+  const f = fixture();
+  try {
+    const full = buildSubmissionPackage(f.root, 'session-1', f.config, { consent: true, shareDetail: 'full' });
+    assert.equal(full.manifest.sharing_policy, 'activity-full-v1');
+    const events = JSON.parse(full.data.get('activity').toString()).events;
+    const focus = events.find((e) => e.event_type === 'focus' && e.app === 'Excel');
+    assert.equal(focus.window_title, 'PRIVATE_TITLE');
+    assert.equal(focus.url, 'https://private.example');
+    assert.equal(focus.text, 'PRIVATE_CLIPBOARD');
+    assert.equal(events.find((e) => e.event_type === 'key').text, 'PRIVATE_TYPED');
+    assert.ok(!events.some((e) => e.app === '[Private]'), 'private windows still never leave');
+    assert.ok(!events.some((e) => e.event_type === 'screen'), 'screenshots are not events that upload');
+
+    const metadata = buildSubmissionPackage(f.root, 'session-1', f.config, { consent: true, shareDetail: 'metadata' });
+    assert.equal(metadata.manifest.sharing_policy, 'activity-metadata-v1');
+    const plain = JSON.parse(metadata.data.get('activity').toString()).events;
+    assert.ok(plain.every((e) => !('window_title' in e) && !('text' in e) && !('url' in e)), 'metadata uploads carry none of it');
+    assert.throws(() => buildSubmissionPackage(f.root, 'session-1', f.config, { consent: true, shareDetail: 'everything' }), /Unknown sharing level/);
+  } finally {
+    f.cleanup();
+  }
+});

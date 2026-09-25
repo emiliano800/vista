@@ -86,7 +86,7 @@ Use Agent, which is its own package at `src/vista/computer_use/`.
 | **File Reviewer** (`file_reviewer`) | `deal_analysis`, `employee_discovery`, `synthetic_discovery`, `canonical_review` | `discover.py` for the discovery run types; `portfolio/interpret.py` for `canonical_review`; `deal_analysis` (the default run type of `POST /api/runs`) is still the stub `handle_agent_run` — one `_call_model` over the document, no phase | one division's tables (csv/xlsx) + deterministic profile; `canonical_review` reads only the tenant's canonical rows (customers, invoices, vendors, policies, purchase orders, inventory…) | `findings` kind `observed_fact` (file/column/row refs, confidence); `canonical_review` also `tasks`, `company_summaries`, and cites canonical record ids |
 | **Sector Merger** (`sector_merger`) | `synthetic_analyze`, `portfolio_merge` | `analyze.py`; `portfolio/interpret.py` for `portfolio_merge` | approved facts + one opportunity kind across sister companies in a sector (only `firm_companies` scope); `portfolio_merge` reads canonical rows plus structured findings of the successful `canonical_review` runs in its `successful_run_ids` | `platform.opportunities` (with `lineage`: `from_findings`/`from_runs`) → `findings` kind `proposed_automation`; rejected look-alikes logged as `step` events |
 | **Pipeline & Report Generator** (`report_generator`) | `company_summary` | handler only | open `findings` for a company | `company_summaries` (verified facts kept separate from hypotheses) |
-| **Recording Reviewer** (`recording_reviewer`) | `recording_review` (+ `extract_recording_files`), `submission_analysis` (job `analyze_submission`) | handler only; `recorder_analysis.py` for `submission_analysis` | v1: recorder report bundle (cleaned, on-device redacted); v2: the accepted `recorder_submissions` package read back from S3 (metadata-only activity + shared documents) | v1: explanations awaiting employee approve/fix/explain; v2: one `recorder_reports` draft (observed facts computed in code; workflow candidates derived from the transfers/loops/stretches in those facts and judged by Jev — `VISTA_RECORDER_INTERPRETER=jev`, the default — or interpreted by the chat model with `=chat`; employee questions) that only the employee can publish. On publish, each judged workflow becomes a `findings` row — kind `proposed_automation` when Jev scored it mechanical enough, else `inefficiency` — citing `report:<id>`, `candidate:<cN>`, `run:<id>`, and carrying the employee's answer plus `actions`: a numbered FDE checklist and, for automation candidates, a prefilled `WorkflowDefinition` (`recorder_uploads.record_findings`, deduped per run) |
+| **Recording Reviewer** (`recording_reviewer`) | `recording_review` (+ `extract_recording_files`), `submission_analysis` (job `analyze_submission`) | handler only; `recorder_analysis.py` for `submission_analysis` | v1: recorder report bundle (cleaned, on-device redacted); v2: the accepted `recorder_submissions` package read back from S3 — activity events + shared documents; under `sharing_policy` `activity-full-v1` (the recorder's default since 0.5.0, chosen per upload in the dialog) the events also carry window titles, page URLs, control labels, typed text, clipboard contents and opened file names, and `observe` keeps per-app `titles`/`pages`/`files`/`typed` and per-transfer `samples` that Jev and the workspace see; under `activity-metadata-v1` none of that is accepted (422) and the device-side leakage test runs | v1: explanations awaiting employee approve/fix/explain; v2: one `recorder_reports` draft (observed facts computed in code; workflow candidates derived from the transfers/loops/stretches in those facts and judged by Jev — `VISTA_RECORDER_INTERPRETER=jev`, the default — or interpreted by the chat model with `=chat`; employee questions) that only the employee can publish. On publish, each judged workflow becomes a `findings` row — kind `proposed_automation` when Jev scored it mechanical enough, else `inefficiency` — citing `report:<id>`, `candidate:<cN>`, `run:<id>`, and carrying the employee's answer plus `actions`: a numbered FDE checklist and, for automation candidates, a prefilled `WorkflowDefinition` (`recorder_uploads.record_findings`, deduped per run) |
 | **Computer Use Agent** (`computer_use`) | `workflow_execution` (job `execute_workflow`) | `computer_use/handler.py` (loop), `planner.py` (Jev judgments), `harness*.py` (documents / http / workspace locally; browser / desktop through the employee's recorder), `tools.py` (label → primitives → harness kinds) | one *approved* `workflow_versions` row pinned by `definition_hash`, its bound inputs (documents from accepted submissions, canonical records, declared values), and the candidates each harness enumerates (accessibility-tree controls, document rows, declared input names, allow-listed endpoints) | `workflow_runs` (mutable header: status, checkpoint, limits, lease), `harness_sessions`/`harness_steps`/`harness_devices`, one `tool_call` event per step and one `usage_events` row per judgment on its `AgentRun`, an approval `Task` when paused, and exactly one `findings` row kind `observed_fact` / `finding_type=workflow.execution` with the verification outcome, steps, cost and undo hints |
 
 Internal (not user-facing) phases: **Config Proposer** (`propose.py`, facts →
@@ -314,7 +314,7 @@ wired only in tests/eval. Any new automatic hop must follow the contract above.
   (`VISTA_TYPESAFE_API_KEY`; stub answers without it — recorder workflow candidates and
   every Computer Use Agent judgment; `VISTA_COMPUTER_USE_*` thresholds/timeouts in
   `config.py`) beside the OpenAI-compatible model; Electron
-  recorder (`src/recorder`, version 0.4.5; every change bumps `package.json` and pushes
+  recorder (`src/recorder`, version 0.4.6; every change bumps `package.json` and pushes
   a `recorder-vX.Y.Z` tag, which builds and publishes the installers; `overrides` pins
   `tar` ≥ 7.5.21 because `get-windows` → `node-pre-gyp` pulled a vulnerable `tar`);
   Cloudflare Worker + static web; Node 22 for JS tests (installed under
@@ -421,10 +421,11 @@ wired only in tests/eval. Any new automatic hop must follow the contract above.
   ANALYST key, not Meridian — scripts must select keys by section, not position.
 - Old "Vista Solutions / Vista Demo" key was revoked 2026-09-19 (rotation,
   replacement destroyed unread).
-- Deployed state 2026-09-24: image `9ca5ecb` (task defs `vista-vista-api:27`,
-  `vista-worker:24`) went live at 22:40 UTC from a clean tree via the `vista-deploy`
-  profile, the fifth image of the day (`53968b1` 13:24, `e965454` 18:19, `d16fb61`
-  22:02). It carries PRs #10–#12 (text normaliser + leakage test, graph dashboard),
+- Deployed state 2026-09-25: image `70fac8d` (task defs `vista-vista-api:28`,
+  `vista-worker:25`) went live at 01:53 UTC from a clean tree via the `vista-deploy`
+  profile, after five images on 2026-09-24 (`53968b1` 13:24, `e965454` 18:19,
+  `d16fb61` 22:02, `9ca5ecb` 22:40). It carries PRs #10–#14 (text normaliser +
+  leakage test, graph dashboard, normaliser everywhere, capture completeness),
   platform migration `0005`, tenant `0020`–`0022`, the `/api/deals/{deal}/imports…` and
   `/api/companies/{id}/reports` routes, the six demo workspaces linked to their analyst
   companies, the firm-counter fix `18713e8`, the unreadable-amount import exception
@@ -446,7 +447,12 @@ wired only in tests/eval. Any new automatic hop must follow the contract above.
   permission needed) for the frontmost app name — titles empty — and notes the reason
   once into the session manifest (`notes`). A report whose apps are all "Unknown app"
   has no transfers or loops, so the analysis never calls Jev — that is the first thing
-  to check when "Jev is not being called".
+  to check when "Jev is not being called". The second thing: Jev is only consulted
+  when `workflow_candidates` finds a transfer (copy in A, paste in B within 120 s), a
+  loop (A→B→A) or a stretch (≥4 switches); a short single-app recording has none, the
+  report publishes with zero workflows, and no model call is made — by design. PRs
+  #15–#21 (2026-09-25) were merged into a stacked chain of `devin/…` branches ending at
+  `devin/1790299890-gates-ui`, not into `main`; merging that stack is a product decision.
 
 ## Gotchas
 

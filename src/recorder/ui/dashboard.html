@@ -550,7 +550,7 @@
             <div style="margin-top:14px"><button class="btn primary" id="cloud-discover">Find my company</button></div>
             <div id="cloud-confirmation" class="hidden" style="margin-top:14px">
               <label for="cloud-company">Your company</label><select id="cloud-company"></select>
-              <div class="set"><label><div>Confirm recording and sharing<span>On this device, the recording captures everything I do in the apps I am recording: keys and text typed, clipboard, URLs and window titles, screenshots and screen video, files opened, created and modified, mouse and app activity. It stays on this device for my review; sign-in and private windows are never recorded, and I can exclude any app or moment. What is sent to Vista when I choose Upload session is activity metadata — app names, interaction types and counts, timestamps — the document snapshots I select and, when I share a plan, the task's structure. It excludes typed text, clipboard contents, URLs, window titles, screenshots, video and raw event logs. The workspace analyses the upload into a draft only I can see; nothing is published until I choose to.</span></div><input id="cloud-consent" type="checkbox" /></label></div>
+              <div class="set"><label><div>Confirm recording and sharing<span>On this device, the recording captures everything I do in the apps I am recording: keys and text typed, clipboard, URLs and window titles, screenshots and screen video, files opened, created and modified, mouse and app activity. It stays on this device for my review; sign-in and private windows are never recorded, and I can exclude any app or moment. What is sent to Vista when I choose Upload session is what the upload dialog shows. With detail on (the default): app names, interaction types and counts, timestamps, window titles, page URLs, control labels, typed text, clipboard contents and opened file names, plus the document snapshots I select and, when I share a plan, the task's structure. With detail off: app names, interaction types and counts, and timestamps only. Screenshots, video and the raw event log never leave this device. The workspace analyses the upload into a draft only I can see; nothing is published until I choose to.</span></div><input id="cloud-consent" type="checkbox" /></label></div>
               <button class="btn primary" id="cloud-connect" disabled>Connect this company</button>
             </div>
             <p class="muted" id="cloud-state" role="status"></p>
@@ -562,7 +562,8 @@
     <dialog id="upload-dialog" class="card wide" aria-labelledby="upload-title">
       <h2 id="upload-title">Review your sharing package</h2>
       <p id="upload-destination"></p>
-      <p>The full recording stays on this device. What is sent is activity metadata — app names, interaction types/counts and timestamps — and, when you share a plan, the task's structure. It excludes typed text, clipboard contents, URLs, window titles, screenshots, video and raw event logs; the package is checked against this recording's values and titles before it leaves.</p>
+      <p id="upload-policy"></p>
+      <div class="set"><label><div>Include activity detail<span>Window titles, page URLs, control labels, typed text, clipboard contents and opened file names, as recorded on this device. This is what lets the workspace say what a workflow does, not only which apps it touches. Untick to send activity metadata only — app names, interaction types and counts, timestamps.</span></div><input id="upload-detail" type="checkbox" /></label></div>
       <h3>Optional document snapshots</h3>
       <p class="muted">Nothing is selected by default. Selected documents are uploaded in full; check their contents before sharing.</p>
       <div id="upload-documents" class="set"></div>
@@ -578,7 +579,7 @@
       <h2 id="publish-title">Share this session with your company</h2>
       <p id="publish-story"></p>
       <div id="publish-questions"></div>
-      <div class="set"><label><div>Share the report with my company workspace<span>Your company sees what the session was about, the app-level facts, your answers and the document summaries. Your recording, screenshots and typed text stay on this computer.</span></div><input id="publish-consent" type="checkbox" /></label></div>
+      <div class="set"><label><div>Share the report with my company workspace<span>Your company sees what the session was about, the app-level facts, your answers and the document summaries. Your screenshots and video stay on this computer; titles, pages and typed text are in the report only if the upload included detail.</span></div><input id="publish-consent" type="checkbox" /></label></div>
       <p id="publish-error" role="status"></p>
       <button id="publish-confirm" class="btn primary" disabled>Publish</button>
       <button id="publish-cancel" class="btn">Not now</button>
@@ -764,7 +765,7 @@
           const a = r.upload?.analysis;
           const cloudTitle = a?.publication === 'published' ? 'Published to your workspace' : a?.status === 'succeeded' ? 'Report ready — answer and publish' : a?.status === 'failed' ? 'Uploaded — analysis failed' : 'Uploaded — analysing';
           $('rv-banner-t').textContent = up.key === 'accepted' ? cloudTitle : up.key === 'failed' ? 'Upload needs attention' : ['uploading', 'queued'].includes(up.key) ? up.label : 'Ready to upload';
-          $('rv-banner-s').textContent = up.key === 'accepted' ? up.sub : up.key === 'failed' ? up.sub : 'Only activity metadata and the documents you choose will be shared. Local originals are retained. Analysis runs in your workspace after upload; nothing is published without your say-so.';
+          $('rv-banner-s').textContent = up.key === 'accepted' ? up.sub : up.key === 'failed' ? up.sub : 'The activity record — with detail unless you untick it in the upload dialog — and the documents you choose will be shared; screenshots and video stay here. Local originals are retained. Analysis runs in your workspace after upload; nothing is published without your say-so.';
         }
         renderCloudAnalysis(r, intake && up.key === 'accepted');
         $('rv-details-t').textContent = done && s ? `How this was analysed · ${(r.counts?.total ?? 0).toLocaleString()} events → ${s.steps} steps → ${s.cases} case${s.cases === 1 ? '' : 's'}` : finished && p !== 'done' ? 'How this was analysed' : `Analysing · ${STAGES[Math.max(0, Math.min(stageIdx, STAGES.length - 1))][1].toLowerCase()}…`;
@@ -838,11 +839,20 @@
             ? `<label><div>Share the plan of this session<span>${plan.states} states · ${plan.moves} moves · ${plan.roles.map(esc).join(', ')}${plan.submits ? ` · ${plan.submits} submit${plan.submits === 1 ? '' : 's'} (always ask)` : ''}${plan.truncated ? ' · cut short' : ''}. Kinds of app, action classes, recurring control names and input names only — no values, titles, URLs or positions. Names seen on a single screen are replaced by placeholders.</span></div><input type="checkbox" id="upload-share-plan" /></label>`
             : '<p class="muted">No plan was compiled from this session.</p>';
           $('upload-consent').checked = false;
+          $('upload-detail').checked = (settings?.shareDetail ?? 'full') === 'full';
+          renderUploadPolicy();
           $('upload-confirm').disabled = true;
           $('upload-error').textContent = '';
           $('upload-dialog').showModal();
         } catch (e) { alert(e.message); }
       }
+      function renderUploadPolicy() {
+        const full = $('upload-detail').checked;
+        $('upload-policy').textContent = full
+          ? 'Screenshots, video and the raw event log stay on this device. What is sent is the activity record with detail — app names, interaction types/counts and timestamps, plus window titles, page URLs, control labels, typed text, clipboard contents and opened file names as recorded — and, when you share a plan, the task\'s structure.'
+          : 'The full recording stays on this device. What is sent is activity metadata — app names, interaction types/counts and timestamps — and, when you share a plan, the task\'s structure. It excludes typed text, clipboard contents, URLs, window titles, screenshots, video and raw event logs; the package is checked against this recording\'s values and titles before it leaves.';
+      }
+      $('upload-detail').onchange = renderUploadPolicy;
       $('upload-consent').onchange = () => { $('upload-confirm').disabled = !$('upload-consent').checked; };
       $('upload-cancel').onclick = () => { pendingShare = null; $('upload-dialog').close(); };
       $('upload-confirm').onclick = async () => {
@@ -851,7 +861,7 @@
         try {
           const selectedFileIds = [...$('upload-documents').querySelectorAll('input:checked')].map((e) => e.dataset.uploadFile);
           const sharePlan = !!$('upload-share-plan')?.checked;
-          await window.vista.submit(pendingShare.id, { consent: true, selectedFileIds, sharePlan, expectedBinding: pendingShare.binding });
+          await window.vista.submit(pendingShare.id, { consent: true, selectedFileIds, sharePlan, expectedBinding: pendingShare.binding, shareDetail: $('upload-detail').checked ? 'full' : 'metadata' });
           pendingShare = null;
           $('upload-dialog').close();
           recordings = await window.vista.recordings();

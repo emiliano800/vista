@@ -279,3 +279,12 @@ test('state frames: one sidecar observation beside focus/click/done, never in pr
   assert.ok(calls.every((c) => c.ctx.app !== '1Password'));
   assert.equal(calls.find((c) => c.reason === 'click').ctx.pointer.x, 10);
 });
+
+test('the recorder itself is an own app under its real name, whatever settings.json says', async () => {
+  const { isOwnApp, ownAppList } = await import('../src/recorder.js');
+  assert.equal(isOwnApp('Vista Recorder', ['Vista', 'Electron']), true, 'settings saved by 0.4.x lack the real name');
+  assert.equal(isOwnApp('vista recorder', []), true);
+  assert.equal(isOwnApp('Google Chrome', ['Vista', 'Electron']), false);
+  assert.equal(isOwnApp('Slack', ['Slack']), true, 'settings still add their own');
+  assert.deepEqual(ownAppList(['Slack', 'Vista']), ['vista recorder', 'vista', 'electron', 'slack']);
+});
