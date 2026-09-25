@@ -155,7 +155,7 @@ The two columns are governed separately. **On device, every leaf in the mind map
 
 ## 3. Work breakdown (each step is one PR, each lands behind existing gates)
 
-Sizes are my own sessions, not people-days. Status as of 2026-09-24: steps 1 and 2 are on `main` (#8, #9, #10, #11 — #11 pulled the dashboard half of step 7 forward). Remaining order: 2b → 2c → 4 → 3 (3 needs the sidecar's AX frames, per §2b gap 1, and the full local recording from 2c); 5 in parallel with 3; 6 → 7 → 8; 9 alongside.
+Sizes are my own sessions, not people-days. Status as of 2026-09-24: steps 1 and 2 are on `main` (#8, #9, #10, #11 — #11 pulled the dashboard half of step 7 forward); 2b is #13 and 2c follows it (`recording_format: 2` — `path`/`drag`/`app_start`/`app_stop`/`done` events, 32-entry clipboard history with `history_depth`, raw local titles/text by default, `apps_seen`, `outcome`, per-file `created`/`modified`; the process list comes from `get-windows` `openWindows()` on every platform and the file probe's `running` on macOS). Remaining order: 2b → 2c → 4 → 3 (3 needs the sidecar's AX frames, per §2b gap 1, and the full local recording from 2c); 5 in parallel with 3; 6 → 7 → 8; 9 alongside.
 
 | # | Step | Files | Exit criterion | Size |
 | --- | --- | --- | --- | --- |

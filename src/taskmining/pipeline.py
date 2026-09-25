@@ -8,7 +8,11 @@ from pathlib import Path
 
 from taskmining import abstraction, analytics, annotations, correlation, discovery, eventlog, preprocess
 from taskmining.capture import EventSource
-from taskmining.models import Annotation, RawEvent, Step, write_jsonl
+from taskmining.models import Annotation, EventType, RawEvent, Step, write_jsonl
+
+# recording_format 2 telemetry that is not an interaction: it stays in the local log
+# for review and graph compilation but must not become steps or inflate counts.
+NON_INTERACTION = frozenset({EventType.PATH, EventType.DRAG, EventType.APP_START, EventType.APP_STOP})
 
 
 @dataclass
@@ -91,7 +95,7 @@ class Pipeline:
         self.redact = redact
 
     def run(self, source: EventSource, human: list[Annotation] | None = None) -> PipelineResult:
-        raw = list(source.events())
+        raw = [e for e in source.events() if e.event_type not in NON_INTERACTION]
         human = list(human or [])
         clean = preprocess.redact(raw) if self.redact else list(raw)
         if self.redact:
