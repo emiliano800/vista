@@ -405,9 +405,9 @@ def test_coverage_and_jev_context_follow_the_sharing_policy():
     metadata = coverage_for(observe([event(0, "Excel")], MANIFEST), document_count=0)
     assert metadata["sharing_policy"] == "activity-metadata-v1" and "window_title" in metadata["excluded"]
     state, _ = judge_request(detailed, [], [])
-    assert "titles" in state["context"] and "never captured" not in state["context"]
+    assert "titles" in state["context"] and "not shared" not in state["context"]
     state, _ = judge_request(observe([event(0, "Excel")], MANIFEST), [], [])
-    assert "never captured" in state["context"]
+    assert "not shared" in state["context"]
 
 
 def test_employee_answers_are_given_to_jev_and_quoted_in_the_summary():
