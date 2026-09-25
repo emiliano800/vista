@@ -1,6 +1,6 @@
 {
   "name": "vista-recorder",
-  "version": "0.5.0",
+  "version": "0.5.1",
   "description": "One-button desktop recorder for Vista task mining: always-on overlay, cross-platform input hooks, active-window + screenshot capture, on-device redaction.",
   "private": true,
   "type": "module",
@@ -30,21 +30,44 @@
   "build": {
     "appId": "org.bumpsolutions.vista.recorder",
     "productName": "Vista Recorder",
-    "files": ["src/**/*", "ui/**/*", "package.json"],
-    "extraResources": [
-      { "from": "../web/public/tokens.css", "to": "web/public/tokens.css" },
-      { "from": "../web/public/fonts", "to": "web/public/fonts" }
+    "files": [
+      "src/**/*",
+      "ui/**/*",
+      "package.json"
     ],
-    "asarUnpack": ["**/node_modules/uiohook-napi/**", "**/node_modules/get-windows/**"],
+    "extraResources": [
+      {
+        "from": "../web/public/tokens.css",
+        "to": "web/public/tokens.css"
+      },
+      {
+        "from": "../web/public/fonts",
+        "to": "web/public/fonts"
+      }
+    ],
+    "asarUnpack": [
+      "**/node_modules/uiohook-napi/**",
+      "**/node_modules/get-windows/**"
+    ],
     "mac": {
       "identity": "-",
       "hardenedRuntime": false,
       "category": "public.app-category.productivity",
-      "target": [{ "target": "dmg", "arch": ["arm64", "x64"] }],
+      "target": [
+        {
+          "target": "dmg",
+          "arch": [
+            "arm64",
+            "x64"
+          ]
+        }
+      ],
       "artifactName": "Vista-Recorder-mac-${arch}.${ext}"
     },
     "win": {
-      "target": ["nsis"],
+      "target": [
+        "nsis"
+      ],
       "artifactName": "Vista-Recorder-windows-setup.${ext}"
     }
   }
