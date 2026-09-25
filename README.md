@@ -38,6 +38,8 @@ Docs:
 - [NEXT_STEPS.md](NEXT_STEPS.md) — roadmap and open work
 - [PRIVATE_EQUITY.md](PRIVATE_EQUITY.md) — short primer on private equity and how Vista maps onto it
 - [BUSINESS_COURSE_OF_ACTION.md](BUSINESS_COURSE_OF_ACTION.md) — business plan + go-to-market
+- [VISION.md](VISION.md) — long-range vision: five stories about where Vista goes
+- [FOUNDER_THESIS.md](FOUNDER_THESIS.md) — unique insight, why we win, path to $1B, where this is in a few years
 - [INFRASTRUCTURE.md](INFRASTRUCTURE.md) — infra primer: request path, AWS stack, deploys, runbook
 - [DESIGN.md](DESIGN.md) — the "Field Notes" design system every surface uses
 - [deploy/README.md](deploy/README.md) · [deploy/aws/README.md](deploy/aws/README.md) — hosting and AWS operations
