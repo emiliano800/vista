@@ -53,6 +53,24 @@ TRANSFER_WINDOW_S = 120  # copy in app A → paste in app B within this window c
 MAX_QUESTIONS = 6
 MAX_DOCUMENT_EXCERPT = 1200
 COVERAGE_EXCLUDED = ["window_title", "url", "typed_text", "clipboard", "screenshots", "video", "raw_events"]
+DETAIL_SAMPLE = 120  # characters kept of a typed run or a transferred clipboard value
+DETAIL_TOP = 5  # titles / pages / files / typed samples kept per application
+TYPED_RUN_GAP_S = 5.0  # keystrokes further apart than this start a new typed run
+
+
+def _page(url: str) -> str:
+    """A URL without its query string, so a page is one entry however it was parameterised."""
+    return url.split("?", 1)[0].split("#", 1)[0][:DETAIL_SAMPLE]
+
+
+def _dedupe(values: list[str]) -> list[str]:
+    seen: set[str] = set()
+    out: list[str] = []
+    for v in values:
+        if v not in seen:
+            seen.add(v)
+            out.append(v)
+    return out
 
 
 # ---- observed facts (pure code) -------------------------------------------------
@@ -70,12 +88,40 @@ def observe(events: list[dict], manifest: dict) -> dict:
     """Deterministic facts from metadata-only events. Input rows are
     {timestamp, event_type, app, count}; output is JSON-serialisable."""
     rows = sorted(
-        ({"t": _ts(e["timestamp"]), "type": e["event_type"], "app": str(e["app"])[:128], "n": int(e.get("count") or 1)} for e in events),
+        (
+            {
+                "t": _ts(e["timestamp"]),
+                "type": e["event_type"],
+                "app": str(e["app"])[:128],
+                "n": int(e.get("count") or 1),
+                # Present only under activity-full-v1 (see recorder_uploads.DETAIL_FIELDS).
+                "title": str(e.get("window_title") or "").strip()[:255],
+                "url": str(e.get("url") or "").strip()[:2048],
+                "text": str(e.get("text") or "")[:4000],
+            }
+            for e in events
+        ),
         key=lambda r: r["t"],
     )
     per_app: dict[str, dict] = defaultdict(
         lambda: {"active_s": 0.0, "events": 0, "clicks": 0, "keys": 0, "copies": 0, "pastes": 0, "spans": 0}
     )
+    # Detail, when the upload carried it: what was on screen and what moved, per app and per transfer.
+    titles: dict[str, Counter] = defaultdict(Counter)
+    pages: dict[str, Counter] = defaultdict(Counter)
+    files: dict[str, Counter] = defaultdict(Counter)
+    typed: dict[str, list[str]] = defaultdict(list)
+    samples: dict[tuple[str, str], list[str]] = defaultdict(list)
+    run_app: str | None = None
+    run_text = ""
+    run_t: datetime | None = None
+
+    def flush_run() -> None:
+        nonlocal run_app, run_text, run_t
+        if run_app is not None and len(run_text.strip()) >= 3:
+            typed[run_app].append(run_text.strip()[:DETAIL_SAMPLE])
+        run_app, run_text, run_t = None, "", None
+
     transitions: Counter = Counter()
     transition_gap: dict[tuple[str, str], list[float]] = defaultdict(list)
     transfers: Counter = Counter()
@@ -100,6 +146,20 @@ def observe(events: list[dict], manifest: dict) -> dict:
         app, t = row["app"], row["t"]
         stats = per_app[app]
         stats["events"] += row["n"]
+        if row["type"] == "file":
+            if row["title"]:
+                files[app][row["title"]] += 1  # a file event names the document, not a window
+        elif row["title"]:
+            titles[app][row["title"]] += 1
+        if row["url"]:
+            pages[app][_page(row["url"])] += 1
+        # Typed text arrives one keystroke per event; join a run in one app into a sample.
+        is_keystroke = row["type"] == "key" and row["text"] and len(row["text"]) <= 2
+        if not is_keystroke or run_app != app or (run_t is not None and (t - run_t).total_seconds() > TYPED_RUN_GAP_S):
+            flush_run()
+        if is_keystroke:
+            run_app, run_t = app, t
+            run_text += row["text"]
         if row["type"] == "click":
             stats["clicks"] += row["n"]
         elif row["type"] == "key":
@@ -113,6 +173,9 @@ def observe(events: list[dict], manifest: dict) -> dict:
                 if last_copy["app"] != app:
                     transfers[(last_copy["app"], app)] += 1
                     transfer_latency[(last_copy["app"], app)].append((t - last_copy["t"]).total_seconds())
+                    moved = (last_copy["text"] or row["text"]).strip()
+                    if moved:
+                        samples[(last_copy["app"], app)].append(moved[:DETAIL_SAMPLE])
                 else:
                     internal_pastes += 1
         gap = (t - previous["t"]).total_seconds() if previous else 0.0
@@ -140,6 +203,7 @@ def observe(events: list[dict], manifest: dict) -> dict:
         close_span(previous["t"])
     if stretch is not None:
         stretches.append(stretch)
+    flush_run()
 
     total_active = sum(v["active_s"] for v in per_app.values())
     total_events = sum(v["events"] for v in per_app.values()) or 1
@@ -152,6 +216,21 @@ def observe(events: list[dict], manifest: dict) -> dict:
         }
         for app, v in sorted(per_app.items(), key=lambda kv: (-kv[1]["active_s"], -kv[1]["events"], kv[0]))
     ]
+    for entry in apps:
+        name = entry["app"]
+        for key, counter in (("titles", titles), ("pages", pages), ("files", files)):
+            if counter[name]:
+                entry[key] = [value for value, _ in counter[name].most_common(DETAIL_TOP)]
+        if typed[name]:
+            entry["typed"] = _dedupe(typed[name])[:DETAIL_TOP]
+    transfer_rows = [
+        {"from": a, "to": b, "count": n, "mean_latency_s": round(sum(transfer_latency[(a, b)]) / len(transfer_latency[(a, b)]), 1)}
+        for (a, b), n in transfers.most_common(20)
+    ]
+    for tr in transfer_rows:
+        moved = _dedupe(samples[(tr["from"], tr["to"])])
+        if moved:
+            tr["samples"] = moved[:3]
     loops = Counter()
     for (a, b), n in transitions.items():
         back = transitions.get((b, a), 0)
@@ -165,10 +244,7 @@ def observe(events: list[dict], manifest: dict) -> dict:
             {"from": a, "to": b, "count": n, "mean_gap_s": round(sum(transition_gap[(a, b)]) / len(transition_gap[(a, b)]), 1)}
             for (a, b), n in transitions.most_common(20)
         ],
-        "transfers": [
-            {"from": a, "to": b, "count": n, "mean_latency_s": round(sum(transfer_latency[(a, b)]) / len(transfer_latency[(a, b)]), 1)}
-            for (a, b), n in transfers.most_common(20)
-        ],
+        "transfers": transfer_rows,
         "internal_pastes": internal_pastes,
         "loops": [{"between": [a, b], "count": n} for (a, b), n in loops.most_common(10)],
         "stretches": [
@@ -191,16 +267,27 @@ def observe(events: list[dict], manifest: dict) -> dict:
     }
 
 
-def coverage_for(observed: dict, document_count: int) -> dict:
+def has_detail(observed: dict) -> bool:
+    """Whether the upload carried titles, pages, typed text or clipboard contents."""
+    return any(k in a for a in observed.get("apps", []) for k in ("titles", "pages", "files", "typed")) or any(
+        "samples" in t for t in observed.get("transfers", [])
+    )
+
+
+def coverage_for(observed: dict, document_count: int, sharing_policy: str = "activity-metadata-v1") -> dict:
+    full = sharing_policy == "activity-full-v1"
     return {
-        "sharing_policy": "activity-metadata-v1",
-        "fields": ["timestamp", "event_type", "app", "count"],
-        "excluded": COVERAGE_EXCLUDED,
+        "sharing_policy": sharing_policy,
+        "fields": ["timestamp", "event_type", "app", "count"] + (["window_title", "url", "element", "text"] if full else []),
+        "excluded": ["screenshots", "video"] if full else COVERAGE_EXCLUDED,
         "events": observed["events"],
         "apps": len(observed["apps"]),
         "documents": document_count,
         "note": (
-            "Activities are known only at application level; documents, records and web pages the employee "
+            "Window titles, pages, typed text and clipboard contents were shared for this session, so what "
+            "moved between applications is observable; screenshots and video stayed on the device."
+            if full
+            else "Activities are known only at application level; documents, records and web pages the employee "
             "worked on are not observable unless a document snapshot was shared."
         ),
     }
@@ -442,7 +529,11 @@ def judge_request(observed: dict, candidates: list[dict], docs: list[dict]) -> t
     facts = {k: observed[k] for k in ("events", "apps", "switches", "transfers", "loops", "stretches", "session")}
     state = {
         "context": (
-            "Metadata-only record of one employee's work session: application names, timing, switches and "
+            "Record of one employee's work session: application names, timing, switches and copy→paste transfers, "
+            "with the window titles and pages seen in each application (`titles`, `pages`, `files`), samples of "
+            "what was typed there (`typed`) and of what each transfer moved (`samples`). Screenshots were not captured."
+            if has_detail(observed)
+            else "Metadata-only record of one employee's work session: application names, timing, switches and "
             "copy→paste transfers. Window titles, URLs, typed text and screenshots were never captured."
         ),
         "observed": facts,
@@ -954,7 +1045,7 @@ def _analyze(tenant_schema: str, submission_id: uuid.UUID, run_id: uuid.UUID, se
                 if q["question"] in previous and previous[q["question"]].get("answer"):
                     q["answer"], q["answered_at"] = previous[q["question"]]["answer"], previous[q["question"]]["answered_at"]
         report.run_id = run_id
-        report.coverage = coverage_for(observed, len(docs))
+        report.coverage = coverage_for(observed, len(docs), str(row.manifest.get("sharing_policy") or "activity-metadata-v1"))
         report.observed = observed
         report.interpretation = {**interpretation, "documents": [{"filename": d["filename"], "summary": d["summary"]} for d in docs]}
         report.questions = questions

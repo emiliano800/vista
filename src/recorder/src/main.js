@@ -1354,7 +1354,11 @@ async function queueSubmission(id, options) {
   const config = cloudConfig();
   if (options?.consent !== true || JSON.stringify(options.expectedBinding) !== JSON.stringify(uploadBinding(config)))
     throw new Error('Review and confirm the upload destination and selected files again.');
-  intakeQueue.enqueue(RECORDINGS, id, config, { ...options, ownApps: ownApps() });
+  intakeQueue.enqueue(RECORDINGS, id, config, {
+    ...options,
+    ownApps: ownApps(),
+    shareDetail: options.shareDetail ?? recorder?.settings?.shareDetail ?? DEFAULT_SETTINGS.shareDetail,
+  });
   resumeUploads(true);
   return sectionsFor(id);
 }

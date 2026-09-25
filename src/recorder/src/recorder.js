@@ -77,6 +77,12 @@ export const DEFAULT_SETTINGS = {
   privateApps: ['1Password', 'Bitwarden', 'KeePass', 'LastPass', 'Keychain Access', 'Signal', 'WhatsApp'],
   privateTitles: ['password', 'bank', 'banking', 'incognito', 'private browsing'],
   ownApps: ['Vista Recorder', 'Vista', 'Electron'], // the recorder itself: time and clicks here are not the employee's work
+  // What an upload carries besides app names, event types and timestamps:
+  //   'full'     — window titles, page URLs, typed text, clipboard contents and file names too,
+  //                so the workspace can say what a workflow does, not only which apps it touches;
+  //   'metadata' — none of those (the activity-metadata-v1 contract).
+  // Screenshots and video stay on the device either way. The upload dialog shows the choice.
+  shareDetail: 'full',
   openaiApiKey: '',           // AI explanations after a session; OPENAI_API_KEY / VISTA_OPENAI_API_KEY env overrides
   openaiModel: '', // empty → provider default (explain.js); VISTA_OPENAI_MODEL env overrides
   clarifyScreenshots: true,   // also send up to 3 low-res frames per section to a local model (legacy local AI only)

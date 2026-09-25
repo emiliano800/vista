@@ -570,3 +570,47 @@ def test_recorder_enrolled_before_the_link_keeps_uploading_by_deal_id(client):
 
     # Only that deal is an alias; any other deal id is still nobody's workspace.
     assert client.post(ROOT, headers=headers, json=body(str(uuid.uuid4()), "deal")).status_code == 404
+
+
+def test_full_detail_policy_accepts_titles_and_text_and_metadata_policy_still_refuses_them(client, workspace, store):
+    headers, _, _, wid = workspace
+    rich = json.dumps(
+        {
+            "schema_version": 1,
+            "events": [
+                {
+                    "timestamp": "2026-09-19T09:01:00Z",
+                    "event_type": "copy",
+                    "app": "Excel",
+                    "count": 1,
+                    "window_title": "Q3.xlsx",
+                    "text": "INV-1042",
+                },
+                {
+                    "timestamp": "2026-09-19T09:02:00Z",
+                    "event_type": "paste",
+                    "app": "Portal",
+                    "count": 1,
+                    "url": "https://portal.example/pay",
+                    "text": "INV-1042",
+                },
+                {"timestamp": "2026-09-19T09:03:00Z", "event_type": "file", "app": "Portal", "count": 1, "window_title": "remittance.pdf"},
+            ],
+        }
+    ).encode()
+    full = body(wid)
+    full["sharing_policy"] = "activity-full-v1"
+    full["artifacts"][0] = artifact("activity", rich)
+    submission = create(client, headers, full)
+    upload_files(client, headers, submission, store, activity=rich)
+    accepted = client.post(f"{ROOT}/{submission['id']}/complete", headers=headers)
+    assert accepted.status_code == 200, accepted.text
+    assert accepted.json()["receipt"]["artifact_count"] == 2
+
+    # The same package under the metadata policy is refused, and the refusal never echoes the content.
+    plain = body(wid)
+    plain["artifacts"][0] = artifact("activity", rich)
+    submission = create(client, headers, plain)
+    upload_files(client, headers, submission, store, activity=rich)
+    refused = client.post(f"{ROOT}/{submission['id']}/complete", headers=headers)
+    assert refused.status_code == 422 and "INV-1042" not in refused.text and "Q3.xlsx" not in refused.text

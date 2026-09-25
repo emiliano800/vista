@@ -558,9 +558,20 @@ function reportHtml(r) {
   return `<p class="small"><strong>${esc(span(o.session))}</strong> · ${number(o.events ?? 0)} interactions · ${number(o.switches ?? 0)} app switches · published ${esc(stamp(r.published_at))}</p><p class="quiet-note">${esc(r.coverage?.note ?? "")} Not observed: ${esc((r.coverage?.excluded ?? []).join(", "))}.</p><h3>Observed</h3><div class="table-wrap"><table><thead><tr><th>Application</th><th class="num">Share of active time</th><th class="num">Events</th><th class="num">Copies</th><th class="num">Pastes</th></tr></thead><tbody>${apps
     .map(
       (a) =>
-        `<tr><td>${esc(a.app)}</td><td class="num">${Math.round((a.share ?? 0) * 100)}%</td><td class="num">${number(a.events)}</td><td class="num">${number(a.copies)}</td><td class="num">${number(a.pastes)}</td></tr>`,
+        `<tr><td>${esc(a.app)}${appDetail(a)}</td><td class="num">${Math.round((a.share ?? 0) * 100)}%</td><td class="num">${number(a.events)}</td><td class="num">${number(a.copies)}</td><td class="num">${number(a.pastes)}</td></tr>`,
     )
-    .join("")}</tbody></table></div>${li(o.transfers ?? [], (t) => `<li>Copied from <strong>${esc(t.from)}</strong> into <strong>${esc(t.to)}</strong> ${number(t.count)}× (about ${number(t.mean_latency_s)}s apart)</li>`)}<h3>Agent's reading <span class="tag">${esc(i.source === "stub" ? "no model" : "hypothesis")}</span></h3>${i.summary ? `<p>${esc(i.summary)}</p>` : '<p class="small muted">No model interpretation was produced.</p>'}${li(i.workflows ?? [], workflowItem)}${(i.automation_candidates ?? []).length ? `<h4>Automation candidates</h4>${li(i.automation_candidates, (c) => `<li><strong>${esc(c.title)}</strong>${c.rationale ? ` — ${esc(c.rationale)}` : ""}</li>`)}` : ""}${(i.documents ?? []).length ? `<h4>Shared documents</h4>${li(i.documents, (d) => `<li>${esc(d.filename)} <span class="muted">${esc(d.summary?.kind ?? "")}${d.summary?.rows != null ? ` · ${number(d.summary.rows)} rows` : ""}</span></li>`)}` : ""}<h3>Employee's answers</h3>${li(r.questions ?? [], (q) => `<li><em>${esc(q.question)}</em><br />${q.answer ? esc(q.answer) : '<span class="muted">Not answered</span>'}</li>`)}`;
+    .join("")}</tbody></table></div>${li(o.transfers ?? [], (t) => `<li>Copied from <strong>${esc(t.from)}</strong> into <strong>${esc(t.to)}</strong> ${number(t.count)}× (about ${number(t.mean_latency_s)}s apart)${(t.samples ?? []).length ? `<br /><span class="muted">moved: ${t.samples.map((s) => `“${esc(s)}”`).join(", ")}</span>` : ""}</li>`)}<h3>Agent's reading <span class="tag">${esc(i.source === "stub" ? "no model" : "hypothesis")}</span></h3>${i.summary ? `<p>${esc(i.summary)}</p>` : '<p class="small muted">No model interpretation was produced.</p>'}${li(i.workflows ?? [], workflowItem)}${(i.automation_candidates ?? []).length ? `<h4>Automation candidates</h4>${li(i.automation_candidates, (c) => `<li><strong>${esc(c.title)}</strong>${c.rationale ? ` — ${esc(c.rationale)}` : ""}</li>`)}` : ""}${(i.documents ?? []).length ? `<h4>Shared documents</h4>${li(i.documents, (d) => `<li>${esc(d.filename)} <span class="muted">${esc(d.summary?.kind ?? "")}${d.summary?.rows != null ? ` · ${number(d.summary.rows)} rows` : ""}</span></li>`)}` : ""}<h3>Employee's answers</h3>${li(r.questions ?? [], (q) => `<li><em>${esc(q.question)}</em><br />${q.answer ? esc(q.answer) : '<span class="muted">Not answered</span>'}</li>`)}`;
+}
+// Under an application's name: what was on screen there (titles, pages, files) and samples
+// of what was typed — present only when the upload carried detail (activity-full-v1).
+function appDetail(a) {
+  const rows = [
+    ["On screen", [...(a.titles ?? []), ...(a.files ?? [])]],
+    ["Pages", a.pages ?? []],
+    ["Typed", (a.typed ?? []).map((t) => `“${t}”`)],
+  ].filter(([, items]) => items.length);
+  if (!rows.length) return "";
+  return `<br /><span class="muted small">${rows.map(([label, items]) => `${esc(label)}: ${items.slice(0, 5).map(esc).join(" · ")}`).join("<br />")}</span>`;
 }
 // What to do about one judged workflow: the employee question it raised, the numbered
 // steps, and — only when a prefilled draft exists and the viewer may act — a Draft button.
