@@ -302,7 +302,7 @@ wired only in tests/eval. Any new automatic hop must follow the contract above.
   (`VISTA_TYPESAFE_API_KEY`; stub answers without it — recorder workflow candidates and
   every Computer Use Agent judgment; `VISTA_COMPUTER_USE_*` thresholds/timeouts in
   `config.py`) beside the OpenAI-compatible model; Electron
-  recorder (`src/recorder`, version 0.4.6; every change bumps `package.json` and pushes
+  recorder (`src/recorder`, version 0.5.0; every change bumps `package.json` and pushes
   a `recorder-vX.Y.Z` tag, which builds and publishes the installers; `overrides` pins
   `tar` ≥ 7.5.21 because `get-windows` → `node-pre-gyp` pulled a vulnerable `tar`);
   Cloudflare Worker + static web; Node 22 for JS tests (installed under
@@ -409,11 +409,12 @@ wired only in tests/eval. Any new automatic hop must follow the contract above.
   ANALYST key, not Meridian — scripts must select keys by section, not position.
 - Old "Vista Solutions / Vista Demo" key was revoked 2026-09-19 (rotation,
   replacement destroyed unread).
-- Deployed state 2026-09-25: image `70fac8d` (task defs `vista-vista-api:28`,
-  `vista-worker:25`) went live at 01:53 UTC from a clean tree via the `vista-deploy`
-  profile, after five images on 2026-09-24 (`53968b1` 13:24, `e965454` 18:19,
-  `d16fb61` 22:02, `9ca5ecb` 22:40). It carries PRs #10–#14 (text normaliser +
-  leakage test, graph dashboard, normaliser everywhere, capture completeness),
+- Deployed state 2026-09-25: image `526153c` (task defs `vista-vista-api:30`,
+  `vista-worker:27`) went live at 02:47 UTC from a clean tree via the `vista-deploy`
+  profile, after `70fac8d` (01:53) and `b7dd140` (02:31) the same night and five
+  images on 2026-09-24. It carries PRs #10–#14, the full-detail upload contract
+  (`activity-full-v1`, recorder 0.5.0) and the answer feedback loop (an employee's
+  answer re-queues the analysis and is handed to Jev as `employee_answers`),
   platform migration `0005`, tenant `0020`–`0022`, the `/api/deals/{deal}/imports…` and
   `/api/companies/{id}/reports` routes, the six demo workspaces linked to their analyst
   companies, the firm-counter fix `18713e8`, the unreadable-amount import exception
