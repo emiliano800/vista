@@ -108,7 +108,7 @@ def version_graph(
     with company_session(company) as session:
         workflow = service.get_workflow(session, company.id, workflow_id)
         version = service.get_version(session, workflow, version_id)
-        return graph_review.review(session, workflow, version)
+        return graph_review.review(session, workflow, version, fde=ctx.is_fde)
 
 
 @router.post("/{workflow_id}/versions/{version_id}/graph/draft", response_model=VersionOut, status_code=201)
@@ -125,7 +125,7 @@ def draft_from_runs(
     with company_session(company) as session:
         workflow = service.get_workflow(session, company.id, workflow_id, lock=True)
         version = service.get_version(session, workflow, version_id)
-        return graph_review.create_draft(session, workflow, version, ctx.principal.user_id, body)
+        return graph_review.create_draft(session, workflow, version, ctx.principal.user_id, body, fde=ctx.is_fde)
 
 
 @router.get("/{workflow_id}/versions/{version_id}/eligibility", response_model=EligibilityOut)

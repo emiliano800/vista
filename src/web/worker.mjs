@@ -23,14 +23,14 @@ const agentStart =
 // is the API's only PATCH operation.
 const findingWrite = /^\/api\/findings\/[0-9a-f-]{36}$/i;
 const workflowRead =
-  /^\/api\/companies\/[a-z0-9-]{1,64}\/workflows(?:\/[0-9a-f-]{36}(?:\/versions(?:\/[0-9a-f-]{36}(?:\/eligibility)?)?)?)?$/i;
+  /^\/api\/companies\/[a-z0-9-]{1,64}\/workflows(?:\/[0-9a-f-]{36}(?:\/versions(?:\/[0-9a-f-]{36}(?:\/eligibility|\/graph)?)?)?)?$/i;
 const workflowWrite =
-  /^\/api\/companies\/[a-z0-9-]{1,64}\/workflows(?:\/[0-9a-f-]{36}\/versions(?:\/[0-9a-f-]{36}\/decision)?)?$/i;
+  /^\/api\/companies\/[a-z0-9-]{1,64}\/workflows(?:\/[0-9a-f-]{36}\/versions(?:\/[0-9a-f-]{36}\/(?:decision|graph\/draft))?)?$/i;
 // The company workspace's own workflows (tenant-scoped; same shapes as the firm routes).
 const tenantWorkflowRead =
-  /^\/api\/workflows(?:\/[0-9a-f-]{36}(?:\/versions(?:\/[0-9a-f-]{36}(?:\/eligibility)?)?)?)?$/i;
+  /^\/api\/workflows(?:\/[0-9a-f-]{36}(?:\/versions(?:\/[0-9a-f-]{36}(?:\/eligibility|\/graph)?)?)?)?$/i;
 const tenantWorkflowWrite =
-  /^\/api\/workflows(?:\/[0-9a-f-]{36}\/versions(?:\/[0-9a-f-]{36}\/decision)?)?$/i;
+  /^\/api\/workflows(?:\/[0-9a-f-]{36}\/versions(?:\/[0-9a-f-]{36}\/(?:decision|graph\/draft))?)?$/i;
 // Computer Use Agent: starting a run on an approved version, listing/reading runs,
 // deciding a paused step, stopping, and streaming a step's screenshot evidence.
 const workflowRunRead =

@@ -11,7 +11,16 @@ from __future__ import annotations
 import uuid
 from datetime import UTC, datetime, timedelta
 
-from vista.computer_use.harness import Action, ActionResult, Candidate, HarnessSuspended, Observation, ObserveContext, rank_candidates
+from vista.computer_use.harness import (
+    MAX_CANDIDATES,
+    Action,
+    ActionResult,
+    Candidate,
+    HarnessSuspended,
+    Observation,
+    ObserveContext,
+    rank_candidates,
+)
 from vista.computer_use.planner import step_id_for
 
 # Page text the recorder sends back; enough for a list plus an open record's detail pane.
@@ -65,6 +74,9 @@ def request_for(
         req["value"] = "text" if action.primitive == "read" else "table"
     elif action.primitive == "wait":
         req["value"] = int(action.args.get("ms", 1500))
+    if action.args.get("read_back"):
+        # Device-side comparison: the expected value travels down, only a boolean comes back.
+        req["read_back"] = {"slot": action.args["read_back"], "expected": action.value, "delay_ms": int(action.args.get("delay_ms", 0))}
     return req
 
 
@@ -72,6 +84,8 @@ def observation_from_result(kind: str, result: dict) -> Observation | None:
     obs = result.get("observation")
     if not obs:
         return None
+    if obs.get("l0") is not None:
+        return _v3_observation(kind, obs, result)
     candidates = []
     for c in obs.get("candidates") or []:
         try:
@@ -91,9 +105,42 @@ def observation_from_result(kind: str, result: dict) -> Observation | None:
     )
 
 
+_TARGET_ATTRS = ("landmark", "position", "has_value", "disabled", "primary", "aliases")
+
+
+def _v3_observation(kind: str, obs: dict, result: dict) -> Observation | None:
+    """A sidecar frame's cloud block: L0/L1 as facts, the per-candidate `targets` (normalised
+    descriptor under an opaque alias) as candidates. Nothing raw is in it by construction."""
+    candidates = []
+    for t in obs.get("targets") or []:
+        try:
+            attrs = {k: t[k] for k in _TARGET_ATTRS if k in t}
+            name = str(t.get("name", ""))[:200]
+            kind_ = str(t.get("kind", "interactive"))
+            candidates.append(Candidate(str(t["id"]), str(t.get("role", "")), name, kind_, {**attrs, "harness": kind}))
+        except (KeyError, TypeError):
+            continue
+    facts = {
+        "sensitive": bool(obs.get("sensitive", False)),
+        "settled": bool(obs.get("settled", True)),
+        "l0": [str(t) for t in obs.get("l0") or []],
+        "l1": dict(obs.get("l1") or {}),
+    }
+    return Observation(
+        kind,
+        facts,
+        candidates[:MAX_CANDIDATES],
+        observation_id=obs.get("observation_id"),
+        artifact_key=(result.get("evidence") or {}).get("artifact_key"),
+    )
+
+
+_RESULT_FACTS = ("url_after", "title_after", "columns", "rows", "text", "count", "previous_value", "read_back", "leakage_failed")
+
+
 def action_result_from(kind: str, step_id: str, result: dict) -> ActionResult:
     payload = result.get("result") or {}
-    facts = {k: v for k, v in payload.items() if k in ("url_after", "title_after", "columns", "rows", "text", "count", "previous_value")}
+    facts = {k: v for k, v in payload.items() if k in _RESULT_FACTS}
     if "url_after" in facts:
         facts["url"] = facts.pop("url_after")
     if "title_after" in facts:

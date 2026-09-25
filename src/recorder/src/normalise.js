@@ -35,6 +35,8 @@ const ANY_TOKEN = /\{[a-z_]+\}/g;
 const WORD = new RegExp(`\\{[a-z]+\\}|[\\p{L}\\p{N}]+(?:['’][\\p{L}\\p{N}]+)?`, 'gu');
 const HASH = /^[0-9a-f]{8,64}$/;
 const SLOT_PREFIX = /^(?:doc|rec|field|fact|dialog|have|read|open|in|ctx):/;
+// Landmark roles are a closed vocabulary (taskmining.leakage.LANDMARK_ROLES), not app names.
+export const LANDMARK_ROLES = new Set(['banner', 'navigation', 'main', 'complementary', 'contentinfo', 'search', 'form', 'region', 'dialog', 'alertdialog', 'toolbar', 'tablist']);
 // Keys and shortcut combos are a closed set: they name no data and pass as themselves.
 const KEY_NAMES = new Set(['enter', 'return', 'tab', 'escape', 'esc', 'backspace', 'delete', 'space', 'up', 'down', 'left', 'right', 'home', 'end', 'pageup', 'pagedown', 'insert', 'capslock']);
 const KEY_COMBO = /^(?:(?:cmd|ctrl|alt|shift|meta|option|win|super|fn)\+)+(?:[a-z0-9]|f\d{1,2}|enter|return|tab|escape|esc|backspace|delete|space|up|down|left|right|home|end|pageup|pagedown|insert)$/;
@@ -151,13 +153,28 @@ export function recordingContext({ values = [], titles = [], vocab = null } = {}
   };
 }
 
+/**
+ * A `type_value` edge's recorded keystrokes, `[{t, key, masked?}]`: the one place typed text
+ * travels with a graph — only in a full-detail upload; a metadata upload strips it first. The
+ * check skips it; every other string still faces the recorded values.
+ */
+export const isKeyScript = (v) =>
+  Array.isArray(v) &&
+  v.length > 0 &&
+  v.every((k) => k && typeof k === 'object' && Object.keys(k).every((f) => f === 't' || f === 'key' || f === 'masked') && Number.isInteger(k.t) && typeof k.key === 'string' && k.key.length <= 32);
+
 function* strings(payload, path = '$') {
   if (typeof payload === 'string') yield [path, path.split('.').pop().split('[')[0], payload];
   else if (Array.isArray(payload)) for (let i = 0; i < payload.length; i++) yield* strings(payload[i], `${path}[${i}]`);
-  else if (payload && typeof payload === 'object') for (const [k, v] of Object.entries(payload)) yield* strings(v, `${path}.${k}`);
+  else if (payload && typeof payload === 'object') {
+    for (const [k, v] of Object.entries(payload)) {
+      if (k === 'keys' && isKeyScript(v)) continue;
+      yield* strings(v, `${path}.${k}`);
+    }
+  }
 }
 
-const exempt = (value) => HASH.test(value) || SLOT_PREFIX.test(value) || APP_ROLES.has(value) || keyName(value) === value;
+const exempt = (value) => HASH.test(value) || SLOT_PREFIX.test(value) || APP_ROLES.has(value) || LANDMARK_ROLES.has(value) || keyName(value) === value;
 
 export function checkLeakage(payload, ctx) {
   const failures = [];

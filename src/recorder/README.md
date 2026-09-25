@@ -272,6 +272,21 @@ offers such a run to this device, and a step that arrives anyway is answered
 through locally. Tests: `test/cu-policy.test.js`, `test/cu-client.test.js`,
 `test/cu-drivers.test.js` (fake CDP page / AX backend), `npm run test:browser` (real Electron).
 
+**Device sidecar** (`src/computer-use/sidecar.js` → `src/vista_device`, Python): one
+`observe()` for recording and execution, on top of the open-source
+[browser-use](https://github.com/browser-use/browser-use) (pages) and
+[macOS-use](https://github.com/browser-use/macOS-use) (the front window's accessibility tree)
+libraries — their observation and action layers only, never their agents; Jev stays the sole
+policy. The recorder spawns `python -m vista_device` at start (interpreter from
+`VISTA_DEVICE_PYTHON`; its own venv, `pip install -r src/vista_device/requirements-device.txt`,
+plus macOS-use on macOS) and speaks newline-delimited JSON over stdin/stdout. A kind is
+advertised only after its self-test observed a real frame here (`~/Vista/device/self-test.json`);
+otherwise the JS drivers above stay in place. While recording, every focus / click / done frame
+also gets a `state` event from the same `observe()` (L0/L1, screen class, ≤40 candidates with
+`has_value`), local only — it is not an upload event type. Every cloud block the sidecar returns
+has already passed the leakage test; a failing one is dropped from the step result. Tests:
+`test/cu-sidecar.test.js` (fake sidecar), `tests/test_vista_device.py`.
+
 Over the agent API (`VISTA_RECORDER_API_TOKEN`): `GET /computer-use/status`,
 `GET /computer-use/sessions` (presence + offers), `POST /computer-use/sessions/{run_id}/start`
 (400 unless `consent: true`; `share_screenshots` optional), `POST /computer-use/sessions/{id}/stop`,

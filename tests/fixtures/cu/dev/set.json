@@ -1,0 +1,6 @@
+{
+  "name": "dev",
+  "cases": [
+    "synthetic-invoice.json"
+  ]
+}

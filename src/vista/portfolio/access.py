@@ -18,6 +18,10 @@ from vista.db import platform_session, tenant_session
 from vista.models.platform import Firm, FirmCompany, FirmMembership, Tenant
 
 WRITE_ROLES = {"analyst", "operator", "admin"}
+# The FDE scope (AGENTS.md "Deployment / FDE"): Vista's own delivery people. Until a dedicated
+# role exists it is the firm `admin` membership — never a tenant role, and never claimed by a
+# client: the server derives it from the membership behind the request.
+FDE_ROLES = frozenset({"admin"})
 
 
 def today() -> date:
@@ -73,6 +77,10 @@ class FirmContext:
     @property
     def can_write(self) -> bool:
         return self.membership is not None and self.membership.role in WRITE_ROLES
+
+    @property
+    def is_fde(self) -> bool:
+        return self.membership is not None and self.membership.role in FDE_ROLES
 
     @property
     def actor(self) -> str:

@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import { JSDOM } from "jsdom";
 const html = fs.readFileSync(new URL("../public/account/index.html", import.meta.url), "utf8");
-const source = fs.readFileSync(new URL("../public/account/app.js", import.meta.url), "utf8");
+import { source } from "./account-source.mjs";
 const company = "00000000-0000-0000-0000-000000000001";
 const workflowId = "00000000-0000-0000-0000-0000000000aa";
 const versionId = "00000000-0000-0000-0000-0000000000bb";

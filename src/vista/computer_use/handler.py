@@ -32,7 +32,9 @@ from vista.computer_use.harness import (
 from vista.computer_use.harness_local import DocumentsHarness, HttpHarness, WorkspaceHarness
 from vista.computer_use.harness_remote import RemoteHarness
 from vista.computer_use.planner import Act, Finish, Pause, PlannerState, Stop, facts_from_result, plan_step, verify
+from vista.computer_use.run_v3 import is_v3, plan_v3_step, record_read_back
 from vista.computer_use.service import JOB_KIND, TERMINAL
+from vista.computer_use.verify_v3 import verify_v3
 from vista.config import settings
 from vista.db import platform_session, tenant_session
 from vista.jobs.queue import enqueue
@@ -457,7 +459,8 @@ def _execute(session, tenant_schema: str, job: Job, run: WorkflowRun, owner: str
             decision = Act(Action.from_json(pending["action"]), gated=bool(pending.get("gated")))
         else:
             state.pending = None
-            decision, judgment, detail = (plan_graph_step if definition.get("graph") else plan_step)(
+            planner = plan_v3_step if is_v3(definition, observation) else plan_graph_step if definition.get("graph") else plan_step
+            decision, judgment, detail = planner(
                 state,
                 definition,
                 run.inputs or {},
@@ -521,6 +524,9 @@ def _execute(session, tenant_schema: str, job: Job, run: WorkflowRun, owner: str
         }
         state.history.append(entry)
         if result.facts:
+            record_read_back(state, result.facts)
+            if result.facts.get("leakage_failed"):
+                state.recovery["leakage_failed"] = int(state.recovery.get("leakage_failed", 0)) + 1
             state.facts[f"step {action.seq}"] = facts_from_result(result.facts)
         if result.undo:
             state.undo.append({"step_id": action.step_id, "undo": result.undo})
@@ -658,7 +664,11 @@ def conclude(
         run.checkpoint = state.to_checkpoint()
         finish("succeeded", outcome=outcome)
         return
-    verification = verify(definition, observation, state.facts, judge_fn=judge)
+    verification = (
+        verify_v3(definition, observation, state, judge_fn=judge)
+        if observation is not None and is_v3(definition, observation)
+        else verify(definition, observation, state.facts, judge_fn=judge)
+    )
     ledger.emit(
         "model_call",
         {
@@ -706,7 +716,7 @@ def conclude(
             "cost_usd": str(run.cost_usd or 0),
             "undo": state.undo,
             "artifacts": [h.get("artifact_key") for h in state.history if h.get("artifact_key")],
-            "graph_delta": merge_run(definition, state, str(run.id), passed),
+            "graph_delta": merge_run(definition, state, str(run.id), passed, leakage_failed=int(state.recovery.get("leakage_failed", 0))),
         },
     )
     session.add(finding)

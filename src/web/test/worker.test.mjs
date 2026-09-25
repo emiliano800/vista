@@ -297,19 +297,20 @@ test("workflow proxy permits registry reads and version decisions, not execution
   const base = `/companies/c-meridian/workflows`;
   const workflow = `${base}/${id}`;
   const version = `${workflow}/versions/${id}`;
-  for (const path of [base, workflow, `${workflow}/versions`, version, `${version}/eligibility`]) {
+  for (const path of [base, workflow, `${workflow}/versions`, version, `${version}/eligibility`, `${version}/graph`]) {
     assert.equal(await status(path, "GET"), 503);
     assert.equal(await status(path, "HEAD"), 503);
     for (const method of ["PUT", "PATCH", "DELETE"])
       assert.equal(await status(path, method), 405);
   }
-  for (const path of [base, `${workflow}/versions`, `${version}/decision`])
+  for (const path of [base, `${workflow}/versions`, `${version}/decision`, `${version}/graph/draft`])
     assert.equal(await status(path, "POST"), 503);
-  for (const path of [workflow, version, `${version}/eligibility`])
+  for (const path of [workflow, version, `${version}/eligibility`, `${version}/graph`])
     assert.equal(await status(path, "POST"), 405);
   for (const method of ["GET", "HEAD", "PUT", "PATCH", "DELETE"])
-    assert.equal(await status(`${version}/decision`, method), 405);
-  for (const path of [`${workflow}/runs`, `${base}/not-a-uuid`, `${version}/decision/extra`])
+    for (const path of [`${version}/decision`, `${version}/graph/draft`])
+      assert.equal(await status(path, method), 405);
+  for (const path of [`${workflow}/runs`, `${base}/not-a-uuid`, `${version}/decision/extra`, `${version}/graph/extra`])
     assert.equal(await status(path, "POST"), 404);
 });
 
@@ -320,14 +321,14 @@ test("tenant workflow proxy mirrors the firm routes: reads, drafts and decisions
   const base = "/workflows";
   const workflow = `${base}/${id}`;
   const version = `${workflow}/versions/${id}`;
-  for (const path of [base, workflow, `${workflow}/versions`, version, `${version}/eligibility`]) {
+  for (const path of [base, workflow, `${workflow}/versions`, version, `${version}/eligibility`, `${version}/graph`]) {
     assert.equal(await status(path, "GET"), 503);
     for (const method of ["PUT", "PATCH", "DELETE"])
       assert.equal(await status(path, method), 405);
   }
-  for (const path of [base, `${workflow}/versions`, `${version}/decision`])
+  for (const path of [base, `${workflow}/versions`, `${version}/decision`, `${version}/graph/draft`])
     assert.equal(await status(path, "POST"), 503);
-  for (const path of [workflow, version, `${version}/eligibility`])
+  for (const path of [workflow, version, `${version}/eligibility`, `${version}/graph`])
     assert.equal(await status(path, "POST"), 405);
   for (const method of ["GET", "PUT", "PATCH", "DELETE"])
     assert.equal(await status(`${version}/decision`, method), 405);

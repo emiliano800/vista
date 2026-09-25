@@ -156,7 +156,7 @@ test('the plan graph is uploaded only when ticked, after the employee\'s edits, 
     const text = pack.data.get('plan').toString();
     for (const s of ['PRIVATE', 'private.example', '500', '301', 'h1', 'Excel', 'QuickBooks']) assert.ok(!text.includes(s), `plan leaks ${s}`);
     const plan = JSON.parse(text);
-    assert.equal(plan.compiled_by, 'recorder-plan/2');
+    assert.equal(plan.compiled_by, 'recorder-plan/3');
     assert.equal(pack.manifest.consent_version, CONSENT_VERSION);
     assert.deepEqual([...new Set(plan.nodes.map((n) => n.app_role))].sort(), ['accounting', 'spreadsheet']);
     const submit = plan.edges.find((e) => e.action_class === 'submit');
@@ -417,4 +417,32 @@ test('full detail keeps titles, pages and typed text in the package and names it
   } finally {
     f.cleanup();
   }
+});
+
+test('key scripts travel with a plan only under full detail; the employee summary rides in the manifest, bounded', () => {
+  const f = fixture();
+  try {
+    const m = JSON.parse(fs.readFileSync(path.join(f.dir, 'manifest.json'), 'utf8'));
+    fs.writeFileSync(path.join(f.dir, 'manifest.json'), JSON.stringify({ ...m, summary_text: '  Re-key\u0007 vendor bills   into QuickBooks ' + 'x'.repeat(5000) }));
+    fs.appendFileSync(path.join(f.dir, 'events.jsonl'), '\n' + [
+      { timestamp: '2026-09-19T09:06:00Z', event_type: 'focus', app: 'QuickBooks', window_title: 'Bills', url: 'https://qbo.example/bills/new' },
+      { timestamp: '2026-09-19T09:06:30Z', event_type: 'click', app: 'QuickBooks', payload: { x: 500, y: 301 } },
+      { timestamp: '2026-09-19T09:07:00.000Z', event_type: 'key', app: 'QuickBooks', text: 'A' },
+      { timestamp: '2026-09-19T09:07:00.120Z', event_type: 'key', app: 'QuickBooks', text: 'C' },
+      { timestamp: '2026-09-19T09:07:01.000Z', event_type: 'key', app: 'QuickBooks', payload: { key: 'Enter' } },
+      { timestamp: '2026-09-19T09:08:00Z', event_type: 'shortcut', app: 'QuickBooks', text: 'Cmd+S' },
+    ].map((e) => JSON.stringify(e)).join('\n'));
+    const metadata = buildSubmissionPackage(f.root, 'session-1', f.config, { consent: true, sharePlan: true, shareDetail: 'metadata' });
+    const plain = JSON.parse(metadata.data.get('plan').toString());
+    assert.ok(plain.edges.some((e) => e.action_class === 'type_value'));
+    assert.ok(plain.edges.every((e) => !('keys' in e)), 'a metadata upload strips every key script');
+    const summary = metadata.manifest.summary_text;
+    assert.ok(summary.startsWith('Re-key vendor bills   into QuickBooks'), 'control characters are dropped, the text kept as written');
+    assert.equal(summary.length, 4096);
+
+    const full = buildSubmissionPackage(f.root, 'session-1', f.config, { consent: true, sharePlan: true, shareDetail: 'full' });
+    const typed = JSON.parse(full.data.get('plan').toString()).edges.find((e) => e.action_class === 'type_value');
+    assert.deepEqual(typed.keys, [{ t: 0, key: 'A' }, { t: 120, key: 'C' }, { t: 1000, key: 'Enter' }]);
+    assert.equal(full.manifest.summary_text, summary);
+  } finally { f.cleanup(); }
 });

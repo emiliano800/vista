@@ -30,6 +30,7 @@ import { openChromePage } from './computer-use/browser-chrome.js';
 import { linuxBackend } from './computer-use/desktop-linux.js';
 import { macosBackend } from './computer-use/desktop-macos.js';
 import { nutPointer } from './computer-use/pointer.js';
+import { SidecarClient, SidecarHarness } from './computer-use/sidecar.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const UI = path.join(__dirname, '..', 'ui');
@@ -119,6 +120,7 @@ async function buildRecorder() {
     keyNames,
     readClipboard: DEMO ? demoClipboard : () => clipboard.readText(),
     frameProvider: grabFrame,
+    stateProvider: DEMO ? null : sidecarState,
     thumbProvider: grabThumb,
     fileProbe: DEMO ? null : probeDocuments,
     runningApps,
@@ -1314,6 +1316,40 @@ const computerUse = new ComputerUseClient({
     if (!status.active && globalShortcut.isRegistered(KILL_SWITCH)) globalShortcut.unregister(KILL_SWITCH);
   },
 });
+// The Python device sidecar (browser-use / macOS-use). Spawned once; the recorder stores a
+// `state` frame through it on every focus/click/done, and a kind it passed the self-test
+// for replaces the JS driver. `VISTA_DEVICE_PYTHON` unset/missing → no sidecar, nothing changes.
+const sidecar = new SidecarClient({ cwd: path.resolve(__dirname, '..', '..', '..'), log: (m) => console.warn(m) });
+const sidecarHarness = {};
+async function startSidecar() {
+  if (DEMO || process.env.VISTA_DEVICE_PYTHON === '') return null;
+  const health = await sidecar.start();
+  if (!health) return null;
+  const settings = () => recorder?.settings ?? DEFAULT_SETTINGS;
+  const store = path.join(HOME, 'device');
+  fs.mkdirSync(store, { recursive: true });
+  for (const kind of Object.keys(health.drivers ?? {})) {
+    if (!health.drivers[kind]) continue;
+    const options = kind === 'browser' ? { user_data_dir: path.join(store, 'browser-profile'), screenshots: false } : {};
+    const h = new SidecarHarness({ kind, client: sidecar, options, settings });
+    const test = await h.probe();
+    console.warn(`sidecar ${kind} self-test: ${test.ok ? 'ok' : `failed (${test.error?.code ?? 'no frame'})`}`);
+    sidecarHarness[kind] = h;
+  }
+  fs.writeFileSync(path.join(store, 'self-test.json'), JSON.stringify({ health, harnesses: Object.fromEntries(Object.entries(sidecarHarness).map(([k, h]) => [k, h.selfTest])) }, null, 2));
+  return health;
+}
+
+// The recorder's frame hook: the front window's state from the same `observe()` the run loop
+// uses. Desktop first (the front window is what the employee works in); the browser driver only
+// covers pages it opened itself.
+async function sidecarState(reason, { pid = null } = {}) {
+  const h = sidecarHarness.desktop?.supported ? sidecarHarness.desktop : null;
+  if (!h || !sidecar.alive || !pid) return null;
+  const obs = await sidecar.call('observe', { kind: h.kind, pid }, 3000);
+  return obs?.observation ?? null;
+}
+
 // The drivers need Electron ready and the recorder's window probe; until then the client
 // holds placeholders and advertises nothing. Demo mode keeps the placeholders on purpose.
 async function buildHarnesses() {
@@ -1324,7 +1360,7 @@ async function buildHarnesses() {
   // VISTA_CU_BROWSER=chrome drives a tab in the employee's own Chrome (DevTools port) instead
   // of the recorder's isolated window — the employee's profile, so opt-in only.
   const openPage = process.env.VISTA_CU_BROWSER === 'chrome' ? openChromePage() : openSandboxPage();
-  return defaultHarnesses({ openPage, pointer, desktopBackend, settings });
+  return defaultHarnesses({ openPage, pointer, desktopBackend, settings, sidecar: sidecarHarness });
 }
 ipcMain.handle('cu:status', (event) => { requireDashboard(event); return computerUse.status(); });
 ipcMain.handle('cu:list', (event) => { requireDashboard(event); return computerUse.tick(); });
@@ -1660,6 +1696,7 @@ async function startAgentApi() {
 app.commandLine.appendSwitch('enable-transparent-visuals');
 app.whenReady().then(async () => {
   recorder = await buildRecorder();
+  await startSidecar().catch((e) => console.warn('sidecar unavailable:', e.message));
   computerUse.harnesses = await buildHarnesses();
   tray = new Tray(trayIcon());
   updateTray(recorder.status());
@@ -1678,6 +1715,7 @@ app.on('window-all-closed', () => {
 app.on('before-quit', async (e) => {
   clearInterval(uploadTimer);
   apiServer?.close();
+  sidecar.stop().catch(() => {});
   if (computerUse.session) {
     e.preventDefault();
     await computerUse.stop('the recorder is quitting');

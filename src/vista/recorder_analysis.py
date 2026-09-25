@@ -104,8 +104,12 @@ def observe(events: list[dict], manifest: dict) -> dict:
         key=lambda r: r["t"],
     )
     per_app: dict[str, dict] = defaultdict(
-        lambda: {"active_s": 0.0, "events": 0, "clicks": 0, "keys": 0, "copies": 0, "pastes": 0, "spans": 0}
+        lambda: {"active_s": 0.0, "events": 0, "clicks": 0, "keys": 0, "typing_runs": 0, "copies": 0, "pastes": 0, "spans": 0}
     )
+    # A typing run is one field's worth of keys (gap-separated); it is the unit of work, the
+    # keystroke count is only how long the value was. Runs are counted with or without text.
+    key_app: str | None = None
+    key_t: datetime | None = None
     # Detail, when the upload carried it: what was on screen and what moved, per app and per transfer.
     titles: dict[str, Counter] = defaultdict(Counter)
     pages: dict[str, Counter] = defaultdict(Counter)
@@ -160,6 +164,14 @@ def observe(events: list[dict], manifest: dict) -> dict:
         if is_keystroke:
             run_app, run_t = app, t
             run_text += row["text"]
+        new_run = False
+        if row["type"] == "key":
+            if key_app != app or key_t is None or (t - key_t).total_seconds() > TYPED_RUN_GAP_S:
+                stats["typing_runs"] += 1
+                new_run = True
+            key_app, key_t = app, t
+        else:
+            key_app, key_t = None, None
         if row["type"] == "click":
             stats["clicks"] += row["n"]
         elif row["type"] == "key":
@@ -185,9 +197,14 @@ def observe(events: list[dict], manifest: dict) -> dict:
         if stretch is None or gap > STRETCH_GAP_S:
             if stretch is not None:
                 stretches.append(stretch)
-            stretch = {"start": t, "end": t, "events": 0, "switches": 0, "apps": Counter()}
+            stretch = {"start": t, "end": t, "events": 0, "interactions": 0, "switches": 0, "apps": Counter()}
         stretch["end"] = t
         stretch["events"] += row["n"]
+        # Interactions count a typing run once, so a long value does not make a stretch look busier.
+        if row["type"] != "key":
+            stretch["interactions"] += row["n"]
+        elif new_run:
+            stretch["interactions"] += 1
         stretch["apps"][app] += row["n"]
         if previous is not None and previous["app"] != app:
             switches += 1
@@ -254,6 +271,7 @@ def observe(events: list[dict], manifest: dict) -> dict:
                 "end": s["end"].isoformat(),
                 "duration_s": round((s["end"] - s["start"]).total_seconds(), 1),
                 "events": s["events"],
+                "interactions": s["interactions"],
                 "switches": s["switches"],
                 "apps": [a for a, _ in s["apps"].most_common(6)],
             }
@@ -502,7 +520,13 @@ def workflow_candidates(observed: dict) -> list[dict]:
                     "pattern": "stretch",
                     "apps": s["apps"][:3],
                     "count": s["switches"],
-                    "about": {"stretch": s["id"], "start": s["start"], "end": s["end"], "switches": s["switches"], "events": s["events"]},
+                    "about": {
+                        "stretch": s["id"],
+                        "start": s["start"],
+                        "end": s["end"],
+                        "switches": s["switches"],
+                        "interactions": s.get("interactions", s["events"]),
+                    },
                 }
             )
     # One candidate per pair of applications: a transfer, a loop and a stretch between the
@@ -524,14 +548,32 @@ def workflow_candidates(observed: dict) -> list[dict]:
     return [{"id": f"c{i + 1}", **{k: v for k, v in c.items() if k != "rank"}} for i, c in enumerate(merged[:MAX_CANDIDATES])]
 
 
-def judge_request(observed: dict, candidates: list[dict], docs: list[dict], answers: list[dict] | None = None) -> tuple[dict, dict]:
+MAX_SUMMARY = 2000
+
+
+def judge_facts(observed: dict) -> dict:
+    """The observed facts as Jev sees them. Keystrokes are how a value was entered, not how much
+    work it was: the per-app `keys` count is dropped in favour of `typing_runs` (fields typed),
+    and a stretch reports `interactions` (a typing run counts once) rather than raw `events`."""
+    facts = {k: observed[k] for k in ("events", "apps", "switches", "transfers", "loops", "stretches", "session")}
+    facts["apps"] = [{k: v for k, v in a.items() if k != "keys"} for a in observed["apps"]]
+    facts["stretches"] = [{**{k: v for k, v in s.items() if k != "events"}} for s in observed["stretches"]]
+    return facts
+
+
+def judge_request(
+    observed: dict, candidates: list[dict], docs: list[dict], answers: list[dict] | None = None, summary: str | None = None
+) -> tuple[dict, dict]:
     """State and questions for one Jev call: four typed questions per candidate, all answered in parallel.
 
     `answers` are the employee's own replies to the report's questions (question, answer). They
     are facts about the session that no metadata carries — what moved and why — and once given
-    they are re-judged with, never only stored beside, the observed patterns."""
-    facts = {k: observed[k] for k in ("events", "apps", "switches", "transfers", "loops", "stretches", "session")}
+    they are re-judged with, never only stored beside, the observed patterns. `summary` is what
+    the employee typed at Start about the session's purpose: context for every judgment, never
+    a value the graph or a run could use."""
+    facts = judge_facts(observed)
     answered = [{"question": a["question"], "answer": a["answer"]} for a in (answers or []) if a.get("answer")]
+    stated = " ".join(str(summary or "").split())[:MAX_SUMMARY]
     state = {
         "context": (
             "Record of one employee's work session: application names, timing, switches and copy→paste transfers, "
@@ -539,12 +581,21 @@ def judge_request(observed: dict, candidates: list[dict], docs: list[dict], answ
             "what was typed there (`typed`) and of what each transfer moved (`samples`). Screenshots were not captured."
             if has_detail(observed)
             else "Metadata-only record of one employee's work session: application names, timing, switches and "
-            "copy→paste transfers. Window titles, URLs, typed text and screenshots were never captured."
+            "copy→paste transfers. Window titles, URLs, typed text and screenshots were not shared."
         ),
         "observed": facts,
         "shared_documents": [{"filename": d["filename"], "summary": d["summary"], "excerpt": d["excerpt"]} for d in docs],
         "candidates": [{k: c[k] for k in ("id", "pattern", "apps", "count", "evidence")} for c in candidates],
     }
+    state["context"] += (
+        " `typing_runs` is how many fields were typed into; how many keys that took says nothing about whether the work is mechanical."
+    )
+    if stated:
+        state["employee_summary"] = stated
+        state["context"] += (
+            " `employee_summary` is what the employee said the session was for before recording it, in their "
+            "own words; read every pattern in that light."
+        )
     if answered:
         state["employee_answers"] = answered
         state["context"] += (
@@ -552,6 +603,8 @@ def judge_request(observed: dict, candidates: list[dict], docs: list[dict], answ
             "between the applications and whether they repeat it. Treat them as the most direct evidence there is."
         )
     with_answers = " and the employee's own account in `employee_answers`" if answered else ""
+    if stated:
+        with_answers += " and the session's stated purpose in `employee_summary`"
     questions: dict[str, dict] = {}
     for c in candidates:
         ref = f"candidate `{c['id']}` in `candidates` ({' and '.join(c['apps'])}; {c['evidence'].lower()})"
@@ -873,7 +926,12 @@ class Interpretation:
 
 
 def interpret_with_jev(
-    observed: dict, docs: list[dict], judge_fn=judge, plan: dict | None = None, answers: list[dict] | None = None
+    observed: dict,
+    docs: list[dict],
+    judge_fn=judge,
+    plan: dict | None = None,
+    answers: list[dict] | None = None,
+    summary: str | None = None,
 ) -> Interpretation:
     candidates = workflow_candidates(observed)
     answered = [a for a in (answers or []) if a.get("answer")]
@@ -884,7 +942,7 @@ def interpret_with_jev(
         return Interpretation(
             interpretation, questions, "none", "code", 0, 0, {"interpreter": "jev", "candidates": 0, "questions": 0, "rejected": 0}
         )
-    state, questions = judge_request(observed, candidates, docs, answered)
+    state, questions = judge_request(observed, candidates, docs, answered, summary)
     judgment = judge_fn(state, questions)
     interpretation, model_questions = apply_judgment(
         judgment, candidates, model=judgment.model, source=judgment.source, docs=docs, plan=plan, answers=answered
@@ -909,9 +967,11 @@ def interpret_with_chat(observed: dict, docs: list[dict], llm=chat) -> Interpret
     return Interpretation(interpretation, model_questions, r.model, r.source, r.input_tokens, r.output_tokens, event)
 
 
-def interpret(observed: dict, docs: list[dict], plan: dict | None = None, answers: list[dict] | None = None) -> Interpretation:
+def interpret(
+    observed: dict, docs: list[dict], plan: dict | None = None, answers: list[dict] | None = None, summary: str | None = None
+) -> Interpretation:
     if settings.recorder_interpreter == "jev":
-        return interpret_with_jev(observed, docs, plan=plan, answers=answers)
+        return interpret_with_jev(observed, docs, plan=plan, answers=answers, summary=summary)
     return interpret_with_chat(observed, docs)
 
 
@@ -1047,7 +1107,7 @@ def _analyze(tenant_schema: str, submission_id: uuid.UUID, run_id: uuid.UUID, se
         # A re-run after the employee answered: their replies are evidence for this judgment.
         prior = session.scalar(select(RecorderReport).where(RecorderReport.submission_id == submission_id))
         answers = [{"question": q["question"], "answer": q["answer"]} for q in (prior.questions if prior else []) if q.get("answer")]
-        result = interpret(observed, docs, plan, answers)
+        result = interpret(observed, docs, plan, answers, summary=row.manifest.get("summary_text"))
         interpretation, model_questions = result.interpretation, result.questions
         seq = _emit(
             session,

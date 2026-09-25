@@ -104,6 +104,8 @@ class SubmissionCreate(StrictModel):
     ended_at: AwareDatetime
     active_seconds: int = Field(strict=True, ge=0)
     artifacts: list[ArtifactSpec] = Field(min_length=1, max_length=12)
+    # The employee's own words at Start: what the session was for. Context for the analysis only.
+    summary_text: str | None = Field(default=None, max_length=4096)
 
     @model_validator(mode="after")
     def bounded(self):
@@ -337,6 +339,9 @@ def verify_objects(principal: Principal, row: RecorderSubmission) -> list[dict]:
                 graph = PlanGraph.model_validate_json(data)
             except ValidationError as exc:
                 raise HTTPException(422, "Plan artifact is not a valid state graph") from exc
+            manifest = SubmissionCreate.model_validate(row.manifest)
+            if manifest.sharing_policy != FULL_DETAIL_POLICY and any(e.keys for e in graph.edges):
+                raise HTTPException(422, "Plan artifact carries keystrokes, which only a full-detail upload may share")
             report = plan_leakage(graph)
             if not report.ok:
                 raise HTTPException(422, f"Plan artifact failed the privacy check: {report.summary()}")

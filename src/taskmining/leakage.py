@@ -31,6 +31,23 @@ NAME_KEYS: frozenset[str] = frozenset({"name", "control", "activity", "label", "
 _TOKEN = re.compile(r"\{[a-z_]+\}")
 _HASH = re.compile(r"^[0-9a-f]{8,64}$")
 _SLOT_PREFIX = re.compile(r"^(?:doc|rec|field|fact|dialog|have|read|open|in|ctx):")
+# Landmark roles are a closed enumeration (ARIA / AX role names), never an app's words.
+LANDMARK_ROLES: frozenset[str] = frozenset(
+    {
+        "banner",
+        "navigation",
+        "main",
+        "complementary",
+        "contentinfo",
+        "search",
+        "form",
+        "region",
+        "dialog",
+        "alertdialog",
+        "toolbar",
+        "tablist",
+    }
+)
 
 
 @dataclass(frozen=True)
@@ -86,12 +103,32 @@ class RecordingContext:
         )
 
 
+def is_key_script(value: object) -> bool:
+    """A `type_value` edge's recorded keystrokes: `[{t, key, masked?}]`. The one place typed
+    text travels with a graph — only under the full-detail sharing policy, which the upload
+    refuses otherwise — so the check skips it; every other string still faces the recorded values."""
+    return (
+        isinstance(value, list)
+        and bool(value)
+        and all(
+            isinstance(k, dict)
+            and set(k) <= {"t", "key", "masked"}
+            and isinstance(k.get("t"), int)
+            and isinstance(k.get("key"), str)
+            and len(k["key"]) <= 32
+            for k in value
+        )
+    )
+
+
 def _strings(payload: object, path: str = "$") -> Iterator[tuple[str, str, str]]:
     """Every string in `payload` as (path, last key, value)."""
     if isinstance(payload, str):
         yield path, path.rsplit(".", 1)[-1].split("[", 1)[0], payload
     elif isinstance(payload, dict):
         for k, v in payload.items():
+            if k == "keys" and is_key_script(v):
+                continue
             yield from _strings(v, f"{path}.{k}")
     elif isinstance(payload, list | tuple):
         for i, v in enumerate(payload):
@@ -99,7 +136,9 @@ def _strings(payload: object, path: str = "$") -> Iterator[tuple[str, str, str]]
 
 
 def _exempt(value: str) -> bool:
-    return bool(_HASH.match(value) or _SLOT_PREFIX.match(value) or value in APP_ROLES or key_name(value) == value)
+    return bool(
+        _HASH.match(value) or _SLOT_PREFIX.match(value) or value in APP_ROLES or value in LANDMARK_ROLES or key_name(value) == value
+    )
 
 
 def check(payload: object, ctx: RecordingContext) -> Report:

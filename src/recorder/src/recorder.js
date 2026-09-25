@@ -12,7 +12,10 @@
 //
 // The local log is complete (`recording_format` 2): typed text, clipboard text and
 // its history, URLs and titles, mouse paths and drags, app start/stop, running apps,
-// a done marker and file created/modified flags. It stays on this device for review
+// a done marker, file created/modified flags and — when the device sidecar is running — a
+// `state` event per focus / click / done frame (`stateProvider`: the same `observe()` the
+// run loop uses, so L0/L1 and the control descriptors under the pointer come from one
+// function for recording and execution). It stays on this device for review
 // and graph compilation; what leaves is decided at upload time (intake.js). Sign-in,
 // payment and private windows are still muted at capture. Every event is stamped
 // with the current foreground app/window so the pipeline can abstract it into a
@@ -121,6 +124,8 @@ export class Recorder extends EventEmitter {
     this.hook = opts.hook;
     this.activeWindow = opts.activeWindow;
     this.frameProvider = opts.frameProvider ?? null;
+    this.stateProvider = opts.stateProvider ?? null; // async (reason, {pointer, pid, app}) -> sidecar observation | null
+    this._stateBusy = false;
     this.thumbProvider = opts.thumbProvider ?? null;
     this.readClipboard = opts.readClipboard ?? (() => '');
     this.fileProbe = opts.fileProbe ?? null;
@@ -275,6 +280,7 @@ export class Recorder extends EventEmitter {
     if (this.state === 'recording') {
       this._write('done', { text: this.outcome.note });
       this._requestFrame('done');
+      this._captureState('done');
     }
     this._note('task marked done');
     this._writeManifest();
@@ -333,6 +339,38 @@ export class Recorder extends EventEmitter {
     this._flushPath();
     this._down = { button: e.button, x: e.x, y: e.y, at: Date.now() };
     this._write('click', { payload: { button: e.button, x: e.x, y: e.y, clicks: e.clicks } });
+    this._captureState('click', { x: e.x, y: e.y });
+  }
+
+  // One shared state frame beside the screenshot: L0/L1, screen class, bounded candidates
+  // with `has_value` and, on clicks, the descriptor of the control under the pointer. Never
+  // in private/own/sensitive windows; the sidecar's local observation stays in this log only.
+  async _captureState(reason, pointer = null) {
+    if (!this.stateProvider || this.state !== 'recording' || this.current.private || this.current.own || this.current.sensitive) return;
+    if (this._stateBusy) return;
+    this._stateBusy = true;
+    const at = Date.now();
+    try {
+      const obs = await this.stateProvider(reason, { pointer, pid: this.current.pid ?? null, app: this.current.app });
+      if (!obs || !Array.isArray(obs.l0)) return;
+      this._write('state', {
+        payload: {
+          reason,
+          l0: obs.l0,
+          l1: obs.l1 ?? {},
+          screen_class: obs.screen_class ?? null,
+          settled: obs.settled ?? null,
+          candidates: (obs.candidates ?? []).slice(0, 40),
+          under_pointer: obs.under_pointer ?? null,
+          fields_with_value: obs.fields_with_value ?? [],
+          observe_ms: Date.now() - at,
+        },
+      });
+    } catch (err) {
+      this._note(`state capture failed: ${err.message}`);
+    } finally {
+      this._stateBusy = false;
+    }
   }
 
   _onMouseUp(e) {
@@ -459,10 +497,11 @@ export class Recorder extends EventEmitter {
     const priv = this._isPrivate(app, title);
     const own = this._isOwn(app);
     const shownTitle = priv ? '(private)' : this._redactText(title);
-    this.current = { app, title: shownTitle, url: priv ? '' : url, private: priv, own, sensitive: priv || isSensitiveWindow({ title: shownTitle, url: priv ? '' : url }) };
+    this.current = { app, title: shownTitle, url: priv ? '' : url, pid: win.owner?.processId ?? null, private: priv, own, sensitive: priv || isSensitiveWindow({ title: shownTitle, url: priv ? '' : url }) };
     if (own) return this._emitStatus();
     this._write('focus', { payload: { window_id: win.id ?? null } });
     this._requestFrame('focus');
+    this._captureState('focus');
     this._probeFiles(win, app, priv);
     this._emitStatus();
   }
@@ -644,7 +683,7 @@ export class Recorder extends EventEmitter {
     this.stream.write(JSON.stringify(ev) + '\n');
     this.counts[type] = (this.counts[type] ?? 0) + 1;
     this.counts.total += 1;
-    if (type !== 'key' && type !== 'scroll' && type !== 'path') this.emit('event', ev);
+    if (type !== 'key' && type !== 'scroll' && type !== 'path' && type !== 'state') this.emit('event', ev);
     if (type === 'focus' || type === 'copy' || type === 'paste' || type === 'shortcut' || type === 'done') this._pushLog(ev);
     return true;
   }

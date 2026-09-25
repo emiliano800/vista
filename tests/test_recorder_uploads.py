@@ -623,3 +623,41 @@ def test_full_detail_policy_accepts_titles_and_text_and_metadata_policy_still_re
     upload_files(client, headers, submission, store, activity=rich)
     refused = client.post(f"{ROOT}/{submission['id']}/complete", headers=headers)
     assert refused.status_code == 422 and "INV-1042" not in refused.text and "Q3.xlsx" not in refused.text
+
+
+PLAN_V3 = (Path(__file__).parent / "fixtures" / "plan_invoice_v3.json").read_bytes()
+
+
+def test_key_scripts_upload_only_under_full_detail_and_the_employee_summary_reaches_the_analysis(client, workspace, store, monkeypatch):
+    headers, _, _, wid = workspace
+    assert any(e.get("keys") for e in json.loads(PLAN_V3)["edges"]), "the recorder fixture carries a key script"
+    # A metadata-only package may not carry typed text, even inside a plan.
+    submission = create(client, headers, plan_body(wid, PLAN_V3))
+    upload_plan(client, headers, submission, store, PLAN_V3)
+    response = client.post(f"{ROOT}/{submission['id']}/complete", headers=headers)
+    assert response.status_code == 422 and "keystrokes" in response.text and "ACM" not in response.text
+
+    manifest = plan_body(wid, PLAN_V3)
+    manifest["sharing_policy"] = "activity-full-v1"
+    manifest["summary_text"] = "Re-keying vendor bills from PDF into QuickBooks"
+    assert client.post(ROOT, headers=headers, json={**manifest, "summary_text": "x" * 4097}).status_code == 422
+    submission = create(client, headers, manifest)
+    upload_plan(client, headers, submission, store, PLAN_V3)
+    assert client.post(f"{ROOT}/{submission['id']}/complete", headers=headers).json()["upload_status"] == "accepted"
+
+    from vista import recorder_analysis
+
+    seen = {}
+    real = recorder_analysis.interpret
+
+    def spy(observed, docs, plan=None, answers=None, summary=None):
+        seen["summary"] = summary
+        return real(observed, docs, plan, answers, summary=summary)
+
+    monkeypatch.setattr(recorder_analysis, "interpret", spy)
+    while process_one():
+        pass
+    detail = client.get(f"{ROOT}/{submission['id']}", headers=headers).json()
+    assert detail["analysis_status"] == "succeeded", detail
+    assert seen["summary"] == "Re-keying vendor bills from PDF into QuickBooks"
+    assert detail["report"]["interpretation"]["plan"]["moves"] == 7

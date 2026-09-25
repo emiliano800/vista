@@ -1,0 +1,88 @@
+{
+  "id": "synthetic-invoice",
+  "kind": "synthetic",
+  "apps": [
+    "pdf",
+    "browser"
+  ],
+  "people": [],
+  "tasks": [
+    "invoice-entry"
+  ],
+  "graph": "../../plan_invoice_v3.json",
+  "held_out": [
+    {
+      "l0": [
+        "in:fee208d94242f0d7",
+        "open:doc:d1",
+        "read:fact:f1"
+      ],
+      "expected": "042e7f9b310726e8",
+      "recording": "rec-synthetic-heldout"
+    },
+    {
+      "l0": [
+        "in:fee208d94242f0d7",
+        "open:doc:d1"
+      ],
+      "expected": "2d3ef664b1bea10d",
+      "recording": "rec-synthetic-heldout"
+    },
+    {
+      "l0": [
+        "have:field:amount",
+        "have:field:input_1",
+        "in:d9689a98516bc009",
+        "read:fact:f1"
+      ],
+      "expected": "42ea684e8600b36b",
+      "recording": "rec-synthetic-heldout"
+    },
+    {
+      "l0": [
+        "have:field:amount",
+        "have:field:c2",
+        "in:d9689a98516bc009",
+        "read:fact:f1"
+      ],
+      "expected": "94124b368008c0a0",
+      "recording": "rec-synthetic-heldout"
+    },
+    {
+      "l0": [
+        "in:d9689a98516bc009",
+        "read:fact:f1"
+      ],
+      "expected": "a361655f7d47b32f",
+      "recording": "rec-synthetic-heldout"
+    },
+    {
+      "l0": [
+        "have:field:amount",
+        "in:d9689a98516bc009",
+        "read:fact:f1"
+      ],
+      "expected": "e70b58739b8277f8",
+      "recording": "rec-synthetic-heldout"
+    },
+    {
+      "l0": [
+        "in:0000000000000000"
+      ],
+      "expected": null,
+      "recording": "rec-synthetic-heldout"
+    }
+  ],
+  "runs": [
+    {
+      "run_id": "smoke-1",
+      "verified": null,
+      "rejudged": 0,
+      "recovery_used": 0,
+      "leakage_failed": 0,
+      "edges": [
+        "919ff397ad537804"
+      ]
+    }
+  ]
+}
