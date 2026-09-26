@@ -99,6 +99,18 @@ const windows = [];
 test.afterEach(() => {
   while (windows.length) windows.pop().close();
 });
+// The server derives these from the tenant and deal roles; the tests map the one
+// `role` they set the way a workspace owner (tenant admin), member and viewer come out.
+function permissionsFor(role) {
+  const edits = role === "owner" || role === "member";
+  return {
+    import: edits,
+    run_agents: edits,
+    draft_workflow: edits,
+    decide_workflow: role === "owner",
+    run_workflow: role === "owner",
+  };
+}
 function mount({ role = "owner", workflows = [workflow()], eligibility = null, runs = [], runView = null } = {}) {
   const state = { requests: [], runs: [...runs], runView };
   const dom = new JSDOM(html, { url: "https://vista.test/account/?view=workflows", runScripts: "outside-only" });
@@ -114,7 +126,7 @@ function mount({ role = "owner", workflows = [workflow()], eligibility = null, r
     state.requests.push({ method, path, body: options.body ? JSON.parse(options.body) : null });
     if (path === "/api/auth/me") return Response.json({ email: "owner@example.com" });
     if (path === "/api/deals") return Response.json([{ id: company, name: "Recorder Company" }]);
-    if (path === `/api/deals/${company}/imports`) return Response.json({ role, imports: [] });
+    if (path === `/api/deals/${company}/imports`) return Response.json({ role, permissions: permissionsFor(role), imports: [] });
     if (path === `/api/deals/${company}/import-datasets`) return Response.json({});
     if (path === "/api/runs?limit=100") return Response.json([]);
     if (path === "/api/findings?limit=200") return Response.json([]);
@@ -175,7 +187,7 @@ test("when no recorder is connected there is no Run button and the reason is spe
   assert.ok($("content").textContent.includes("No employee's recorder is connected"));
   for (const role of ["member", "viewer"]) {
     const m = mount({ role });
-    await settle(() => m.$("content").textContent.includes("Only the workspace owner can run a workflow."));
+    await settle(() => m.$("content").textContent.includes("Only a workspace admin can run a workflow."));
     assert.equal(m.dom.window.document.querySelector("[data-run-workflow]"), null);
   }
   const draft = mount({ workflows: [workflow("draft")] });
@@ -231,7 +243,7 @@ test("Stop run posts to the stop route and the dialog shows the stopped outcome;
   m.dom.window.document.querySelector("[data-workflow-run]").click();
   await settle(() => m.$("run-body").textContent.includes("The agent wants to"));
   assert.equal(m.$("run-body").querySelector("[data-decide-step]"), null);
-  assert.ok(m.$("run-body").textContent.includes("Only the workspace owner can decide"));
+  assert.ok(m.$("run-body").textContent.includes("Only a workspace admin can decide"));
   m.$("close-run").click();
 });
 

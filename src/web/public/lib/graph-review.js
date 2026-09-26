@@ -20,8 +20,8 @@ const runTag = (status) =>
   `<span class="tag ${status === "succeeded" ? "success" : status === "failed" || status === "stopped" ? "danger" : "warning"}">${esc(status)}</span>`;
 
 // What the person in front of this panel may do. `who` labels the gate in the copy.
-export function gates(review, { canDraft }) {
-  const draft = !!review.can_draft && !!canDraft;
+export function gates(review, { canDraft } = {}) {
+  const draft = !!review.can_draft && !!(canDraft ?? review.may_draft);
   return { draft, fde: draft && !!review.fde };
 }
 
@@ -88,7 +88,7 @@ export function shadowReportHtml(s, edges, name, g) {
   return `<p class="small">${number(s.runs)} shadow run${s.runs === 1 ? "" : "s"} · ${number(s.proposed)} proposals · ${number(s.agreed)} agreed${s.agreement == null ? "" : ` · ${Math.round(s.agreement * 100)}% agreement`}</p><div class="table-wrap"><table><thead><tr><th>Move proposed</th><th class="num">Proposed</th><th class="num">Agreed</th><th class="num">Agreement</th><th>Disagreements${g.fde ? " · tick to accept as a new shadow move" : g.draft ? " · accepting one is an FDE decision" : ""}</th></tr></thead><tbody>${rows}</tbody></table></div>`;
 }
 
-export function graphReviewHtml(review, { canDraft = false, workflowId = "", who = "the workspace owner" } = {}) {
+export function graphReviewHtml(review, { canDraft, workflowId = "", who = "a workspace admin" } = {}) {
   const g = review.graph;
   if (!g) return '<p class="small muted">This version has no task graph; it was written by hand rather than compiled from recordings.</p>';
   const gate = gates(review, { canDraft });

@@ -92,6 +92,18 @@ async function settle(predicate) {
   }
   assert.fail("UI did not reach expected state");
 }
+// The server derives these from the tenant and deal roles; the tests map the one
+// `role` they set the way a workspace owner (tenant admin), member and viewer come out.
+function permissionsFor(role) {
+  const edits = role === "owner" || role === "member";
+  return {
+    import: edits,
+    run_agents: edits,
+    draft_workflow: edits,
+    decide_workflow: role === "owner",
+    run_workflow: role === "owner",
+  };
+}
 function mount({ jobs = [], role = "owner", unlinked = false, signedIn = true } = {}) {
   const state = { jobs, records: jobs.some((j) => j.status === "completed") ? RECORDS : null, requests: [], navigations: [] };
   const dom = new JSDOM(html, { url: "https://vista.test/account/", runScripts: "outside-only" });
@@ -117,6 +129,7 @@ function mount({ jobs = [], role = "owner", unlinked = false, signedIn = true } 
     if (path === `${base}/imports`)
       return Response.json({
         role,
+        permissions: permissionsFor(role),
         company: { id: "c-1", name: "Meridian Risk Partners, LLC", slug: "meridian" },
         imports: state.jobs,
         openExceptions: state.jobs.flatMap((j) => (j.exceptions ?? []).filter((x) => x.open)),

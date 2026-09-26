@@ -30,15 +30,18 @@ export function runsChart(days, { width = 600, height = 120 } = {}) {
   return `<svg class="chart" viewBox="0 0 ${width} ${height}" role="img" aria-label="Agent runs per day, ${esc(first)} to ${esc(last)}; peak ${max}"><line x1="0" y1="${height - 20}" x2="${width}" y2="${height - 20}" stroke="var(--line)"/>${bars}<text x="0" y="${height - 4}" class="axis">${esc(first)}</text><text x="${width}" y="${height - 4}" text-anchor="end" class="axis">${esc(last)}</text><text x="0" y="10" class="axis">peak ${max}/day</text></svg>`;
 }
 
-// Horizontal proportion bars for spend by company or model.
+// Horizontal proportion bars for spend by company or model. Each bar is a tiny
+// SVG whose width is a presentation attribute, not an inline style: the site's
+// CSP (`style-src 'self'`, no 'unsafe-inline') drops inline styles, which left
+// every bar at zero width.
 export function spendBars(rows, label = (r) => r.key ?? "Portfolio-wide") {
   if (!rows.length) return `<p class="empty">No model spend recorded yet.</p>`;
   const max = Math.max(...rows.map((r) => Number(r.cost_usd)), 1e-9);
   return `<ul class="spend-bars">${rows
     .slice(0, 8)
-    .map(
-      (r, i) =>
-        `<li><span class="label">${esc(label(r))}</span><span class="bar"><i style="width:${((Number(r.cost_usd) / max) * 100).toFixed(1)}%;background:var(--chart-${(i % 8) + 1})"></i></span><span class="num">${esc(spend(r.cost_usd))}<small>${esc(integer(r.runs))} run${r.runs === 1 ? "" : "s"} · ${esc(integer(r.tokens))} tok</small></span></li>`,
-    )
+    .map((r, i) => {
+      const pct = ((Number(r.cost_usd) / max) * 100).toFixed(1);
+      return `<li><span class="label">${esc(label(r))}</span><svg class="bar" viewBox="0 0 100 1" preserveAspectRatio="none" aria-hidden="true"><rect x="0" y="0" width="${pct}" height="1" fill="var(--chart-${(i % 8) + 1})"/></svg><span class="num">${esc(spend(r.cost_usd))}<small>${esc(integer(r.runs))} run${r.runs === 1 ? "" : "s"} · ${esc(integer(r.tokens))} tok</small></span></li>`;
+    })
     .join("")}</ul>`;
 }

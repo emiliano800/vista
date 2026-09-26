@@ -152,7 +152,8 @@ class GraphReviewOut(BaseModel):
     compile: CompileReport | None = None
     previous_version_number: int | None = None
     against_previous: list[EdgeChange]
-    can_draft: bool
+    can_draft: bool  # the version has something to fold into a draft
+    may_draft: bool = False  # the requester's role may POST …/graph/draft (server-derived; the client never claims it)
     fde: bool = False  # the requester holds the FDE scope (server-derived; the client never claims it)
 
 
@@ -478,7 +479,7 @@ def _structural_diff(prev: dict | None, cur: dict | None) -> list[EdgeChange]:
     return out
 
 
-def review(session: Session, workflow: Workflow, version: WorkflowVersion, *, fde: bool = False) -> GraphReviewOut:
+def review(session: Session, workflow: Workflow, version: WorkflowVersion, *, fde: bool = False, may_draft: bool = False) -> GraphReviewOut:
     runs = _runs(session, version)
     draft, views, changes, proposals = _fold(version, runs, set())
     previous = _previous_approved(session, workflow, version) if version.number > 1 else None
@@ -498,6 +499,7 @@ def review(session: Session, workflow: Workflow, version: WorkflowVersion, *, fd
         previous_version_number=previous.number if previous else None,
         against_previous=_structural_diff(previous.definition.get("graph") if previous else None, graph),
         can_draft=graph is not None and status == "approved" and version.number == workflow.latest_version and bool(changes or proposals),
+        may_draft=may_draft,
         fde=fde,
     )
 

@@ -108,7 +108,8 @@ def version_graph(
     with company_session(company) as session:
         workflow = service.get_workflow(session, company.id, workflow_id)
         version = service.get_version(session, workflow, version_id)
-        return graph_review.review(session, workflow, version, fde=ctx.is_fde)
+        may_draft = ctx.membership is not None and ctx.membership.role == "admin"  # the rule draft_from_runs enforces
+        return graph_review.review(session, workflow, version, fde=ctx.is_fde, may_draft=may_draft)
 
 
 @router.post("/{workflow_id}/versions/{version_id}/graph/draft", response_model=VersionOut, status_code=201)

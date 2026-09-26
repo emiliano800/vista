@@ -59,6 +59,25 @@ def datasets(deal_id: uuid.UUID, principal: Principal = Depends(current_principa
     }
 
 
+def workspace_permissions(tenant_role: str, deal_role: str) -> dict:
+    """What this person may do in the company workspace, derived from the same rules the
+    write routes enforce: imports, exception decisions and agent runs go by the deal role
+    (`require_deal_role(..., "member")`); workflow drafting, decisions and runs go by the
+    tenant role (`api/company_workflows.py`, `api/computer_use.py`). The page renders its
+    buttons from this instead of guessing from either role alone."""
+    from vista.api.company_workflows import DECISION_ROLES, WRITE_ROLES
+    from vista.api.computer_use import EXECUTION_ROLES_TENANT
+
+    edits = deal_role in ("owner", "member")
+    return {
+        "import": edits,
+        "run_agents": edits,
+        "draft_workflow": tenant_role in WRITE_ROLES,
+        "decide_workflow": tenant_role in DECISION_ROLES,
+        "run_workflow": tenant_role in EXECUTION_ROLES_TENANT,
+    }
+
+
 @router.get("/deals/{deal_id}/imports")
 def list_imports(deal_id: uuid.UUID, principal: Principal = Depends(current_principal)) -> dict:
     _ctx, company, role = _scope(deal_id, principal, "viewer")
@@ -66,6 +85,7 @@ def list_imports(deal_id: uuid.UUID, principal: Principal = Depends(current_prin
         jobs, open_exceptions = company_imports(ts)
     return {
         "role": role,
+        "permissions": workspace_permissions(principal.role, role),
         "company": {"id": str(company.id), "name": company.name, "slug": company.slug},
         "imports": jobs,
         "openExceptions": open_exceptions,

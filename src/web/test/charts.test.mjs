@@ -29,8 +29,11 @@ test("spendBars ranks rows, labels the portfolio bucket and formats spend", () =
   ]);
   assert.match(html, /Ridgeway/);
   assert.match(html, /Portfolio-wide/);
-  assert.match(html, /width:100\.0%/);
-  assert.match(html, /width:50\.0%/);
+  assert.match(html, /<rect [^>]*width="100\.0"/);
+  assert.match(html, /<rect [^>]*width="50\.0"/);
+  assert.match(html, /fill="var\(--chart-1\)"/);
+  // The site's CSP has no 'unsafe-inline' for styles: bars must not rely on style="".
+  assert.doesNotMatch(html, /style=/);
   assert.equal(spend("0.0034"), "$0.0034");
   assert.equal(spend(12), "$12.00");
   assert.match(spendBars([]), /No model spend/);

@@ -58,6 +58,7 @@ let companies = [],
   wizard = null,
   files = [],
   role = "viewer",
+  permissions = {}, // server-derived: what the write routes would accept from this person
   view = ["overview", "sources", "findings", "agents", "runs", "recordings", "workflows"].includes(
     new URLSearchParams(location.search).get("view"),
   )
@@ -134,7 +135,7 @@ const KINDS = {
 const cost = (value) =>
   `$${Number(value).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 4 })}`;
 const stamp = (value) => (value ? new Date(value).toLocaleString() : "—");
-const canEdit = () => role === "owner" || role === "member";
+const canEdit = () => permissions.run_workflow || role === "member";
 const company = () => companies.find((c) => c.id === $("company").value);
 const isMeridian = () => /meridian risk partners/i.test(company()?.name ?? "");
 let workflows = [];
@@ -371,7 +372,7 @@ let workflowRuns = {},
   runConfirm = null,
   runPoll = null;
 const REASONS = {
-  execution_permission_required: "Only the workspace owner can run a workflow.",
+  execution_permission_required: "Only a workspace admin can run a workflow.",
   version_superseded: "A newer version exists; decide on it first.",
   version_not_approved: "This version is not approved.",
   unsupported_environment: "Only sandbox workflows can run.",
@@ -408,7 +409,7 @@ function workflowRunControls(w) {
   if (v.status !== "approved") return "";
   const e = eligibility[v.id];
   if (!e) return '<span class="small muted">Checking whether this version can run…</span>';
-  if (role !== "owner") return '<span class="small muted">Only the workspace owner can run a workflow.</span>';
+  if (!permissions.run_workflow) return '<span class="small muted">Only a workspace admin can run a workflow.</span>';
   const reasons = [...e.reasons, ...(e.availability?.reasons ?? [])];
   if (!e.execution_available)
     return `<span class="small muted">Cannot run now: ${esc(reasons.map(eligibilityReason).join(" "))}${e.availability?.unmapped_tools?.length ? ` (${esc(e.availability.unmapped_tools.join(", "))})` : ""}</span>`;
@@ -458,16 +459,16 @@ function pauseCardHtml(run) {
       ? `<details open><summary class="small">What the agent could see (${cands.length})</summary><ul class="candidates small">${cands.map((c) => `<li class="${c.id === p.chosen ? "chosen" : ""}">${esc(c.label)}${c.p != null ? ` <span class="muted">${Math.round(c.p * 100)}%</span>` : ""}${c.id === p.chosen ? " ← chosen" : ""}</li>`).join("")}</ul></details>`
       : ""
   }<p class="small muted">${run.harness?.screenshots ? `<a href="/api/workflow-runs/${esc(run.id)}/steps/${esc(p.step_id)}/screenshot" target="_blank" rel="noopener">Screenshot evidence</a>` : "Screenshots stay on the employee's computer."}</p>${
-    role === "owner"
+    permissions.run_workflow
       ? `<div class="actions"><button class="primary" data-decide-step="approve" data-run-id="${esc(run.id)}" data-step="${esc(p.step_id)}">${icon("check")}Approve step</button><button data-decide-step="deny" data-run-id="${esc(run.id)}" data-step="${esc(p.step_id)}">Deny</button><button data-stop-run="${esc(run.id)}">Stop run</button></div>`
-      : '<p class="small muted">Only the workspace owner can decide.</p>'
+      : '<p class="small muted">Only a workspace admin can decide.</p>'
   }</section>`;
 }
 function harnessWaitHtml(run) {
   const p = run.pending ?? {};
   if (p.kind === "offer")
-    return `<section class="pause-card"><h3>Waiting for an employee's recorder</h3><p class="small">This run needs ${esc((p.harness_kinds ?? []).join(" and ") || "a harness")} on an employee's computer. ${p.harness?.connected ? "A recorder is connected; the employee must press Start and accept." : "The employee must open the Vista Recorder, go to Computer use and accept the offer."}</p>${role === "owner" ? `<div class="actions"><button data-stop-run="${esc(run.id)}">Stop run</button></div>` : ""}</section>`;
-  return `<section class="pause-card"><h3>Running on the employee's computer</h3><p class="small">Step ${esc(p.seq ?? "?")}: ${esc(p.description ?? p.action ?? "")} (${esc(p.harness ?? "")})${run.harness?.connected === false ? " · the recorder is no longer connected" : ""}</p>${role === "owner" ? `<div class="actions"><button data-stop-run="${esc(run.id)}">Stop run</button></div>` : ""}</section>`;
+    return `<section class="pause-card"><h3>Waiting for an employee's recorder</h3><p class="small">This run needs ${esc((p.harness_kinds ?? []).join(" and ") || "a harness")} on an employee's computer. ${p.harness?.connected ? "A recorder is connected; the employee must press Start and accept." : "The employee must open the Vista Recorder, go to Computer use and accept the offer."}</p>${permissions.run_workflow ? `<div class="actions"><button data-stop-run="${esc(run.id)}">Stop run</button></div>` : ""}</section>`;
+  return `<section class="pause-card"><h3>Running on the employee's computer</h3><p class="small">Step ${esc(p.seq ?? "?")}: ${esc(p.description ?? p.action ?? "")} (${esc(p.harness ?? "")})${run.harness?.connected === false ? " · the recorder is no longer connected" : ""}</p>${permissions.run_workflow ? `<div class="actions"><button data-stop-run="${esc(run.id)}">Stop run</button></div>` : ""}</section>`;
 }
 function outcomeHtml(run) {
   const o = run.outcome ?? {};
@@ -484,7 +485,7 @@ function workflowRunHtml(run, trace) {
         ? harnessWaitHtml(run)
         : RUN_TERMINAL.has(run.status)
           ? outcomeHtml(run)
-          : role === "owner"
+          : permissions.run_workflow
             ? `<div class="actions"><button data-stop-run="${esc(run.id)}">Stop run</button></div>`
             : "";
   const steps = stepListHtml(trace?.events ?? []);
@@ -582,8 +583,8 @@ function actionsHtml(actions, key) {
   const steps = actions.instructions.map((s) => `<li>${esc(s)}</li>`).join("");
   const asked = actions.question ? `<p class="small">Asked the employee: <em>${esc(actions.question)}</em></p>` : "";
   const draft =
-    actions.draft_definition && canEdit()
-      ? `<p class="actions"><button class="primary" data-draft="${esc(key)}">${icon("workflow")}Draft workflow</button><span class="small muted">sandbox · draft · needs owner approval</span></p>`
+    actions.draft_definition && permissions.draft_workflow
+      ? `<p class="actions"><button class="primary" data-draft="${esc(key)}">${icon("workflow")}Draft workflow</button><span class="small muted">sandbox · draft · needs admin approval</span></p>`
       : "";
   return `<details class="what-to-do"><summary>What to do</summary>${asked}<ol class="small">${steps}</ol>${draft}<p class="small draft-result" data-draft-result="${esc(key)}" hidden></p></details>`;
 }
@@ -929,7 +930,7 @@ async function loadGraphReview(workflowId, versionId, body) {
   try {
     const review = await api(`/workflows/${workflowId}/versions/${versionId}/graph`);
     graphReviews = { ...graphReviews, [versionId]: review };
-    body.innerHTML = graphReviewHtml(review, { canDraft: role === "owner", workflowId });
+    body.innerHTML = graphReviewHtml(review, { workflowId }); // who may draft is `review.may_draft`, the server's word
     bindGraphReview(body, {
       onRun: showWorkflowRun,
       onDraft: action(async (draftBody) => {
@@ -959,11 +960,11 @@ function workflowsView() {
       const d = v.definition ?? {};
       const decision = v.decision ? `${v.decision.decision} · ${v.decision.reason || "no reason given"}` : "awaiting a decision";
       const buttons =
-        role === "owner" && v.status === "draft"
+        permissions.decide_workflow && v.status === "draft"
           ? `<button class="primary" data-decide="approved" data-workflow="${esc(w.id)}" data-version="${esc(v.id)}">${icon("check")}Approve v${v.number}</button><button data-decide="rejected" data-workflow="${esc(w.id)}" data-version="${esc(v.id)}">Reject</button>`
-          : role === "owner"
+          : permissions.decide_workflow
             ? ""
-            : '<span class="small muted">Only the workspace owner can approve or reject.</span>';
+            : '<span class="small muted">Only a workspace admin can approve or reject.</span>';
       return `<article class="finding-row"><div><span class="eyebrow">v${v.number} · ${esc(v.status)}</span><h3>${esc(w.name)}</h3><p>${esc(d.goal ?? "")}</p><details><summary class="small">Definition</summary><dl class="small"><dt>Inputs</dt><dd>${esc((d.required_inputs ?? []).join(", "))}</dd><dt>Tools</dt><dd>${esc((d.allowed_tools ?? []).join(", "))}</dd><dt>Success</dt><dd>${(d.success_criteria ?? []).map((c) => `<div>${esc(c)}</div>`).join("")}</dd><dt>Limits</dt><dd>${esc(`${d.limits?.max_steps ?? "?"} steps · ${d.limits?.max_runtime_seconds ?? "?"} s · $${d.limits?.max_cost_usd ?? "?"} per run · ${d.environment ?? "sandbox"}`)}</dd></dl></details>${graphPanelHtml(w)}<p class="spacing-2 small">${esc(decision)} · created ${esc(stamp(v.created_at))}</p>${workflowRunsHtml(w)}</div><section>${versionTag(v.status)}<div class="actions">${buttons}${workflowRunControls(w)}</div></section></article>`;
     })
     .join("");
@@ -1410,6 +1411,7 @@ async function refreshImports() {
   jobs = result.imports;
   openExceptions = result.openExceptions ?? [];
   role = result.role;
+  permissions = result.permissions ?? {};
   records = jobs.some((j) => j.status === "completed") ? await api(`/deals/${company().id}/records`) : null;
 }
 async function enterCompany() {

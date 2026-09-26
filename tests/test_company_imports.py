@@ -50,6 +50,14 @@ def test_company_import_writes_the_rows_the_analyst_reads(client, source_store, 
     listing = client.get(f"/api/deals/{deal}/imports", headers=emp)
     assert listing.status_code == 200, listing.text
     assert listing.json()["role"] == "member" and listing.json()["imports"] == [] and listing.json()["company"]["id"] == cid
+    # A tenant `member` who is a deal member: may import and draft, may not decide or run workflows.
+    assert listing.json()["permissions"] == {
+        "import": True,
+        "run_agents": True,
+        "draft_workflow": True,
+        "decide_workflow": False,
+        "run_workflow": False,
+    }
     assert "invoices" in client.get(f"/api/deals/{deal}/import-datasets", headers=emp).json()
 
     job = client.post(
@@ -114,7 +122,10 @@ def test_company_import_permissions_and_scope(client, source_store, tenant_facto
     _neighbour, other_deal = employee(other_cid)
     upload = {"name": "customers.csv", "content": b64("customers.csv"), "mime_type": "text/csv"}
 
-    assert client.get(f"/api/deals/{deal}/imports", headers=viewer).json()["role"] == "viewer"
+    listing = client.get(f"/api/deals/{deal}/imports", headers=viewer).json()
+    assert listing["role"] == "viewer"
+    assert listing["permissions"]["import"] is False and listing["permissions"]["run_agents"] is False
+    assert listing["permissions"]["draft_workflow"] is True, "drafting goes by the tenant role, which is still member"
     assert client.post(f"/api/deals/{deal}/imports", headers=viewer, json=upload).status_code == 403
     assert client.post(f"/api/deals/{deal}/review", headers=viewer).status_code == 403
     assert client.get("/api/portfolio", headers=viewer).status_code == 403, "an employee has no analyst scope"

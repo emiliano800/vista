@@ -119,6 +119,18 @@ async function settle(predicate) {
   }
   assert.fail("UI did not reach expected state");
 }
+// The server derives these from the tenant and deal roles; the tests map the one
+// `role` they set the way a workspace owner (tenant admin), member and viewer come out.
+function permissionsFor(role) {
+  const edits = role === "owner" || role === "member";
+  return {
+    import: edits,
+    run_agents: edits,
+    draft_workflow: edits,
+    decide_workflow: role === "owner",
+    run_workflow: role === "owner",
+  };
+}
 function mount({ role = "owner", status = "approved", graphReview = review() } = {}) {
   const state = { requests: [], workflows: [workflow(status)] };
   const dom = new JSDOM(html, { url: "https://vista.test/account/", runScripts: "outside-only" });
@@ -133,7 +145,7 @@ function mount({ role = "owner", status = "approved", graphReview = review() } =
     state.requests.push({ method, path, body: options.body ? JSON.parse(options.body) : null });
     if (path === "/api/auth/me") return Response.json({ email: "owner@example.com" });
     if (path === "/api/deals") return Response.json([{ id: company, name: "Recorder Company" }]);
-    if (path === `/api/deals/${company}/imports`) return Response.json({ role, imports: [] });
+    if (path === `/api/deals/${company}/imports`) return Response.json({ role, permissions: permissionsFor(role), imports: [] });
     if (path === `/api/deals/${company}/import-datasets`) return Response.json({});
     if (path === "/api/runs?limit=100") return Response.json([]);
     if (path === "/api/findings?limit=200") return Response.json([]);
@@ -143,7 +155,8 @@ function mount({ role = "owner", status = "approved", graphReview = review() } =
     if (path === "/api/workflows?limit=100") return Response.json(state.workflows);
     if (path === `/api/workflows/${workflowId}/versions/${versionId}/eligibility`) return Response.json({ version_id: versionId, eligible: false, reasons: ["harness_not_connected"], execution_available: false });
     if (path === `/api/workflows/${workflowId}/runs?limit=20`) return Response.json([]);
-    if (path === `/api/workflows/${workflowId}/versions/${versionId}/graph`) return Response.json(graphReview);
+    if (path === `/api/workflows/${workflowId}/versions/${versionId}/graph`)
+      return Response.json({ ...graphReview, may_draft: role === "owner" }); // the server's verdict on drafting
     if (path === `/api/workflows/${workflowId}/versions/${versionId}/graph/draft` && method === "POST") {
       const created = { ...version("draft", 2), id: "00000000-0000-0000-0000-0000000000dd" };
       state.workflows = [{ ...state.workflows[0], latest_version: created }];
@@ -205,7 +218,7 @@ test("members read the graph but cannot draft, and a version without runs offers
     const details = await openGraph(member);
     assert.equal(details.querySelector("[data-draft-runs]"), null);
     assert.equal(details.querySelector("[data-promote]").disabled, true);
-    assert.match(details.textContent, /Only the workspace owner can draft/);
+    assert.match(details.textContent, /Only a workspace admin can draft/);
   } finally {
     member.dom.window.close();
   }

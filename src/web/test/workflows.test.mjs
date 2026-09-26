@@ -69,6 +69,18 @@ async function settle(predicate) {
   }
   assert.fail("UI did not reach expected state");
 }
+// The server derives these from the tenant and deal roles; the tests map the one
+// `role` they set the way a workspace owner (tenant admin), member and viewer come out.
+function permissionsFor(role) {
+  const edits = role === "owner" || role === "member";
+  return {
+    import: edits,
+    run_agents: edits,
+    draft_workflow: edits,
+    decide_workflow: role === "owner",
+    run_workflow: role === "owner",
+  };
+}
 function mount({ role = "owner", existing = [] } = {}) {
   const state = { requests: [], workflows: [...existing] };
   const dom = new JSDOM(html, { url: "https://vista.test/account/", runScripts: "outside-only" });
@@ -83,7 +95,7 @@ function mount({ role = "owner", existing = [] } = {}) {
     state.requests.push({ method, path, body: options.body ? JSON.parse(options.body) : null });
     if (path === "/api/auth/me") return Response.json({ email: "owner@example.com" });
     if (path === "/api/deals") return Response.json([{ id: company, name: "Recorder Company" }]);
-    if (path === `/api/deals/${company}/imports`) return Response.json({ role, imports: [] });
+    if (path === `/api/deals/${company}/imports`) return Response.json({ role, permissions: permissionsFor(role), imports: [] });
     if (path === `/api/deals/${company}/import-datasets`) return Response.json({});
     if (path === "/api/runs?limit=100")
       return Response.json([
@@ -172,7 +184,7 @@ test("viewers see instructions but no buttons, and members cannot approve", asyn
     assert.equal(viewer.$("evidence-body").querySelector("[data-draft]"), null);
     viewer.dom.window.document.querySelector('[data-view="workflows"]').click();
     await settle(() => /Workflows/.test(viewer.$("view-name").textContent));
-    assert.match(viewer.$("content").textContent, /Only the workspace owner can approve or reject/);
+    assert.match(viewer.$("content").textContent, /Only a workspace admin can approve or reject/);
     assert.equal(viewer.$("content").querySelector("[data-decide]"), null);
   } finally {
     viewer.dom.window.close();

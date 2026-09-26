@@ -127,7 +127,8 @@ def version_graph(
     with tenant_session(principal.tenant_schema) as session:
         workflow = service.get_workflow(session, company_id, workflow_id)
         version = service.get_version(session, workflow, version_id)
-        return graph_review.review(session, workflow, version)
+        # `may_draft` is the rule draft_from_runs enforces (`_decider`), so the page needs no guess.
+        return graph_review.review(session, workflow, version, may_draft=principal.role in DECISION_ROLES)
 
 
 @router.post("/{workflow_id}/versions/{version_id}/graph/draft", response_model=VersionOut, status_code=201)

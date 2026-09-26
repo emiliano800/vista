@@ -855,14 +855,11 @@ dialog::backdrop {
 }
 .spend-bars .bar {
   display: block;
+  width: 100%;
   height: 10px;
   background: var(--line);
   border-radius: 2px;
   overflow: hidden;
-}
-.spend-bars .bar i {
-  display: block;
-  height: 100%;
 }
 .spend-bars .num {
   text-align: right;

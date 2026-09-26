@@ -7,7 +7,8 @@ import { api } from "/lib/auth.js";
 import { companies, companyName } from "/lib/store.js";
 import { graphReviewHtml, bindGraphReview } from "/lib/graph-review.js";
 
-const analyst = await mountShell();
+const analyst = await mountShell({ onUpdate: () => render() });
+let generation = 0; // a reply for the previously selected company must not overwrite this one's list
 if (analyst) render();
 
 function selectedCompany() {
@@ -32,13 +33,16 @@ function render() {
       render();
     };
   }
-  if (company) loadWorkflows(company.id).catch((e) => message(e.message, "danger"));
+  const current = ++generation;
+  if (company) loadWorkflows(company.id, current).catch((e) => message(e.message, "danger"));
   else $("workflows").innerHTML = `<p class="small muted">No company in this firm's scope yet.</p>`;
 }
 
-async function loadWorkflows(companyId) {
+async function loadWorkflows(companyId, current = generation) {
   const workflows = await api(`/companies/${companyId}/workflows?limit=100`);
+  if (current !== generation) return; // the person has moved on to another company
   const root = $("workflows");
+  if (!root) return;
   if (!workflows.length) {
     root.innerHTML = `<p class="small muted">No workflow has been drafted for this company.</p>`;
     return;
@@ -47,7 +51,7 @@ async function loadWorkflows(companyId) {
     .map((w) => {
       const v = w.latest_version;
       return `<details class="card" data-deploy-workflow="${esc(w.id)}" data-version="${esc(v.id)}">
-        <summary><b>${esc(w.name)}</b> · v${esc(v.version_number)} · ${esc(v.status)}${v.definition?.graph ? ` · ${v.definition.graph.nodes.length} states · ${v.definition.graph.edges.length} moves` : " · no task graph"}</summary>
+        <summary><b>${esc(w.name)}</b> · v${esc(v.number)} · ${esc(v.status)}${v.definition?.graph ? ` · ${v.definition.graph.nodes.length} states · ${v.definition.graph.edges.length} moves` : " · no task graph"}</summary>
         <div data-review><p class="small muted">Open to load the review.</p></div>
       </details>`;
     })
@@ -56,17 +60,18 @@ async function loadWorkflows(companyId) {
     d.addEventListener("toggle", () => {
       if (d.open && !d.dataset.loaded) {
         d.dataset.loaded = "1";
-        loadReview(companyId, d.dataset.deployWorkflow, d.dataset.version, d.querySelector("[data-review]"));
+        loadReview(companyId, d.dataset.deployWorkflow, d.dataset.version, d.querySelector("[data-review]"), current);
       }
     });
   });
 }
 
-async function loadReview(companyId, workflowId, versionId, body) {
+async function loadReview(companyId, workflowId, versionId, body, current = generation) {
   body.innerHTML = `<p class="small muted">Loading task graph…</p>`;
   try {
     const review = await api(`/companies/${companyId}/workflows/${workflowId}/versions/${versionId}/graph`);
-    body.innerHTML = graphReviewHtml(review, { canDraft: analyst.role === "admin", workflowId, who: "a firm admin" });
+    // `review.may_draft` is the server's word on whether this person may draft (firm admin).
+    body.innerHTML = graphReviewHtml(review, { workflowId, who: "a firm admin" });
     bindGraphReview(body, {
       onDraft: async (draft, button) => {
         button.disabled = true;
@@ -76,8 +81,8 @@ async function loadReview(companyId, workflowId, versionId, body) {
             method: "POST",
             body: JSON.stringify(draft),
           });
-          message(`Draft v${created.version_number} created — it awaits the ordinary approval.`, "success");
-          await loadWorkflows(companyId);
+          message(`Draft v${created.number} created — it awaits the ordinary approval.`, "success");
+          await loadWorkflows(companyId, current);
         } catch (e) {
           message(e.message, "danger");
           button.disabled = false;

@@ -81,7 +81,7 @@ membership — never from the request body — and surfaced only on the firm rou
 (`/api/companies/{id}/workflows/…/graph`, `/deployment/` page). Tenant workflow routes
 always pass `fde=False`. Tenant (company workspace) roles are `admin/member/viewer`
 (`tenancy.py`); `owner` is a *deal-membership* role, not a tenant role — the workspace
-UI gates on the deal role while the API enforces tenant `admin` for workflow decisions
+UI renders workflow buttons from the server's `permissions` block on `GET /api/deals/{deal}/imports` (tenant role for workflow drafting/decisions/runs, deal role for imports and agent runs) and `may_draft` on the graph review, while the API enforces tenant `admin` for workflow decisions
 and runs (`api/company_workflows.py`, `api/computer_use.py`). Enforce company/workflow restrictions server-side before
 exposing new views, including evidence, exports, and job/run endpoints. A financial
 metrics dashboard is not yet a full forecasting/valuation model, and an agent run
@@ -335,7 +335,7 @@ auditable. The rules below are the contract.
 - Recording Reviewer never hands off below the confidence threshold; it waits for
   the employee. Its findings exist only after the employee publishes; the workspace's
   **Draft workflow** button then creates a *draft* version through `api/company_workflows.py`
-  (tenant-scoped twin of `api/workflows.py`: `member`/`owner` draft, `owner` decides),
+  (tenant-scoped twin of `api/workflows.py`: tenant `member`/`admin` draft, tenant `admin` decides),
   and a draft still needs a decision before it is eligible. An approved sandbox version
   can then be run by the Computer Use Agent (`POST /workflows/{w}/versions/{v}/runs`,
   tenant `admin`), which adds two more gates: the *employee's consent* in the recorder

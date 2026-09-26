@@ -125,7 +125,10 @@ def test_a_member_reads_the_graph_but_cannot_draft(client, monkeypatch):
         session.add(User(tenant_id=admin.tenant_id, email=f"{uuid.uuid4().hex}@example.com", api_token=key, role="member"))
         session.commit()
     member = {"Authorization": f"Bearer {key}"}
-    assert client.get(graph_path(workflow, version), headers=member).status_code == 200
+    seen = client.get(graph_path(workflow, version), headers=member)
+    assert seen.status_code == 200
+    assert seen.json()["may_draft"] is False, "the review tells the page the member may not draft"
+    assert client.get(graph_path(workflow, version), headers=headers).json()["may_draft"] is True
     assert (
         client.post(f"{graph_path(workflow, version)}/draft", headers=member, json={"expected_version": 1, "promote": []}).status_code
         == 403

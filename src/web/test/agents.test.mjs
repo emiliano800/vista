@@ -88,6 +88,18 @@ async function settle(predicate) {
   }
   assert.fail("UI did not reach expected state");
 }
+// The server derives these from the tenant and deal roles; the tests map the one
+// `role` they set the way a workspace owner (tenant admin), member and viewer come out.
+function permissionsFor(role) {
+  const edits = role === "owner" || role === "member";
+  return {
+    import: edits,
+    run_agents: edits,
+    draft_workflow: edits,
+    decide_workflow: role === "owner",
+    run_workflow: role === "owner",
+  };
+}
 function mount({ role = "owner" } = {}) {
   const state = { requests: [], runs: runs() };
   const dom = new JSDOM(html, {
@@ -110,7 +122,7 @@ function mount({ role = "owner" } = {}) {
         { id: company, name: "Ridgeway Fasteners & Supply" },
       ]);
     if (path === `/api/deals/${company}/imports`)
-      return Response.json({ role, company: { id: "c-1", name: "Ridgeway", slug: "ridgeway" }, imports: [], openExceptions: [] });
+      return Response.json({ role, permissions: permissionsFor(role), company: { id: "c-1", name: "Ridgeway", slug: "ridgeway" }, imports: [], openExceptions: [] });
     if (path === `/api/deals/${company}/import-datasets`) return Response.json({});
     if (path === "/api/runs?limit=100") return Response.json(state.runs);
     if (path === "/api/findings?limit=200") return Response.json(findings);
