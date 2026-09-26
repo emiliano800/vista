@@ -40,6 +40,7 @@ contextBridge.exposeInMainWorld('vista', {
   analysis: (id) => ipcRenderer.invoke('recordings:analysis', id),
   answerQuestions: (id, answers) => ipcRenderer.invoke('recordings:answer', id, answers),
   publishReport: (id, options) => ipcRenderer.invoke('recordings:publish', id, options),
+  cancelPublish: (id) => ipcRenderer.invoke('recordings:cancel-publish', id),
   reanalyze: (id) => ipcRenderer.invoke('recordings:reanalyze', id),
   retryUploads: () => ipcRenderer.invoke('cloud:retry'),
   openDashboard: () => ipcRenderer.invoke('dashboard:open'),

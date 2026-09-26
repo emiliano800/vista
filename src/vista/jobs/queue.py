@@ -45,6 +45,13 @@ def enqueue(
     return job
 
 
+def find_job(session: Session, tenant_id: uuid.UUID, kind: str, idempotency_key: str) -> Job | None:
+    """The job already filed under this key, if any. Producers check this before creating the
+    tenant rows a new job would carry, so a repeated key returns the earlier run instead of
+    leaving a fresh AgentRun `queued` with no job behind it."""
+    return session.scalar(select(Job).where(Job.tenant_id == tenant_id, Job.kind == kind, Job.idempotency_key == idempotency_key))
+
+
 def claim_next(session: Session, owner: str = "worker", lease_seconds: int | None = None) -> Job | None:
     """Claim one due job using FOR UPDATE SKIP LOCKED. Marks it running, increments
     attempts and leases it to `owner` for `lease_seconds` (the worker renews the lease

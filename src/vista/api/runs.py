@@ -8,7 +8,7 @@ from vista.agents.keys import agent_key_for
 from vista.api.schemas import RunCreate, RunEventOut, RunOut
 from vista.auth import Principal, current_principal
 from vista.db import platform_session, tenant_session
-from vista.jobs.queue import enqueue
+from vista.jobs.queue import enqueue, find_job
 from vista.models.tenant import AgentRun, AgentRunEvent, Deal, Document
 from vista.permissions import require_deal_role, visible_deal_clause
 
@@ -17,12 +17,22 @@ router = APIRouter(tags=["runs"])
 
 @router.post("/runs", response_model=RunOut, status_code=201)
 def create_run(body: RunCreate, principal: Principal = Depends(current_principal)) -> RunOut:
+    # Client keys are scoped to the caller, so two people's keys never collide, and a repeated
+    # key returns the run it already created rather than a second AgentRun no job will ever run.
+    key = f"user:{principal.user_id}:{body.idempotency_key}" if body.idempotency_key else None
     with tenant_session(principal.tenant_schema) as session:
         require_deal_role(session, body.deal_id, principal.user_id, "member")
         if body.document_id is not None:
             doc = session.get(Document, body.document_id)
             if doc is None or doc.deal_id != body.deal_id:
                 raise HTTPException(status_code=404, detail="document not found in deal")
+        if key is not None:
+            with platform_session() as psession:
+                earlier = find_job(psession, principal.tenant_id, "agent_run", key)
+            if earlier is not None:
+                existing = session.get(AgentRun, uuid.UUID(earlier.payload["run_id"]))
+                if existing is not None:
+                    return _run_out(existing, [])
         run = AgentRun(
             job_id=uuid.uuid4(),  # placeholder, replaced after enqueue
             deal_id=body.deal_id,
@@ -39,9 +49,15 @@ def create_run(body: RunCreate, principal: Principal = Depends(current_principal
                 tenant_id=principal.tenant_id,
                 kind="agent_run",
                 payload={"run_id": str(run.id)},
-                idempotency_key=body.idempotency_key,
+                idempotency_key=key,
             )
             psession.commit()
+            existing_run_id = job.payload.get("run_id")
+        if existing_run_id != str(run.id):
+            # Two identical requests raced: the other one's job won; this run is not kept.
+            session.rollback()
+            existing = session.get(AgentRun, uuid.UUID(existing_run_id))
+            return _run_out(existing, [])
         run.job_id = job.id
         session.commit()
         return _run_out(run, [])

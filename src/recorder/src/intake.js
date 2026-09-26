@@ -255,6 +255,7 @@ export class SubmissionQueue {
   constructor(home, { fetchImpl = fetch, onChange = () => {}, now = () => Date.now(), isCurrent = () => true, sleep = (ms) => new Promise((r) => setTimeout(r, ms)) } = {}) {
     this.root = path.join(home, 'upload-queue');
     fs.mkdirSync(this.root, { recursive: true, mode: 0o700 });
+    this._cancelled = new Set(); // recording ids whose pending publish was withdrawn
     this.fetch = fetchImpl;
     this.onChange = onChange;
     this.now = now;
@@ -332,9 +333,21 @@ export class SubmissionQueue {
   }
 
   status(config, id) { return this.submissionAction(config, id, null); }
+  // Only answers that differ from what the server already holds are sent: every answer
+  // the server receives re-queues a (paid) re-analysis, so re-posting the pre-filled
+  // ones on a retry would re-read the session for nothing and block publishing again.
   answer(config, id, answers) {
     if (!answers || typeof answers !== 'object' || !Object.keys(answers).length) throw new Error('Answer at least one question.');
-    return this.submissionAction(config, id, 'answers', { answers });
+    const state = this.acceptedEntry(config, id);
+    const saved = new Map((state.analysis?.report?.questions ?? []).map((q) => [q.id, String(q.answer ?? '').trim()]));
+    const changed = Object.fromEntries(Object.entries(answers).filter(([q, a]) => !saved.has(q) || saved.get(q) !== String(a ?? '').trim()));
+    if (!Object.keys(changed).length) return Promise.resolve(state.analysis);
+    return this.submissionAction(config, id, 'answers', { answers: changed });
+  }
+  // "Not now" while a publish waits for the re-judged report: the wait ends and nothing
+  // is published. The employee's consent is only ever spent by the click that gave it.
+  cancelPublish(id) {
+    this._cancelled.add(String(id));
   }
   // The employee's second, explicit consent: the draft becomes visible to the workspace.
   // Answering a question sends the session back through analysis, so a publish that
@@ -346,14 +359,18 @@ export class SubmissionQueue {
   }
 
   async #publish(config, id, pollMs, timeoutMs) {
+    this._cancelled.delete(String(id));
     const pending = () => ['queued', 'running'].includes(this.acceptedEntry(config, id).analysis?.status);
+    const cancelled = () => this._cancelled.delete(String(id));
     if (pending()) {
       const deadline = this.now() + timeoutMs;
       while (pending()) {
+        if (cancelled()) throw new Error('Sharing was cancelled; nothing was published.');
         if (this.now() >= deadline) throw new Error('Your workspace is still re-reading this session with your answers. Try sharing again in a moment.');
         await this.sleep(pollMs);
         await this.status(config, id);
       }
+      if (cancelled()) throw new Error('Sharing was cancelled; nothing was published.');
       const { status, error } = this.acceptedEntry(config, id).analysis;
       if (status !== 'succeeded') throw new Error(error ?? 'Your workspace could not finish reading this session; retry the analysis before sharing.');
     }

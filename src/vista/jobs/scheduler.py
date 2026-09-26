@@ -11,7 +11,7 @@ from datetime import UTC, datetime, timedelta
 from sqlalchemy import select
 
 from vista.db import platform_session, tenant_session
-from vista.jobs.queue import enqueue
+from vista.jobs.queue import enqueue, find_job
 from vista.models.platform import Tenant
 from vista.models.tenant import AgentRun, Employee, EmployeeAgent
 
@@ -39,6 +39,15 @@ def enqueue_due(now: datetime | None = None) -> int:
                 if agent.last_run_at is not None and agent.last_run_at + interval > now:
                     continue
                 employee = session.get(Employee, agent.employee_id)
+                window = now.strftime("%Y%m%d%H") if agent.schedule == "hourly" else now.strftime("%Y%m%d")
+                key = f"discovery:{agent.id}:{window}"
+                with platform_session() as psession:
+                    already = find_job(psession, tenant_id, "employee_discovery", key) is not None
+                if already:
+                    # This slot was filed by an earlier pass; no second run row for the same job.
+                    agent.last_run_at = now
+                    session.commit()
+                    continue
                 run = AgentRun(
                     job_id=uuid.uuid4(),
                     run_type="employee_discovery",
@@ -49,14 +58,13 @@ def enqueue_due(now: datetime | None = None) -> int:
                 )
                 session.add(run)
                 session.flush()
-                window = now.strftime("%Y%m%d%H") if agent.schedule == "hourly" else now.strftime("%Y%m%d")
                 with platform_session() as psession:
                     job = enqueue(
                         psession,
                         tenant_id=tenant_id,
                         kind="employee_discovery",
                         payload={"run_id": str(run.id)},
-                        idempotency_key=f"discovery:{agent.id}:{window}",
+                        idempotency_key=key,
                     )
                     psession.commit()
                 run.job_id = job.id

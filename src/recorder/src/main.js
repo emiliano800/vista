@@ -126,7 +126,7 @@ async function buildRecorder() {
     runningApps,
   });
   rec.on('status', broadcastStatus);
-  rec.on('finished', (m) => postProcess(m).catch((e) => console.error('post-processing failed:', e.message)));
+  rec.on('finished', (m) => trackPostProcess(m));
   return rec;
 }
 
@@ -217,6 +217,47 @@ function broadcastStatus(status) {
 // After a recording ends: run the taskmining pipeline if it's reachable so the
 // dashboard can show steps/cases/open questions. Raw events are never modified.
 // Resolves with the manifest patch once processing is done/failed/skipped.
+// Post-processing in flight, by recording id, so quitting can wait for it: a session whose
+// manifest never gets `upload_ready` can never be uploaded from the dashboard.
+const postProcessing = new Map();
+function trackPostProcess(manifest) {
+  const id = manifest.recording_id;
+  const p = postProcess(manifest)
+    .catch((e) => console.error('post-processing failed:', e.message))
+    .finally(() => { if (postProcessing.get(id) === p) postProcessing.delete(id); });
+  postProcessing.set(id, p);
+  return p;
+}
+async function awaitPostProcessing(timeoutMs = 15000) {
+  if (!postProcessing.size) return;
+  await Promise.race([Promise.allSettled([...postProcessing.values()]), new Promise((r) => setTimeout(r, timeoutMs))]);
+}
+
+// Sessions the app did not get to finish: a crash or a forced quit mid-recording leaves
+// `ended_at` null (the capture files are on disk), and a quit during post-processing leaves
+// the manifest without `upload_ready`. Both are closed out here, at the next launch.
+function finishStaleSessions() {
+  let dirs = [];
+  try { dirs = fs.readdirSync(RECORDINGS); } catch { return; }
+  for (const id of dirs) {
+    const dir = path.join(RECORDINGS, id);
+    let m;
+    try { m = readManifest(dir); } catch { continue; }
+    if (!m.started_at || m.submitted) continue;
+    if (!m.ended_at) {
+      const events = path.join(dir, 'events.jsonl');
+      let endedAt;
+      try { endedAt = fs.statSync(events).mtime; } catch { continue; } // nothing was captured
+      const started = Date.parse(m.started_at);
+      const active = Math.max(0, Math.round((endedAt.getTime() - started) / 1000));
+      const note = { t: new Date().toISOString(), note: 'session closed at the next launch: the recorder stopped without finishing it' };
+      m = { ...m, ended_at: endedAt.toISOString(), active_seconds: active, processing: 'pending', notes: [...(m.notes ?? []), note] };
+      fs.writeFileSync(path.join(dir, 'manifest.json'), JSON.stringify(m, null, 2));
+    } else if (m.upload_ready || !['pending', 'running'].includes(m.processing ?? 'pending')) continue;
+    trackPostProcess(m);
+  }
+}
+
 async function postProcess(manifest) {
   const dir = path.join(RECORDINGS, manifest.recording_id);
   const repo = app.isPackaged || cloudSettings()?.protocol === 2 ? null : findRepoRoot();
@@ -1416,6 +1457,12 @@ async function withAnalysis(event, id, work) {
 ipcMain.handle('recordings:analysis', (event, id) => withAnalysis(event, id, (config) => intakeQueue.status(config, id)));
 ipcMain.handle('recordings:answer', (event, id, answers) => withAnalysis(event, id, (config) => intakeQueue.answer(config, id, answers)));
 ipcMain.handle('recordings:publish', (event, id, options) => withAnalysis(event, id, (config) => intakeQueue.publish(config, id, { consent: options?.consent })));
+ipcMain.handle('recordings:cancel-publish', (event, id) => {
+  requireDashboard(event);
+  if (!ID_RE.test(String(id))) throw new Error('Invalid recording ID.');
+  intakeQueue.cancelPublish(id);
+  return true;
+});
 ipcMain.handle('recordings:reanalyze', (event, id) => withAnalysis(event, id, (config) => intakeQueue.reanalyze(config, id)));
 ipcMain.handle('recordings:upload-preview', (event, id) => {
   requireDashboard(event);
@@ -1704,6 +1751,7 @@ app.whenReady().then(async () => {
   createOverlay();
   createCaptureWindow();
   if (process.argv.includes('--dashboard') || !cloudSettings()) createDashboard();
+  finishStaleSessions();
   resumeUploads();
   uploadTimer = setInterval(() => resumeUploads(), 30000);
   await startAgentApi();
@@ -1725,6 +1773,13 @@ app.on('before-quit', async (e) => {
   if (recorder && recorder.state !== 'idle') {
     e.preventDefault();
     await stopRecording();
+    await awaitPostProcessing(); // the manifest gets `upload_ready` before the app is gone
+    app.quit();
+    return;
+  }
+  if (postProcessing.size) {
+    e.preventDefault();
+    await awaitPostProcessing();
     app.quit();
   }
 });

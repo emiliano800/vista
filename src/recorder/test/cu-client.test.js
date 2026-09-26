@@ -103,6 +103,30 @@ test('the idle tick announces the device with its real capabilities and lists of
   assert.equal((await off.tick()).enabled, false);
 });
 
+test('a step whose result could not be posted is re-posted when offered again, never performed twice', async (t) => {
+  const s = server();
+  let failPosts = 1;
+  const flaky = async (url, init) => {
+    if (failPosts > 0 && url.includes(`/steps/${STEP}/result`)) { failPosts -= 1; return { ok: false, status: 502, json: async () => ({ detail: 'proxy hiccup' }) }; }
+    return s.fetchImpl(url, init);
+  };
+  const browser = new FakeBrowser();
+  const { c } = client(t, { fetchImpl: flaky, harnesses: { browser, desktop: new UnsupportedHarness('desktop', 'no') } });
+  await c.tick();
+  s.state.pending = { step_id: STEP, seq: 1, harness: 'browser', action: 'observe' };
+  await c.start(RUN, { consent: true, shareScreenshots: false });
+  for (let i = 0; i < 200 && browser.performed.length < 1; i++) await new Promise((r) => setImmediate(r));
+  assert.equal(browser.performed.length, 1);
+  assert.equal(s.state.results.length, 0, 'the first post failed');
+  // The server has no result, so it offers the same step again.
+  s.state.pending = { step_id: STEP, seq: 1, harness: 'browser', action: 'observe' };
+  for (let i = 0; i < 400 && s.state.results.length < 1; i++) await new Promise((r) => setImmediate(r));
+  assert.equal(s.state.results.length, 1, 'the saved result went up');
+  assert.equal(browser.performed.length, 1, 'the step was not performed a second time');
+  assert.equal(s.state.results[0].description, 'did observe');
+  await c.stop('done');
+});
+
 test('start refuses without consent === true, when the offer needs a harness this computer lacks, and when busy', async (t) => {
   const s = server();
   const { c } = client(t, { fetchImpl: s.fetchImpl });

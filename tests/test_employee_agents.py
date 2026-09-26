@@ -2,14 +2,14 @@ import secrets
 import uuid
 from datetime import UTC, datetime, timedelta
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 
 from tests.conftest import requires_db
 from vista.db import platform_session, tenant_session
 from vista.jobs.scheduler import enqueue_due
 from vista.jobs.worker import process_one
 from vista.models.platform import Tenant, User
-from vista.models.tenant import EmployeeAgent
+from vista.models.tenant import AgentRun, EmployeeAgent
 
 pytestmark = requires_db
 
@@ -127,6 +127,17 @@ def test_scheduler_enqueues_due_agents_once(client, tenant_factory):
 
     before = len(client.get("/findings", headers=headers).json())
     assert enqueue_due() >= 1  # our agent has never run -> due now
+    # The same window filed again (a second scheduler process, a restart): the job's key
+    # already exists, so no second run row is created for it.
+    with tenant_session(schema) as session:
+        a = session.get(EmployeeAgent, uuid.UUID(agent["id"]))
+        a.last_run_at = None
+        session.commit()
+        runs_before = session.scalar(select(func.count()).select_from(AgentRun).where(AgentRun.employee_agent_id == a.id))
+    enqueue_due()
+    with tenant_session(schema) as session:
+        runs_after = session.scalar(select(func.count()).select_from(AgentRun).where(AgentRun.employee_agent_id == uuid.UUID(agent["id"])))
+    assert runs_after == runs_before
     # Second pass within the same window: our agent must not be re-enqueued.
     with tenant_session(schema) as session:
         a = session.get(EmployeeAgent, uuid.UUID(agent["id"]))

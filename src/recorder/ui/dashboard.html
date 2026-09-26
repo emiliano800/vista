@@ -995,7 +995,12 @@
         $('publish-dialog').showModal();
       }
       $('publish-consent').onchange = () => { $('publish-confirm').disabled = !$('publish-consent').checked; };
-      $('publish-cancel').onclick = () => { pendingPublish = null; $('publish-dialog').close(); };
+      $('publish-cancel').onclick = () => {
+        const id = pendingPublish?.id;
+        pendingPublish = null;
+        $('publish-dialog').close();
+        if (id) window.vista.cancelPublish?.(id).catch(() => {}); // a publish waiting on re-analysis stops here
+      };
       $('publish-confirm').onclick = async () => {
         if (!pendingPublish || !$('publish-consent').checked) return;
         $('publish-confirm').disabled = true;

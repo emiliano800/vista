@@ -23,7 +23,7 @@ from vista.computer_use import tools
 from vista.computer_use.schemas import ClaimIn, DecisionIn, RunStart, SessionStopIn, StepResultIn, WorkflowRunOut
 from vista.config import settings
 from vista.db import platform_session
-from vista.jobs.queue import enqueue
+from vista.jobs.queue import enqueue, find_job
 from vista.models.platform import FirmCompany, User
 from vista.models.tenant import (
     AgentRun,
@@ -163,6 +163,15 @@ def start_run(
     inputs = bind_inputs(session, principal, body)
     remote_kinds = list(availability.remote_kinds)
     needs_remote = bool(remote_kinds)
+    # A client key is scoped to the caller; a repeated key returns the run it already started.
+    key = f"user:{principal.user_id}:{body.idempotency_key}" if body.idempotency_key else None
+    if key is not None and not needs_remote:
+        with platform_session() as platform:
+            earlier = find_job(platform, principal.tenant_id, JOB_KIND, key)
+        if earlier is not None:
+            existing = session.get(WorkflowRun, uuid.UUID(earlier.payload["workflow_run_id"]))
+            if existing is not None:
+                return existing
     agent_run = AgentRun(
         job_id=uuid.uuid4(),  # replaced once the job row exists
         run_type=RUN_TYPE,
@@ -196,7 +205,7 @@ def start_run(
     session.add(run)
     session.commit()
     if not needs_remote:
-        _enqueue(session, run, principal.tenant_id, body.idempotency_key or f"workflow_run:{run.id}:start")
+        _enqueue(session, run, principal.tenant_id, key or f"workflow_run:{run.id}:start")
     return run
 
 
@@ -217,6 +226,9 @@ def decide(session: Session, run: WorkflowRun, principal, body: DecisionIn) -> W
     if run.pending_step_id is None or run.pending_step_id != body.step_id:
         raise HTTPException(409, "The decision names a different step than the one waiting")
     seq = (run.pending or {}).get("seq")
+    # The same seq can pause more than once (a gated step, then the recorder going away at the
+    # same seq); the pause's own nonce keeps the second decision from finding the first's job.
+    nonce = (run.pending or {}).get("nonce")
     checkpoint = dict(run.checkpoint or {})
     decisions = dict(checkpoint.get("decisions") or {})
     decisions[str(body.step_id)] = {"decision": body.decision, "by": str(principal.user_id), "at": now().isoformat(), "reason": body.reason}
@@ -226,7 +238,8 @@ def decide(session: Session, run: WorkflowRun, principal, body: DecisionIn) -> W
     run.pending = None
     run.pending_step_id = None
     session.commit()
-    _enqueue(session, run, principal.tenant_id, f"workflow_run:{run.id}:decision:{seq}:{body.decision}")
+    pause = f"{seq}:{nonce}" if nonce is not None else f"{seq}"
+    _enqueue(session, run, principal.tenant_id, f"workflow_run:{run.id}:decision:{pause}:{body.decision}")
     return run
 
 
@@ -474,6 +487,10 @@ def post_result(session: Session, hs: HarnessSession, run: WorkflowRun, step: Ha
     _check_lease(hs, body.device_id, body.lease_token)
     if step.workflow_run_id != run.id:
         raise HTTPException(404, "Step not found")
+    if step.status in ("expired", "failed"):
+        # The watchdog gave up on this step and the planner moved on; a late answer would make
+        # the run resume against a plan that already recorded the step as not executed.
+        raise HTTPException(409, "This step has expired; the run has moved on without it")
     if step.status == "done":
         return {"ok": True, "duplicate": True, "step_id": str(step.id)}
     result = body.model_dump(mode="json", exclude={"device_id", "lease_token"})

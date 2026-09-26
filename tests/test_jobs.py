@@ -47,10 +47,14 @@ def test_idempotency_key_dedupes_jobs(client, tenant_factory):
     r1 = client.post("/runs", json={"deal_id": deal["id"], "idempotency_key": key}, headers=headers)
     r2 = client.post("/runs", json={"deal_id": deal["id"], "idempotency_key": key}, headers=headers)
     assert r1.status_code == r2.status_code == 201
+    assert r1.json()["id"] == r2.json()["id"], "a repeated key answers with the run it already made"
 
     with platform_session() as session:
-        jobs = session.scalars(select(Job).where(Job.tenant_id == tenant_id, Job.idempotency_key == key)).all()
-    assert len(jobs) == 1
+        jobs = session.scalars(select(Job).where(Job.tenant_id == tenant_id, Job.idempotency_key.like(f"%:{key}"))).all()
+    assert len(jobs) == 1 and jobs[0].idempotency_key.startswith("user:"), "keys are scoped to the caller"
+    assert jobs[0].payload["run_id"] == r1.json()["id"]
+    runs = client.get("/runs", headers=headers).json()
+    assert [r["id"] for r in runs if r["deal_id"] == deal["id"]] == [r1.json()["id"]], "no orphaned second run"
 
 
 def test_failed_job_is_retried_then_fails_permanently(tenant_factory, client):

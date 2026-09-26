@@ -142,6 +142,10 @@ CUA loops (observe → decide → act → verify) but deliberately bounded; the 
    `VISTA_COMPUTER_USE_RISK_THRESHOLD` (0.3) pauses; two consecutive `none`s pause.
    Paused runs are `waiting_for_human` with an approval `Task`; only tenant `admin`
    decides, per step, by `step_id`.
+   A decision job's key carries the pause's nonce (the ledger seq of its `waiting_for_human`
+   event), since one seq can pause twice; a step result posted after the watchdog expired
+   the step is refused (409), and the recorder re-posts a result whose upload failed
+   instead of performing the step again.
 7. **Independent verification.** A separate `judge` call over the *final observation
    and the success criteria only* (no plan history) decides `succeeded`/`failed`.
 8. **Kill switch and lease.** Stop from the workspace or the recorder (⌘⇧Esc) at any
@@ -426,7 +430,7 @@ wired only in tests/eval. Any new automatic hop must follow the contract above.
   (`VISTA_TYPESAFE_API_KEY`; stub answers without it — recorder workflow candidates and
   every Computer Use Agent judgment; `VISTA_COMPUTER_USE_*` thresholds/timeouts in
   `config.py`) beside the OpenAI-compatible model; Electron
-  recorder (`src/recorder`, version 0.5.0; every change bumps `package.json` and pushes
+  recorder (`src/recorder`, version 0.5.2; every change bumps `package.json` and pushes
   a `recorder-vX.Y.Z` tag, which builds and publishes the installers; `overrides` pins
   `tar` ≥ 7.5.21 because `get-windows` → `node-pre-gyp` pulled a vulnerable `tar`);
   Cloudflare Worker + static web; Node 22 for JS tests (installed under

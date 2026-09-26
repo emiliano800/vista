@@ -388,6 +388,22 @@ test('accepted uploads poll for analysis, cache the draft report, take answers a
     assert.equal(answered.status, 'queued');
     assert.throws(() => queue.publish(f.config, 'session-1', {}), /Confirm/);
     assert.equal(queue.entries()[0].analysis.publication, 'draft');
+    // The same answer again is not sent: nothing changed, so nothing is re-judged.
+    const answerPosts = () => srv.calls.filter((c) => /\/answers$/.test(c.url)).length;
+    const posts = answerPosts();
+    srv.cloud.analysis_status = 'succeeded';
+    await queue.status(f.config, 'session-1');
+    const same = await queue.answer(f.config, 'session-1', { q1: ' Month-end close ' });
+    assert.equal(answerPosts(), posts, 'an unchanged answer is not re-posted');
+    assert.equal(same.status, 'succeeded', 'and the analysis is not re-queued');
+    srv.cloud.analysis_status = 'queued';
+    // "Not now" while the publish waits: the wait ends and nothing is published.
+    const waiting = new SubmissionQueue(f.home, { fetchImpl: srv.fetchImpl, now: () => clock, sleep: async (ms) => { clock += ms; waiting.cancelPublish('session-1'); } });
+    await waiting.status(f.config, 'session-1'); // sees the re-analysis in flight
+    await assert.rejects(waiting.publish(f.config, 'session-1', { consent: true, pollMs: 1000, timeoutMs: 60000 }), /cancelled/);
+    assert.equal(srv.cloud.publication_status, 'draft');
+    await queue.status(f.config, 'session-1'); // the queue sees the re-analysis in flight again
+    sleeps.length = 0;
     // Publishing right after an answer waits for the re-judged report instead of failing with 409.
     const published = await queue.publish(f.config, 'session-1', { consent: true, pollMs: 2000 });
     assert.equal(published.publication, 'published');

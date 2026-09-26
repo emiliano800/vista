@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import json
 import uuid
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 import pytest
@@ -173,6 +174,46 @@ def test_documents_run_finishes_with_verification_finding_and_usage(client, monk
     assert [r["id"] for r in listed] == [run["id"]]
 
 
+def test_a_run_leased_to_a_dead_worker_is_retried_once_that_lease_lapses(client, monkeypatch):
+    judge = ScriptedJudge({"action": "done"}, {"goal_met": 0.9, "criterion_0": 0.95})
+    monkeypatch.setattr("vista.computer_use.handler.judge", judge)
+    headers, _company_id, schema, _ = company_admin(client)
+    workflow, version = approved(client, headers, DOCS_ONLY)
+    run = start(client, headers, workflow, version).json()
+    # A worker took the run lease and died; its job was reaped and this is the retry.
+    with tenant_session(schema) as session:
+        header = session.get(WorkflowRun, uuid.UUID(run["id"]))
+        header.lease_owner, header.lease_until = "dead-worker:abc", datetime.now(UTC) + timedelta(seconds=90)
+        session.commit()
+        until = header.lease_until
+    _drain()
+    with platform_session() as platform:
+        waits = platform.scalars(select(Job).where(Job.idempotency_key.like(f"workflow_run:{run['id']}:lease-wait:%"))).all()
+        assert len(waits) == 1 and waits[0].status == "queued" and waits[0].run_at >= until
+        wait_id = waits[0].id
+    assert client.get(f"/api/workflow-runs/{run['id']}", headers=headers).json()["status"] == "queued", "not stranded, not marked done"
+    # The lease lapses: the deferred job is due and the run finishes.
+    with tenant_session(schema) as session:
+        session.get(WorkflowRun, uuid.UUID(run["id"])).lease_until = datetime.now(UTC) - timedelta(seconds=1)
+        session.commit()
+    with platform_session() as platform:
+        platform.get(Job, wait_id).run_at = datetime.now(UTC) - timedelta(seconds=1)
+        platform.commit()
+    _drain()
+    assert client.get(f"/api/workflow-runs/{run['id']}", headers=headers).json()["status"] == "succeeded"
+
+
+def test_starting_a_run_twice_with_one_key_starts_it_once(client, monkeypatch):
+    monkeypatch.setattr("vista.computer_use.handler.judge", ScriptedJudge({"action": "done"}, {"goal_met": 0.9, "criterion_0": 0.95}))
+    headers, _company_id, _schema, _ = company_admin(client)
+    workflow, version = approved(client, headers, DOCS_ONLY)
+    key = f"once-{uuid.uuid4().hex[:8]}"
+    first = start(client, headers, workflow, version, idempotency_key=key).json()
+    second = start(client, headers, workflow, version, idempotency_key=key).json()
+    assert first["id"] == second["id"]
+    assert [r["id"] for r in client.get(f"/api/workflows/{workflow['id']}/runs", headers=headers).json()] == [first["id"]]
+
+
 def test_browser_run_needs_a_connected_consenting_recorder_and_pauses_before_submit(client, monkeypatch):
     submit = {"action": "submit", "target": "button: Submit invoice", "irreversible": 0.9}
     judge = ScriptedJudge(submit, submit, {"action": "done"}, {"goal_met": 0.85, "criterion_0": 0.9})
@@ -277,9 +318,22 @@ def test_browser_run_needs_a_connected_consenting_recorder_and_pauses_before_sub
         "observation": {**observation, "observation_id": "obs-2"},
     }
     assert client.post(f"/api/recorder/computer-use/steps/{step['step_id']}/result", headers=headers, json=done).status_code == 200
+    with platform_session() as platform:
+        keys = platform.scalars(select(Job.idempotency_key).where(Job.idempotency_key.like(f"workflow_run:{run['id']}:decision:%"))).all()
+        assert len(keys) == 1 and keys[0].endswith(":approve") and len(keys[0].split(":")) == 6, keys
     _drain()
     run = client.get(f"/api/workflow-runs/{run['id']}", headers=headers).json()
     assert run["status"] == "succeeded", run
+    # A late answer to a step the watchdog gave up on is refused, not replayed into the plan.
+    with tenant_session(schema) as session:
+        expired = session.scalar(select(HarnessStep).where(HarnessStep.workflow_run_id == uuid.UUID(run["id"]), HarnessStep.seq == 2))
+        expired.status = "expired"
+        session.commit()
+    late = client.post(f"/api/recorder/computer-use/steps/{step['step_id']}/result", headers=headers, json=done)
+    assert late.status_code == 409 and "expired" in late.json()["detail"]
+    with tenant_session(schema) as session:
+        session.scalar(select(HarnessStep).where(HarnessStep.workflow_run_id == uuid.UUID(run["id"]), HarnessStep.seq == 2)).status = "done"
+        session.commit()
     trace = events(schema, run["agent_run_id"])
     clicks = [d for t, d in trace if t == "tool_call" and d.get("tool") == "submit" and d.get("executed")]
     assert len(clicks) == 1 and clicks[0]["gated"] is True and clicks[0]["value_input"] is None

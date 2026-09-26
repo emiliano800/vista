@@ -186,6 +186,11 @@ export class ComputerUseClient {
   }
 
   async _perform(s, config, step) {
+    // The server offers a step again until it has its result. If we already performed it
+    // and only the post failed, the same result goes up again: the action must not run twice.
+    s.unposted ??= new Map();
+    const saved = s.unposted.get(step.step_id);
+    if (saved) return this._post(s, config, step, saved);
     const startedAt = new Date(this.now()).toISOString();
     let r;
     try {
@@ -203,11 +208,18 @@ export class ComputerUseClient {
     s.log.push(line);
     this._append(s, 'steps.jsonl', { request: step, result: { ...body, lease_token: undefined, evidence: evidence ? { ...evidence, screenshot_base64: undefined } : null }, line, at: body.finished_at });
     this.onChange(this.status());
+    return this._post(s, config, step, body);
+  }
+
+  async _post(s, config, step, body) {
+    s.unposted ??= new Map();
     try {
       await cloudRequest(config, `${BASE}/steps/${step.step_id}/result`, { method: 'POST', body: JSON.stringify(body) }, this.fetchImpl);
+      s.unposted.delete(step.step_id);
     } catch (e) {
       if (e.status === 409 || e.status === 403) return this._end('stopped', `the session lease was lost (${e.message})`);
-      this.lastError = e.message; // the server will re-offer the step; the next poll retries
+      s.unposted.set(step.step_id, body); // the server will re-offer the step; the next poll re-posts this
+      this.lastError = e.message;
     }
   }
 

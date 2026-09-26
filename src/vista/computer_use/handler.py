@@ -3,12 +3,14 @@
 One job runs the loop until the run finishes, pauses for a person, or needs the recorder.
 It is idempotent per run: the planner state lives in `workflow_runs.checkpoint`, step ids are
 deterministic per `(run, seq)`, and a resumed job finds the recorder's answers in the mailbox
-instead of filing them again. A run-level lease keeps two workers from planning at once,
-because the job queue only claims and never leases.
+instead of filing them again. A run-level lease keeps two workers from planning at once;
+the job queue's own lease (`jobs.lease_until`) is the worker's liveness, and a job that finds
+the run leased elsewhere comes back when that lease lapses rather than declaring itself done.
 """
 
 from __future__ import annotations
 
+import logging
 import socket
 import uuid
 from datetime import UTC, datetime, timedelta
@@ -57,6 +59,9 @@ MAX_CONSECUTIVE_FAILURES = 2
 
 def _now() -> datetime:
     return datetime.now(UTC)
+
+
+log = logging.getLogger("vista.computer_use")
 
 
 def _lease_owner() -> str:
@@ -203,6 +208,22 @@ def handle_execute_workflow(job: Job, tenant_schema: str) -> None:
     owner = _lease_owner()
     with tenant_session(tenant_schema) as session:
         if not acquire_lease(session, run_id, owner):
+            # Another worker holds the run — or held it and died. Returning here would mark
+            # this job done and strand the run; come back once that lease has lapsed.
+            held = session.get(WorkflowRun, run_id)
+            until = held.lease_until if held is not None and held.lease_until else _now()
+            resume_at = until + timedelta(seconds=1)
+            with platform_session() as platform:
+                enqueue(
+                    platform,
+                    tenant_id=job.tenant_id,
+                    kind=JOB_KIND,
+                    payload={"workflow_run_id": str(run_id)},
+                    idempotency_key=f"workflow_run:{run_id}:lease-wait:{int(until.timestamp())}",
+                    run_at=resume_at,
+                )
+                platform.commit()
+            log.warning("workflow run %s is leased to %s until %s; retrying then", run_id, held.lease_owner if held else "?", until)
             return
         run = session.get(WorkflowRun, run_id)
         if run is None:
@@ -630,6 +651,7 @@ def pause(session, run: WorkflowRun, agent_run: AgentRun, ledger: Ledger, workfl
     run.checkpoint = state.to_checkpoint()
     agent_run.status = "waiting"
     ledger.emit("step", {"message": "waiting_for_human", **{k: v for k, v in request.items() if k != "candidates"}})
+    run.pending = {**run.pending, "nonce": ledger.seq}  # unique per pause: the decision job's key carries it
     ledger.emit("handoff", {"to": "owner", "pending_review": True, "step_id": request.get("step_id"), "reason": request.get("reason")})
     ref = create_task(
         session,
