@@ -537,7 +537,12 @@ wired only in tests/eval. Any new automatic hop must follow the contract above.
   ANALYST key, not Meridian — scripts must select keys by section, not position.
 - Old "Vista Solutions / Vista Demo" key was revoked 2026-09-19 (rotation,
   replacement destroyed unread).
-- Deployed state 2026-09-26 (evening): image `0708db8` (task defs `vista-vista-api:36`,
+- Deployed state 2026-09-26 (afternoon): image `c223752` (task defs `vista-vista-api:37`,
+  `vista-worker:34`) went live at about 16:35 UTC: `GET /api/deals` carries
+  `canonical_company_id` for a linked tenant's deal, so the company workspace lists recorder
+  reports uploaded under the company workspace id (Ridgeway's first upload was invisible
+  there), and the analyst company page no longer throws `recordCount` before
+  initialization (every `/company/?id=…` rendered blank). Before it: image `0708db8` (task defs `vista-vista-api:36`,
   `vista-worker:33`) went live at about 07:20 UTC with the job/run lease hand-off,
   decision nonces, expired-step refusal and per-user idempotency keys; recorder 0.5.2
   (cancelable publish, changed-answers-only, no double-run of a step, stale sessions
