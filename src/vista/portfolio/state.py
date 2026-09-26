@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import uuid
 from concurrent.futures import ThreadPoolExecutor
-from datetime import UTC, date, datetime
+from datetime import UTC, date, datetime, timedelta
 
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
@@ -183,6 +183,21 @@ def record_detail(session: Session, key: str, record_id: uuid.UUID) -> dict | No
     return serializer(row, prov)
 
 
+def upcoming_renewals(session: Session, now: date, within_days: int = 30) -> list[dict]:
+    """Subscriptions renewing in the next `within_days`: what the attention queue needs
+    without the subscription rows themselves (the light snapshot leaves those out)."""
+    rows = session.scalars(
+        select(Subscription)
+        .where(
+            Subscription.renewal_date.is_not(None),
+            Subscription.renewal_date >= now,
+            Subscription.renewal_date <= now + timedelta(days=within_days),
+        )
+        .order_by(Subscription.renewal_date, Subscription.product_name)
+    ).all()
+    return [{"id": str(s.id), "product": s.product_name, "renewalDate": s.renewal_date.isoformat()} for s in rows]
+
+
 def record_summary(session: Session) -> dict[str, dict]:
     """Per collection: row count, source files and how the rows were accepted — what the
     company Data tab shows without the rows themselves."""
@@ -290,6 +305,7 @@ def load_company(ref: CompanyRef, include_records: bool = True) -> tuple[dict, C
         jobs, open_x = company_imports(session)
         records = company_records(session, full_provenance=False) if include_records else {}
         c["records"] = record_summary(session)
+        c["renewals"] = upcoming_renewals(session, now)
         tasks = [ser.task(t) for t in session.scalars(select(Task).order_by(Task.created_at))]
         # The agent layer is read straight from the ledger the company workspace and the
         # recorder write to; nothing is mirrored for the analyst.
@@ -360,7 +376,7 @@ def attention_queue(companies: list[dict], opportunities: list[dict], agents: li
                     "href": f"/company/?id={cid}&tab=finance&filter=overdue90",
                 }
             )
-        for s in c.get("subscriptions", []):
+        for s in c.get("renewals") or c.get("subscriptions", []):
             if not s["renewalDate"]:
                 continue
             days = -_days_between(s["renewalDate"], now)

@@ -430,3 +430,24 @@ def test_light_snapshot_carries_record_summaries_and_answers_304_when_unchanged(
     full = client.get("/api/portfolio", headers=headers).json()["companies"][0]
     assert len(full["invoices"]) == 3
     assert set(full["invoices"][0]["provenance"]) == {"file", "sheet", "row", "importJob", "confidence", "review"}
+
+
+def test_renewal_alerts_survive_the_light_snapshot(client, source_store, monkeypatch):
+    # QuickBooks in the simple fixture renews 2026-11-01: within 30 days of this "today".
+    monkeypatch.setattr(settings, "demo_today", "2026-10-15")
+    headers, _ = make_firm()
+    cid = client.post("/api/portfolio/companies", headers=headers, json={"name": "Cedar Climate"}).json()["id"]
+    job = upload(client, headers, cid, "software.csv")
+    client.post(
+        f"/api/import-jobs/{job['id']}/mappings/approve",
+        headers=headers,
+        json={"mappings": [{"source": m["source"], "target": m["target"], "confirmed": True} for m in job["mappings"]]},
+    )
+    assert client.post(f"/api/import-jobs/{job['id']}/approve", headers=headers).status_code == 200
+    light = client.get("/api/portfolio?records=false", headers=headers).json()
+    company = light["companies"][0]
+    assert "subscriptions" not in company
+    assert [r["product"] for r in company["renewals"]] == ["QuickBooks Online"]
+    renewals = [a for a in light["attention"] if a["type"] == "Renewal"]
+    assert [a["text"] for a in renewals] == ["QuickBooks Online renews in 17 days"]
+    assert [a["type"] for a in client.get("/api/portfolio/attention", headers=headers).json() if a["type"] == "Renewal"] == ["Renewal"]
