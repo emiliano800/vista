@@ -94,27 +94,47 @@ def _expire_lease(job_id) -> None:
         session.commit()
 
 
+def _claim_as_dead_worker(run_id: str) -> Job:
+    """Claim this run's job the way a worker that then vanishes would. The queue is shared
+    with every other test, so claim until it is ours and put anything else back."""
+    others = []
+    with platform_session() as session:
+        while True:
+            job = claim_next(session, owner="dead-worker")
+            assert job is not None, "the run's job was not claimable"
+            if job.payload.get("run_id") == run_id:
+                break
+            others.append(job)
+        for other in others:
+            other.status, other.attempts, other.lease_owner, other.lease_until = "queued", other.attempts - 1, None, None
+        session.commit()
+        session.refresh(job)
+        session.expunge(job)
+        return job
+
+
 def test_a_job_whose_worker_died_is_reaped_and_re_run(client, tenant_factory):
+    _drain()  # other tests' leftovers first, so the queue holds only this run's job
     headers, _, _ = tenant_factory()
     deal = client.post("/deals", json={"name": "Project Heron"}, headers=headers).json()
     run = client.post("/runs", json={"deal_id": deal["id"]}, headers=headers).json()
 
     # A worker claims the job and then vanishes (deploy, crash): the job stays `running`
     # with a lease that nobody renews.
+    job = _claim_as_dead_worker(run["id"])
+    assert job.status == "running" and job.lease_owner == "dead-worker" and job.lease_until is not None
+    job_id = job.id
+    _drain()
     with platform_session() as session:
-        job = claim_next(session, owner="dead-worker")
-        assert job is not None and job.status == "running" and job.lease_owner == "dead-worker"
-        assert job.lease_until is not None
-        session.commit()
-        job_id = job.id
-    assert process_one() is False, "a leased job is not claimable while its lease holds"
+        assert session.get(Job, job_id).status == "running", "a leased job is not claimable while its lease holds"
     with platform_session() as session:
-        assert reap_expired(session) == [], "a live lease is left alone"
+        assert job_id not in {j.id for j in reap_expired(session)}, "a live lease is left alone"
+        session.rollback()
         assert renew_lease(session, job_id, "someone-else") is False, "only the owner renews"
         assert renew_lease(session, job_id, "dead-worker") is True
 
     _expire_lease(job_id)
-    assert reap_stuck_jobs() == 1
+    assert reap_stuck_jobs() >= 1
     with platform_session() as session:
         job = session.get(Job, job_id)
         assert job.status == "queued" and job.lease_owner is None and job.error == LEASE_EXPIRED
@@ -133,23 +153,45 @@ def test_a_job_whose_worker_died_is_reaped_and_re_run(client, tenant_factory):
 
 
 def test_a_reaped_job_out_of_attempts_fails_its_run(client, tenant_factory):
+    _drain()
     headers, _, _ = tenant_factory()
     deal = client.post("/deals", json={"name": "Project Egret"}, headers=headers).json()
     run = client.post("/runs", json={"deal_id": deal["id"]}, headers=headers).json()
+    job_id = _claim_as_dead_worker(run["id"]).id
     with platform_session() as session:
-        job = claim_next(session, owner="dead-worker")
-        job.max_attempts = 1
+        session.get(Job, job_id).max_attempts = 1
         session.commit()
-        job_id = job.id
     _expire_lease(job_id)
-    assert reap_stuck_jobs() == 1
+    assert reap_stuck_jobs() >= 1
     with platform_session() as session:
         assert session.get(Job, job_id).status == "failed"
     assert client.get(f"/runs/{run['id']}", headers=headers).json()["status"] == "failed"
-    assert process_one() is False
+    _drain()
+    with platform_session() as session:
+        assert session.get(Job, job_id).status == "failed", "a failed job is never claimed again"
+
+
+def test_a_job_claimed_before_leases_existed_is_reaped_too(client, tenant_factory):
+    from sqlalchemy import text
+
+    _drain()
+    headers, _, _ = tenant_factory()
+    deal = client.post("/deals", json={"name": "Project Ibis"}, headers=headers).json()
+    run = client.post("/runs", json={"deal_id": deal["id"]}, headers=headers).json()
+    job_id = _claim_as_dead_worker(run["id"]).id
+    with platform_session() as session:
+        session.execute(
+            text("UPDATE platform.jobs SET lease_owner = NULL, lease_until = NULL, updated_at = now() - interval '1 hour' WHERE id = :id"),
+            {"id": job_id},
+        )
+        session.commit()
+    assert reap_stuck_jobs() >= 1
+    with platform_session() as session:
+        assert session.get(Job, job_id).status == "queued"
 
 
 def test_a_long_handler_keeps_its_lease_through_heartbeats(tenant_factory, monkeypatch):
+    _drain()
     _, tenant_id, _ = tenant_factory()
     monkeypatch.setattr(settings, "job_lease_s", 1)  # heartbeat every ~0.33 s
     seen: dict = {}

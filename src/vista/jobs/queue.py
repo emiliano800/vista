@@ -94,7 +94,8 @@ LEASE_EXPIRED = "lease expired: the worker running this job stopped answering"
 
 
 def reap_expired(session: Session) -> list[Job]:
-    """Take back every running job whose lease has lapsed: re-queue it to run now, or fail
+    """Take back every running job whose lease has lapsed — or, for a job claimed before
+    leases existed, one not touched for a lease's length — re-queue it to run now, or fail
     it when its attempts are spent. Returns the jobs touched (status already updated,
     not yet committed) so the worker can settle their AgentRun rows."""
     ids = [
@@ -103,10 +104,13 @@ def reap_expired(session: Session) -> list[Job]:
             text(
                 """
                 SELECT id FROM platform.jobs
-                WHERE status = 'running' AND lease_until IS NOT NULL AND lease_until < now()
+                WHERE status = 'running'
+                  AND (lease_until < now()
+                       OR (lease_until IS NULL AND updated_at < now() - make_interval(secs => :lease)))
                 FOR UPDATE SKIP LOCKED
                 """
-            )
+            ),
+            {"lease": float(settings.job_lease_s)},
         ).all()
     ]
     reaped = []
