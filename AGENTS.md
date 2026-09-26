@@ -525,7 +525,10 @@ wired only in tests/eval. Any new automatic hop must follow the contract above.
   ANALYST key, not Meridian — scripts must select keys by section, not position.
 - Old "Vista Solutions / Vista Demo" key was revoked 2026-09-19 (rotation,
   replacement destroyed unread).
-- Deployed state 2026-09-25 (later): image `4d34464` (task defs `vista-vista-api:31`,
+- Deployed state 2026-09-25 (evening): image `bb0cfdc` (task defs `vista-vista-api:32`,
+  `vista-worker:29`) went live at about 21:50 UTC with the renewal-alert fix for the light
+  snapshot and PRs #25–#26 (recorder 0.5.1: publishing waits for the re-judged report
+  after answers). Before it: image `4d34464` (task defs `vista-vista-api:31`,
   `vista-worker:28`) went live at about 04:55 UTC with the analyst light snapshot,
   per-tab record loads, ETag/304 revalidation and the per-record provenance route
   (see "Product direction"); the Worker build from the same push serves the pages
