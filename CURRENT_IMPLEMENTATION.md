@@ -175,7 +175,7 @@ renders from the cache). A Cloudflare Worker serves assets and proxies an explic
 
 One CloudFormation stack `vista`: ECS Fargate `vista-api` + `vista-worker` (worker
 enabled, model **gpt-6-astra** via Secrets Manager), RDS Postgres (schema history in
-Alembic: platform ×5, tenant ×21 migrations in `main`; migrate-on-start with advisory lock),
+Alembic: platform ×6, tenant ×22 migrations in `main`; migrate-on-start with advisory lock; jobs are leased to their worker and a reaper re-queues jobs whose worker died),
 private versioned S3 `vista-reports-630396228214`, CloudWatch logs. Cloudflare
 serves bumpsolutions.org and proxies `/api`. Deploys: `deploy/aws/deploy.sh` from
 **emiliano800/vista main only** (needs a deployment-capable identity; the scoped

@@ -3,9 +3,11 @@ import uuid
 from sqlalchemy import select
 
 from tests.conftest import requires_db
+from vista.config import settings
 from vista.db import platform_session
-from vista.jobs.queue import enqueue
-from vista.jobs.worker import process_one
+from vista.jobs.handlers import HANDLERS
+from vista.jobs.queue import LEASE_EXPIRED, claim_next, enqueue, reap_expired, renew_lease
+from vista.jobs.worker import process_one, reap_stuck_jobs
 from vista.models.platform import Job
 
 pytestmark = requires_db
@@ -82,3 +84,92 @@ def test_failed_job_is_retried_then_fails_permanently(tenant_factory, client):
         job = session.get(Job, job_id)
         assert job.status == "failed"
         assert job.attempts == 2
+
+
+def _expire_lease(job_id) -> None:
+    from sqlalchemy import text
+
+    with platform_session() as session:
+        session.execute(text("UPDATE platform.jobs SET lease_until = now() - interval '1 second' WHERE id = :id"), {"id": job_id})
+        session.commit()
+
+
+def test_a_job_whose_worker_died_is_reaped_and_re_run(client, tenant_factory):
+    headers, _, _ = tenant_factory()
+    deal = client.post("/deals", json={"name": "Project Heron"}, headers=headers).json()
+    run = client.post("/runs", json={"deal_id": deal["id"]}, headers=headers).json()
+
+    # A worker claims the job and then vanishes (deploy, crash): the job stays `running`
+    # with a lease that nobody renews.
+    with platform_session() as session:
+        job = claim_next(session, owner="dead-worker")
+        assert job is not None and job.status == "running" and job.lease_owner == "dead-worker"
+        assert job.lease_until is not None
+        session.commit()
+        job_id = job.id
+    assert process_one() is False, "a leased job is not claimable while its lease holds"
+    with platform_session() as session:
+        assert reap_expired(session) == [], "a live lease is left alone"
+        assert renew_lease(session, job_id, "someone-else") is False, "only the owner renews"
+        assert renew_lease(session, job_id, "dead-worker") is True
+
+    _expire_lease(job_id)
+    assert reap_stuck_jobs() == 1
+    with platform_session() as session:
+        job = session.get(Job, job_id)
+        assert job.status == "queued" and job.lease_owner is None and job.error == LEASE_EXPIRED
+        assert job.attempts == 1
+    events = client.get(f"/runs/{run['id']}", headers=headers).json()
+    assert events["status"] == "queued"
+    assert events["events"][-1]["event_type"] == "error" and "lease expired" in events["events"][-1]["data"]["error"]
+
+    # The next worker picks it up and finishes the work.
+    _drain()
+    result = client.get(f"/runs/{run['id']}", headers=headers).json()
+    assert result["status"] == "succeeded"
+    with platform_session() as session:
+        job = session.get(Job, job_id)
+        assert job.status == "succeeded" and job.attempts == 2 and job.lease_owner is None
+
+
+def test_a_reaped_job_out_of_attempts_fails_its_run(client, tenant_factory):
+    headers, _, _ = tenant_factory()
+    deal = client.post("/deals", json={"name": "Project Egret"}, headers=headers).json()
+    run = client.post("/runs", json={"deal_id": deal["id"]}, headers=headers).json()
+    with platform_session() as session:
+        job = claim_next(session, owner="dead-worker")
+        job.max_attempts = 1
+        session.commit()
+        job_id = job.id
+    _expire_lease(job_id)
+    assert reap_stuck_jobs() == 1
+    with platform_session() as session:
+        assert session.get(Job, job_id).status == "failed"
+    assert client.get(f"/runs/{run['id']}", headers=headers).json()["status"] == "failed"
+    assert process_one() is False
+
+
+def test_a_long_handler_keeps_its_lease_through_heartbeats(tenant_factory, monkeypatch):
+    _, tenant_id, _ = tenant_factory()
+    monkeypatch.setattr(settings, "job_lease_s", 1)  # heartbeat every ~0.33 s
+    seen: dict = {}
+
+    def slow_handler(job, schema):
+        import time
+
+        time.sleep(1.6)  # longer than the lease: only the heartbeat keeps this job ours
+        with platform_session() as session:
+            seen["reaped_mid_run"] = len(reap_expired(session))
+            seen["lease_until"] = session.get(Job, job.id).lease_until
+            session.rollback()
+
+    monkeypatch.setitem(HANDLERS, "slow_test_job", slow_handler)
+    with platform_session() as session:
+        job = enqueue(session, tenant_id=uuid.UUID(tenant_id), kind="slow_test_job", payload={})
+        session.commit()
+        job_id = job.id
+    assert process_one() is True
+    assert seen["reaped_mid_run"] == 0
+    with platform_session() as session:
+        job = session.get(Job, job_id)
+        assert job.status == "succeeded" and job.error is None and job.lease_until is None

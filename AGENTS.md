@@ -352,6 +352,14 @@ auditable. The rules below are the contract.
 - `max_attempts` exhausted → `AgentRun.status="failed"` with `error`; the producer
   is *not* rolled back. A failed hop is surfaced in the parent's trace by the API,
   not by mutating the parent.
+- A claimed job is *leased* to its worker (`jobs.lease_owner/lease_until`, platform
+  migration `0006`, `VISTA_JOB_LEASE_S`, default 120 s) and the worker renews the lease
+  every third of it while the handler runs. A worker that dies (deploy, crash) stops
+  renewing; the reaper (`worker.reap_stuck_jobs`, every `VISTA_JOB_REAP_INTERVAL_S`)
+  re-queues the job to run now — or fails it when attempts are spent — and marks its
+  `AgentRun` `queued`/`failed` with an `error` event, so no job is `running` forever
+  and barriers (`release_sector_barrier`) still close. A worker whose lease was taken
+  back drops its result instead of recording it over the new attempt's.
 - Cost accrues to the run that made the call (`usage_events.run_id`); A2A adds no
   hidden spend.
 - The Computer Use Agent is the first handler that *suspends*: when a step needs the

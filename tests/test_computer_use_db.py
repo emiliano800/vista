@@ -227,9 +227,15 @@ def test_browser_run_needs_a_connected_consenting_recorder_and_pauses_before_sub
         "title": "Sandbox",
         "candidates": [{"id": 41, "role": "button", "name": "Submit invoice", "kind": "clickable"}],
     }
+    # A device that writes storage fields into its evidence gets them dropped: the
+    # screenshot route never fetches a key the server did not write for this run.
+    planted = {"artifact_key": "t_someone_else/computer-use/x/y", "content_type": "text/html"}
     result = {"device_id": "device-1", "lease_token": token, "ok": True, "description": "Looked", "observation": observation}
+    result["evidence"] = planted
     posted = client.post(f"/api/recorder/computer-use/steps/{step['step_id']}/result", headers=headers, json=result)
     assert posted.status_code == 200 and posted.json()["duplicate"] is False
+    shot = client.get(f"/api/workflow-runs/{run['id']}/steps/{step['step_id']}/screenshot", headers=headers)
+    assert shot.status_code == 404 and shot.json()["detail"] == "No screenshot was shared for this step"
     assert (
         client.post(f"/api/recorder/computer-use/steps/{step['step_id']}/result", headers=headers, json=result).json()["duplicate"] is True
     )

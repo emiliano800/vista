@@ -44,6 +44,10 @@ class Settings(BaseSettings):
     computer_use_step_timeout_s: int = 180  # how long a step may wait for the recorder before it expires
     computer_use_lease_s: int = 300  # run-level lease held by the worker that is planning
     computer_use_offer_ttl_s: int = 1800  # how long a run waits for an employee to accept before it fails
+    # Job queue leases: a claimed job is leased to its worker for this long and renewed every
+    # third of it while the handler runs; a job whose lease lapsed is re-queued by the reaper.
+    job_lease_s: int = 120
+    job_reap_interval_s: int = 30
 
     def openai_client(self):
         from openai import OpenAI

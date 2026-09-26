@@ -338,3 +338,26 @@ def test_prefilled_drafts_still_validate_and_unlock_only_their_primitives():
     definition = WorkflowDefinition.model_validate(DEFINITION)
     assert tools.unmapped(definition.allowed_tools) == []
     assert "create_task" not in tools.primitives_for(definition.allowed_tools)
+
+
+def test_screenshot_keys_are_confined_to_the_run_and_never_come_from_the_device():
+    import uuid as _uuid
+
+    from vista.computer_use.service import screenshot_key, store_evidence
+
+    run_id = _uuid.uuid4()
+    own = f"t_0123456789ab/computer-use/{run_id}/step/abc"
+    assert screenshot_key("t_0123456789ab", run_id, {"artifact_key": own}) == own
+    # Another tenant's prefix, another run's prefix, a non-string, or nothing at all.
+    assert screenshot_key("t_0123456789ab", run_id, {"artifact_key": f"t_ffffffffffff/computer-use/{run_id}/x"}) is None
+    assert screenshot_key("t_0123456789ab", run_id, {"artifact_key": f"t_0123456789ab/computer-use/{_uuid.uuid4()}/x"}) is None
+    assert screenshot_key("t_0123456789ab", run_id, {"artifact_key": ["own"]}) is None
+    assert screenshot_key("t_0123456789ab", run_id, None) is None
+
+    # A device cannot plant storage fields in its result; without a screenshot nothing is stored.
+    class _Row:
+        id = run_id
+
+    planted = {"artifact_key": "t_other/secret", "sha256": "x", "bytes": 1, "content_type": "text/html", "note": "kept"}
+    evidence = store_evidence("t_0123456789ab", _Row(), _Row(), planted)
+    assert evidence == {"note": "kept"}

@@ -422,8 +422,32 @@ def poll(session: Session, hs: HarnessSession, run: WorkflowRun, *, device_id: s
     return view
 
 
+SCREENSHOT_TYPES = ("image/png", "image/jpeg", "image/webp")
+# Set by the server when it stores a screenshot; a device may not supply them.
+SERVER_EVIDENCE_FIELDS = ("artifact_key", "sha256", "bytes")
+
+
+def screenshot_prefix(tenant_schema: str, run_id: uuid.UUID) -> str:
+    return f"{tenant_schema}/computer-use/{run_id}/"
+
+
+def screenshot_key(tenant_schema: str, run_id: uuid.UUID, evidence: dict | None) -> str | None:
+    """The object key of a step's shared screenshot, only if it sits under this tenant's and
+    run's own prefix. Anything else — a key a device wrote into its result, a key from
+    another tenant — is treated as no screenshot."""
+    key = (evidence or {}).get("artifact_key")
+    if not isinstance(key, str) or not key.startswith(screenshot_prefix(tenant_schema, run_id)):
+        return None
+    return key
+
+
 def store_evidence(tenant_schema: str, run: WorkflowRun, step: HarnessStep, evidence: dict) -> dict:
-    """Keep the screenshot only when the employee consented; the planner never sees pixels."""
+    """Keep the screenshot only when the employee consented; the planner never sees pixels.
+    The storage fields are the server's: whatever a device sent under them is dropped."""
+    for field in SERVER_EVIDENCE_FIELDS:
+        evidence.pop(field, None)
+    if evidence.get("content_type") not in SCREENSHOT_TYPES:
+        evidence.pop("content_type", None)
     blob = evidence.pop("screenshot_base64", None)
     if not blob:
         return evidence
@@ -436,7 +460,7 @@ def store_evidence(tenant_schema: str, run: WorkflowRun, step: HarnessStep, evid
         evidence["error"] = "screenshot_too_large"
         return evidence
     digest = hashlib.sha256(data).hexdigest()
-    key = f"{tenant_schema}/computer-use/{run.id}/{step.id}/{digest}"
+    key = f"{screenshot_prefix(tenant_schema, run.id)}{step.id}/{digest}"
     from vista.storage import s3_client
 
     s3_client().put_object(Bucket=settings.s3_bucket, Key=key, Body=data, ContentType=str(evidence.get("content_type") or "image/png"))

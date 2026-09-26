@@ -176,5 +176,9 @@ class Job(PlatformBase):
     max_attempts: Mapped[int] = mapped_column(Integer, default=3)
     run_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     error: Mapped[str | None] = mapped_column(Text, nullable=True)
+    # Held by the worker that claimed the job and renewed while its handler runs; a lapsed
+    # lease means that worker is gone and the reaper may re-queue the job.
+    lease_owner: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    lease_until: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())

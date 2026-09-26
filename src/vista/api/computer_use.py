@@ -95,17 +95,19 @@ def step_screenshot(run_id: uuid.UUID, step_id: uuid.UUID, principal: Principal 
         if step is None or step.workflow_run_id != run.id:
             raise HTTPException(404, "Step not found")
         evidence = (step.result or {}).get("evidence") or {}
-        key = evidence.get("artifact_key")
+        # Only a key under this tenant's and run's own prefix is ever fetched.
+        key = service.screenshot_key(principal.tenant_schema, run.id, evidence)
         if not key:
             raise HTTPException(404, "No screenshot was shared for this step")
+        media_type = evidence.get("content_type")
+        if media_type not in service.SCREENSHOT_TYPES:
+            media_type = "image/png"
     from vista.storage import s3_client
 
     obj = s3_client().get_object(Bucket=settings.s3_bucket, Key=key)
     with obj["Body"] as stream:
         data = stream.read(2 * 1024 * 1024 + 1)
-    return Response(
-        content=data, media_type=str(evidence.get("content_type") or "image/png"), headers={"Cache-Control": "private, max-age=60"}
-    )
+    return Response(content=data, media_type=media_type, headers={"Cache-Control": "private, max-age=60"})
 
 
 # ---- recorder ----------------------------------------------------------------------------------------

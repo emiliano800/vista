@@ -4,6 +4,7 @@ from datetime import UTC, datetime, timedelta
 from sqlalchemy import select, text
 from sqlalchemy.orm import Session
 
+from vista.config import settings
 from vista.models.platform import Job
 
 RETRY_BACKOFF_SECONDS = [10, 60, 300]
@@ -44,14 +45,17 @@ def enqueue(
     return job
 
 
-def claim_next(session: Session) -> Job | None:
-    """Claim one due job using FOR UPDATE SKIP LOCKED. Marks it running and
-    increments attempts. Caller must commit to release the row lock."""
+def claim_next(session: Session, owner: str = "worker", lease_seconds: int | None = None) -> Job | None:
+    """Claim one due job using FOR UPDATE SKIP LOCKED. Marks it running, increments
+    attempts and leases it to `owner` for `lease_seconds` (the worker renews the lease
+    while its handler runs). Caller must commit to release the row lock."""
+    lease = settings.job_lease_s if lease_seconds is None else lease_seconds
     row = session.execute(
         text(
             """
             UPDATE platform.jobs
-            SET status = 'running', attempts = attempts + 1, updated_at = now()
+            SET status = 'running', attempts = attempts + 1, updated_at = now(),
+                lease_owner = :owner, lease_until = now() + make_interval(secs => :lease)
             WHERE id = (
                 SELECT id FROM platform.jobs
                 WHERE status = 'queued' AND run_at <= now()
@@ -61,21 +65,75 @@ def claim_next(session: Session) -> Job | None:
             )
             RETURNING id
             """
-        )
+        ),
+        {"owner": owner, "lease": float(lease)},
     ).first()
     if row is None:
         return None
     return session.get(Job, row[0])
 
 
+def renew_lease(session: Session, job_id: uuid.UUID, owner: str, lease_seconds: int | None = None) -> bool:
+    """Extend the lease the worker holds on a running job. False when the lease is no
+    longer this worker's (the reaper took it back), so the caller must not report a result."""
+    lease = settings.job_lease_s if lease_seconds is None else lease_seconds
+    result = session.execute(
+        text(
+            """
+            UPDATE platform.jobs
+            SET lease_until = now() + make_interval(secs => :lease), updated_at = now()
+            WHERE id = :id AND status = 'running' AND lease_owner = :owner
+            """
+        ),
+        {"id": job_id, "owner": owner, "lease": float(lease)},
+    )
+    return result.rowcount == 1
+
+
+LEASE_EXPIRED = "lease expired: the worker running this job stopped answering"
+
+
+def reap_expired(session: Session) -> list[Job]:
+    """Take back every running job whose lease has lapsed: re-queue it to run now, or fail
+    it when its attempts are spent. Returns the jobs touched (status already updated,
+    not yet committed) so the worker can settle their AgentRun rows."""
+    ids = [
+        row[0]
+        for row in session.execute(
+            text(
+                """
+                SELECT id FROM platform.jobs
+                WHERE status = 'running' AND lease_until IS NOT NULL AND lease_until < now()
+                FOR UPDATE SKIP LOCKED
+                """
+            )
+        ).all()
+    ]
+    reaped = []
+    for job_id in ids:
+        job = session.get(Job, job_id)
+        job.lease_owner, job.lease_until = None, None
+        job.error = LEASE_EXPIRED
+        if job.attempts >= job.max_attempts:
+            job.status = "failed"
+        else:
+            job.status = "queued"
+            job.run_at = datetime.now(UTC)
+        reaped.append(job)
+    session.flush()
+    return reaped
+
+
 def mark_succeeded(session: Session, job: Job) -> None:
     job.status = "succeeded"
     job.error = None
+    job.lease_owner, job.lease_until = None, None
 
 
 def mark_failed(session: Session, job: Job, error: str) -> None:
     """Retry with backoff until max_attempts, then fail permanently."""
     job.error = error[:4000]
+    job.lease_owner, job.lease_until = None, None
     if job.attempts >= job.max_attempts:
         job.status = "failed"
     else:
