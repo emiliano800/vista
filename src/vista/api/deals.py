@@ -11,7 +11,8 @@ from vista.api.schemas import (
     DocumentOut,
 )
 from vista.auth import Principal, current_principal
-from vista.db import tenant_session
+from vista.db import platform_session, tenant_session
+from vista.models.platform import FirmCompany
 from vista.models.tenant import Deal, DealMembership, Document
 from vista.permissions import require_deal_role
 from vista.storage import presigned_download_url, presigned_upload_url
@@ -32,11 +33,25 @@ def create_deal(body: DealCreate, principal: Principal = Depends(current_princip
 
 @router.get("/deals", response_model=list[DealOut])
 def list_deals(principal: Principal = Depends(current_principal)) -> list[DealOut]:
+    with platform_session() as platform:
+        linked = platform.execute(
+            select(FirmCompany.id, FirmCompany.deal_id).where(
+                FirmCompany.tenant_id == principal.tenant_id, FirmCompany.deal_id.is_not(None)
+            )
+        ).first()
     with tenant_session(principal.tenant_schema) as session:
         deals = session.scalars(
             select(Deal).join(DealMembership, DealMembership.deal_id == Deal.id).where(DealMembership.user_id == principal.user_id)
         ).all()
-        return [DealOut(id=d.id, name=d.name, created_at=d.created_at) for d in deals]
+        return [
+            DealOut(
+                id=d.id,
+                name=d.name,
+                created_at=d.created_at,
+                canonical_company_id=linked.id if linked is not None and linked.deal_id == d.id else None,
+            )
+            for d in deals
+        ]
 
 
 @router.post("/deals/{deal_id}/documents", response_model=DocumentCreated, status_code=201)

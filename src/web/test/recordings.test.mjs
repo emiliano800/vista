@@ -6,6 +6,9 @@ const html = fs.readFileSync(new URL("../public/account/index.html", import.meta
 import { source } from "./account-source.mjs";
 const company = "00000000-0000-0000-0000-000000000001";
 const other = "00000000-0000-0000-0000-000000000009";
+// The analyst company this workspace's Deal aliases once the tenant is linked;
+// recorders enrolled after the link upload under this id (kind "company").
+const linked = "00000000-0000-0000-0000-000000000002";
 const malicious = "<img src=x onerror=alert(1)>";
 const summary = (id, workspace) => ({
   id,
@@ -58,7 +61,7 @@ async function settle(predicate) {
   }
   assert.fail("UI did not reach expected state");
 }
-function mount({ reportsFail = false } = {}) {
+function mount({ reportsFail = false, linkedCompany = false } = {}) {
   const state = { requests: [] };
   const dom = new JSDOM(html, { url: "https://vista.test/account/", runScripts: "outside-only" });
   dom.window.HTMLDialogElement.prototype.showModal = function () {
@@ -70,7 +73,8 @@ function mount({ reportsFail = false } = {}) {
   dom.window.fetch = async (path) => {
     state.requests.push(path);
     if (path === "/api/auth/me") return Response.json({ email: "employee@example.com" });
-    if (path === "/api/deals") return Response.json([{ id: company, name: "Recorder Company" }]);
+    if (path === "/api/deals")
+      return Response.json([{ id: company, name: "Recorder Company", canonical_company_id: linkedCompany ? linked : null }]);
     if (path === `/api/deals/${company}/imports`)
       return Response.json({ role: "viewer", company: { id: "c-1", name: "Meridian", slug: "meridian" }, imports: [], openExceptions: [] });
     if (path === `/api/deals/${company}/import-datasets`) return Response.json({});
@@ -80,7 +84,11 @@ function mount({ reportsFail = false } = {}) {
     if (path === "/api/synthetic/companies") return Response.json([]);
     if (path === "/api/recorder/reports?limit=100") {
       if (reportsFail) return Response.json({ detail: "Not Found" }, { status: 404 });
-      return Response.json([full, summary("00000000-0000-0000-0000-00000000000c", { id: other, kind: "deal" })]);
+      return Response.json([
+        full,
+        summary("00000000-0000-0000-0000-00000000000c", { id: other, kind: "deal" }),
+        { ...summary("00000000-0000-0000-0000-00000000000d", { id: linked, kind: "company" }), canonical_company_id: linked },
+      ]);
     }
     if (path === `/api/recorder/reports/${full.id}`) return Response.json(full);
     throw new Error("Unexpected URL " + path);
@@ -115,6 +123,26 @@ test("published recording reports are listed for the company only, escaped, and 
     assert.match(body.textContent, /Not observed: window_title, url/);
     ui.$("close-report").click();
     assert.equal(ui.$("report-dialog").open, false);
+  } finally {
+    ui.dom.window.close();
+  }
+});
+
+test("reports uploaded under the linked analyst company are listed with the deal's own", async () => {
+  // Before the link the deal is the workspace's only name and company-kind reports stay out.
+  const bare = mount();
+  try {
+    await settle(() => bare.state.requests.includes("/api/recorder/reports?limit=100"));
+    await settle(() => bare.$("report-count").textContent === "1");
+  } finally {
+    bare.dom.window.close();
+  }
+  const ui = mount({ linkedCompany: true });
+  try {
+    await settle(() => ui.$("report-count").textContent === "2");
+    ui.dom.window.document.querySelector('[data-view="recordings"]').click();
+    await settle(() => /Recordings/.test(ui.$("view-name").textContent));
+    assert.equal(ui.$("content").querySelectorAll("tbody tr").length, 2);
   } finally {
     ui.dom.window.close();
   }

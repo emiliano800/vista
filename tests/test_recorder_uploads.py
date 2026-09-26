@@ -576,8 +576,10 @@ def test_recorder_enrolled_before_the_link_keeps_uploading_by_deal_id(client):
         row = session.get(FirmCompany, uuid.UUID(company["id"]))
         deal_id = str(row.deal_id)
         key = uuid.uuid4().hex + uuid.uuid4().hex
-        session.add(User(tenant_id=row.tenant_id, email="employee@linked.example.com", api_token=key, role="member"))
+        employee = User(tenant_id=row.tenant_id, email="employee@linked.example.com", api_token=key, role="member")
+        session.add(employee)
         session.commit()
+        employee_id, schema = employee.id, session.get(Tenant, row.tenant_id).schema_name
     assert deal_id != "None", "creating a company creates its Deal"
     headers = {"Authorization": f"Bearer {key}"}
 
@@ -589,6 +591,23 @@ def test_recorder_enrolled_before_the_link_keeps_uploading_by_deal_id(client):
 
     # Only that deal is an alias; any other deal id is still nobody's workspace.
     assert client.post(ROOT, headers=headers, json=body(str(uuid.uuid4()), "deal")).status_code == 404
+
+    # The company workspace selects the Deal, so /api/deals names the company it
+    # aliases; uploads made after the link carry that id, not the deal's.
+    with tenant_session(schema) as session:
+        session.add(DealMembership(deal_id=uuid.UUID(deal_id), user_id=employee_id, role="member"))
+        session.commit()
+    deals = client.get("/api/deals", headers=headers).json()
+    assert [(d["id"], d["canonical_company_id"]) for d in deals] == [(deal_id, company["id"])]
+    linked_upload = create(client, headers, body(company["id"], "company"))
+    assert linked_upload["workspace"] == {"id": company["id"], "kind": "company"}
+    assert linked_upload["canonical_company_id"] == deals[0]["canonical_company_id"]
+
+
+def test_unlinked_deals_carry_no_canonical_company(client, workspace):
+    headers, _, _, wid = workspace
+    deals = client.get("/api/deals", headers=headers).json()
+    assert [(d["id"], d["canonical_company_id"]) for d in deals] == [(wid, None)]
 
 
 def test_full_detail_policy_accepts_titles_and_text_and_metadata_policy_still_refuses_them(client, workspace, store):

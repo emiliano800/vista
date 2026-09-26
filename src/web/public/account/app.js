@@ -343,10 +343,15 @@ function agentsView() {
 }
 // Published recording reports for this company: what employees chose to share
 // from the desktop recorder after the Recording Reviewer analysed the upload.
-const companyReports = () =>
-  reports.filter(
-    (r) => r.workspace?.id === company()?.id || r.canonical_company_id === company()?.id,
-  );
+// A linked workspace is named by two ids: its Deal (what this page selects) and
+// the analyst company it aliases (`canonical_company_id` on /api/deals); uploads
+// made after the link carry the company one, earlier recorders the deal one.
+const companyReports = () => {
+  const c = company();
+  if (!c) return [];
+  const ids = new Set([c.id, c.canonical_company_id].filter(Boolean));
+  return reports.filter((r) => ids.has(r.workspace?.id) || ids.has(r.canonical_company_id));
+};
 async function loadReports(current) {
   try {
     const rows = await api("/recorder/reports?limit=100");

@@ -26,6 +26,10 @@ class DealOut(BaseModel):
     id: uuid.UUID
     name: str
     created_at: datetime
+    # The analyst company this deal is an alias of, once the tenant is linked
+    # (`FirmCompany.deal_id`). Recorder uploads made after the link carry the
+    # company workspace, so the company workspace matches reports by either id.
+    canonical_company_id: uuid.UUID | None = None
 
 
 class DocumentCreate(BaseModel):

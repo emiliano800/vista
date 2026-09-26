@@ -90,6 +90,11 @@ const RECORD_LABELS = {
 };
 const id = qs().get("id");
 const tab = qs().get("tab") ?? "overview";
+// A function declaration, not a `const`: render() runs at module top level
+// below, before any later `const` would be initialised (temporal dead zone).
+function recordCount(kind) {
+  return c.records?.[kind]?.count ?? (c[kind] ?? []).length;
+}
 const analyst = await mountShell({
   onUpdate: () => {
     if (company(id)) render();
@@ -132,9 +137,6 @@ function bindSources(lists) {
       };
     });
 }
-
-const recordCount = (kind) =>
-  c.records?.[kind]?.count ?? (c[kind] ?? []).length;
 
 async function render() {
   c = company(id);
