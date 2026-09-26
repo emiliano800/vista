@@ -537,8 +537,12 @@ wired only in tests/eval. Any new automatic hop must follow the contract above.
   ANALYST key, not Meridian — scripts must select keys by section, not position.
 - Old "Vista Solutions / Vista Demo" key was revoked 2026-09-19 (rotation,
   replacement destroyed unread).
-- Deployed state 2026-09-26 (later): image `afac97e` (task defs `vista-vista-api:35`,
-  `vista-worker:32`) went live at about 05:10 UTC with the live-UI fixes (SVG spend bars
+- Deployed state 2026-09-26 (evening): image `0708db8` (task defs `vista-vista-api:36`,
+  `vista-worker:33`) went live at about 07:20 UTC with the job/run lease hand-off,
+  decision nonces, expired-step refusal and per-user idempotency keys; recorder 0.5.2
+  (cancelable publish, changed-answers-only, no double-run of a step, stale sessions
+  finished at launch) was released from the same push. Before it: image `afac97e`
+  (task defs `vista-vista-api:35`, `vista-worker:32`) went live at about 05:10 UTC with the live-UI fixes (SVG spend bars
   under the CSP, deployment page `number` + generation counter, server-derived
   `permissions` / `may_draft` for workflow buttons). Before it: image `6e03a45` (task
   defs `vista-vista-api:34`, `vista-worker:31`) went live at about 00:30 UTC with platform migration `0006` (job
