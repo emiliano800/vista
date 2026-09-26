@@ -533,7 +533,10 @@ wired only in tests/eval. Any new automatic hop must follow the contract above.
   ANALYST key, not Meridian — scripts must select keys by section, not position.
 - Old "Vista Solutions / Vista Demo" key was revoked 2026-09-19 (rotation,
   replacement destroyed unread).
-- Deployed state 2026-09-25 (evening): image `bb0cfdc` (task defs `vista-vista-api:32`,
+- Deployed state 2026-09-26: image `6e03a45` (task defs `vista-vista-api:34`,
+  `vista-worker:31`) went live at about 00:30 UTC with platform migration `0006` (job
+  leases + reaper) and the screenshot-key confinement, after `20a3ce9` (task defs :33/:30)
+  minutes earlier. Before it: image `bb0cfdc` (task defs `vista-vista-api:32`,
   `vista-worker:29`) went live at about 21:50 UTC with the renewal-alert fix for the light
   snapshot and PRs #25–#26 (recorder 0.5.1: publishing waits for the re-judged report
   after answers). Before it: image `4d34464` (task defs `vista-vista-api:31`,
